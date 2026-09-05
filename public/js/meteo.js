@@ -17,6 +17,17 @@
 //          refusée/indisponible), affichage d'un état neutre invitant au
 //          choix manuel (ville ou géoloc) au lieu d'imposer une ville
 //          arbitraire non pertinente pour un utilisateur hors France.
+// FIX MODALE/COHERENCE : la carte "Aujourd'hui" de la modale affichait
+//          l'icône/texte de la condition dominante prévue sur toute la
+//          journée (daily.weather_code[0]) à côté de la température
+//          instantanée (current.temperature_2m), ce qui pouvait afficher
+//          "Pluie légère" alors qu'il fait actuellement "Ciel dégagé"
+//          (widget). Pour selectedIdx === 0 uniquement, l'icône et la
+//          description utilisent désormais la condition ACTUELLE
+//          (current.weather_code / d.icon, d.code), identique au widget.
+//          Les autres jours (idx 1-5) continuent d'utiliser
+//          daily.weather_code[i] (aucune condition instantanée possible
+//          pour un jour futur).
 // ============================================================
 
 const METEO_SVG = {
@@ -128,7 +139,7 @@ async function chargerMeteo(lat, lon, nomVille, mode) {
             daily : d.daily
         };
 
-        const modeEffectif = mode || 'ville';
+                const modeEffectif = mode || 'ville';
         _sauverMeteoLS(modeEffectif, lat, lon, nomVille);
 
         // FIX B3 : mémorise l'heure du fetch
@@ -289,18 +300,24 @@ function _renderModaleMeteo(selectedIdx) {
         return;
     }
     const d = meteoData;
+    const isToday = selectedIdx === 0;
 
     const t         = d.daily.time[selectedIdx];
     const dateObj   = new Date(t + 'T12:00:00');
-    const dateLabel = selectedIdx === 0
+    const dateLabel = isToday
         ? "Aujourd'hui"
         : dateObj.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
     const iMax    = Math.round(d.daily.temperature_2m_max[selectedIdx]);
     const iMin    = Math.round(d.daily.temperature_2m_min[selectedIdx]);
-    const iIcon   = METEO_ICONS[d.daily.weather_code[selectedIdx]] || '🌡️';
+    // FIX MODALE/COHERENCE : pour "aujourd'hui", on utilise la condition
+    // ACTUELLE (d.icon / d.code, identique au widget) et non l'agrégat
+    // du jour (daily.weather_code[0]), qui pouvait afficher une condition
+    // différente (ex. pluie prévue plus tard) alors que la température
+    // affichée à côté est la température instantanée. Pour les autres
+    // jours, aucune condition instantanée n'existe : on garde l'agrégat.
+    const iIcon   = isToday ? d.icon : (METEO_ICONS[d.daily.weather_code[selectedIdx]] || '🌡️');
     const iPluie  = d.daily.precipitation_probability_max?.[selectedIdx] || 0;
-    const desc    = METEO_DESC[d.daily.weather_code[selectedIdx]] || 'Variable';
-    const isToday = selectedIdx === 0;
+    const desc    = isToday ? (METEO_DESC[d.code] || 'Variable') : (METEO_DESC[d.daily.weather_code[selectedIdx]] || 'Variable');
 
     const joursHTML = d.daily.time.slice(0, 6).map((tj, i) => {
         const jObj  = new Date(tj + 'T12:00:00');
