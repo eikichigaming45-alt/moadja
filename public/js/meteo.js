@@ -25,6 +25,16 @@
 //          Seul le contenu des SVG change ; les clés (soleil, peuNuageux,
 //          partNuageux, couvert, brouillard, bruine, pluie, neige, orage)
 //          et leur usage dans METEO_ICONS restent strictement identiques.
+// FIX GEOLOC-LAUNCH (v1.69.7) : chargerMeteoAuto() réutilisait directement
+//          les coordonnées GPS en cache (localStorage) au lancement de
+//          l'app, même en mode 'geoloc' — la position n'était donc jamais
+//          réactualisée tant que visibilitychange/focus ne se déclenchait
+//          pas (ex. app relancée après un déplacement à pied). Désormais,
+//          si mode=geoloc, une position fraîche est redemandée en priorité
+//          au lancement ; fallback sur les coordonnées en cache uniquement
+//          si la géolocalisation échoue ou est refusée. Mode 'ville'
+//          inchangé (une ville choisie manuellement ne doit pas être
+//          remplacée par une géoloc).
 // ============================================================
 
 const METEO_SVG = {
@@ -202,7 +212,7 @@ function _renderWidget() {
                 <span class="meteo-badge">💨 ${d.vent} km/h</span>
                 <span class="meteo-badge">🌧️ ${d.pluie}%</span>
             </div>
-                        <div style="display:flex;gap:4px;width:100%">${joursHTML}</div>
+                                                <div style="display:flex;gap:4px;width:100%">${joursHTML}</div>
         </div>
     `;
 }
@@ -408,8 +418,35 @@ function _afficherEtatMeteoVide() {
     }
 }
 
+// FIX GEOLOC-LAUNCH (v1.69.7) : au lancement, si le mode enregistré est
+// 'geoloc', on redemande une position fraîche AVANT d'utiliser les
+// coordonnées en cache. Fallback sur le cache uniquement en cas d'échec
+// ou de refus de la géolocalisation. Le mode 'ville' n'est pas concerné
+// (une ville choisie manuellement doit rester figée jusqu'à changement
+// explicite par l'utilisateur).
 async function chargerMeteoAuto() {
     const ls = _lireMeteoLS();
+
+    if (ls?.mode === 'geoloc' && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            async pos => {
+                const ville = await getNomVille(pos.coords.latitude, pos.coords.longitude);
+                await chargerMeteo(pos.coords.latitude, pos.coords.longitude, ville, 'geoloc');
+                _demarrerRefreshAuto();
+            },
+            async () => {
+                // Géoloc refusée/échouée au lancement : fallback sur le cache existant
+                if (ls?.lat && ls?.lon) {
+                    await chargerMeteo(ls.lat, ls.lon, ls.ville || 'Ma position', 'geoloc');
+                    _demarrerRefreshAuto();
+                } else {
+                    _afficherEtatMeteoVide();
+                }
+            }
+        );
+        return;
+    }
+
     if (ls?.lat && ls?.lon) {
         await chargerMeteo(ls.lat, ls.lon, ls.ville || 'Ma position', ls.mode || 'ville');
         _demarrerRefreshAuto();
