@@ -2,6 +2,25 @@
 
 ---
 
+## v1.69.5 - 05-09-2026
+
+### ✨ Nouveau
+- Nouvelles icônes météo, plus douces et plus lisibles (soleil, nuages, pluie, neige, orage)
+
+### 🔧 Corrections
+- Dans certains cas, la météo du jour affichait une icône et un texte différents entre la vignette d'accueil et la fenêtre détaillée (par exemple "pluie" à un endroit et "ciel dégagé" à un autre) - l'affichage est désormais toujours cohérent, y compris dans le récapitulatif des 6 prochains jours
+
+---
+
+## v1.69.2 - 05-09-2026
+
+### ✨ Nouveau
+- Possibilité d'ajouter un lieu à ses publications dans le fil d'actualité, avec recherche par nom de ville ou détection automatique de sa position
+- Un badge affichant le lieu apparaît désormais sur les publications concernées, à côté du nom de l'auteur, et ouvre une carte interactive au clic
+- Nouveau bouton "Envoyer un message" directement depuis la fiche d'un membre, en plus du bouton "Suivre"
+
+---
+
 ## v1.65 - 04-09-2026
 
 ### ✨ Nouveau
