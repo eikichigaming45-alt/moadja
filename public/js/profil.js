@@ -5,6 +5,15 @@
 // suppression), géocodage lieu de naissance, sauvegarde profil
 // et santé, widgets visibles, changement mot de passe, onglet
 // social (miens / nouveau / mon profil public).
+//
+// FIX WIDGETS-TOGGLE (v1.69.8) : afficherSectionWidgets() reprend
+// désormais le style toggle (libellé à gauche, interrupteur à droite)
+// déjà utilisé dans "Mon Profil Public" (onglet Social), au lieu des
+// checkboxes natives mal alignées. Le listener `change` visuel est
+// étendu pour gérer aussi ces nouveaux toggles. Classe et attribut
+// data-id inchangés (widget-visible-check / data-id) — aucune
+// modification de sauvegarderWidgetsVisibles() ni de la logique
+// métier associée.
 // ============================================================
 
 function construireTrigramme(prenom, nom) {
@@ -368,7 +377,7 @@ async function sauvegarderProfil() {
         heure_naissance : document.getElementById('p-heure-naissance')?.value  || null,
         lieu_naissance  : document.getElementById('p-lieu-naissance')?.value   || null,
         naissance_lat   : document.getElementById('p-naissance-lat')?.value    ? parseFloat(document.getElementById('p-naissance-lat').value)  : null,
-        naissance_lon   : document.getElementById('p-naissance-lon')?.value    ? parseFloat(document.getElementById('p-naissance-lon').value)  : null,
+                naissance_lon   : document.getElementById('p-naissance-lon')?.value    ? parseFloat(document.getElementById('p-naissance-lon').value)  : null,
         email           : document.getElementById('p-email')?.value            || '',
         telephone       : document.getElementById('p-tel')?.value              || '',
         profession      : document.getElementById('p-prof')?.value             || '',
@@ -478,6 +487,11 @@ function _injecterChampsAllergies(p) {
     }
 }
 
+// FIX WIDGETS-TOGGLE (v1.69.8) : rendu réécrit pour reprendre le style
+// toggle (libellé à gauche, interrupteur à droite) déjà utilisé dans
+// "Mon Profil Public" (_injecterProfilPublicToggles). La classe
+// "widget-visible-check" et l'attribut data-id sont conservés à l'identique
+// pour ne rien casser côté sauvegarderWidgetsVisibles()/appliquerWidgetsVisibles().
 async function afficherSectionWidgets() {
     const user = getUser();
     const zone = document.getElementById('widgets-choix');
@@ -502,15 +516,27 @@ async function afficherSectionWidgets() {
         const d = await r.json();
         const caches = Array.isArray(d.widgets_caches) ? d.widgets_caches : [];
 
-        zone.innerHTML = WIDGETS_DISPONIBLES.map(w => `
-            <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;
-                          background:#fff;border-radius:10px;margin-bottom:6px;cursor:pointer">
-                <input type="checkbox" class="widget-visible-check" data-id="${w.id}"
-                    ${caches.includes(w.id) ? '' : 'checked'}
-                    style="width:18px;height:18px;cursor:pointer">
-                <span style="font-size:14px;color:#333">${w.label}</span>
-            </label>
-        `).join('');
+        zone.innerHTML = WIDGETS_DISPONIBLES.map(w => {
+            const actif = !caches.includes(w.id);
+            return `
+            <div style="display:flex;align-items:center;justify-content:space-between;
+                        padding:10px 12px;background:#fff;border-radius:10px;
+                        border:1px solid #f3f4f6;margin-bottom:6px;min-height:40px">
+                <span style="font-size:14px;color:#333;flex:1">${w.label}</span>
+                <label style="position:relative;display:inline-flex;align-items:center;
+                              width:38px;height:22px;flex-shrink:0;cursor:pointer">
+                    <input type="checkbox" class="widget-visible-check" data-id="${w.id}"
+                        ${actif ? 'checked' : ''}
+                        style="opacity:0;width:0;height:0;position:absolute">
+                    <span style="position:absolute;inset:0;border-radius:22px;cursor:pointer;
+                                 background:${actif ? '#7c3aed' : '#d1d5db'};transition:background .2s">
+                        <span style="position:absolute;top:3px;left:${actif ? '19px' : '3px'};
+                                     width:16px;height:16px;border-radius:50%;background:#fff;
+                                     transition:left .2s;display:block"></span>
+                    </span>
+                </label>
+            </div>`;
+        }).join('');
     } catch {
         zone.innerHTML = '<p style="color:#ef4444;font-size:13px">Erreur de chargement des widgets.</p>';
     }
@@ -684,8 +710,11 @@ async function _injecterProfilPublicToggles() {
 }
 
 // ── Mise à jour visuelle du toggle au clic ────────────────────
+// FIX WIDGETS-TOGGLE (v1.69.8) : sélecteur étendu pour couvrir aussi
+// les toggles "Mes widgets" (.widget-visible-check), en plus des
+// toggles "Mon Profil Public" (.profil-public-toggle-check) déjà gérés.
 document.addEventListener('change', e => {
-    const cb = e.target.closest('.profil-public-toggle-check');
+    const cb = e.target.closest('.profil-public-toggle-check, .widget-visible-check');
     if (!cb) return;
     const track = cb.nextElementSibling;
     const thumb = track?.querySelector('span');
