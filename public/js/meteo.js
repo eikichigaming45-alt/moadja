@@ -6,40 +6,37 @@
 // Refresh géoloc : re-demande position si mode=geoloc.
 // Fallback : coords profil BDD → géoloc → état neutre (plus de Paris).
 //
-// FIX B2/B2.1 : icônes météo en SVG inline, style "Google Weather"
-//          (dégradés doux + ombre portée), indépendant de la police
-//          emoji du système (corrige le rendu carré/glossy du brouillard).
+// FIX B2/B2.1 : icônes météo en SVG inline (historique, remplacées v1.69.5).
 // FIX B3  : refresh auto au retour au premier plan (visibilitychange/focus)
 //          si données > 30 min, + refresh à l'ouverture de la modale météo
 //          (clic widget). Refresh au lancement/reload déjà natif.
-// FIX PARIS : suppression du fallback ville par défaut "Paris". Si aucune
-//          coordonnée n'est disponible (localStorage, profil BDD, géoloc
-//          refusée/indisponible), affichage d'un état neutre invitant au
-//          choix manuel (ville ou géoloc) au lieu d'imposer une ville
-//          arbitraire non pertinente pour un utilisateur hors France.
-// FIX MODALE/COHERENCE : la carte "Aujourd'hui" de la modale affichait
-//          l'icône/texte de la condition dominante prévue sur toute la
-//          journée (daily.weather_code[0]) à côté de la température
-//          instantanée (current.temperature_2m), ce qui pouvait afficher
-//          "Pluie légère" alors qu'il fait actuellement "Ciel dégagé"
-//          (widget). Pour selectedIdx === 0 uniquement, l'icône et la
-//          description utilisent désormais la condition ACTUELLE
-//          (current.weather_code / d.icon, d.code), identique au widget.
-//          Les autres jours (idx 1-5) continuent d'utiliser
-//          daily.weather_code[i] (aucune condition instantanée possible
-//          pour un jour futur).
+// FIX PARIS : suppression du fallback ville par défaut "Paris". État
+//          neutre si aucune coordonnée disponible.
+// FIX MODALE/COHERENCE (v1.69.3) : carte "Aujourd'hui" (détail) de la
+//          modale utilise désormais la condition ACTUELLE (d.icon/d.code)
+//          au lieu de l'agrégat du jour (daily.weather_code[0]).
+// FIX MINI-CARTES 6 JOURS (v1.69.4) : mini-carte "Auj." (widget ET modale,
+//          bande "PRÉVISIONS 6 JOURS") utilise désormais d.icon pour i===0
+//          au lieu de daily.weather_code[0]. Jours 1-5 inchangés.
+// FIX ICONES FLAT (v1.69.5) : remplacement du set METEO_SVG par un style
+//          flat/plein sans dégradé (soleil orange à rayons fins, nuages
+//          bleu clair unis, pluie/neige/orage en aplat) — demande
+//          explicite utilisateur (ancienne icône soleil jugée datée/moche).
+//          Seul le contenu des SVG change ; les clés (soleil, peuNuageux,
+//          partNuageux, couvert, brouillard, bruine, pluie, neige, orage)
+//          et leur usage dans METEO_ICONS restent strictement identiques.
 // ============================================================
 
 const METEO_SVG = {
-    soleil: `<svg width="1em" height="1em" viewBox="0 0 24 24" style="vertical-align:-0.15em;filter:drop-shadow(0 2px 3px rgba(251,191,36,.35))"><defs><radialGradient id="gSoleil" cx="35%" cy="30%" r="70%"><stop offset="0%" stop-color="#fde68a"/><stop offset="100%" stop-color="#f59e0b"/></radialGradient></defs><circle cx="12" cy="12" r="6" fill="url(#gSoleil)"/><g stroke="#fbbf24" stroke-width="1.6" stroke-linecap="round" opacity="0.85"><line x1="12" y1="2" x2="12" y2="4.5"/><line x1="12" y1="19.5" x2="12" y2="22"/><line x1="2" y1="12" x2="4.5" y2="12"/><line x1="19.5" y1="12" x2="22" y2="12"/></g></svg>`,
-    peuNuageux: `<svg width="1em" height="1em" viewBox="0 0 24 24" style="vertical-align:-0.15em;filter:drop-shadow(0 2px 3px rgba(100,116,139,.3))"><defs><radialGradient id="gSoleil2" cx="35%" cy="30%" r="70%"><stop offset="0%" stop-color="#fde68a"/><stop offset="100%" stop-color="#f59e0b"/></radialGradient><linearGradient id="gNuage1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#cbd5e1"/></linearGradient></defs><circle cx="9" cy="8.5" r="4.2" fill="url(#gSoleil2)"/><path d="M17 18H8a3.2 3.2 0 0 1-.5-6.36A4.4 4.4 0 0 1 16 10.3a3.6 3.6 0 0 1 2.4 2.8 2.8 2.8 0 0 1-1.4 4.9z" fill="url(#gNuage1)"/></svg>`,
-    partNuageux: `<svg width="1em" height="1em" viewBox="0 0 24 24" style="vertical-align:-0.15em;filter:drop-shadow(0 2px 3px rgba(100,116,139,.3))"><defs><radialGradient id="gSoleil3" cx="35%" cy="30%" r="70%"><stop offset="0%" stop-color="#fde68a"/><stop offset="100%" stop-color="#f59e0b"/></radialGradient><linearGradient id="gNuage2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f8fafc"/><stop offset="100%" stop-color="#b0bec5"/></linearGradient></defs><circle cx="7.5" cy="7.5" r="3.6" fill="url(#gSoleil3)"/><path d="M19 18H7a3.6 3.6 0 0 1-.6-7.15A5 5 0 0 1 16.2 9.3a4 4 0 0 1 2.7 3.1 3.2 3.2 0 0 1 0 5.6z" fill="url(#gNuage2)"/></svg>`,
-    couvert: `<svg width="1em" height="1em" viewBox="0 0 24 24" style="vertical-align:-0.15em;filter:drop-shadow(0 2px 3px rgba(100,116,139,.3))"><defs><linearGradient id="gNuage3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f1f5f9"/><stop offset="100%" stop-color="#94a3b8"/></linearGradient></defs><path d="M19 18H6a4 4 0 0 1-.6-7.96A5.5 5.5 0 0 1 16 8.5a4.5 4.5 0 0 1 3 3.5 3.5 3.5 0 0 1 0 6z" fill="url(#gNuage3)"/></svg>`,
-    brouillard: `<svg width="1em" height="1em" viewBox="0 0 24 24" style="vertical-align:-0.15em;filter:drop-shadow(0 2px 3px rgba(100,116,139,.25))"><defs><linearGradient id="gNuage4" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f1f5f9"/><stop offset="100%" stop-color="#b0bec5"/></linearGradient></defs><path d="M18 11.5H7a3.2 3.2 0 0 1-.5-6.36A4.6 4.6 0 0 1 15.6 3.8 3.7 3.7 0 0 1 18 11.5z" fill="url(#gNuage4)"/><rect x="3" y="14.5" width="18" height="1.5" rx="0.75" fill="#90a4ae" opacity="0.7"/><rect x="5" y="17.5" width="14" height="1.5" rx="0.75" fill="#b0bec5" opacity="0.7"/><rect x="3" y="20.5" width="18" height="1.5" rx="0.75" fill="#90a4ae" opacity="0.5"/></svg>`,
-    bruine: `<svg width="1em" height="1em" viewBox="0 0 24 24" style="vertical-align:-0.15em;filter:drop-shadow(0 2px 3px rgba(100,116,139,.3))"><defs><linearGradient id="gNuage5" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e2e8f0"/><stop offset="100%" stop-color="#94a3b8"/></linearGradient></defs><path d="M18 12H7a3.2 3.2 0 0 1-.5-6.36A4.6 4.6 0 0 1 15.6 4.3 3.7 3.7 0 0 1 18 12z" fill="url(#gNuage5)"/><circle cx="9" cy="17" r="1" fill="#93c5fd"/><circle cx="13" cy="19" r="1" fill="#93c5fd"/><circle cx="17" cy="17" r="1" fill="#93c5fd"/></svg>`,
-    pluie: `<svg width="1em" height="1em" viewBox="0 0 24 24" style="vertical-align:-0.15em;filter:drop-shadow(0 2px 3px rgba(100,116,139,.3))"><defs><linearGradient id="gNuage6" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e2e8f0"/><stop offset="100%" stop-color="#94a3b8"/></linearGradient></defs><path d="M18 12H7a3.2 3.2 0 0 1-.5-6.36A4.6 4.6 0 0 1 15.6 4.3 3.7 3.7 0 0 1 18 12z" fill="url(#gNuage6)"/><path d="M8 16.2c0 1-1.5 2-1.5 3.2a1.5 1.5 0 0 0 3 0c0-1.2-1.5-2.2-1.5-3.2z" fill="#60a5fa"/><path d="M13 16.2c0 1-1.5 2-1.5 3.2a1.5 1.5 0 0 0 3 0c0-1.2-1.5-2.2-1.5-3.2z" fill="#60a5fa"/><path d="M18 16.2c0 1-1.5 2-1.5 3.2a1.5 1.5 0 0 0 3 0c0-1.2-1.5-2.2-1.5-3.2z" fill="#60a5fa"/></svg>`,
-    neige: `<svg width="1em" height="1em" viewBox="0 0 24 24" style="vertical-align:-0.15em;filter:drop-shadow(0 2px 3px rgba(100,116,139,.3))"><defs><linearGradient id="gNuage7" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#e2e8f0"/><stop offset="100%" stop-color="#94a3b8"/></linearGradient></defs><path d="M18 11.5H7a3.2 3.2 0 0 1-.5-6.36A4.6 4.6 0 0 1 15.6 3.8 3.7 3.7 0 0 1 18 11.5z" fill="url(#gNuage7)"/><g stroke="#bfdbfe" stroke-width="1.4" stroke-linecap="round"><line x1="8" y1="15" x2="8" y2="19"/><line x1="6.2" y1="16" x2="9.8" y2="18"/><line x1="6.2" y1="18" x2="9.8" y2="16"/><line x1="13" y1="16" x2="13" y2="20"/><line x1="11.2" y1="17" x2="14.8" y2="19"/><line x1="11.2" y1="19" x2="14.8" y2="17"/><line x1="18" y1="15" x2="18" y2="19"/><line x1="16.2" y1="16" x2="19.8" y2="18"/><line x1="16.2" y1="18" x2="19.8" y2="16"/></g></svg>`,
-    orage: `<svg width="1em" height="1em" viewBox="0 0 24 24" style="vertical-align:-0.15em;filter:drop-shadow(0 2px 3px rgba(71,85,105,.35))"><defs><linearGradient id="gNuage8" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#94a3b8"/><stop offset="100%" stop-color="#475569"/></linearGradient><linearGradient id="gEclair" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fde68a"/><stop offset="100%" stop-color="#f59e0b"/></linearGradient></defs><path d="M18 10.5H7a3.2 3.2 0 0 1-.5-6.36A4.6 4.6 0 0 1 15.6 2.8 3.7 3.7 0 0 1 18 10.5z" fill="url(#gNuage8)"/><path d="M13 11.5l-4 6h3l-1 5 5-7h-3l1-4z" fill="url(#gEclair)"/></svg>`
+    soleil: `<svg width="1em" height="1em" viewBox="0 0 24 24" style="vertical-align:-0.15em"><circle cx="12" cy="12" r="5" fill="#fbbf24"/><g stroke="#fbbf24" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="23"/><line x1="1" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="23" y2="12"/><line x1="4.2" y1="4.2" x2="6.3" y2="6.3"/><line x1="17.7" y1="17.7" x2="19.8" y2="19.8"/><line x1="4.2" y1="19.8" x2="6.3" y2="17.7"/><line x1="17.7" y1="6.3" x2="19.8" y2="4.2"/></g></svg>`,
+    peuNuageux: `<svg width="1em" height="1em" viewBox="0 0 24 24" style="vertical-align:-0.15em"><circle cx="9" cy="8" r="4" fill="#fbbf24"/><path d="M18 18H8a3.5 3.5 0 0 1-.5-6.95A4.5 4.5 0 0 1 16 10a3.8 3.8 0 0 1 2.6 3 2.9 2.9 0 0 1-.6 5z" fill="#93c5fd"/></svg>`,
+    partNuageux: `<svg width="1em" height="1em" viewBox="0 0 24 24" style="vertical-align:-0.15em"><path d="M9 16H5a3 3 0 0 1-.4-5.98A3.8 3.8 0 0 1 12 9.2a2 2 0 0 1 .2 3.98" fill="#bfdbfe"/><path d="M19 18H9a3.2 3.2 0 0 1-.5-6.36A4.4 4.4 0 0 1 17 10.3a3.5 3.5 0 0 1 2 6.7z" fill="#60a5fa"/></svg>`,
+    couvert: `<svg width="1em" height="1em" viewBox="0 0 24 24" style="vertical-align:-0.15em"><path d="M19 18H6a4 4 0 0 1-.6-7.96A5.5 5.5 0 0 1 16 8.5a4.5 4.5 0 0 1 3 3.5 3.5 3.5 0 0 1 0 6z" fill="#94a3b8"/></svg>`,
+    brouillard: `<svg width="1em" height="1em" viewBox="0 0 24 24" style="vertical-align:-0.15em"><path d="M18 10.5H7a3.2 3.2 0 0 1-.5-6.36A4.6 4.6 0 0 1 15.6 2.8 3.7 3.7 0 0 1 18 10.5z" fill="#cbd5e1"/><g stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round"><line x1="3" y1="14" x2="21" y2="14"/><line x1="5" y1="17.5" x2="19" y2="17.5"/><line x1="3" y1="21" x2="21" y2="21"/></g></svg>`,
+    bruine: `<svg width="1em" height="1em" viewBox="0 0 24 24" style="vertical-align:-0.15em"><path d="M18 12H7a3.2 3.2 0 0 1-.5-6.36A4.6 4.6 0 0 1 15.6 4.3 3.7 3.7 0 0 1 18 12z" fill="#93c5fd"/><g fill="#60a5fa"><circle cx="9" cy="17" r="1.2"/><circle cx="13" cy="19" r="1.2"/><circle cx="17" cy="17" r="1.2"/></g></svg>`,
+    pluie: `<svg width="1em" height="1em" viewBox="0 0 24 24" style="vertical-align:-0.15em"><path d="M18 12H7a3.2 3.2 0 0 1-.5-6.36A4.6 4.6 0 0 1 15.6 4.3 3.7 3.7 0 0 1 18 12z" fill="#60a5fa"/><g fill="#3b82f6"><path d="M8 16.2c0 1-1.5 2-1.5 3.2a1.5 1.5 0 0 0 3 0c0-1.2-1.5-2.2-1.5-3.2z"/><path d="M13 16.2c0 1-1.5 2-1.5 3.2a1.5 1.5 0 0 0 3 0c0-1.2-1.5-2.2-1.5-3.2z"/><path d="M18 16.2c0 1-1.5 2-1.5 3.2a1.5 1.5 0 0 0 3 0c0-1.2-1.5-2.2-1.5-3.2z"/></g></svg>`,
+    neige: `<svg width="1em" height="1em" viewBox="0 0 24 24" style="vertical-align:-0.15em"><path d="M18 11.5H7a3.2 3.2 0 0 1-.5-6.36A4.6 4.6 0 0 1 15.6 3.8 3.7 3.7 0 0 1 18 11.5z" fill="#bfdbfe"/><g stroke="#60a5fa" stroke-width="1.6" stroke-linecap="round"><line x1="8" y1="15" x2="8" y2="19"/><line x1="6.2" y1="16" x2="9.8" y2="18"/><line x1="6.2" y1="18" x2="9.8" y2="16"/><line x1="13" y1="16" x2="13" y2="20"/><line x1="11.2" y1="17" x2="14.8" y2="19"/><line x1="11.2" y1="19" x2="14.8" y2="17"/><line x1="18" y1="15" x2="18" y2="19"/><line x1="16.2" y1="16" x2="19.8" y2="18"/><line x1="16.2" y1="18" x2="19.8" y2="16"/></g></svg>`,
+    orage: `<svg width="1em" height="1em" viewBox="0 0 24 24" style="vertical-align:-0.15em"><path d="M18 10.5H7a3.2 3.2 0 0 1-.5-6.36A4.6 4.6 0 0 1 15.6 2.8 3.7 3.7 0 0 1 18 10.5z" fill="#64748b"/><path d="M13 11.5l-4 6h3l-1 5 5-7h-3l1-4z" fill="#fbbf24"/></svg>`
 };
 
 const METEO_ICONS = {
@@ -139,7 +136,7 @@ async function chargerMeteo(lat, lon, nomVille, mode) {
             daily : d.daily
         };
 
-                const modeEffectif = mode || 'ville';
+        const modeEffectif = mode || 'ville';
         _sauverMeteoLS(modeEffectif, lat, lon, nomVille);
 
         // FIX B3 : mémorise l'heure du fetch
@@ -176,7 +173,8 @@ function _renderWidget() {
         const jour  = i === 0 ? 'Auj.' : JOURS_COURT[jObj.getDay()];
         const jMax  = Math.round(d.daily.temperature_2m_max[i]);
         const jMin  = Math.round(d.daily.temperature_2m_min[i]);
-        const jIcon = METEO_ICONS[d.daily.weather_code[i]] || '🌡️';
+        // FIX MINI-CARTES 6 JOURS : "Auj." (i===0) = condition actuelle
+        const jIcon = i === 0 ? d.icon : (METEO_ICONS[d.daily.weather_code[i]] || '🌡️');
         return `
             <div style="display:flex;flex-direction:column;align-items:center;gap:1px;
                         padding:5px 0;border-radius:8px;flex:1;min-width:0">
@@ -309,12 +307,7 @@ function _renderModaleMeteo(selectedIdx) {
         : dateObj.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
     const iMax    = Math.round(d.daily.temperature_2m_max[selectedIdx]);
     const iMin    = Math.round(d.daily.temperature_2m_min[selectedIdx]);
-    // FIX MODALE/COHERENCE : pour "aujourd'hui", on utilise la condition
-    // ACTUELLE (d.icon / d.code, identique au widget) et non l'agrégat
-    // du jour (daily.weather_code[0]), qui pouvait afficher une condition
-    // différente (ex. pluie prévue plus tard) alors que la température
-    // affichée à côté est la température instantanée. Pour les autres
-    // jours, aucune condition instantanée n'existe : on garde l'agrégat.
+    // FIX MODALE/COHERENCE : "aujourd'hui" = condition actuelle (d.icon/d.code)
     const iIcon   = isToday ? d.icon : (METEO_ICONS[d.daily.weather_code[selectedIdx]] || '🌡️');
     const iPluie  = d.daily.precipitation_probability_max?.[selectedIdx] || 0;
     const desc    = isToday ? (METEO_DESC[d.code] || 'Variable') : (METEO_DESC[d.daily.weather_code[selectedIdx]] || 'Variable');
@@ -324,7 +317,8 @@ function _renderModaleMeteo(selectedIdx) {
         const jour  = i === 0 ? 'Auj.' : JOURS_COURT[jObj.getDay()];
         const jMax  = Math.round(d.daily.temperature_2m_max[i]);
         const jMin  = Math.round(d.daily.temperature_2m_min[i]);
-        const jIcon = METEO_ICONS[d.daily.weather_code[i]] || '🌡️';
+        // FIX MINI-CARTES 6 JOURS : "Auj." (i===0) = condition actuelle
+        const jIcon = i === 0 ? d.icon : (METEO_ICONS[d.daily.weather_code[i]] || '🌡️');
         const sel   = i === selectedIdx;
         return `
             <div onclick="_selectJourModale(${i})" style="
