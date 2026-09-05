@@ -2,6 +2,20 @@
 
 ---
 
+## v1.69.8 - 06-09-2026
+
+### 🔧 Corrections
+- Dans "Mon Profil" > Widgets, les cases à cocher mal alignées ont été remplacées par des interrupteurs (toggles), avec le libellé à gauche et l'interrupteur à droite - même présentation que dans l'onglet Social
+
+---
+
+## v1.69.7 - 06-09-2026
+
+### 🔧 Corrections
+- La météo pouvait rester figée sur une ancienne position après un déplacement, tant que l'application n'était pas remise au premier plan - elle demande désormais votre position à jour dès le lancement de l'application (si le mode localisation automatique est actif)
+
+---
+
 ## v1.69.5 - 05-09-2026
 
 ### ✨ Nouveau
