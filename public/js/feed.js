@@ -261,14 +261,13 @@ function renderPost(p) {
             ${p.photo_url ? `
             <div class="feed-photo-wrap" id="photo-wrap-${p.id}" data-post-id="${p.id}" data-photo-url="${escapeHtml(p.photo_url)}" data-ma-resonance="${escapeHtml(p.ma_resonance || '')}">
                 <img src="${p.photo_url}" class="feed-photo" alt="">
-                <div class="feed-arc-resonance" id="arc-${p.id}" style="display:none"><div class="feed-arc-label">Résonances</div><div class="feed-arc-items">${RESONANCES.map(r => `<button class="feed-arc-item ${p.ma_resonance === r.type ? 'active' : ''}" data-type="${r.type}" style="--r-color:${r.couleur}" onclick="choisirResonance(${p.id}, '${r.type}', this, event)"><span class="feed-arc-icone">${r.icone}</span><span class="feed-arc-item-label">${r.label}</span></button>`).join('')}</div></div>
             </div>` : ''}
             <div class="feed-footer">
                 <div class="feed-resonance-wrap" data-post-id="${p.id}">${_renderResonanceBouton(p.id, p.ma_resonance, p.resonances_stats)}</div>
                 <button class="feed-comment-btn" onclick="toggleCommentaires(${p.id})"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>${p.nb_comments}</span></button>
                 <button class="feed-share-btn" onclick="partagerPost(${p.id})"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
             </div>
-            <div class="feed-comments" id="comments-${p.id}" style="display:none"></div>
+                        <div class="feed-comments" id="comments-${p.id}" style="display:none"></div>
         </div>
     `;
 }
@@ -398,7 +397,6 @@ async function rechercherLieuGeoloc(inputElId, latId, lonId, wrapId) {
         let itemsHTML = _renderLocItem(ville, 'Ville actuelle', lat, lon);
 
         if (dataOv.elements && dataOv.elements.length > 0) {
-            // Tri par distance réelle (Haversine) même sur les résultats Overpass
             const elementsAvecDistance = dataOv.elements
                 .filter(el => el.tags && el.tags.name)
                 .map(el => ({ ...el, _dist: _distanceKm(lat, lon, el.lat, el.lon) }))
@@ -459,7 +457,6 @@ async function _rechercherLieuTexte(q, inputElId, latId, lonId, wrapId) {
     const position = await _getLocPosition();
 
     try {
-                // On demande plus de résultats à Nominatim pour avoir de la matière à trier par distance
         let url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=15&addressdetails=1`;
 
         if (position) {
@@ -479,8 +476,6 @@ async function _rechercherLieuTexte(q, inputElId, latId, lonId, wrapId) {
             return;
         }
 
-        // Tri par distance réelle (Haversine) si on a la position GPS,
-        // sinon on garde l'ordre de pertinence renvoyé par Nominatim.
         let resultats = data.map(r => ({
             nom: r.display_name.split(',')[0].trim(),
             detail: r.address?.city || r.address?.town || r.address?.village
@@ -494,7 +489,7 @@ async function _rechercherLieuTexte(q, inputElId, latId, lonId, wrapId) {
             resultats.sort((a, b) => a._dist - b._dist);
         }
 
-                resultats = resultats.slice(0, 8);
+        resultats = resultats.slice(0, 8);
 
         const itemsHTML = resultats.map(r => {
             let detailAffiche;
@@ -520,38 +515,37 @@ async function _rechercherLieuTexte(q, inputElId, latId, lonId, wrapId) {
     }
 }
 
+// ── RÉSONANCES (unifié — un seul mode d'affichage, PC + mobile) ──
+// FIX bug double-affichage mobile : l'ancien mode "arc centré sur la
+// photo au survol" a été supprimé. Un seul comportement subsiste :
+// clic sur le bouton Résonances → sélecteur ancré au bouton (inline).
 function _bindResonances() {
     document.querySelectorAll('.feed-photo-wrap[data-post-id]').forEach(wrap => {
-        const postId = wrap.dataset.postId, arc = document.getElementById(`arc-${postId}`), img = wrap.querySelector('.feed-photo');
+        const img = wrap.querySelector('.feed-photo');
         if (!img) return;
-        if (_isMobile()) { img.addEventListener('click', e => { e.stopPropagation(); ouvrirPhoto(wrap.dataset.photoUrl); }); }
-        else {
-            if (arc) {
-                wrap.addEventListener('mouseenter', e => { if (e.target.closest('.feed-arc-resonance')) return; _ouvrirArc(postId); });
-                wrap.addEventListener('mouseleave', e => { if (e.relatedTarget && wrap.contains(e.relatedTarget)) return; _fermerArc(postId); });
-            }
-            img.addEventListener('click', e => { e.stopPropagation(); ouvrirPhoto(wrap.dataset.photoUrl); });
-        }
+        img.addEventListener('click', e => { e.stopPropagation(); ouvrirPhoto(wrap.dataset.photoUrl); });
     });
     if (!window._feedResonanceOutsideBound) {
         window._feedResonanceOutsideBound = true;
         document.addEventListener('click', e => {
-            if (!e.target.closest('.feed-photo-wrap') && !e.target.closest('.feed-resonance-btn') && !e.target.closest('.feed-resonance-count-btn')) {
-                document.querySelectorAll('.feed-arc-resonance').forEach(a => a.style.display = 'none');
+            if (!e.target.closest('.feed-resonance-btn') && !e.target.closest('.feed-resonance-count-btn') && !e.target.closest('.feed-arc-inline')) {
                 document.querySelectorAll('.feed-arc-inline').forEach(a => a.remove());
             }
         });
     }
 }
 
-function _ouvrirArc(postId) { document.querySelectorAll('.feed-arc-resonance').forEach(a => { if (a.id !== `arc-${postId}`) a.style.display = 'none'; }); document.querySelectorAll('.feed-arc-inline').forEach(a => { if (a.id !== `arc-inline-${postId}`) a.remove(); }); const arc = document.getElementById(`arc-${postId}`); if (arc) arc.style.display = 'flex'; }
-function _fermerArc(postId) { const arc = document.getElementById(`arc-${postId}`); if (arc) arc.style.display = 'none'; }
-function ouvrirArcResonance(btn, e) { if (e) { e.preventDefault(); e.stopPropagation(); } const wrap = btn.closest('.feed-resonance-wrap'), postId = wrap?.dataset.postId; if (!postId) return; const photoWrap = document.getElementById(`photo-wrap-${postId}`); if (!_isMobile() && photoWrap) { const arc = document.getElementById(`arc-${postId}`); if (arc && arc.style.display === 'flex') { _fermerArc(postId); } else { _ouvrirArc(postId); } } else { _ouvrirArcInline(postId, btn); } }
+function ouvrirArcResonance(btn, e) {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    const wrap = btn.closest('.feed-resonance-wrap'), postId = wrap?.dataset.postId;
+    if (!postId) return;
+    _ouvrirArcInline(postId, btn);
+}
 
 function _ouvrirArcInline(postId, btn) {
     let inline = document.getElementById(`arc-inline-${postId}`);
     if (inline) { inline.remove(); return; }
-    document.querySelectorAll('.feed-arc-inline').forEach(a => a.remove()); document.querySelectorAll('.feed-arc-resonance').forEach(a => a.style.display = 'none');
+    document.querySelectorAll('.feed-arc-inline').forEach(a => a.remove());
     const wrap = btn.closest('.feed-resonance-wrap');
     inline = document.createElement('div'); inline.id = `arc-inline-${postId}`; inline.className = 'feed-arc-resonance feed-arc-inline';
     inline.innerHTML = `<div class="feed-arc-label">Résonances</div><div class="feed-arc-items">${RESONANCES.map(r => `<button class="feed-arc-item" data-type="${r.type}" style="--r-color:${r.couleur}" onclick="choisirResonance(${postId}, '${r.type}', this, event)"><span class="feed-arc-icone">${r.icone}</span><span class="feed-arc-item-label">${r.label}</span></button>`).join('')}</div>`;
@@ -565,9 +559,8 @@ async function choisirResonance(postId, type, btn, e) {
         const r = await fetch(`/api/feed/${postId}/resonance`, { method: 'POST', headers: { 'Authorization': `Bearer ${user.token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ type }) });
         const d = await r.json();
         if (!d.success) return;
-        _fermerArc(postId); const inline = document.getElementById(`arc-inline-${postId}`); if (inline) inline.remove();
+        const inline = document.getElementById(`arc-inline-${postId}`); if (inline) inline.remove();
         const wrap = document.querySelector(`.feed-resonance-wrap[data-post-id="${postId}"]`); if (wrap) wrap.innerHTML = _renderResonanceBouton(postId, d.ma_resonance, d.resonances_stats || []);
-        const arc = document.getElementById(`arc-${postId}`); if (arc) arc.querySelectorAll('.feed-arc-item').forEach(b => b.classList.toggle('active', b.dataset.type === d.ma_resonance));
         const photoWrap = document.getElementById(`photo-wrap-${postId}`); if (photoWrap) photoWrap.dataset.maResonance = d.ma_resonance || '';
     } catch {}
 }
