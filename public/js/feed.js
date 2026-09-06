@@ -494,10 +494,17 @@ async function _rechercherLieuTexte(q, inputElId, latId, lonId, wrapId) {
             resultats.sort((a, b) => a._dist - b._dist);
         }
 
-        resultats = resultats.slice(0, 8);
+                resultats = resultats.slice(0, 8);
 
         const itemsHTML = resultats.map(r => {
-            const detailAffiche = r._dist !== null ? _formatDistance(r._dist) : r.detail;
+            let detailAffiche;
+            if (r._dist !== null && r.detail) {
+                detailAffiche = `${_formatDistance(r._dist)} · ${r.detail}`;
+            } else if (r._dist !== null) {
+                detailAffiche = _formatDistance(r._dist);
+            } else {
+                detailAffiche = r.detail;
+            }
             return _renderLocItem(r.nom, detailAffiche, r.lat, r.lon);
         }).join('');
 
