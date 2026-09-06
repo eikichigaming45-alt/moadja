@@ -1,4 +1,11 @@
-# Changelog MoaDja
+## Changelog MoaDja
+
+---
+
+## v1.70.0 - 06-09-2026
+
+### 🔧 Corrections
+- La météo pouvait rester affichée sur "Chargement..." pendant plusieurs secondes au lancement de l'application en mode géolocalisation, ce qui décalait tout le contenu de l'écran vers le bas - elle affiche désormais instantanément la dernière météo connue, puis se met à jour silencieusement dès que la nouvelle position est disponible
 
 ---
 
