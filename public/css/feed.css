@@ -703,16 +703,19 @@
     margin-top: 1px;
 }
 
-/* ===================== CHAMP LIEU FUSIONNÉ (icône intégrée) ===================== */
+/* ===================== CHAMP LIEU (icône à gauche, hors du champ) ===================== */
 .loc-input-wrap {
     position: relative;
     width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .loc-input-wrap input.loc-input {
-    width: 100%;
+    flex: 1;
     height: 40px;
-    padding: 0 12px 0 34px;
+    padding: 0 12px;
     border: 1.5px solid #e5e7eb;
     border-radius: 10px;
     font-size: 13px;
@@ -728,26 +731,25 @@
 }
 
 .loc-input-wrap .loc-input-icone {
-    position: absolute;
-    left: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 22px;
-    height: 22px;
+    position: static;
+    transform: none;
+    width: 36px;
+    height: 36px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: none;
+    background: #f3f0ff;
     border: none;
     cursor: pointer;
-    font-size: 15px;
+    font-size: 16px;
     line-height: 1;
     padding: 0;
     color: #7c3aed;
-    border-radius: 6px;
+    border-radius: 8px;
     transition: background .2s;
+    flex-shrink: 0;
 }
 
 .loc-input-wrap .loc-input-icone:hover {
-    background: #f3f0ff;
+    background: #e9d5ff;
 }
