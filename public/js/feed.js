@@ -230,7 +230,6 @@ function renderPost(p) {
     const date = new Date(p.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
     const followed = feedFollowing.includes(p.user_id);
 
-    // LOC2 / LOC4 : LieuTag déplacé et rendu cliquable si lat/lon
     const lieuTag = p.lieu ? 
         `<span class="feed-lieu-badge" 
             ${p.lieu_lat && p.lieu_lon ? `onclick="ouvrirCarte(${p.lieu_lat}, ${p.lieu_lon}, '${escapeHtml(p.lieu)}', event)"` : ''} 
@@ -326,6 +325,23 @@ function _getLocPosition() {
     });
 }
 
+// ── CALCUL DE DISTANCE (formule Haversine, aucun appel réseau) ──
+function _distanceKm(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
+function _formatDistance(km) {
+    if (km < 1) return `à ${Math.round(km * 1000)} m`;
+    return `à ${km.toFixed(1)} km`;
+}
+
 // ── AFFICHAGE D'UNE LIGNE DE SUGGESTION (nom + détail) ─────────
 function _renderLocItem(nom, detail, lat, lon) {
     return `<div class="loc-item" data-nom="${escapeHtml(nom)}" data-lat="${lat}" data-lon="${lon}">
@@ -382,11 +398,18 @@ async function rechercherLieuGeoloc(inputElId, latId, lonId, wrapId) {
         let itemsHTML = _renderLocItem(ville, 'Ville actuelle', lat, lon);
 
         if (dataOv.elements && dataOv.elements.length > 0) {
-            itemsHTML += `<div style="padding:6px 14px;font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;background:#f9fafb;">Lieux à proximité</div>`;
-            dataOv.elements.forEach(el => {
-                if (!el.tags || !el.tags.name) return;
-                itemsHTML += _renderLocItem(el.tags.name, ville, el.lat, el.lon);
-            });
+            // Tri par distance réelle (Haversine) même sur les résultats Overpass
+            const elementsAvecDistance = dataOv.elements
+                .filter(el => el.tags && el.tags.name)
+                .map(el => ({ ...el, _dist: _distanceKm(lat, lon, el.lat, el.lon) }))
+                .sort((a, b) => a._dist - b._dist);
+
+            if (elementsAvecDistance.length > 0) {
+                itemsHTML += `<div style="padding:6px 14px;font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;background:#f9fafb;">Lieux à proximité</div>`;
+                elementsAvecDistance.forEach(el => {
+                    itemsHTML += _renderLocItem(el.tags.name, _formatDistance(el._dist), el.lat, el.lon);
+                });
+            }
         }
 
         drop.innerHTML = itemsHTML;
@@ -402,7 +425,7 @@ async function rechercherLieuGeoloc(inputElId, latId, lonId, wrapId) {
     }
 }
 
-// ── RECHERCHE DE LIEU PAR TEXTE (frappe — restreinte à proximité) ──
+// ── RECHERCHE DE LIEU PAR TEXTE (frappe — triée par proximité réelle) ──
 function _initLieuAutocomplete(inputElId, latId, lonId, wrapId) {
     const input = document.getElementById(inputElId);
     const latInput = document.getElementById(latId);
@@ -410,7 +433,6 @@ function _initLieuAutocomplete(inputElId, latId, lonId, wrapId) {
     if (!input) return;
     let debounceTimer = null;
     input.addEventListener('input', () => {
-        // Toute frappe manuelle invalide la sélection précédente tant qu'une suggestion n'est pas re-cliquée
         if (latInput) latInput.value = '';
         if (lonInput) lonInput.value = '';
         clearTimeout(debounceTimer);
@@ -437,11 +459,11 @@ async function _rechercherLieuTexte(q, inputElId, latId, lonId, wrapId) {
     const position = await _getLocPosition();
 
     try {
-        let url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=8&addressdetails=1`;
+                // On demande plus de résultats à Nominatim pour avoir de la matière à trier par distance
+        let url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=15&addressdetails=1`;
 
-        // Restriction à ~15km autour de la position si disponible (sinon recherche mondiale en repli)
         if (position) {
-            const delta = 0.15; // ≈ 15-16 km selon la latitude
+            const delta = 0.15;
             const left   = position.lon - delta;
             const top    = position.lat + delta;
             const right  = position.lon + delta;
@@ -457,13 +479,26 @@ async function _rechercherLieuTexte(q, inputElId, latId, lonId, wrapId) {
             return;
         }
 
-        const itemsHTML = data.map(r => {
-            const parts = r.display_name.split(',').map(p => p.trim());
-            const nom = parts[0];
-            // Détail = ville/commune si identifiable, sinon 2e segment de l'adresse
-            const detail = r.address?.city || r.address?.town || r.address?.village
-                || parts[1] || '';
-            return _renderLocItem(nom, detail, r.lat, r.lon);
+        // Tri par distance réelle (Haversine) si on a la position GPS,
+        // sinon on garde l'ordre de pertinence renvoyé par Nominatim.
+        let resultats = data.map(r => ({
+            nom: r.display_name.split(',')[0].trim(),
+            detail: r.address?.city || r.address?.town || r.address?.village
+                || r.display_name.split(',')[1]?.trim() || '',
+            lat: r.lat,
+            lon: r.lon,
+            _dist: position ? _distanceKm(position.lat, position.lon, parseFloat(r.lat), parseFloat(r.lon)) : null
+        }));
+
+        if (position) {
+            resultats.sort((a, b) => a._dist - b._dist);
+        }
+
+        resultats = resultats.slice(0, 8);
+
+        const itemsHTML = resultats.map(r => {
+            const detailAffiche = r._dist !== null ? _formatDistance(r._dist) : r.detail;
+            return _renderLocItem(r.nom, detailAffiche, r.lat, r.lon);
         }).join('');
 
         drop.innerHTML = itemsHTML;
@@ -586,7 +621,6 @@ async function sauvegarderEditionPost(postId) {
     let lieu = (document.getElementById('edit-post-lieu')?.value || '').trim() || null;
     let lieu_lat = document.getElementById('edit-post-lat')?.value || null;
     let lieu_lon = document.getElementById('edit-post-lon')?.value || null;
-    // Un lieu doit obligatoirement provenir d'une suggestion géocodée (lat/lon renseignés)
     if (lieu && (!lieu_lat || !lieu_lon)) { lieu = null; lieu_lat = null; lieu_lon = null; }
     if (!contenu && !photo && window._editSupprimerPhoto) { msg.style.color = '#ef4444'; msg.textContent = 'Le post ne peut pas être vide.'; return; }
     try {
@@ -731,7 +765,6 @@ async function publierPost() {
     let lieu = (document.getElementById('post-lieu')?.value || '').trim() || null;
     let lieu_lat = document.getElementById('post-lat')?.value || null;
     let lieu_lon = document.getElementById('post-lon')?.value || null;
-    // Un lieu doit obligatoirement provenir d'une suggestion géocodée (lat/lon renseignés)
     if (lieu && (!lieu_lat || !lieu_lon)) { lieu = null; lieu_lat = null; lieu_lon = null; }
     if (!contenu && !photo) { msg.style.color = '#ef4444'; msg.textContent = 'Le post ne peut pas être vide.'; return; }
     try {
