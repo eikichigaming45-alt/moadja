@@ -2,6 +2,17 @@
 
 ---
 
+## v1.69.12 - 06-09-2026
+
+### ✨ Nouveau
+- Lors de l'ajout d'un lieu à une publication, les suggestions de la recherche textuelle sont désormais triées par distance réelle par rapport à votre position (du plus proche au plus éloigné).
+- L'affichage des lieux indique désormais la distance exacte et la ville (ex: "à 534 m · Lieu").
+
+### 🔧 Corrections
+- Correction visuelle : l'icône de géolocalisation dans la fenêtre de création de post est désormais parfaitement alignée à gauche du champ de saisie.
+
+---
+
 ## v1.69.8 - 06-09-2026
 
 ### 🔧 Corrections
@@ -94,7 +105,7 @@
 ### 🔧 Corrections
 - Bug C (push inter-users) : un appareil = un seul user à la fois
 - Bug D : purge des anciens `post_likes` sans type - 5 entrées supprimées
-- Bug F : séparation desktop/mobile dans les résonances - tap photo ouvre uniquement la photo sur mobile
+- Bug F : separation desktop/mobile dans les résonances - tap photo ouvre uniquement la photo sur mobile
 - Bug G : rappels agenda reçus par tous - confirmé propre suite à la correction Bug C
 
 ---
