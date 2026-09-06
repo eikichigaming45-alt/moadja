@@ -214,7 +214,6 @@ function _insererToutLeMonde(inputEl, dropEl) {
 }
 
 function _fermerDropdown(dropEl) { if (dropEl) { dropEl.innerHTML = ''; dropEl.style.display = 'none'; } }
-function _isMobile() { return window.matchMedia('(pointer: coarse)').matches; }
 
 function _renderResonanceBouton(postId, maResonance, resonancesStats) {
     const stats = resonancesStats || [], total = stats.reduce((s, r) => s + (r.nb || 0), 0), actifs = RESONANCES.filter(r => stats.find(s => s.type === r.type && s.nb > 0));
@@ -223,7 +222,7 @@ function _renderResonanceBouton(postId, maResonance, resonancesStats) {
     return `<div style="display:flex;align-items:center;gap:8px"><button class="feed-resonance-btn" onclick="ouvrirArcResonance(this, event)"><span class="feed-resonance-icones">${icones}</span></button><button class="feed-resonance-count-btn" onclick="voirLikers(${postId}, event)" style="background:none;border:none;cursor:pointer;font-size:13px;font-weight:600;color:#6b7280;padding:4px 0;transition:color .2s" onmouseover="this.style.color='#7c3aed'" onmouseout="this.style.color='#6b7280'">${total}</button></div>`;
 }
 
-// ── RENDER POST (Modifié pour LOC2 et LOC4) ───────────────────
+// ── RENDER POST ───────────────────
 function renderPost(p) {
     const user = getUser(), isOwner = user.username === p.username, isAdmin = user.role === 'admin';
     const avatar = p.avatar ? `<img src="${p.avatar}" class="feed-avatar" alt="">` : `<div class="feed-avatar feed-avatar-initiale">${_feedTrigramme(p.prenom, p.nom, p.username)}</div>`;
@@ -267,7 +266,7 @@ function renderPost(p) {
                 <button class="feed-comment-btn" onclick="toggleCommentaires(${p.id})"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>${p.nb_comments}</span></button>
                 <button class="feed-share-btn" onclick="partagerPost(${p.id})"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
             </div>
-                        <div class="feed-comments" id="comments-${p.id}" style="display:none"></div>
+            <div class="feed-comments" id="comments-${p.id}" style="display:none"></div>
         </div>
     `;
 }
@@ -410,7 +409,7 @@ async function rechercherLieuGeoloc(inputElId, latId, lonId, wrapId) {
             }
         }
 
-        drop.innerHTML = itemsHTML;
+                drop.innerHTML = itemsHTML;
         _bindLocItems(drop, inputElId, latId, lonId);
 
         document.addEventListener('click', function _closeLoc(e) {
@@ -515,10 +514,7 @@ async function _rechercherLieuTexte(q, inputElId, latId, lonId, wrapId) {
     }
 }
 
-// ── RÉSONANCES (unifié — un seul mode d'affichage, PC + mobile) ──
-// FIX bug double-affichage mobile : l'ancien mode "arc centré sur la
-// photo au survol" a été supprimé. Un seul comportement subsiste :
-// clic sur le bouton Résonances → sélecteur ancré au bouton (inline).
+// ── RÉSONANCES (Nouveau style pilule flottante unifié) ──
 function _bindResonances() {
     document.querySelectorAll('.feed-photo-wrap[data-post-id]').forEach(wrap => {
         const img = wrap.querySelector('.feed-photo');
@@ -528,8 +524,8 @@ function _bindResonances() {
     if (!window._feedResonanceOutsideBound) {
         window._feedResonanceOutsideBound = true;
         document.addEventListener('click', e => {
-            if (!e.target.closest('.feed-resonance-btn') && !e.target.closest('.feed-resonance-count-btn') && !e.target.closest('.feed-arc-inline')) {
-                document.querySelectorAll('.feed-arc-inline').forEach(a => a.remove());
+            if (!e.target.closest('.feed-resonance-btn') && !e.target.closest('.feed-resonance-count-btn') && !e.target.closest('.resonance-picker')) {
+                document.querySelectorAll('.resonance-picker').forEach(a => a.remove());
             }
         });
     }
@@ -543,13 +539,18 @@ function ouvrirArcResonance(btn, e) {
 }
 
 function _ouvrirArcInline(postId, btn) {
-    let inline = document.getElementById(`arc-inline-${postId}`);
-    if (inline) { inline.remove(); return; }
-    document.querySelectorAll('.feed-arc-inline').forEach(a => a.remove());
+    let picker = document.getElementById(`resonance-picker-${postId}`);
+    if (picker) { picker.remove(); return; }
+    document.querySelectorAll('.resonance-picker').forEach(a => a.remove());
     const wrap = btn.closest('.feed-resonance-wrap');
-    inline = document.createElement('div'); inline.id = `arc-inline-${postId}`; inline.className = 'feed-arc-resonance feed-arc-inline';
-    inline.innerHTML = `<div class="feed-arc-label">Résonances</div><div class="feed-arc-items">${RESONANCES.map(r => `<button class="feed-arc-item" data-type="${r.type}" style="--r-color:${r.couleur}" onclick="choisirResonance(${postId}, '${r.type}', this, event)"><span class="feed-arc-icone">${r.icone}</span><span class="feed-arc-item-label">${r.label}</span></button>`).join('')}</div>`;
-    wrap.appendChild(inline);
+    
+    // Création de la nouvelle pilule propre
+    picker = document.createElement('div'); 
+    picker.id = `resonance-picker-${postId}`; 
+    picker.className = 'resonance-picker';
+    picker.innerHTML = RESONANCES.map(r => `<button class="resonance-picker-item" data-type="${r.type}" style="--r-color:${r.couleur}" onclick="choisirResonance(${postId}, '${r.type}', this, event)"><span class="resonance-picker-icone">${r.icone}</span><span class="resonance-picker-label">${r.label}</span></button>`).join('');
+    
+    wrap.appendChild(picker);
 }
 
 async function choisirResonance(postId, type, btn, e) {
@@ -559,7 +560,7 @@ async function choisirResonance(postId, type, btn, e) {
         const r = await fetch(`/api/feed/${postId}/resonance`, { method: 'POST', headers: { 'Authorization': `Bearer ${user.token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ type }) });
         const d = await r.json();
         if (!d.success) return;
-        const inline = document.getElementById(`arc-inline-${postId}`); if (inline) inline.remove();
+        const picker = document.getElementById(`resonance-picker-${postId}`); if (picker) picker.remove();
         const wrap = document.querySelector(`.feed-resonance-wrap[data-post-id="${postId}"]`); if (wrap) wrap.innerHTML = _renderResonanceBouton(postId, d.ma_resonance, d.resonances_stats || []);
         const photoWrap = document.getElementById(`photo-wrap-${postId}`); if (photoWrap) photoWrap.dataset.maResonance = d.ma_resonance || '';
     } catch {}

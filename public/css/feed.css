@@ -244,105 +244,69 @@
     padding: 0 2px;
 }
 
-/* ===================== ARC RÉSONANCES ===================== */
-.feed-arc-resonance {
+/* ===================== SÉLECTEUR RÉSONANCES (Nouveau style Pilule flottante) ===================== */
+.resonance-picker {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    bottom: calc(100% + 10px); /* Flotte au-dessus du bouton cliqué */
+    left: 0;
     display: flex;
-    flex-direction: column;
     align-items: center;
     gap: 8px;
-    z-index: 10;
-    animation: arcFadeIn .18s ease;
-}
-
-@keyframes arcFadeIn {
-    from { opacity: 0; transform: translate(-50%, -50%) scale(.9); }
-    to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-}
-
-.feed-arc-label {
-    background: rgba(255,255,255,.92);
-    backdrop-filter: blur(8px);
-    border-radius: 20px;
-    padding: 4px 16px;
-    font-size: 12px;
-    font-weight: 700;
-    color: #6b7280;
-    letter-spacing: .3px;
-    box-shadow: 0 2px 12px rgba(0,0,0,.10);
-}
-
-.feed-arc-items {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: rgba(255,255,255,.92);
-    backdrop-filter: blur(8px);
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
     border-radius: 40px;
-    padding: 10px 18px;
-    box-shadow: 0 4px 20px rgba(0,0,0,.13);
+    padding: 8px 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    border: 1px solid #f3f4f6;
+    z-index: 50;
+    animation: pickerFadeIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.feed-arc-item {
+@keyframes pickerFadeIn {
+    from { opacity: 0; transform: translateY(10px) scale(0.95); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.resonance-picker-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
+    gap: 4px;
     background: none;
     border: none;
     cursor: pointer;
-    padding: 6px 8px;
-    border-radius: 16px;
-    transition: background .15s, transform .15s;
+    padding: 6px;
+    border-radius: 50%;
+    transition: transform 0.2s, background 0.2s;
 }
 
-.feed-arc-item:hover,
-.feed-arc-item.active {
-    background: color-mix(in srgb, var(--r-color) 20%, transparent);
-    transform: scale(1.12);
+.resonance-picker-item:hover,
+.resonance-picker-item.active {
+    transform: scale(1.15);
+    background: color-mix(in srgb, var(--r-color) 15%, transparent);
 }
 
-.feed-arc-icone {
-    font-size: 26px;
+.resonance-picker-icone {
+    font-size: 24px;
     line-height: 1;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,.10));
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
 }
 
-.feed-arc-item-label {
+.resonance-picker-label {
     font-size: 10px;
-    font-weight: 600;
-    color: #6b7280;
-    white-space: nowrap;
-}
-
-.feed-arc-item.active .feed-arc-item-label {
-    color: #374151;
     font-weight: 700;
+    color: #6b7280;
 }
 
-/* Arc inline (post sans photo) */
-.feed-arc-inline {
-    position: relative;
-    top: auto;
-    left: auto;
-    transform: none;
-    margin-top: 6px;
-    animation: arcFadeIn .18s ease;
-}
-
-.feed-arc-inline .feed-arc-items {
-    background: #fff;
-    box-shadow: 0 2px 12px rgba(0,0,0,.10);
-    border: 1px solid #f3f4f6;
+.resonance-picker-item.active .resonance-picker-label {
+    color: #374151;
 }
 
 /* ===================== BOUTON BAS RÉSONANCES ===================== */
 .feed-resonance-wrap {
     display: flex;
     align-items: center;
+    position: relative; /* CRUCIAL : Sert de point d'ancrage pour le sélecteur absolu */
 }
 
 .feed-resonance-btn {
