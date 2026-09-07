@@ -1,17 +1,16 @@
 ﻿/* ===================== FONDATION V3 (Variables) ===================== */
 :root {
-  /* VRAI FOND MAQUETTE : Mesh Gradient (Halos de couleurs diffuses) */
-  --v3-bg-color: #fdfbfb;
+  /* FOND AURA INTENSE : Halos Pêche et Lavande saturés */
+  --v3-bg-color: #faf7fc;
   --v3-bg-gradient: 
-    radial-gradient(circle at 10% 10%, #fde4d8 0%, transparent 40%),
-    radial-gradient(circle at 90% 15%, #e6d8fb 0%, transparent 45%),
-    radial-gradient(circle at 20% 80%, #fceadd 0%, transparent 40%),
-    radial-gradient(circle at 80% 85%, #efe5fd 0%, transparent 45%);
+    radial-gradient(circle at top left, #ffd6c9 0%, transparent 55%),
+    radial-gradient(circle at top right, #d9c6ff 0%, transparent 55%),
+    radial-gradient(circle at bottom left, #ffe0d1 0%, transparent 55%),
+    radial-gradient(circle at bottom right, #ebdfff 0%, transparent 55%);
 
-  /* Verre légèrement plus blanc pour contraster avec le nouveau fond coloré */
-  --v3-glass-bg: rgba(255, 255, 255, 0.75);
-  --v3-glass-border: 1px solid rgba(255, 255, 255, 0.9);
-  --v3-glass-shadow: 0 12px 40px rgba(31, 38, 135, 0.05);
+  --v3-glass-bg: rgba(255, 255, 255, 0.65);
+  --v3-glass-border: 1px solid rgba(255, 255, 255, 0.8);
+  --v3-glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.08);
   --v3-radius-lg: 24px;
   --v3-radius-xl: 32px;
   --v3-text-main: #1f2937;
@@ -139,7 +138,8 @@ input:focus{border-color:#7C3AED;background:#fff}
 /* ===================== OVERLAY & MODAL ===================== */
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);backdrop-filter:blur(4px);z-index:1000;justify-content:center;align-items:center}
 .overlay.on{display:flex}
-.modal{background:var(--v3-glass-bg);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:var(--v3-glass-border);border-radius:var(--v3-radius-xl);padding:30px;width:90%;max-width:560px;max-height:88vh;overflow-y:auto;position:relative;box-shadow:0 24px 48px rgba(0,0,0,0.1)}
+/* Modale plus opaque pour la lisibilité */
+.modal{background:rgba(255, 255, 255, 0.85);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:var(--v3-glass-border);border-radius:var(--v3-radius-xl);padding:30px;width:90%;max-width:560px;max-height:88vh;overflow-y:auto;position:relative;box-shadow:0 24px 48px rgba(0,0,0,0.15)}
 .modal h3{font-size:20px;color:#1f2937;margin-bottom:16px;font-weight:700}
 .modal p{color:#4b5563;font-size:15px;line-height:1.6}
 .mclos{position:absolute;top:16px;right:16px;background:rgba(0,0,0,.05);border:none;border-radius:50%;width:32px;height:32px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
@@ -189,4 +189,3 @@ input:focus{border-color:#7C3AED;background:#fff}
 .widget-choix-item:last-child{border-bottom:none}
 .widget-choix-label{flex:1;display:flex;align-items:center;gap:8px;font-size:14px;color:#1f2937;font-weight:500;cursor:pointer}
 .widget-choix-item input[type="checkbox"]{width:18px;height:18px;accent-color:#7C3AED;flex-shrink:0;margin:0;cursor:pointer}
-
