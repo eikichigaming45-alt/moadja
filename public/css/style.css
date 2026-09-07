@@ -1,9 +1,11 @@
 ﻿/* ===================== FONDATION V3 (Variables) ===================== */
 :root {
-  --v3-bg-gradient: linear-gradient(135deg, #fdfbfb 0%, #f3eaff 100%);
-  --v3-glass-bg: rgba(255, 255, 255, 0.65);
-  --v3-glass-border: 1px solid rgba(255, 255, 255, 0.8);
-  --v3-glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.05);
+  /* Vrai dégradé maquette : Pêche -> Crème -> Lavande */
+  --v3-bg-gradient: linear-gradient(135deg, #fff0e6 0%, #f3ebff 50%, #e2d1fa 100%);
+  /* Transparence accentuée pour bien voir le dégradé à travers */
+  --v3-glass-bg: rgba(255, 255, 255, 0.45);
+  --v3-glass-border: 1px solid rgba(255, 255, 255, 0.7);
+  --v3-glass-shadow: 0 12px 40px rgba(31, 38, 135, 0.06);
   --v3-radius-lg: 24px;
   --v3-radius-xl: 32px;
   --v3-text-main: #1f2937;
@@ -15,7 +17,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;b
 body.modal-open{overflow:hidden;position:fixed;width:100%}
 
 /* ===================== LOGIN ===================== */
-.login-card{background:var(--v3-glass-bg);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:var(--v3-glass-border);padding:40px;border-radius:var(--v3-radius-xl);box-shadow:var(--v3-glass-shadow);width:100%;max-width:380px;text-align:center;align-self:center;display:flex;flex-direction:column;align-items:center}
+.login-card{background:var(--v3-glass-bg);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:var(--v3-glass-border);padding:40px;border-radius:var(--v3-radius-xl);box-shadow:var(--v3-glass-shadow);width:100%;max-width:380px;text-align:center;align-self:center;display:flex;flex-direction:column;align-items:center}
 .login-card h1{color:#1f2937;font-size:24px;margin-bottom:8px}
 .login-card p{color:#6b7280;font-size:14px;margin-bottom:28px}
 input{width:100%;padding:14px;margin-bottom:16px;border:2px solid rgba(255,255,255,0.8);background:rgba(255,255,255,0.7);border-radius:12px;font-size:15px;outline:none;transition:border-color .2s, background .2s}
@@ -37,7 +39,7 @@ input:focus{border-color:#7C3AED;background:#fff}
 .desktop-layout-wrapper { display: flex; flex-direction: column; width: 100%; }
 .desktop-center-col { flex: 1; width: 100%; }
 
-.topbar{background:var(--v3-glass-bg);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:var(--v3-glass-border);color:var(--v3-text-main);padding:0 24px;height:60px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;position:sticky;top:0;z-index:200}
+.topbar{background:var(--v3-glass-bg);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:var(--v3-glass-border);color:var(--v3-text-main);padding:0 24px;height:60px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;position:sticky;top:0;z-index:200}
 .topbar-left{display:flex;align-items:center;gap:12px}
 .topbar-left h2{font-size:18px;font-weight:700;cursor:pointer;user-select:none;color:var(--v3-text-main)}
 .topbar-left h2:hover{opacity:.85}
@@ -62,7 +64,7 @@ input:focus{border-color:#7C3AED;background:#fff}
 @media (min-width: 1024px) { .tab-pane { padding-bottom: 20px; } }
 
 /* ===================== BOTTOM NAV ===================== */
-.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:60px;background:var(--v3-glass-bg);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:var(--v3-glass-border);display:flex;align-items:stretch;z-index:300;}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;height:60px;background:var(--v3-glass-bg);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:var(--v3-glass-border);display:flex;align-items:stretch;z-index:300;}
 .bn-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;cursor:pointer;padding:6px 4px;transition:color .15s;color:#9ca3af;-webkit-tap-highlight-color:transparent;position:relative}
 .bn-item.active{color:#7C3AED}
 .bn-item.active::after{content:'';position:absolute;bottom:0;left:20%;right:20%;height:3px;background:#7C3AED;border-radius:3px 3px 0 0}
@@ -79,8 +81,8 @@ input:focus{border-color:#7C3AED;background:#fff}
 
 .glass-panel, .widget {
   background: var(--v3-glass-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: var(--v3-glass-border);
   border-radius: var(--v3-radius-lg);
   box-shadow: var(--v3-glass-shadow);
@@ -89,7 +91,7 @@ input:focus{border-color:#7C3AED;background:#fff}
 }
 
 .widget{cursor:pointer;transition:transform .15s,box-shadow .15s,opacity .15s;user-select:none;display:flex;flex-direction:column}
-.widget:hover{transform:translateY(-3px);box-shadow:0 12px 32px rgba(31,38,135,0.1)}
+.widget:hover{transform:translateY(-3px);box-shadow:0 16px 40px rgba(31,38,135,0.08)}
 .widget.dragging{opacity:.35;transform:scale(.96);box-shadow:0 2px 8px rgba(0,0,0,.1);cursor:grabbing}
 .widget.drag-over{outline:3px dashed #7C3AED;outline-offset:3px;background:rgba(245,243,255,0.7);transform:translateY(-2px)}
 .drag-handle{position:absolute;top:12px;right:44px;color:#d1d5db;font-size:15px;cursor:grab;padding:4px 6px;border-radius:4px;line-height:1;opacity:0;transition:opacity .15s}
