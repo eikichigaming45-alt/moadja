@@ -1,4 +1,7 @@
-## Changelog MoaDja
+## v1.71.20 - 07-09-2026
+
+### ✨ Nouveau
+- Harmonisation UI "Glassmorphism" : Les boutons de filtre du Feed ("Tous", "Abonnements") et le bouton "+ Post" ont été refondus avec le même style premium que le bouton Tchat (forme pilule, violet translucide, ombres douces).
 
 ---
 

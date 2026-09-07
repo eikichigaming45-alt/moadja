@@ -40,36 +40,53 @@
     gap: 8px;
 }
 
+/* --- BOUTONS TOUS / ABONNEMENTS (Pilules Glassmorphism) --- */
 .feed-filter-btn {
-    padding: 6px 14px;
-    border-radius: 20px;
-    border: var(--glass-border);
-    background: var(--glass-bg);
-    backdrop-filter: blur(4px);
+    padding: 10px 18px;
+    border-radius: 50px;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     font-size: 13px;
     font-weight: 600;
     color: #6b7280;
     cursor: pointer;
-    transition: all .2s;
+    transition: all .2s ease;
+}
+
+.feed-filter-btn:hover {
+    background: rgba(255, 255, 255, 0.7);
+    color: #1f2937;
 }
 
 .feed-filter-btn.active {
-    background: #7c3aed;
-    border-color: #7c3aed;
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(124,58,237,.2);
+    background: rgba(167, 139, 250, 0.85);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: #ffffff;
+    box-shadow: 0 8px 24px rgba(167, 139, 250, 0.25);
 }
 
+/* --- BOUTON + POST (Pilule Glassmorphism) --- */
 .feed-new-btn {
-    padding: 8px 18px;
-    background: linear-gradient(135deg, #7c3aed, #6d28d9);
-    color: #fff;
-    border: none;
-    border-radius: 20px;
+    padding: 10px 20px;
+    background: rgba(167, 139, 250, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: #ffffff;
+    border-radius: 50px;
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(124,58,237,.25);
+    box-shadow: 0 8px 24px rgba(167, 139, 250, 0.25);
+    transition: all .2s ease;
+}
+
+.feed-new-btn:hover {
+    background: rgba(167, 139, 250, 1);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(167, 139, 250, 0.35);
 }
 
 /* ===================== FEED LIST ===================== */
