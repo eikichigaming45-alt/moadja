@@ -103,11 +103,11 @@
             </div>
 
             <!-- Bouton Tchat Mobile (Visible uniquement sur mobile via CSS) -->
-            <button class="icon-btn mobile-chat-btn" id="btn-tchat-mobile-header" onclick="if(typeof toggleTchatPanel === 'function') { toggleTchatPanel(event); } else if(typeof toggleTchat === 'function') { toggleTchat(event); }" title="Messages">
+            <button class="icon-btn mobile-chat-btn" id="btn-tchat-mobile-header" onclick="window.Tchat && Tchat.toggle()" title="Messages">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                 </svg>
-                <span id="tchat-badge-mobile-header" style="
+                <span id="tchat-topbar-badge" style="
                     display:none;
                     position:absolute;
                     top:-4px;right:-4px;
