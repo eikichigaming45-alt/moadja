@@ -204,42 +204,65 @@ async function chargerProfilHeader() {
         }
 
         if (imTogglesList) {
-            imTogglesList.innerHTML = ''; // Vide les boutons factices de la maquette
+            imTogglesList.innerHTML = ''; 
+            
+            // On transforme le conteneur pour afficher les infos sous forme de "pilules" alignées
+            imTogglesList.style.display = 'flex';
+            imTogglesList.style.flexDirection = 'row';
+            imTogglesList.style.flexWrap = 'wrap';
+            imTogglesList.style.justifyContent = 'center';
+            imTogglesList.style.gap = '8px';
+            imTogglesList.style.marginBottom = '16px';
 
-            // Fonction pour créer une belle carte glassmorphism
-            const addImCard = (icon, color, title, val) => {
+            const addPill = (icon, color, val) => {
                 if (!val) return;
                 imTogglesList.innerHTML += `
-                <div class="im-toggle-item" style="cursor:default">
-                    <div class="im-toggle-left">
-                        <div class="im-toggle-icon-wrap" style="background: ${color}1A; color: ${color};">${icon}</div>
-                        <div class="im-toggle-text">
-                            <span class="im-toggle-title" style="color:#6b7280;font-size:11px">${title}</span>
-                            <span class="im-toggle-subtitle" style="color:var(--text-main);font-weight:600;font-size:13px;margin-top:2px">${val}</span>
-                        </div>
-                    </div>
+                <div style="display:inline-flex; align-items:center; gap:6px; padding:6px 12px; background:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.8); border-radius:20px; box-shadow:0 2px 10px rgba(0,0,0,0.03);">
+                    <span style="color:${color}; font-size:14px;">${icon}</span>
+                    <span style="font-size:12px; font-weight:600; color:var(--text-main); white-space:nowrap;">${val}</span>
                 </div>`;
             };
 
-            if (age) addImCard('🎂', '#f59e0b', 'Âge', `${age} ans`);
-            if (signe) addImCard(signe.emoji, '#8b5cf6', 'Signe', signe.signe);
-            if (p.profession) addImCard('💼', '#3b82f6', 'Profession', p.profession);
-            if (p.telephone) addImCard('📞', '#10b981', 'Téléphone', p.telephone);
-            if (p.site_web) addImCard('🔗', '#ec4899', 'Site Web', `<a href="${p.site_web}" target="_blank" style="color:inherit">${p.site_web}</a>`);
+            // Injection des pilules minimalistes (Icône + Valeur uniquement)
+            if (age) addPill('🎂', '#f59e0b', `${age} ans`);
+            if (signe) addPill(signe.emoji, '#8b5cf6', signe.signe);
+            if (p.profession) addPill('💼', '#3b82f6', p.profession);
+            if (p.telephone) addPill('📞', '#10b981', p.telephone);
+            if (p.site_web) addPill('🔗', '#ec4899', `<a href="${p.site_web}" target="_blank" style="color:inherit;text-decoration:none">${p.site_web.replace(/^https?:\/\//,'')}</a>`);
 
+            // Note (Bio) centrée en dessous
             if (p.note) {
                 imTogglesList.innerHTML += `
-                <div class="im-toggle-item" style="cursor:default;flex-direction:column;align-items:flex-start;gap:6px">
-                    <div style="color:#6b7280;font-size:11px;font-weight:600;text-transform:uppercase">Note / Bio</div>
-                    <div style="font-size:13px;color:#374151;line-height:1.5">${p.note}</div>
+                <div style="width:100%; text-align:center; font-size:12px; color:#6b7280; line-height:1.4; margin-top:8px; font-style:italic; padding:0 10px;">
+                    "${p.note}"
                 </div>`;
             }
 
-            // Bouton Modifier propre à l'Identity Mirror
-            imTogglesList.innerHTML += `
-            <button onclick="openModal('profil')" style="width:100%;margin-top:8px;padding:12px;background:rgba(255,255,255,0.6);border:1px solid #7c3aed;color:#7c3aed;border-radius:16px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s">
-                ✏️ Modifier mon profil
-            </button>`;
+            // Bloc boutons (Modifier + Admin)
+            let boutonsHtml = `
+            <div style="width:100%; margin-top:16px; display:flex; flex-direction:column; gap:8px;">
+                <button onclick="openModal('profil')" style="padding:10px; background:rgba(255,255,255,0.8); border:none; border-radius:20px; font-size:13px; font-weight:600; color:#1f2937; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.05); transition:all .2s">
+                    ✏️ Modifier mon profil
+                </button>`;
+
+            // Injection du bouton Administration si l'utilisateur est admin
+            if (user?.role === 'admin') {
+                boutonsHtml += `
+                <button onclick="openModal('admin')" style="padding:10px; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); border-radius:20px; font-size:13px; font-weight:600; color:#d97706; cursor:pointer; transition:all .2s">
+                    ⚙️ Administration
+                </button>`;
+            }
+
+            boutonsHtml += `</div>`;
+            imTogglesList.innerHTML += boutonsHtml;
+        }
+        
+        // 3. Injection du numéro de version dans le menu déroulant (pour Mobile & Desktop)
+        const userMenu = document.getElementById('user-menu');
+        if (userMenu && !document.getElementById('menu-version-display')) {
+            const versionNode = document.getElementById('topbar-version');
+            const vText = versionNode ? versionNode.textContent : '';
+            userMenu.innerHTML += `<div id="menu-version-display" style="text-align:center; padding:10px; font-size:10px; color:#9ca3af; border-top:1px solid #f0f0f0; margin-top:4px; font-weight:600;">${vText}</div>`;
         }
 
     } catch { /* silencieux */ }
@@ -267,7 +290,7 @@ function previewPhoto(event) {
                     <img id="crop-img" src="">
                 </div>
                 <div class="crop-actions">
-                    <button class="btn-crop-cancel" onclick="annulerCrop()">✕ Annuler</button>
+			                    <button class="btn-crop-cancel" onclick="annulerCrop()">✕ Annuler</button>
                     <button class="btn-crop-ok"     onclick="validerCrop()">✅ Valider le recadrage</button>
                 </div>
             `;
@@ -346,6 +369,9 @@ async function validerCrop() {
                 btn.style.fontWeight = '';
                 btn.style.background = '';
             }
+
+            // Rafraîchit l'Identity Mirror
+            chargerProfilHeader();
 
         } catch (err) {
             const msgEl = document.getElementById('profil-msg');
@@ -548,11 +574,6 @@ function _injecterChampsAllergies(p) {
     }
 }
 
-// FIX WIDGETS-TOGGLE (v1.69.8) : rendu réécrit pour reprendre le style
-// toggle (libellé à gauche, interrupteur à droite) déjà utilisé dans
-// "Mon Profil Public" (_injecterProfilPublicToggles). La classe
-// "widget-visible-check" et l'attribut data-id sont conservés à l'identique
-// pour ne rien casser côté sauvegarderWidgetsVisibles()/appliquerWidgetsVisibles().
 async function afficherSectionWidgets() {
     const user = getUser();
     const zone = document.getElementById('widgets-choix');
@@ -598,7 +619,8 @@ async function afficherSectionWidgets() {
                 </label>
             </div>`;
         }).join('');
-    } catch {        zone.innerHTML = '<p style="color:#ef4444;font-size:13px">Erreur de chargement des widgets.</p>';
+    } catch {
+        zone.innerHTML = '<p style="color:#ef4444;font-size:13px">Erreur de chargement des widgets.</p>';
     }
 }
 
@@ -693,10 +715,6 @@ async function changerMdp() {
     }
 }
 
-// ============================================================
-// PROFIL PUBLIC — 5 toggles de visibilité (section ajoutée
-// dans l'onglet Social, au-dessus de "Ce que je partage")
-// ============================================================
 const _PROFIL_PUBLIC_CHAMPS_DEF = [
     { id: 'age',         label: 'Âge' },
     { id: 'profession',  label: 'Profession' },
@@ -708,7 +726,7 @@ const _PROFIL_PUBLIC_CHAMPS_DEF = [
 async function _injecterProfilPublicToggles() {
     const container = document.getElementById('profil-tab-social');
     if (!container) return;
-    if (document.getElementById('profil-public-toggles-bloc')) return; // déjà injecté, on ne duplique pas
+    if (document.getElementById('profil-public-toggles-bloc')) return; 
     const user = getUser();
     if (!user?.token) return;
 
@@ -768,7 +786,6 @@ async function _injecterProfilPublicToggles() {
     }
 }
 
-// ── Mise à jour visuelle du toggle au clic ────────────────────
 document.addEventListener('change', e => {
     const cb = e.target.closest('.profil-public-toggle-check, .widget-visible-check');
     if (!cb) return;
@@ -844,4 +861,3 @@ async function _socialOnglet(onglet) {
 document.addEventListener('DOMContentLoaded', () => {
     chargerProfilHeader();
 });
-
