@@ -5,15 +5,6 @@
 // suppression), géocodage lieu de naissance, sauvegarde profil
 // et santé, widgets visibles, changement mot de passe, onglet
 // social (miens / nouveau / mon profil public).
-//
-// FIX WIDGETS-TOGGLE (v1.69.8) : afficherSectionWidgets() reprend
-// désormais le style toggle (libellé à gauche, interrupteur à droite)
-// déjà utilisé dans "Mon Profil Public" (onglet Social), au lieu des
-// checkboxes natives mal alignées. Le listener `change` visuel est
-// étendu pour gérer aussi ces nouveaux toggles. Classe et attribut
-// data-id inchangés (widget-visible-check / data-id) — aucune
-// modification de sauvegarderWidgetsVisibles() ni de la logique
-// métier associée.
 // ============================================================
 
 function construireTrigramme(prenom, nom) {
@@ -153,7 +144,6 @@ async function chargerProfilHeader() {
         _appliquerVisibiliteCycle(p.sexe);
 
         const wc = document.getElementById('wc-profil');
-        if (!wc) return;
         const nom = [p.prenom, p.nom].filter(Boolean).join(' ') || 'Mon Profil';
 
         const age = p.date_naissance ? (() => {
@@ -166,21 +156,92 @@ async function chargerProfilHeader() {
 
         const signe = obtenirSigne(p);
 
-        wc.innerHTML = `
-            <div class="profil-widget">
-                ${p.photo
-                    ? `<img src="${p.photo}" alt="profil" class="profil-widget-photo">`
-                    : `<div class="profil-widget-initiales">${trigramme || '👤'}</div>`
+        // 1. Mise à jour du widget classique (pour Mobile)
+        if (wc) {
+            wc.innerHTML = `
+                <div class="profil-widget">
+                    ${p.photo
+                        ? `<img src="${p.photo}" alt="profil" class="profil-widget-photo">`
+                        : `<div class="profil-widget-initiales">${trigramme || '👤'}</div>`
+                    }
+                    <div class="profil-widget-nom">${nom}</div>
+                    ${age          ? `<div class="profil-widget-info">${age} ans</div>`          : ''}
+                    ${p.profession ? `<div class="profil-widget-info">💼 ${p.profession}</div>` : ''}
+                    ${p.telephone  ? `<div class="profil-widget-info">📞 ${p.telephone}</div>`  : ''}
+                    ${signe        ? `<div class="profil-widget-info">${signe.emoji} ${signe.signe}</div>` : ''}
+                    ${p.site_web   ? `<div class="profil-widget-info">🔗 <a href="${p.site_web}" target="_blank" rel="noopener noreferrer" style="color:inherit">${p.site_web}</a></div>` : ''}
+                    ${p.note       ? `<div class="profil-widget-bio">${p.note}</div>`           : ''}
+                </div>
+            `;
+        }
+
+        // ==========================================
+        // 2. INJECTION DANS L'IDENTITY MIRROR (DESKTOP)
+        // ==========================================
+        const imAvatarImg   = document.getElementById('im-avatar-img');
+        const imUserName    = document.getElementById('im-user-name');
+        const imTogglesList = document.querySelector('.im-toggles-list');
+
+        if (imUserName) imUserName.textContent = nom;
+
+        if (imAvatarImg) {
+            if (p.photo) {
+                imAvatarImg.src = p.photo;
+                imAvatarImg.style.display = 'block';
+                const oldTri = imAvatarImg.parentElement.querySelector('.im-trigramme');
+                if (oldTri) oldTri.remove();
+            } else {
+                imAvatarImg.style.display = 'none';
+                let tri = imAvatarImg.parentElement.querySelector('.im-trigramme');
+                if (!tri) {
+                    tri = document.createElement('div');
+                    tri.className = 'im-trigramme';
+                    tri.style.cssText = 'width:100%;height:100%;border-radius:50%;background:#7C3AED;color:#fff;font-size:32px;font-weight:700;display:flex;align-items:center;justify-content:center;border:3px solid #fff;';
+                    imAvatarImg.parentElement.appendChild(tri);
                 }
-                <div class="profil-widget-nom">${nom}</div>
-                ${age          ? `<div class="profil-widget-info">${age} ans</div>`          : ''}
-                ${p.profession ? `<div class="profil-widget-info">💼 ${p.profession}</div>` : ''}
-                ${p.telephone  ? `<div class="profil-widget-info">📞 ${p.telephone}</div>`  : ''}
-                ${signe        ? `<div class="profil-widget-info">${signe.emoji} ${signe.signe}</div>` : ''}
-				${p.site_web   ? `<div class="profil-widget-info">🔗 <a href="${p.site_web}" target="_blank" rel="noopener noreferrer" style="color:inherit">${p.site_web}</a></div>` : ''}
-                ${p.note       ? `<div class="profil-widget-bio">${p.note}</div>`           : ''}
-            </div>
-        `;
+                tri.textContent = trigramme || '👤';
+            }
+        }
+
+        if (imTogglesList) {
+            imTogglesList.innerHTML = ''; // Vide les boutons factices de la maquette
+
+            // Fonction pour créer une belle carte glassmorphism
+            const addImCard = (icon, color, title, val) => {
+                if (!val) return;
+                imTogglesList.innerHTML += `
+                <div class="im-toggle-item" style="cursor:default">
+                    <div class="im-toggle-left">
+                        <div class="im-toggle-icon-wrap" style="background: ${color}1A; color: ${color};">${icon}</div>
+                        <div class="im-toggle-text">
+                            <span class="im-toggle-title" style="color:#6b7280;font-size:11px">${title}</span>
+                            <span class="im-toggle-subtitle" style="color:var(--text-main);font-weight:600;font-size:13px;margin-top:2px">${val}</span>
+                        </div>
+                    </div>
+                </div>`;
+            };
+
+            if (age) addImCard('🎂', '#f59e0b', 'Âge', `${age} ans`);
+            if (signe) addImCard(signe.emoji, '#8b5cf6', 'Signe', signe.signe);
+            if (p.profession) addImCard('💼', '#3b82f6', 'Profession', p.profession);
+            if (p.telephone) addImCard('📞', '#10b981', 'Téléphone', p.telephone);
+            if (p.site_web) addImCard('🔗', '#ec4899', 'Site Web', `<a href="${p.site_web}" target="_blank" style="color:inherit">${p.site_web}</a>`);
+
+            if (p.note) {
+                imTogglesList.innerHTML += `
+                <div class="im-toggle-item" style="cursor:default;flex-direction:column;align-items:flex-start;gap:6px">
+                    <div style="color:#6b7280;font-size:11px;font-weight:600;text-transform:uppercase">Note / Bio</div>
+                    <div style="font-size:13px;color:#374151;line-height:1.5">${p.note}</div>
+                </div>`;
+            }
+
+            // Bouton Modifier propre à l'Identity Mirror
+            imTogglesList.innerHTML += `
+            <button onclick="openModal('profil')" style="width:100%;margin-top:8px;padding:12px;background:rgba(255,255,255,0.6);border:1px solid #7c3aed;color:#7c3aed;border-radius:16px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s">
+                ✏️ Modifier mon profil
+            </button>`;
+        }
+
     } catch { /* silencieux */ }
 }
 
@@ -537,8 +598,7 @@ async function afficherSectionWidgets() {
                 </label>
             </div>`;
         }).join('');
-    } catch {
-        zone.innerHTML = '<p style="color:#ef4444;font-size:13px">Erreur de chargement des widgets.</p>';
+    } catch {        zone.innerHTML = '<p style="color:#ef4444;font-size:13px">Erreur de chargement des widgets.</p>';
     }
 }
 
@@ -675,7 +735,6 @@ async function _injecterProfilPublicToggles() {
     container.insertBefore(bloc, container.firstChild);
 
     const liste = document.getElementById('profil-public-toggles-liste');
-    // ── le reste de la fonction (fetch + affichage des toggles) est inchangé ──
     try {
         const r = await fetch('/api/profil/public-champs', {
             headers: { 'Authorization': `Bearer ${user.token}` }
@@ -710,9 +769,6 @@ async function _injecterProfilPublicToggles() {
 }
 
 // ── Mise à jour visuelle du toggle au clic ────────────────────
-// FIX WIDGETS-TOGGLE (v1.69.8) : sélecteur étendu pour couvrir aussi
-// les toggles "Mes widgets" (.widget-visible-check), en plus des
-// toggles "Mon Profil Public" (.profil-public-toggle-check) déjà gérés.
 document.addEventListener('change', e => {
     const cb = e.target.closest('.profil-public-toggle-check, .widget-visible-check');
     if (!cb) return;
@@ -780,9 +836,6 @@ async function _socialOnglet(onglet) {
         zone.innerHTML = '<p style="color:#9ca3af;font-size:13px">Fonctionnalité en cours de chargement.</p>';
     }
 
-    // Injection de la section "Mon Profil Public" au-dessus du contenu social,
-    // uniquement sur l'onglet "miens" (Ce que je partage), pour respecter le
-    // placement demandé sans dupliquer sur l'onglet "Partager avec…".
     if (onglet === 'miens') {
         await _injecterProfilPublicToggles();
     }
@@ -791,3 +844,4 @@ async function _socialOnglet(onglet) {
 document.addEventListener('DOMContentLoaded', () => {
     chargerProfilHeader();
 });
+
