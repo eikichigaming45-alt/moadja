@@ -190,15 +190,44 @@
     <!-- WRAPPER V3 : Grille Desktop -->
     <div class="desktop-layout-wrapper">
         
-        <!-- COLONNE GAUCHE (Identity Mirror) -->
+        <!-- COLONNE GAUCHE (Identity Mirror & Navigation PC) -->
         <aside class="desktop-sidebar left-sidebar" id="identity-mirror">
+            
+            <!-- Navigation Desktop (Visible uniquement sur PC) -->
+            <div class="glass-panel desktop-nav-container" style="margin-bottom: 20px;">
+                <nav class="desktop-nav">
+                    <button class="bn-item active" data-tab="accueil" onclick="switchTab('accueil')">
+                        <span class="bn-icon">🏠</span>
+                        <span class="bn-label">Accueil</span>
+                    </button>
+                    <button class="bn-item" data-tab="quotidien" onclick="switchTab('quotidien')">
+                        <span class="bn-icon">📅</span>
+                        <span class="bn-label">Quotidien</span>
+                    </button>
+                    <button class="bn-item" data-tab="bienetre" onclick="switchTab('bienetre')">
+                        <span class="bn-icon">🌸</span>
+                        <span class="bn-label">Bien-être</span>
+                    </button>
+                    <button class="bn-item" data-tab="astral" onclick="switchTab('astral')">
+                        <span class="bn-icon">🔮</span>
+                        <span class="bn-label">Astral</span>
+                    </button>
+                    <button class="bn-item" data-tab="profil" onclick="switchTab('profil')">
+                        <span class="bn-icon">👤</span>
+                        <span class="bn-label">Profil</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Futur Espace Profil -->
             <div class="glass-panel" style="text-align:center;">
                 <h3 style="margin-top:0;font-weight:600;color:#1f2937;">Identity Mirror</h3>
                 <p style="font-size:13px;color:#6b7280;">(Espace profil à venir)</p>
             </div>
+
         </aside>
 
-        <!-- COLONNE CENTRALE (Contenu principal existant) -->
+        <!-- COLONNE CENTRALE (Living Feed) -->
         <main class="desktop-center-col">
             <!-- Contenu onglets -->
             <div class="tab-content-wrap">
@@ -245,7 +274,7 @@
 
     </div>
 
-    <!-- Bottom nav -->
+    <!-- Bottom nav (Visible uniquement sur Mobile) -->
     <nav class="bottom-nav" id="bottom-nav">
         <button class="bn-item active" data-tab="accueil"   onclick="switchTab('accueil')">
             <span class="bn-icon">🏠</span>
@@ -308,3 +337,4 @@
 <script src="/js/tchat.js"         defer></script>
 </body>
 </html>
+
