@@ -7,12 +7,12 @@
     margin: 0 auto 16px auto;
     
     /* Glassmorphism */
-    background: var(--v3-glass-bg);
+    background: var(--glass-bg);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: var(--v3-glass-border);
-    border-radius: var(--v3-radius-xl);
-    box-shadow: var(--v3-glass-shadow);
+    border: var(--glass-border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--glass-shadow);
 }
 
 .meteo-accueil-card:hover {
@@ -39,7 +39,7 @@
     flex: 1;
     padding: 10px 14px;
     background: rgba(255, 255, 255, 0.6);
-    border: var(--v3-glass-border);
+    border: var(--glass-border);
     border-radius: 12px;
     font-size: 14px;
     margin: 0;

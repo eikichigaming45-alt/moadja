@@ -56,12 +56,10 @@
 <!-- Application principale -->
 <div id="app">
 
-    <!-- Topbar -->
+    <!-- Topbar épurée -->
     <div class="topbar">
         <div class="topbar-left">
             <h2 id="topbar-title" onclick="switchTab('accueil');actualiser()" title="Accueil">MoaDja</h2>
-            <span class="date-badge" id="date-display"></span>
-            <span id="topbar-version" style="font-size:10px;opacity:.5;font-weight:500;margin-left:6px;color:var(--v3-text-main)"></span>
         </div>
         <div class="topbar-right" style="position:relative">
 
@@ -113,7 +111,7 @@
                 "></span>
             </div>
 
-            <!-- Bouton profil -->
+            <!-- Bouton profil (Mobile) -->
             <button class="icon-btn" id="btn-profil-header" onclick="toggleUserMenu(event)" title="Mon compte">👤</button>
 
             <!-- Menu déroulant utilisateur -->
@@ -187,16 +185,59 @@
         </div>
     </div>
 
-    <!-- WRAPPER V3 : Grille Desktop -->
-    <div class="desktop-layout-wrapper">
+    <!-- WRAPPER : Grille applicative -->
+    <div class="app-layout-wrapper">
         
         <!-- COLONNE GAUCHE (Identity Mirror & Navigation PC) -->
-        <aside class="desktop-sidebar left-sidebar" id="identity-mirror">
+        <aside class="sidebar-col left-sidebar" id="identity-mirror">
             
-            <!-- Futur Espace Profil -->
-            <div class="glass-panel" style="text-align:center; margin-bottom: 20px;">
-                <h3 style="margin-top:0;font-weight:600;color:#1f2937;">Identity Mirror</h3>
-                <p style="font-size:13px;color:#6b7280;">(Espace profil à venir)</p>
+            <!-- Composant Identity Mirror -->
+            <div class="glass-panel im-panel">
+                <div class="im-header">
+                    <div class="im-aura-wrap">
+                        <img src="/icon-192.png" alt="Avatar" id="im-avatar-img">
+                    </div>
+                    <h3 class="im-user-name" id="im-user-name">...</h3>
+                </div>
+
+                <div class="im-toggles-list">
+                    <!-- Toggle Astral -->
+                    <div class="im-toggle-item">
+                        <div class="im-toggle-left">
+                            <div class="im-toggle-icon-wrap" style="background: rgba(124, 58, 237, 0.1); color: #7C3AED;">🔮</div>
+                            <div class="im-toggle-text">
+                                <span class="im-toggle-title">Astral</span>
+                                <span class="im-toggle-subtitle">Humeur du jour</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Toggle Mini -->
+                    <div class="im-toggle-item">
+                        <div class="im-toggle-left">
+                            <div class="im-toggle-icon-wrap" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">🌸</div>
+                            <div class="im-toggle-text">
+                                <span class="im-toggle-title">Mini</span>
+                            </div>
+                        </div>
+                        <label class="im-switch">
+                            <input type="checkbox" checked>
+                            <span class="im-slider"></span>
+                        </label>
+                    </div>
+                    <!-- Toggle Sport -->
+                    <div class="im-toggle-item">
+                        <div class="im-toggle-left">
+                            <div class="im-toggle-icon-wrap" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">🏃</div>
+                            <div class="im-toggle-text">
+                                <span class="im-toggle-title">Sport</span>
+                            </div>
+                        </div>
+                        <label class="im-switch">
+                            <input type="checkbox">
+                            <span class="im-slider"></span>
+                        </label>
+                    </div>
+                </div>
             </div>
 
             <!-- Navigation Desktop (Horizontale) -->
@@ -218,17 +259,18 @@
                         <span class="bn-icon">🔮</span>
                         <span class="bn-label">Astral</span>
                     </button>
-                    <button class="bn-item" data-tab="profil" onclick="switchTab('profil')" style="flex: 1; padding: 10px 4px;">
-                        <span class="bn-icon">👤</span>
-                        <span class="bn-label">Profil</span>
-                    </button>
                 </nav>
+            </div>
+            
+            <!-- Affichage de la version pour debug -->
+            <div style="text-align: center; margin-top: 16px;">
+                <span id="topbar-version" style="font-size:11px;opacity:0.5;font-weight:500;color:var(--text-main)"></span>
             </div>
 
         </aside>
 
         <!-- COLONNE CENTRALE (Living Feed) -->
-        <main class="desktop-center-col">
+        <main class="center-col">
             <!-- Contenu onglets -->
             <div class="tab-content-wrap">
 
@@ -256,7 +298,7 @@
                     <div class="grid" id="grid-astral"></div>
                 </div>
 
-                <!-- ONGLET 5 — Profil -->
+                <!-- ONGLET 5 — Profil (Uniquement Mobile) -->
                 <div class="tab-pane" id="tab-profil">
                     <div class="grid" id="grid-profil"></div>
                 </div>
@@ -265,7 +307,7 @@
         </main>
 
         <!-- COLONNE DROITE (Human Link) -->
-        <aside class="desktop-sidebar right-sidebar" id="human-link">
+        <aside class="sidebar-col right-sidebar" id="human-link">
             <div class="glass-panel">
                 <h3 style="margin-top:0;font-weight:600;color:#1f2937;">Human Link</h3>
                 <p style="font-size:13px;color:#6b7280;">(Espace contacts à venir)</p>
