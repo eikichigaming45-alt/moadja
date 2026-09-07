@@ -13,11 +13,12 @@
 
 /* ===================== SCROLLBAR PREMIUM ===================== */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
+  margin: 24px; /* Empêche la scrollbar de mordre sur les angles arrondis */
 }
 ::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.15);
@@ -317,7 +318,7 @@ input:focus { border-color: #7C3AED; background: #fff; }
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .im-aura-wrap {
@@ -329,7 +330,7 @@ input:focus { border-color: #7C3AED; background: #fff; }
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   animation: aura-spin 8s linear infinite;
   box-shadow: 0 8px 24px rgba(245, 87, 108, 0.2);
 }
@@ -352,7 +353,7 @@ input:focus { border-color: #7C3AED; background: #fff; }
 }
 
 .im-user-name {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--text-main);
   text-align: center;
@@ -361,54 +362,34 @@ input:focus { border-color: #7C3AED; background: #fff; }
 .im-toggles-list {
   display: flex;
   flex-direction: column;
-  gap: 8px; /* Réduit l'espacement global */
+  gap: 8px; /* Beaucoup plus serré */
 }
 
-/* NOUVELLES CLASSES POUR UN PROFIL FIN ET ÉLÉGANT */
+/* NOUVELLES CLASSES : Profil minimaliste sans labels */
 .im-profil-row {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 8px 12px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.03);
-}
-
-.im-profil-row:last-child {
-  border-bottom: none;
+  gap: 12px;
+  padding: 6px 8px;
 }
 
 .im-profil-icon {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
-  background: rgba(255, 255, 255, 0.6);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
   flex-shrink: 0;
-}
-
-.im-profil-text {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.im-profil-label {
-  font-size: 10px;
-  color: #9ca3af;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 700;
 }
 
 .im-profil-val {
   font-size: 13px;
   color: var(--text-main);
-  font-weight: 600;
-  margin-top: 2px;
+  font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -417,32 +398,31 @@ input:focus { border-color: #7C3AED; background: #fff; }
 .im-profil-bio {
   font-size: 12px;
   color: #6b7280;
-  line-height: 1.5;
+  line-height: 1.4;
   padding: 8px 12px;
   font-style: italic;
   text-align: center;
+  margin-top: 4px;
 }
 
-/* Nouveau bouton Modifier premium */
+/* Bouton Modifier premium, discret, contour violet */
 .btn-im-edit {
   width: 100%;
-  padding: 10px;
-  background: rgba(255, 255, 255, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  border-radius: 20px;
+  padding: 8px;
+  background: transparent;
+  border: 1.5px solid #7c3aed;
+  color: #7c3aed;
+  border-radius: 30px;
   font-size: 13px;
   font-weight: 600;
-  color: #1f2937;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
-  margin-top: 16px;
+  margin-top: 12px;
 }
 
 .btn-im-edit:hover {
-  background: rgba(255, 255, 255, 0.9);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+  background: rgba(124, 58, 237, 0.1);
+  transform: translateY(-1px);
 }
 
 /* ===================== OVERLAY & MODAL (AMÉLIORÉ) ===================== */
@@ -460,7 +440,7 @@ input:focus { border-color: #7C3AED; background: #fff; }
 .overlay.on { display: flex; }
 
 .modal {
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.75);
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
   border: 1px solid rgba(255, 255, 255, 0.9);
@@ -470,9 +450,16 @@ input:focus { border-color: #7C3AED; background: #fff; }
   max-width: 560px;
   max-height: 85vh;
   overflow-y: auto;
+  overflow-x: hidden;
   position: relative;
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.1);
 }
+
+/* Empêche la scrollbar de mordre sur les angles très arrondis de la modale */
+.modal::-webkit-scrollbar-track {
+  margin: 32px 0; 
+}
+
 .modal h3 { font-size: 20px; color: #1f2937; margin-bottom: 16px; font-weight: 700; }
 .modal p { color: #4b5563; font-size: 15px; line-height: 1.6; }
 
@@ -481,7 +468,7 @@ input:focus { border-color: #7C3AED; background: #fff; }
   top: 16px;
   right: 16px;
   background: rgba(255, 255, 255, 0.5);
-    border: none;
+  border: none;
   border-radius: 50%;
   width: 32px;
   height: 32px;
