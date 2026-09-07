@@ -61,7 +61,7 @@
         <div class="topbar-left">
             <h2 id="topbar-title" onclick="switchTab('accueil');actualiser()" title="Accueil">MoaDja</h2>
             <span class="date-badge" id="date-display"></span>
-            <span id="topbar-version" style="font-size:10px;opacity:.5;font-weight:500;margin-left:6px;color:#fff"></span>
+            <span id="topbar-version" style="font-size:10px;opacity:.5;font-weight:500;margin-left:6px;color:var(--v3-text-main)"></span>
         </div>
         <div class="topbar-right" style="position:relative">
 
@@ -88,7 +88,7 @@
                 "></span>
             </div>
 
-            <!-- Icône Tchat topbar (mobile uniquement — desktop = bulle flottante) -->
+            <!-- Icône Tchat topbar -->
             <div style="position:relative;display:inline-flex" id="tchat-topbar-wrap">
                 <button class="icon-btn" id="btn-tchat-topbar"
                         onclick="if(typeof Tchat!=='undefined')Tchat.toggle()"
@@ -170,86 +170,78 @@
     </div>
 
     <!-- Panel notifications -->
-    <div id="panel-notifs" style="
-        display:none;
-        position:fixed;
-        top:68px;
-        right:8px;
-        width:min(380px, calc(100vw - 16px));
-        max-height:calc(100vh - 80px);
-        background:#fff;
-        border-radius:16px;
-        box-shadow:0 8px 32px rgba(0,0,0,0.18);
-        z-index:500;
-        overflow:hidden;
-        border:1px solid #f0f0f0;
-        flex-direction:column;
-    ">
+    <div id="panel-notifs" style="display:none;position:fixed;top:68px;right:8px;width:min(380px, calc(100vw - 16px));max-height:calc(100vh - 80px);background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.18);z-index:500;overflow:hidden;border:1px solid #f0f0f0;flex-direction:column;">
         <div style="padding:16px 16px 0;flex-shrink:0">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
                 <span style="font-size:18px;font-weight:800;color:#1f2937">Notifications</span>
-                <button onclick="toutMarquerVu()" style="
-                    background:none;border:none;font-size:13px;font-weight:600;
-                    color:#7c3aed;cursor:pointer;padding:4px 8px;border-radius:8px">
-                    Tout marquer lu
-                </button>
+                <button onclick="toutMarquerVu()" style="background:none;border:none;font-size:13px;font-weight:600;color:#7c3aed;cursor:pointer;padding:4px 8px;border-radius:8px">Tout marquer lu</button>
             </div>
             <div style="display:flex;gap:0;border-bottom:2px solid #f3f4f6">
-                <button id="notif-tab-tout" onclick="switchNotifTab('tout')" style="
-                    flex:1;padding:8px 12px;border:none;border-bottom:2px solid #7c3aed;
-                    margin-bottom:-2px;background:none;font-size:14px;font-weight:700;
-                    color:#7c3aed;cursor:pointer">
-                    Tout
-                </button>
-                <button id="notif-tab-nonlu" onclick="switchNotifTab('nonlu')" style="
-                    flex:1;padding:8px 12px;border:none;border-bottom:2px solid transparent;
-                    margin-bottom:-2px;background:none;font-size:14px;font-weight:600;
-                    color:#9ca3af;cursor:pointer">
-                    Non lu
-                </button>
+                <button id="notif-tab-tout" onclick="switchNotifTab('tout')" style="flex:1;padding:8px 12px;border:none;border-bottom:2px solid #7c3aed;margin-bottom:-2px;background:none;font-size:14px;font-weight:700;color:#7c3aed;cursor:pointer">Tout</button>
+                <button id="notif-tab-nonlu" onclick="switchNotifTab('nonlu')" style="flex:1;padding:8px 12px;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;background:none;font-size:14px;font-weight:600;color:#9ca3af;cursor:pointer">Non lu</button>
             </div>
         </div>
         <div id="notif-liste" style="overflow-y:auto;flex:1;padding:8px 0"></div>
         <div style="padding:8px 16px 12px;flex-shrink:0;border-top:1px solid #f3f4f6">
-            <button onclick="voirPlusNotifs()" id="btn-voir-plus-notifs" style="
-                width:100%;padding:10px;background:#f9fafb;border:none;border-radius:10px;
-                font-size:13px;font-weight:600;color:#6b7280;cursor:pointer">
-                Voir les notifications précédentes
-            </button>
+            <button onclick="voirPlusNotifs()" id="btn-voir-plus-notifs" style="width:100%;padding:10px;background:#f9fafb;border:none;border-radius:10px;font-size:13px;font-weight:600;color:#6b7280;cursor:pointer">Voir les notifications précédentes</button>
         </div>
     </div>
 
-    <!-- Contenu onglets -->
-    <div class="tab-content-wrap">
-
-        <!-- ONGLET 1 — Accueil -->
-        <div class="tab-pane active" id="tab-accueil">
-            <div class="accueil-meteo-fixed" id="accueil-meteo"></div>
-            <div class="accueil-feed" id="accueil-feed">
-                <div id="eclats-bandeau-1"></div>
-                <div id="eclats-bandeau-2"></div>
+    <!-- WRAPPER V3 : Grille Desktop -->
+    <div class="desktop-layout-wrapper">
+        
+        <!-- COLONNE GAUCHE (Identity Mirror) -->
+        <aside class="desktop-sidebar left-sidebar" id="identity-mirror">
+            <div class="glass-panel" style="text-align:center;">
+                <h3 style="margin-top:0;font-weight:600;color:#1f2937;">Identity Mirror</h3>
+                <p style="font-size:13px;color:#6b7280;">(Espace profil à venir)</p>
             </div>
-        </div>
+        </aside>
 
-        <!-- ONGLET 2 — Mon Quotidien -->
-        <div class="tab-pane" id="tab-quotidien">
-            <div class="grid" id="grid-quotidien"></div>
-        </div>
+        <!-- COLONNE CENTRALE (Contenu principal existant) -->
+        <main class="desktop-center-col">
+            <!-- Contenu onglets -->
+            <div class="tab-content-wrap">
 
-        <!-- ONGLET 3 — Bien-être -->
-        <div class="tab-pane" id="tab-bienetre">
-            <div class="grid" id="grid-bienetre"></div>
-        </div>
+                <!-- ONGLET 1 — Accueil -->
+                <div class="tab-pane active" id="tab-accueil">
+                    <div class="accueil-meteo-fixed" id="accueil-meteo"></div>
+                    <div class="accueil-feed" id="accueil-feed">
+                        <div id="eclats-bandeau-1"></div>
+                        <div id="eclats-bandeau-2"></div>
+                    </div>
+                </div>
 
-        <!-- ONGLET 4 — Astral -->
-        <div class="tab-pane" id="tab-astral">
-            <div class="grid" id="grid-astral"></div>
-        </div>
+                <!-- ONGLET 2 — Mon Quotidien -->
+                <div class="tab-pane" id="tab-quotidien">
+                    <div class="grid" id="grid-quotidien"></div>
+                </div>
 
-        <!-- ONGLET 5 — Profil -->
-        <div class="tab-pane" id="tab-profil">
-            <div class="grid" id="grid-profil"></div>
-        </div>
+                <!-- ONGLET 3 — Bien-être -->
+                <div class="tab-pane" id="tab-bienetre">
+                    <div class="grid" id="grid-bienetre"></div>
+                </div>
+
+                <!-- ONGLET 4 — Astral -->
+                <div class="tab-pane" id="tab-astral">
+                    <div class="grid" id="grid-astral"></div>
+                </div>
+
+                <!-- ONGLET 5 — Profil -->
+                <div class="tab-pane" id="tab-profil">
+                    <div class="grid" id="grid-profil"></div>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- COLONNE DROITE (Human Link) -->
+        <aside class="desktop-sidebar right-sidebar" id="human-link">
+            <div class="glass-panel">
+                <h3 style="margin-top:0;font-weight:600;color:#1f2937;">Human Link</h3>
+                <p style="font-size:13px;color:#6b7280;">(Espace contacts à venir)</p>
+            </div>
+        </aside>
 
     </div>
 
