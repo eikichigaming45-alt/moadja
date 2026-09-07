@@ -1,8 +1,78 @@
 ﻿/* ===================== WIDGET METEO ===================== */
-.meteo-accueil-card{padding:14px 20px;cursor:pointer;transition:background .15s;max-width:600px;margin:0 auto}
-.meteo-accueil-card:hover{background:#f8f5ff;border-radius:12px}
-.meteo-badge{background:#e0f2fe;color:#0369a1;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px}
-.ville-form{display:flex;gap:8px;margin-top:16px}
-.ville-form input{flex:1;padding:10px;border:2px solid #e5e7eb;border-radius:8px;font-size:14px;margin:0}
-.ville-form button{padding:10px 16px;background:#7C3AED;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;width:auto}
-.geo-btn{width:100%;margin-top:8px;padding:10px;background:#10b981;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px}
+.meteo-accueil-card {
+    padding: 20px;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+    max-width: 600px;
+    margin: 0 auto 16px auto;
+    
+    /* Glassmorphism */
+    background: var(--v3-glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: var(--v3-glass-border);
+    border-radius: var(--v3-radius-xl);
+    box-shadow: var(--v3-glass-shadow);
+}
+
+.meteo-accueil-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(31,38,135,0.1);
+}
+
+.meteo-badge {
+    background: rgba(224, 242, 254, 0.7);
+    color: #0369a1;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+}
+
+.ville-form {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.ville-form input {
+    flex: 1;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.6);
+    border: var(--v3-glass-border);
+    border-radius: 12px;
+    font-size: 14px;
+    margin: 0;
+    outline: none;
+    transition: background 0.2s, border-color 0.2s;
+}
+
+.ville-form input:focus {
+    background: #fff;
+    border-color: #7C3AED;
+}
+
+.ville-form button {
+    padding: 10px 16px;
+    background: #7C3AED;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
+}
+
+.geo-btn {
+    width: 100%;
+    margin-top: 8px;
+    padding: 10px;
+    background: rgba(16, 185, 129, 0.9);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+}
