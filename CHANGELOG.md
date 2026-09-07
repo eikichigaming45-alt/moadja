@@ -2,6 +2,14 @@
 
 ---
 
+## v1.71.15 - 07-09-2026
+
+### ✨ Nouveau
+- Début de la grande refonte visuelle du site pour un design plus doux, moderne et épuré.
+- Ajout d'un bouton d'accès rapide aux messages (Tchat) en haut de l'écran, spécialement conçu pour faciliter la navigation sur mobile.
+
+---
+
 ## v1.70.0 - 06-09-2026
 
 ### 🔧 Corrections
