@@ -118,17 +118,17 @@ async function openModal(type) {
                     <div class="islam-modal-date">${d.date || ''}</div>
                     <div style="text-align:center;margin-top:6px;">
                         <span style="font-size:12px;color:#059669;font-weight:600;">📍 ${coords.ville}</span>
-                        <button onclick="window._islamChangerVille()" style="margin-left:10px;background:#f0fdf4;border:1px solid #10b981;color:#059669;border-radius:8px;padding:4px 10px;font-size:11px;cursor:pointer;font-weight:600;">Changer</button>
+                        <button onclick="window._islamChangerVille()" style="margin-left:10px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:#059669;border-radius:50px;padding:4px 12px;font-size:11px;cursor:pointer;font-weight:600;backdrop-filter:blur(5px);">Changer</button>
                     </div>
                 </div>
-                <div id="islam-ville-form" style="display:none;background:#f8fafc;border-radius:10px;padding:14px;margin:10px 0;">
+                <div id="islam-ville-form" style="display:none;background:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.8);backdrop-filter:blur(10px);border-radius:16px;padding:14px;margin:10px 0;box-shadow:0 4px 12px rgba(0,0,0,0.05);">
                     <div style="font-weight:700;font-size:13px;color:#333;margin-bottom:10px;">Changer la localisation</div>
-                    <button onclick="window._islamGeolocate()" style="width:100%;padding:10px;background:#10b981;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:8px;">📍 Utiliser ma position GPS</button>
+                    <button onclick="window._islamGeolocate()" style="width:100%;padding:10px;background:linear-gradient(135deg, #34d399, #10b981);color:#fff;border:none;border-radius:50px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px;box-shadow:0 4px 10px rgba(16,185,129,0.3);">📍 Utiliser ma position GPS</button>
                     <div style="display:flex;gap:8px;">
-                        <input id="islam-ville-input" placeholder="Nom de la ville..." style="flex:1;padding:10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;outline:none;">
-                        <button onclick="window._islamRechercherVille()" style="padding:10px 14px;background:#4f46e5;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">OK</button>
+                        <input id="islam-ville-input" placeholder="Nom de la ville..." style="flex:1;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:50px;font-size:13px;outline:none;">
+                        <button onclick="window._islamRechercherVille()" style="padding:10px 18px;background:linear-gradient(135deg, #a78bfa, #8b5cf6);color:#fff;border:none;border-radius:50px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 10px rgba(139,92,246,0.3);">OK</button>
                     </div>
-                    <div id="islam-ville-msg" style="font-size:12px;color:#ef4444;margin-top:6px;min-height:16px;"></div>
+                    <div id="islam-ville-msg" style="font-size:12px;color:#ef4444;margin-top:6px;min-height:16px;padding-left:10px;"></div>
                 </div>
                 <div class="islam-modal-prieres">
                     <div class="islam-modal-titre-section">Horaires des prières</div>
@@ -242,114 +242,116 @@ async function openModal(type) {
 
                 <!-- ── ONGLET PROFIL ── -->
                 <div id="profil-tab-infos" class="profil-tab-content">
-                    <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:20px">
-                        ${photoSrc
-                            ? `<img id="profil-photo-preview" src="${photoSrc}"
-                                style="width:90px;height:90px;border-radius:50%;object-fit:cover;
-                                       border:3px solid #4f46e5;cursor:pointer;
-                                       box-shadow:0 4px 12px rgba(79,70,229,0.3)"
-                                onclick="document.getElementById('photo-input').click()">`
-                            : `<div class="profil-widget-initiales"
-                                    style="width:90px;height:90px;font-size:24px;cursor:pointer;
-                                           box-shadow:0 4px 12px rgba(79,70,229,0.3)"
-                                    onclick="document.getElementById('photo-input').click()">${initiales}</div>`
-                        }
-                        <input type="file" id="photo-input" accept="image/*" style="display:none"
-                            onchange="previewPhoto(event)">
-                        <span style="font-size:11px;color:#9ca3af;margin-top:8px">Appuyez sur la photo pour changer</span>
-                        ${photoSrc
-                            ? `<button id="btn-supprimer-photo" onclick="supprimerPhoto()"
-                                style="margin-top:8px;background:#fee2e2;color:#ef4444;border:none;
-                                       border-radius:8px;padding:6px 14px;font-size:12px;
-                                       font-weight:600;cursor:pointer">
-                                🗑️ Supprimer la photo
-                               </button>`
-                            : ''
-                        }
-                    </div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-                        <div>
-                            <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Prénom</label>
-                            <input id="p-prenom" placeholder="Prénom" value="${p.prenom||''}"
-                                style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none">
+                    <div style="background:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.05);">
+                        <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:20px">
+                            ${photoSrc
+                                ? `<img id="profil-photo-preview" src="${photoSrc}"
+                                    style="width:90px;height:90px;border-radius:50%;object-fit:cover;
+                                           border:3px solid #8b5cf6;cursor:pointer;
+                                           box-shadow:0 4px 12px rgba(139,92,246,0.3)"
+                                    onclick="document.getElementById('photo-input').click()">`
+                                : `<div class="profil-widget-initiales"
+                                        style="width:90px;height:90px;font-size:24px;cursor:pointer;
+                                               box-shadow:0 4px 12px rgba(139,92,246,0.3)"
+                                        onclick="document.getElementById('photo-input').click()">${initiales}</div>`
+                            }
+                            <input type="file" id="photo-input" accept="image/*" style="display:none"
+                                onchange="previewPhoto(event)">
+                            <span style="font-size:11px;color:#9ca3af;margin-top:8px">Appuyez sur la photo pour changer</span>
+                            ${photoSrc
+                                ? `<button id="btn-supprimer-photo" onclick="supprimerPhoto()"
+                                    style="margin-top:10px;background:rgba(239, 68, 68, 0.1);color:#ef4444;border:1px solid rgba(239, 68, 68, 0.2);
+                                           border-radius:50px;padding:8px 16px;font-size:12px;
+                                           font-weight:600;cursor:pointer;backdrop-filter:blur(10px);transition:all 0.3s ease;">
+                                    🗑️ Supprimer la photo
+                                   </button>`
+                                : ''
+                            }
                         </div>
-                        <div>
-                            <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Nom</label>
-                            <input id="p-nom" placeholder="Nom" value="${p.nom||''}"
-                                style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+                            <div>
+                                <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Prénom</label>
+                                <input id="p-prenom" placeholder="Prénom" value="${p.prenom||''}"
+                                    style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
+                            </div>
+                            <div>
+                                <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Nom</label>
+                                <input id="p-nom" placeholder="Nom" value="${p.nom||''}"
+                                    style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
+                            </div>
                         </div>
-                    </div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-                        <div>
-                            <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Date de naissance</label>
-                            <input id="p-naissance" type="date" value="${p.date_naissance ? p.date_naissance.split('T')[0] : ''}"
-                                style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+                            <div>
+                                <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Date de naissance</label>
+                                <input id="p-naissance" type="date" value="${p.date_naissance ? p.date_naissance.split('T')[0] : ''}"
+                                    style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
+                            </div>
+                                                        <div>
+                                <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Heure de naissance</label>
+                                <input id="p-heure-naissance" type="time" value="${p.heure_naissance ? p.heure_naissance.slice(0,5) : ''}"
+                                    style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
+                            </div>
                         </div>
-                        <div>
-                            <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Heure de naissance</label>
-                            <input id="p-heure-naissance" type="time" value="${p.heure_naissance ? p.heure_naissance.slice(0,5) : ''}"
-                                style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none">
+                        <div style="margin-bottom:10px">
+                            <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Lieu de naissance</label>
+                            <input id="p-lieu-naissance" type="text" placeholder="Ville de naissance"
+                                value="${p.lieu_naissance||''}"
+                                onblur="geocoderLieuNaissance()"
+                                style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
+                            <input type="hidden" id="p-naissance-lat" value="${p.naissance_lat||''}">
+                            <input type="hidden" id="p-naissance-lon" value="${p.naissance_lon||''}">
+                            <div id="p-lieu-naissance-msg" style="font-size:12px;margin-top:4px;min-height:16px;
+                                ${p.naissance_lat ? 'color:#10b981' : 'color:#9ca3af'}">
+                                ${p.naissance_lat ? '✅ Coordonnées enregistrées' : ''}
+                            </div>
                         </div>
-                    </div>
-                    <div style="margin-bottom:10px">
-                        <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Lieu de naissance</label>
-                        <input id="p-lieu-naissance" type="text" placeholder="Ville de naissance"
-                            value="${p.lieu_naissance||''}"
-                            onblur="geocoderLieuNaissance()"
-                            style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none">
-                        <input type="hidden" id="p-naissance-lat" value="${p.naissance_lat||''}">
-                        <input type="hidden" id="p-naissance-lon" value="${p.naissance_lon||''}">
-                        <div id="p-lieu-naissance-msg" style="font-size:12px;margin-top:4px;min-height:16px;
-                            ${p.naissance_lat ? 'color:#10b981' : 'color:#9ca3af'}">
-                            ${p.naissance_lat ? '✅ Coordonnées enregistrées' : ''}
+                        <div style="margin-bottom:10px">
+                            <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Email</label>
+                            <input id="p-email" placeholder="Email" value="${p.email||''}"
+                                style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
                         </div>
-                    </div>
-                    <div style="margin-bottom:10px">
-                        <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Email</label>
-                        <input id="p-email" placeholder="Email" value="${p.email||''}"
-                            style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none">
-                    </div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
-                        <div>
-                            <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Téléphone</label>
-                            <input id="p-tel" placeholder="Téléphone" value="${p.telephone||''}"
-                                style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+                            <div>
+                                <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Téléphone</label>
+                                <input id="p-tel" placeholder="Téléphone" value="${p.telephone||''}"
+                                    style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
+                            </div>
+                            <div>
+                                <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Profession</label>
+                                <input id="p-prof" placeholder="Profession" value="${p.profession||''}"
+                                    style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
+                            </div>
                         </div>
-                                                <div>
-                            <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Profession</label>
-                            <input id="p-prof" placeholder="Profession" value="${p.profession||''}"
-                                style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none">
+                        <div style="margin-bottom:10px">
+                            <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Site internet</label>
+                            <input id="p-site-web" type="url" placeholder="https://..." value="${p.site_web||''}"
+                                style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
                         </div>
+                        <div style="margin-bottom:16px">
+                            <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Note personnelle</label>
+                            <textarea id="p-note" placeholder="Note personnelle..." rows="3"
+                                style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;
+                                       font-size:14px;box-sizing:border-box;resize:none;outline:none;background:rgba(255,255,255,0.8)">${p.note||''}</textarea>
+                        </div>
+                        <button onclick="sauvegarderProfil()"
+                            style="width:100%;padding:14px;background:linear-gradient(135deg,#a78bfa,#8b5cf6);
+                                   color:white;border:none;border-radius:50px;font-size:15px;
+                                   font-weight:600;cursor:pointer;box-shadow:0 6px 16px rgba(139,92,246,0.3);backdrop-filter:blur(10px);transition:all 0.3s ease;">
+                            💾 Sauvegarder le profil
+                        </button>
+                        <div id="profil-msg" style="text-align:center;margin-top:10px;font-size:13px;min-height:18px"></div>
                     </div>
-                    <div style="margin-bottom:10px">
-                        <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Site internet</label>
-                        <input id="p-site-web" type="url" placeholder="https://..." value="${p.site_web||''}"
-                            style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none">
-                    </div>
-                    <div style="margin-bottom:16px">
-                        <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Note personnelle</label>
-                        <textarea id="p-note" placeholder="Note personnelle..." rows="3"
-                            style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;
-                                   font-size:14px;box-sizing:border-box;resize:none;outline:none">${p.note||''}</textarea>
-                    </div>
-                    <button onclick="sauvegarderProfil()"
-                        style="width:100%;padding:13px;background:linear-gradient(135deg,#4f46e5,#7c3aed);
-                               color:white;border:none;border-radius:12px;font-size:15px;
-                               font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(79,70,229,0.3)">
-                        💾 Sauvegarder le profil
-                    </button>
-                    <div id="profil-msg" style="text-align:center;margin-top:10px;font-size:13px;min-height:18px"></div>
                 </div>
 
                 <!-- ── ONGLET SANTÉ ── -->
                 <div id="profil-tab-sante" class="profil-tab-content" style="display:none">
-                    <div style="background:#f8fafc;border-radius:16px;padding:20px">
+                    <div style="background:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.05);">
                         <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;
                                     letter-spacing:.5px;margin-bottom:10px">Identité biologique</div>
                         <div style="margin-bottom:10px">
                             <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Sexe</label>
                             <select id="p-sexe"
-                                style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;background:#fff">
+                                style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
                                 <option value="">— Non renseigné —</option>
                                 <option value="femme"     ${p.sexe === 'femme'     ? 'selected' : ''}>Femme</option>
                                 <option value="homme"     ${p.sexe === 'homme'     ? 'selected' : ''}>Homme</option>
@@ -361,19 +363,19 @@ async function openModal(type) {
                                 <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Taille (cm)</label>
                                 <input id="p-taille" type="number" min="50" max="250" placeholder="170"
                                     value="${p.taille||''}"
-                                    style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none">
+                                    style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
                             </div>
                             <div>
                                 <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Poids (kg)</label>
                                 <input id="p-poids" type="number" min="20" max="300" step="0.1" placeholder="65"
                                     value="${p.poids||''}"
-                                    style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none">
+                                    style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
                             </div>
                         </div>
                         <div style="margin-bottom:16px">
                             <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Groupe sanguin</label>
                             <select id="p-groupe-sanguin"
-                                style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;background:#fff">
+                                style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
                                 <option value="">— Non renseigné —</option>
                                 ${['A+','A-','B+','B-','AB+','AB-','O+','O-'].map(g =>
                                     `<option value="${g}" ${p.groupe_sanguin === g ? 'selected' : ''}>${g}</option>`
@@ -385,19 +387,19 @@ async function openModal(type) {
                         <div style="margin-bottom:10px">
                             <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Niveau d'activité</label>
                             <select id="p-niveau-activite"
-                                style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;background:#fff">
+                                style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
                                 <option value="">— Non renseigné —</option>
                                 <option value="sedentaire" ${p.niveau_activite === 'sedentaire' ? 'selected' : ''}>Sédentaire (bureau, peu de sport)</option>
                                 <option value="leger"      ${p.niveau_activite === 'leger'      ? 'selected' : ''}>Légèrement actif (1–3 séances/sem)</option>
                                 <option value="modere"     ${p.niveau_activite === 'modere'     ? 'selected' : ''}>Modérément actif (3–5 séances/sem)</option>
                                 <option value="actif"      ${p.niveau_activite === 'actif'      ? 'selected' : ''}>Actif (6–7 séances/sem)</option>
-                                                                <option value="tres_actif" ${p.niveau_activite === 'tres_actif' ? 'selected' : ''}>Très actif (sport intensif quotidien)</option>
+                                <option value="tres_actif" ${p.niveau_activite === 'tres_actif' ? 'selected' : ''}>Très actif (sport intensif quotidien)</option>
                             </select>
                         </div>
                         <div style="margin-bottom:16px">
                             <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Objectif à atteindre</label>
                             <select id="p-objectif-sante"
-                                style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;background:#fff">
+                                style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
                                 <option value="">— Non renseigné —</option>
                                 <option value="perte_rapide"       ${p.objectif_sante === 'perte_rapide'       ? 'selected' : ''}>🔥 Perte de poids rapide (−500 kcal/j)</option>
                                 <option value="perte_moderee"      ${p.objectif_sante === 'perte_moderee'      ? 'selected' : ''}>📉 Perte de poids modérée (−300 kcal/j)</option>
@@ -416,7 +418,7 @@ async function openModal(type) {
                             <input type="text" id="p-allergies"
                                 placeholder="gluten, arachides, lactose"
                                 value="${Array.isArray(p.allergies) ? p.allergies.join(', ') : ''}"
-                                style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none">
+                                style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
                         </div>
                         <div style="margin-bottom:16px">
                             <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">
@@ -425,7 +427,7 @@ async function openModal(type) {
                             <input type="text" id="p-aliments-exclus"
                                 placeholder="porc, alcool, café"
                                 value="${Array.isArray(p.aliments_exclus) ? p.aliments_exclus.join(', ') : ''}"
-                                style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none">
+                                style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
                         </div>
 
                         <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;
@@ -433,7 +435,7 @@ async function openModal(type) {
                         <div style="margin-bottom:16px">
                             <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Signe du zodiaque</label>
                             <select id="p-signe"
-                                style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none;background:#fff">
+                                style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
                                 <option value="">— Laisser calculer depuis la date de naissance —</option>
                                 <option value="belier"     ${p.signe_zodiaque==='belier'     ? 'selected':''}>♈ Bélier</option>
                                 <option value="taureau"    ${p.signe_zodiaque==='taureau'    ? 'selected':''}>♉ Taureau</option>
@@ -454,9 +456,9 @@ async function openModal(type) {
                         </div>
 
                         <button onclick="sauvegarderSante()"
-                            style="width:100%;padding:13px;background:linear-gradient(135deg,#10b981,#059669);
-                                   color:white;border:none;border-radius:12px;font-size:15px;
-                                   font-weight:600;cursor:pointer;box-shadow:0 4px 10px rgba(16,185,129,0.3)">
+                            style="width:100%;padding:14px;background:linear-gradient(135deg,#34d399,#10b981);
+                                   color:white;border:none;border-radius:50px;font-size:15px;
+                                   font-weight:600;cursor:pointer;box-shadow:0 6px 16px rgba(16,185,129,0.3);backdrop-filter:blur(10px);transition:all 0.3s ease;">
                             💾 Sauvegarder la santé
                         </button>
                         <div id="sante-msg" style="text-align:center;margin-top:10px;font-size:13px;min-height:18px"></div>
@@ -465,11 +467,11 @@ async function openModal(type) {
 
                 <!-- ── ONGLET SÉCURITÉ ── -->
                 <div id="profil-tab-securite" class="profil-tab-content" style="display:none">
-                    <div style="background:#f8fafc;border-radius:16px;padding:20px">
+                    <div style="background:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.05);">
                         <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
-                            <div style="width:48px;height:48px;background:linear-gradient(135deg,#f59e0b,#d97706);
+                            <div style="width:48px;height:48px;background:linear-gradient(135deg,#fcd34d,#fbbf24);
                                         border-radius:14px;display:flex;align-items:center;justify-content:center;
-                                        font-size:22px;box-shadow:0 4px 10px rgba(245,158,11,0.3)">🔑</div>
+                                        font-size:22px;box-shadow:0 4px 10px rgba(245,158,11,0.2)">🔑</div>
                             <div>
                                 <div style="font-weight:700;color:#111;font-size:15px">Changer le mot de passe</div>
                                 <div style="font-size:12px;color:#9ca3af;margin-top:2px">8 car. min · majuscule · minuscule · chiffre · caractère spécial</div>
@@ -478,22 +480,22 @@ async function openModal(type) {
                         <div style="margin-bottom:10px">
                             <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Ancien mot de passe</label>
                             <input type="password" id="mdp-ancien" placeholder="••••••••"
-                                style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none">
+                                style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
                         </div>
                         <div style="margin-bottom:10px">
                             <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Nouveau mot de passe</label>
                             <input type="password" id="mdp-nouveau" placeholder="••••••••"
-                                style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none">
+                                style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
                         </div>
                         <div style="margin-bottom:20px">
                             <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Confirmer le mot de passe</label>
                             <input type="password" id="mdp-confirm" placeholder="••••••••"
-                                style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;outline:none">
+                                style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
                         </div>
                         <button onclick="changerMdp()"
-                            style="width:100%;padding:13px;background:linear-gradient(135deg,#f59e0b,#d97706);
-                                   color:white;border:none;border-radius:12px;font-size:15px;font-weight:600;
-                                   cursor:pointer;box-shadow:0 4px 10px rgba(245,158,11,0.3)">
+                            style="width:100%;padding:14px;background:linear-gradient(135deg,#fbbf24,#f59e0b);
+                                   color:white;border:none;border-radius:50px;font-size:15px;font-weight:600;
+                                   cursor:pointer;box-shadow:0 6px 16px rgba(245,158,11,0.3);backdrop-filter:blur(10px);transition:all 0.3s ease;">
                             🔑 Changer le mot de passe
                         </button>
                         <div id="mdp-msg" style="text-align:center;margin-top:10px;font-size:13px;min-height:18px"></div>
@@ -502,9 +504,9 @@ async function openModal(type) {
 
                 <!-- ── ONGLET WIDGETS ── -->
                 <div id="profil-tab-widgets" class="profil-tab-content" style="display:none">
-                    <div style="background:#f8fafc;border-radius:16px;padding:20px">
+                    <div style="background:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.05);">
                         <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-                            <div style="width:48px;height:48px;background:linear-gradient(135deg,#10b981,#059669);
+                            <div style="width:48px;height:48px;background:linear-gradient(135deg,#34d399,#10b981);
                                         border-radius:14px;display:flex;align-items:center;justify-content:center;
                                         font-size:22px;box-shadow:0 4px 10px rgba(16,185,129,0.3)">📱</div>
                             <div>
@@ -516,9 +518,9 @@ async function openModal(type) {
                             <p style="color:#9ca3af;font-size:13px">Chargement...</p>
                         </div>
                         <button onclick="sauvegarderWidgetsVisibles()"
-                            style="width:100%;padding:13px;background:linear-gradient(135deg,#10b981,#059669);
-                                   color:white;border:none;border-radius:12px;font-size:15px;font-weight:600;
-                                   cursor:pointer;margin-top:16px;box-shadow:0 4px 10px rgba(16,185,129,0.3)">
+                            style="width:100%;padding:14px;background:linear-gradient(135deg,#34d399,#10b981);
+                                   color:white;border:none;border-radius:50px;font-size:15px;font-weight:600;
+                                   cursor:pointer;margin-top:16px;box-shadow:0 6px 16px rgba(16,185,129,0.3);backdrop-filter:blur(10px);transition:all 0.3s ease;">
                             💾 Sauvegarder mes widgets
                         </button>
                         <div id="widgets-msg" style="text-align:center;margin-top:10px;font-size:13px;min-height:18px"></div>
@@ -527,24 +529,23 @@ async function openModal(type) {
 
                 <!-- ── ONGLET SOCIAL ── -->
                 <div id="profil-tab-social" class="profil-tab-content" style="display:none">
-                    <div style="display:flex;gap:0;margin-bottom:16px;border-radius:10px;
-                                overflow:hidden;border:1px solid #ede9fe">
+                    <div style="display:flex;gap:8px;margin-bottom:20px;background:rgba(255,255,255,0.4);border:1px solid rgba(255,255,255,0.6);border-radius:50px;padding:4px;backdrop-filter:blur(10px);">
                         <button id="social-tab-miens"
                             data-action="social-onglet"
                             data-onglet="miens"
-                            style="flex:1;padding:10px;border:none;background:#7c3aed;
-                                   color:#fff;font-size:13px;font-weight:600;cursor:pointer">
+                            style="flex:1;padding:12px;border:none;background:linear-gradient(135deg,#a78bfa,#8b5cf6);
+                                   color:#fff;font-size:13px;font-weight:600;cursor:pointer;border-radius:50px;box-shadow:0 4px 10px rgba(139,92,246,0.3);transition:all 0.3s ease;">
                             Ce que je partage
                         </button>
                         <button id="social-tab-nouveau"
                             data-action="social-onglet"
                             data-onglet="nouveau"
-                            style="flex:1;padding:10px;border:none;background:#f5f3ff;
-                                   color:#7c3aed;font-size:13px;font-weight:600;cursor:pointer">
+                            style="flex:1;padding:12px;border:none;background:transparent;
+                                   color:#6b7280;font-size:13px;font-weight:600;cursor:pointer;border-radius:50px;transition:all 0.3s ease;">
                             Partager avec…
                         </button>
                     </div>
-                    <div id="social-tab-content"></div>
+                    <div id="social-tab-content" style="background:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.05);"></div>
                 </div>
             `;
 
@@ -567,7 +568,22 @@ async function openModal(type) {
 
             // ── Listeners onglets social ──────────────────────────
             document.querySelectorAll('[data-action="social-onglet"]').forEach(btn => {
-                btn.addEventListener('click', () => _socialOnglet(btn.dataset.onglet));
+                btn.addEventListener('click', () => {
+                    // Mettre à jour visuellement les boutons pillules
+                    document.getElementById('social-tab-miens').style.background = 'transparent';
+                    document.getElementById('social-tab-miens').style.color = '#6b7280';
+                    document.getElementById('social-tab-miens').style.boxShadow = 'none';
+                    
+                    document.getElementById('social-tab-nouveau').style.background = 'transparent';
+                    document.getElementById('social-tab-nouveau').style.color = '#6b7280';
+                    document.getElementById('social-tab-nouveau').style.boxShadow = 'none';
+                    
+                    btn.style.background = 'linear-gradient(135deg,#a78bfa,#8b5cf6)';
+                    btn.style.color = '#fff';
+                    btn.style.boxShadow = '0 4px 10px rgba(139,92,246,0.3)';
+                    
+                    _socialOnglet(btn.dataset.onglet);
+                });
             });
 
             await afficherSectionWidgets();
@@ -582,12 +598,12 @@ async function openModal(type) {
     // ── Admin ─────────────────────────────────────────────────
     } else if (type === 'admin') {
         document.getElementById('modal-body').innerHTML = `
-            <div class="admin-tabs">
-                <button class="admin-tab active" data-tab="stats" onclick="switchAdminTab('stats')">📊 Stats</button>
-                <button class="admin-tab" data-tab="users"  onclick="switchAdminTab('users')">👥 Utilisateurs</button>
+            <div class="admin-tabs" style="display:flex;gap:8px;margin-bottom:20px;background:rgba(255,255,255,0.4);border:1px solid rgba(255,255,255,0.6);border-radius:50px;padding:4px;backdrop-filter:blur(10px);">
+                <button class="admin-tab active" data-tab="stats" onclick="switchAdminTab('stats')" style="flex:1;border-radius:50px;border:none;">📊 Stats</button>
+                <button class="admin-tab" data-tab="users"  onclick="switchAdminTab('users')" style="flex:1;border-radius:50px;border:none;">👥 Utilisateurs</button>
             </div>
-            <div id="admin-tab-stats" class="admin-tab-content active"><p style="color:#9ca3af">Chargement...</p></div>
-            <div id="admin-tab-users" class="admin-tab-content"><p style="color:#9ca3af">Chargement...</p></div>
+            <div id="admin-tab-stats" class="admin-tab-content active" style="background:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.05);"><p style="color:#9ca3af">Chargement...</p></div>
+            <div id="admin-tab-users" class="admin-tab-content" style="background:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.05);"><p style="color:#9ca3af">Chargement...</p></div>
         `;
         chargerAdminStats();
         chargerAdminUsers();
@@ -604,7 +620,7 @@ function lirePriereModal(e) {
         document.getElementById('modal-body').innerHTML = `
             <p style="color:#ef4444;font-size:15px;margin-bottom:20px">La synthèse vocale n'est pas supportée par votre navigateur.</p>
             <div class="modal-actions">
-                <button class="btn-cancel" onclick="openModal('priere')">Retour</button>
+                <button class="btn-cancel" onclick="openModal('priere')" style="border-radius:50px;">Retour</button>
             </div>`;
         return;
     }
@@ -655,3 +671,4 @@ function closeModal() {
 function closeOutside(e) {
     if (e.target === document.getElementById('overlay')) closeModal();
 }
+
