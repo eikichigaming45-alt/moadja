@@ -1,15 +1,15 @@
 /* ============================================================
    public/css/feed.css
-   Styles du fil social — onglet Accueil
+   Styles du fil social — onglet Accueil (Mise à jour V3)
    ============================================================ */
 
 /* ===================== ZONE MÉTÉO FIGÉE ===================== */
 .accueil-meteo-fixed {
-    background: #fff;
-    border-bottom: 1px solid #e5e7eb;
+    background: transparent;
+    border-bottom: none;
     padding: 14px 20px;
     flex-shrink: 0;
-    box-shadow: 0 2px 8px rgba(0,0,0,.04);
+    box-shadow: none;
 }
 
 /* ===================== FEED CONTENEUR ===================== */
@@ -22,7 +22,7 @@
     flex-direction: column;
     align-items: center;
     gap: 16px;
-    background: #f3f4f6;
+    background: transparent;
 }
 
 /* ===================== HEADER FEED ===================== */
@@ -43,8 +43,9 @@
 .feed-filter-btn {
     padding: 6px 14px;
     border-radius: 20px;
-    border: 1.5px solid #e5e7eb;
-    background: #fff;
+    border: var(--v3-glass-border);
+    background: var(--v3-glass-bg);
+    backdrop-filter: blur(4px);
     font-size: 13px;
     font-weight: 600;
     color: #6b7280;
@@ -56,6 +57,7 @@
     background: #7c3aed;
     border-color: #7c3aed;
     color: #fff;
+    box-shadow: 0 4px 12px rgba(124,58,237,.2);
 }
 
 .feed-new-btn {
@@ -67,7 +69,7 @@
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 2px 8px rgba(124,58,237,.25);
+    box-shadow: 0 4px 12px rgba(124,58,237,.25);
 }
 
 /* ===================== FEED LIST ===================== */
@@ -81,13 +83,16 @@
 
 /* ===================== CARD POST ===================== */
 .feed-card {
-    background: #fff;
-    border-radius: 16px;
-    padding: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    background: var(--v3-glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: var(--v3-glass-border);
+    border-radius: var(--v3-radius-xl);
+    padding: 20px;
+    box-shadow: var(--v3-glass-shadow);
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
     width: 100%;
 }
 
@@ -108,11 +113,13 @@
 }
 
 .feed-avatar {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
+    border: 2px solid rgba(255,255,255,0.8);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
 .feed-avatar-initiale {
@@ -123,12 +130,16 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.8);
 }
 
 .feed-username {
     font-size: 14px;
     font-weight: 700;
-    color: #111827;
+    color: var(--v3-text-main);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -136,7 +147,7 @@
 
 .feed-handle {
     font-size: 11px;
-    color: #9ca3af;
+    color: #6b7280;
 }
 
 .feed-card-actions {
@@ -150,7 +161,7 @@
     padding: 5px 12px;
     border-radius: 20px;
     border: 1.5px solid #7c3aed;
-    background: #fff;
+    background: rgba(255,255,255,0.5);
     color: #7c3aed;
     font-size: 12px;
     font-weight: 600;
@@ -168,7 +179,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    color: #d1d5db;
+    color: #9ca3af;
     padding: 6px;
     border-radius: 8px;
     display: flex;
@@ -179,14 +190,14 @@
 
 .feed-action-btn:hover {
     color: #7c3aed;
-    background: #f3f0ff;
+    background: rgba(124,58,237,0.1);
 }
 
 .feed-delete-btn {
     background: none;
     border: none;
     cursor: pointer;
-    color: #d1d5db;
+    color: #9ca3af;
     padding: 6px;
     border-radius: 8px;
     display: flex;
@@ -197,7 +208,7 @@
 
 .feed-delete-btn:hover {
     color: #ef4444;
-    background: #fee2e2;
+    background: rgba(239,68,68,0.1);
 }
 
 /* ===================== CONTENU POST ===================== */
@@ -213,14 +224,15 @@
 .feed-photo-wrap {
     width: 100%;
     height: 420px;
-    border-radius: 12px;
+    border-radius: var(--v3-radius-lg);
     overflow: hidden;
-    background: #f3f4f6;
+    background: rgba(0,0,0,0.02);
     display: flex;
     justify-content: center;
     align-items: center;
     position: relative;
     cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.4);
 }
 
 .feed-photo {
@@ -229,7 +241,6 @@
     object-fit: cover;
     display: block;
     transition: opacity .2s;
-    background: #f3f4f6;
 }
 
 .feed-photo:hover {
@@ -239,25 +250,26 @@
 /* ===================== LIEU TAG ===================== */
 .feed-lieu {
     font-size: 12px;
-    color: #9ca3af;
+    color: #6b7280;
     font-weight: 500;
     padding: 0 2px;
 }
 
-/* ===================== SÉLECTEUR RÉSONANCES (Nouveau style Pilule flottante) ===================== */
+/* ===================== SÉLECTEUR RÉSONANCES ===================== */
 .resonance-picker {
     position: absolute;
-    bottom: calc(100% + 10px); /* Flotte au-dessus du bouton cliqué */
+    bottom: calc(100% + 10px);
     left: 0;
     display: flex;
     align-items: center;
     gap: 8px;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
+    background: var(--v3-glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-radius: 40px;
     padding: 8px 16px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-    border: 1px solid #f3f4f6;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    border: var(--v3-glass-border);
     z-index: 50;
     animation: pickerFadeIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -306,7 +318,7 @@
 .feed-resonance-wrap {
     display: flex;
     align-items: center;
-    position: relative; /* CRUCIAL : Sert de point d'ancrage pour le sélecteur absolu */
+    position: relative; 
 }
 
 .feed-resonance-btn {
@@ -319,7 +331,7 @@
     padding: 4px 0;
     font-size: 13px;
     font-weight: 600;
-    color: #9ca3af;
+    color: #6b7280;
     transition: color .2s;
 }
 
@@ -335,7 +347,7 @@
 .feed-resonance-label-neutre {
     font-size: 13px;
     font-weight: 600;
-    color: #9ca3af;
+    color: #6b7280;
 }
 
 .feed-resonance-icones {
@@ -357,7 +369,7 @@
 .feed-resonance-count {
     font-size: 13px;
     font-weight: 600;
-    color: #6b7280;
+    color: #4b5563;
 }
 
 /* ===================== PILLS RÉSONANCES ===================== */
@@ -376,9 +388,9 @@
     border-radius: 20px;
     font-size: 12px;
     font-weight: 600;
-    background: color-mix(in srgb, var(--pill-color) 18%, #fff);
+    background: color-mix(in srgb, var(--pill-color) 18%, rgba(255,255,255,0.7));
     color: #374151;
-    border: 1px solid color-mix(in srgb, var(--pill-color) 40%, transparent);
+    border: 1px solid color-mix(in srgb, var(--pill-color) 30%, transparent);
 }
 
 /* ===================== FOOTER POST ===================== */
@@ -386,8 +398,8 @@
     display: flex;
     align-items: center;
     gap: 20px;
-    padding-top: 8px;
-    border-top: 1px solid #f3f4f6;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0,0,0,0.05);
 }
 
 .feed-comment-btn,
@@ -397,7 +409,7 @@
     cursor: pointer;
     font-size: 13px;
     font-weight: 600;
-    color: #9ca3af;
+    color: #6b7280;
     display: flex;
     align-items: center;
     gap: 5px;
@@ -410,17 +422,18 @@
 
 /* ===================== COMMENTAIRES ===================== */
 .feed-comments {
-    border-top: 1px solid #f3f4f6;
-    padding-top: 10px;
+    border-top: 1px solid rgba(0,0,0,0.05);
+    padding-top: 12px;
     display: flex;
     flex-direction: column;
     gap: 8px;
 }
 
 .feed-comment {
-    background: #f9fafb;
-    border-radius: 10px;
-    padding: 8px 12px;
+    background: rgba(255,255,255,0.4);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 16px;
+    padding: 10px 14px;
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -436,12 +449,12 @@
 .feed-comment-author {
     font-size: 12px;
     font-weight: 700;
-    color: #374151;
+    color: #1f2937;
 }
 
 .feed-comment-date {
     font-size: 11px;
-    color: #9ca3af;
+    color: #6b7280;
 }
 
 .feed-comment-actions {
@@ -457,7 +470,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    color: #d1d5db;
+    color: #9ca3af;
     padding: 3px 5px;
     border-radius: 6px;
     display: flex;
@@ -468,8 +481,8 @@
     transition: color .2s, background .2s;
 }
 
-.feed-comment-edit-btn:hover  { color: #7c3aed; background: #f3f0ff; }
-.feed-comment-delete:hover    { color: #ef4444; background: #fee2e2; }
+.feed-comment-edit-btn:hover  { color: #7c3aed; background: rgba(124,58,237,0.1); }
+.feed-comment-delete:hover    { color: #ef4444; background: rgba(239,68,68,0.1); }
 .feed-comment-like-btn:hover  { color: #7c3aed; }
 .feed-comment-like-btn.liked  { color: #7c3aed; }
 
@@ -489,21 +502,23 @@
 
 .feed-comment-input {
     flex: 1;
-    padding: 8px 12px;
-    border: 1.5px solid #e5e7eb;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.6);
+    border: var(--v3-glass-border);
     border-radius: 20px;
     font-size: 13px;
     outline: none;
     font-family: inherit;
-    transition: border-color .2s;
+    transition: border-color .2s, background .2s;
 }
 
 .feed-comment-input:focus {
     border-color: #7c3aed;
+    background: #fff;
 }
 
 .feed-comment-send {
-    padding: 8px 14px;
+    padding: 8px 16px;
     background: #7c3aed;
     color: #fff;
     border: none;
@@ -512,13 +527,14 @@
     font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(124,58,237,0.2);
 }
 
 /* ===================== ÉTATS ===================== */
 .feed-loading,
 .feed-empty {
     text-align: center;
-    color: #9ca3af;
+    color: #6b7280;
     font-size: 14px;
     padding: 24px 0;
 }
@@ -529,12 +545,13 @@
     align-items: center;
     justify-content: center;
     min-height: 200px;
-    color: #9ca3af;
+    color: #6b7280;
     font-size: 15px;
     font-weight: 600;
-    background: #fff;
-    border-radius: 16px;
-    border: 2px dashed #e5e7eb;
+    background: var(--v3-glass-bg);
+    backdrop-filter: blur(8px);
+    border-radius: var(--v3-radius-xl);
+    border: 2px dashed rgba(255,255,255,0.8);
     margin: 8px 0;
 }
 
@@ -544,14 +561,14 @@
     color: #7c3aed;
     font-weight: 700;
     cursor: pointer;
-    border-radius: 4px;
-    padding: 0 2px;
+    border-radius: 6px;
+    padding: 2px 4px;
+    background: rgba(124,58,237,0.1);
     transition: background .15s, color .15s;
 }
 
 .mention-tag:hover {
-    background: #f3e8ff;
-    color: #6d28d9;
+    background: rgba(124,58,237,0.2);
 }
 
 /* ===================== @MENTION DROPDOWN ===================== */
@@ -561,10 +578,11 @@
     bottom: calc(100% + 6px);
     left: 0;
     right: 0;
-    background: #fff;
-    border: 1.5px solid #e5e7eb;
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.12);
+    background: var(--v3-glass-bg);
+    backdrop-filter: blur(16px);
+    border: var(--v3-glass-border);
+    border-radius: 16px;
+    box-shadow: 0 12px 32px rgba(0,0,0,.1);
     z-index: 500;
     overflow: hidden;
     max-height: 220px;
@@ -583,7 +601,7 @@
     padding: 10px 14px;
     cursor: pointer;
     transition: background .15s;
-    border-bottom: 1px solid #f3f4f6;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
 }
 
 .mention-item:last-child {
@@ -592,7 +610,7 @@
 
 .mention-item:hover,
 .mention-item.active {
-    background: #f5f3ff;
+    background: rgba(255,255,255,0.6);
 }
 
 /* ===================== BADGE LIEU (HEADER) ===================== */
@@ -601,16 +619,15 @@
     font-weight: 600;
     cursor: pointer;
     transition: color 0.2s, background 0.2s;
-    padding: 2px 6px;
-    border-radius: 6px;
-    background: #f3f0ff;
+    padding: 2px 8px;
+    border-radius: 8px;
+    background: rgba(124,58,237,0.1);
     display: inline-block;
     margin-left: 4px;
 }
 
 .feed-lieu-badge:hover {
-    background: #e9d5ff;
-    color: #6d28d9;
+    background: rgba(124,58,237,0.2);
 }
 
 /* ===================== DROPDOWN GEOLOC (suggestions lieu) ===================== */
@@ -619,19 +636,20 @@
     top: calc(100% + 4px);
     left: 0;
     right: 0;
-    background: #fff;
-    border: 1.5px solid #e5e7eb;
-    border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    background: var(--v3-glass-bg);
+    backdrop-filter: blur(16px);
+    border: var(--v3-glass-border);
+    border-radius: 16px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.1);
     z-index: 500;
     max-height: 220px;
     overflow-y: auto;
 }
 
 .loc-item {
-    padding: 8px 14px;
+    padding: 10px 14px;
     cursor: pointer;
-    border-bottom: 1px solid #f3f4f6;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
     transition: background 0.2s;
 }
 
@@ -640,12 +658,12 @@
 }
 
 .loc-item:hover {
-    background: #f5f3ff;
+    background: rgba(255,255,255,0.6);
 }
 
 .loc-item-nom {
     font-size: 13px;
-    color: #374151;
+    color: #1f2937;
     font-weight: 600;
 }
 
@@ -655,11 +673,11 @@
 
 .loc-item-detail {
     font-size: 11px;
-    color: #9ca3af;
-    margin-top: 1px;
+    color: #6b7280;
+    margin-top: 2px;
 }
 
-/* ===================== CHAMP LIEU (icône à gauche, hors du champ) ===================== */
+/* ===================== CHAMP LIEU ===================== */
 .loc-input-wrap {
     position: relative;
     width: 100%;
@@ -670,42 +688,40 @@
 
 .loc-input-wrap input.loc-input {
     flex: 1;
-    height: 40px;
-    padding: 0 12px;
-    border: 1.5px solid #e5e7eb;
-    border-radius: 10px;
+    height: 44px;
+    padding: 0 14px;
+    background: rgba(255,255,255,0.6);
+    border: var(--v3-glass-border);
+    border-radius: 12px;
     font-size: 13px;
-    line-height: normal;
     outline: none;
     box-sizing: border-box;
     font-family: inherit;
-    transition: border-color .2s;
+    transition: border-color .2s, background .2s;
 }
 
 .loc-input-wrap input.loc-input:focus {
     border-color: #7c3aed;
+    background: #fff;
 }
 
 .loc-input-wrap .loc-input-icone {
     position: static;
-    transform: none;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f3f0ff;
+    background: rgba(124,58,237,0.1);
     border: none;
     cursor: pointer;
-    font-size: 16px;
-    line-height: 1;
-    padding: 0;
+    font-size: 18px;
     color: #7c3aed;
-    border-radius: 8px;
+    border-radius: 12px;
     transition: background .2s;
     flex-shrink: 0;
 }
 
 .loc-input-wrap .loc-input-icone:hover {
-    background: #e9d5ff;
+    background: rgba(124,58,237,0.2);
 }
