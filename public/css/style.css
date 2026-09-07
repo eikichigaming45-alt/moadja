@@ -1,13 +1,7 @@
 ﻿/* ===================== FONDATION V3 (Variables) ===================== */
 :root {
-  /* FOND AURA INTENSE : Halos Pêche et Lavande saturés */
-  --v3-bg-color: #faf7fc;
-  --v3-bg-gradient: 
-    radial-gradient(circle at top left, #ffd6c9 0%, transparent 55%),
-    radial-gradient(circle at top right, #d9c6ff 0%, transparent 55%),
-    radial-gradient(circle at bottom left, #ffe0d1 0%, transparent 55%),
-    radial-gradient(circle at bottom right, #ebdfff 0%, transparent 55%);
-
+  /* On force les couleurs : Pêche saturé -> Crème -> Violet saturé */
+  --v3-bg-gradient: linear-gradient(135deg, #ffc3a0 0%, #fdfbfb 40%, #e6d8fb 70%, #d8b4fe 100%);
   --v3-glass-bg: rgba(255, 255, 255, 0.65);
   --v3-glass-border: 1px solid rgba(255, 255, 255, 0.8);
   --v3-glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.08);
@@ -20,9 +14,7 @@
 *{box-sizing:border-box;margin:0;padding:0}
 body{
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-  background-color: var(--v3-bg-color);
-  background-image: var(--v3-bg-gradient);
-  background-attachment: fixed;
+  background: var(--v3-bg-gradient) fixed !important;
   min-height:100vh;
   display:flex;
   justify-content:center;
