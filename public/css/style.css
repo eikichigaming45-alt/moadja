@@ -145,11 +145,10 @@ input:focus { border-color: #7C3AED; background: #fff; }
 .icon-btn img { width: 38px; height: 38px; object-fit: cover; border-radius: 50%; }
 
 /* ===================== BARRE DE RECHERCHE (TOPBAR) ===================== */
-/* Checkbox invisible (placée avant .topbar dans le HTML), pilote l'ouverture (CSS-only, aucun JS) */
 .search-toggle-checkbox { display: none; }
 
 .topbar-search {
-  display: none; /* Masquée par défaut sur mobile */
+  display: none;
   align-items: center;
   gap: 10px;
   background: var(--glass-bg);
@@ -162,14 +161,14 @@ input:focus { border-color: #7C3AED; background: #fff; }
 }
 .topbar-search svg {
   color: #7C3AED;
-  flex-shrink: 0; /* Empêche l'icône de se compresser et de chevaucher le texte */
+  flex-shrink: 0;
 }
 .topbar-search input {
   border: none;
   background: transparent;
   outline: none;
-  flex: 1;       /* Prend l'espace restant proprement, au lieu de width:100% */
-  min-width: 0;  /* Corrige le bug Flexbox qui causait le chevauchement du "E" */
+  flex: 1;
+  min-width: 0;
   margin: 0;
   padding: 0;
   font-size: 14px;
@@ -177,7 +176,6 @@ input:focus { border-color: #7C3AED; background: #fff; }
 }
 .topbar-search input::placeholder { color: #9ca3af; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* Mobile : bulle ancrée à droite, sous le header ; apparition + poussée du contenu au clic sur la checkbox */
 @media (max-width: 1023px) {
   .topbar-search {
     position: absolute;
@@ -198,7 +196,6 @@ input:focus { border-color: #7C3AED; background: #fff; }
   }
 }
 
-/* Desktop : pilule toujours visible, centrée dans le header ; icône loupe mobile masquée */
 @media (min-width: 1024px) {
   .topbar-search {
     display: flex !important;
@@ -263,11 +260,11 @@ input:focus { border-color: #7C3AED; background: #fff; }
   cursor: pointer;
   padding: 6px 4px;
   transition: color .15s;
-  color: #9ca3af;
+  color: rgba(31, 41, 55, 0.6);
   -webkit-tap-highlight-color: transparent;
   position: relative;
 }
-.bn-item.active { color: #7C3AED; }
+.bn-item.active { color: rgb(167, 139, 250); }
 .bn-item.active::after {
   content: '';
   position: absolute;
@@ -275,7 +272,7 @@ input:focus { border-color: #7C3AED; background: #fff; }
   left: 20%;
   right: 20%;
   height: 3px;
-  background: #7C3AED;
+  background: rgb(167, 139, 250);
   border-radius: 3px 3px 0 0;
 }
 .bn-icon { font-size: 20px; line-height: 1; }
@@ -285,7 +282,7 @@ input:focus { border-color: #7C3AED; background: #fff; }
 .desktop-nav-container { margin-top: 16px; padding: 12px !important; }
 .desktop-nav .bn-item.active::after { display: none; }
 .desktop-nav .bn-item { border-radius: 12px; }
-.desktop-nav .bn-item.active { background: rgba(124, 58, 237, 0.1); }
+.desktop-nav .bn-item.active { background: rgba(167, 139, 250, 0.15); }
 .desktop-nav .bn-item:hover { background: rgba(0, 0, 0, 0.05); }
 
 /* ===================== GRID & WIDGETS ===================== */
