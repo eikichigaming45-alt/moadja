@@ -43,17 +43,15 @@ function _ouvrirModaleConseil(texte) {
         position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;
         display:flex;align-items:center;justify-content:center;padding:20px`;
     overlay.innerHTML = `
-        <div style="background:#fff;border-radius:16px;padding:24px;
-                    max-width:340px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.18)">
-            <div style="font-size:13px;font-weight:700;color:#7c3aed;margin-bottom:12px">
+        <div style="background:rgba(255,255,255,0.85);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.9);border-radius:24px;padding:24px;
+                    max-width:340px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.15)">
+            <div style="font-size:14px;font-weight:700;color:#7c3aed;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">
                 Conseil du jour
             </div>
             <p style="font-size:14px;color:#374151;line-height:1.7;margin:0 0 20px">
                 ${texte}
             </p>
-            <button style="width:100%;padding:11px;background:linear-gradient(135deg,#7c3aed,#6d28d9);
-                           color:#fff;border:none;border-radius:10px;font-size:14px;
-                           font-weight:600;cursor:pointer">
+            <button class="btn-save" style="width:100%;">
                 Fermer
             </button>
         </div>`;
@@ -134,7 +132,7 @@ async function _renderOwnerSection(owner, token) {
     const nom    = [owner.prenom, owner.nom].filter(Boolean).join(' ') || owner.username;
     const avatar = owner.photo
         ? `<img src="${owner.photo}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;flex-shrink:0" alt="">`
-        : `<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#6d28d9);
+        : `<div style="width:32px;height:32px;border-radius:50%;background:rgba(167,139,250,0.85);backdrop-filter:blur(8px);
                        color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;
                        justify-content:center;flex-shrink:0">
                ${(owner.prenom?.[0] || owner.username[0]).toUpperCase()}
@@ -149,12 +147,12 @@ async function _renderOwnerSection(owner, token) {
     const blocsAvecSeparateur = blocs.map((bloc, i) =>
         i === 0
             ? bloc
-            : `<div style="border-top:1px solid #ede9fe;margin-top:2px;padding-top:10px">${bloc}</div>`
+            : `<div style="border-top:1px solid rgba(167,139,250,0.2);margin-top:2px;padding-top:10px">${bloc}</div>`
     ).join('');
 
     return `
-        <div style="margin-bottom:16px;background:#faf5ff;border-radius:14px;
-                    padding:12px 14px;border:1px solid #ede9fe">
+        <div style="margin-bottom:16px;background:rgba(255,255,255,0.4);border-radius:14px;
+                    padding:12px 14px;border:1px solid rgba(255,255,255,0.6)">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
                 ${avatar}
                 <div style="font-size:14px;font-weight:700;color:#1f2937">${nom}</div>
@@ -195,7 +193,7 @@ async function _renderBlocCycle(ownerId, token) {
 
         if (ci.enRetard) {
             lignes.push(`
-                <div style="background:#fff7ed;border:1.5px solid #f59e0b;border-radius:10px;
+                <div style="background:rgba(255,247,237,0.8);border:1.5px solid rgba(245,158,11,0.5);border-radius:10px;
                             padding:10px 12px;margin-bottom:8px">
                     <div style="display:flex;align-items:center;gap:6px;font-size:13px;
                                 font-weight:700;color:#92400e;margin-bottom:4px">
@@ -220,7 +218,7 @@ async function _renderBlocCycle(ownerId, token) {
         if (ci.enRegles && ci.finRegles) {
             lignes.push(`
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;
-                            padding:5px 0;border-bottom:1px solid #f3f4f6">
+                            padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.05)">
                     <span style="font-size:12px;color:#6b7280;flex:1">Fin des règles estimée</span>
                     <span style="font-size:12px;font-weight:600;color:#ef4444;text-align:right">${ci.finRegles}</span>
                 </div>`);
@@ -229,14 +227,14 @@ async function _renderBlocCycle(ownerId, token) {
         if (!ci.enRetard && ci.labelOvulation) {
             lignes.push(`
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;
-                            padding:5px 0;border-bottom:1px solid #f3f4f6">
+                            padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.05)">
                     <span style="font-size:12px;color:#6b7280;flex:1">${ci.labelOvulation}</span>
                     <span style="font-size:12px;font-weight:600;color:#7c3aed;text-align:right">${ci.valeurOvulation}</span>
                 </div>`);
 
             lignes.push(`
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;
-                            padding:5px 0;border-bottom:1px solid #f3f4f6">
+                            padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.05)">
                     <span style="font-size:12px;color:#6b7280;flex:1;padding-right:8px">${ci.labelFenetre}</span>
                     <span style="font-size:12px;font-weight:600;color:#7c3aed;text-align:right;white-space:nowrap">${ci.valeurFenetre}</span>
                 </div>`);
@@ -258,14 +256,14 @@ async function _renderBlocCycle(ownerId, token) {
         if (!ci.enRetard) {
             if (ci.enFenetre) {
                 lignes.push(`
-                    <div style="margin-top:8px;padding:6px 10px;background:#fdf4ff;border-radius:8px;
+                    <div style="margin-top:8px;padding:6px 10px;background:rgba(253,244,255,0.8);border-radius:8px;
                                 font-size:12px;color:#7c3aed;font-weight:600;text-align:center">
                         🌸 Fenêtre fertile en cours
                     </div>`);
             }
             if (ci.estOvulation) {
                 lignes.push(`
-                    <div style="margin-top:8px;padding:6px 10px;background:#fdf4ff;border-radius:8px;
+                    <div style="margin-top:8px;padding:6px 10px;background:rgba(253,244,255,0.8);border-radius:8px;
                                 font-size:12px;color:#7c3aed;font-weight:600;text-align:center">
                         🌟 Jour d'ovulation
                     </div>`);
@@ -273,8 +271,8 @@ async function _renderBlocCycle(ownerId, token) {
         }
 
         carteInfos = `
-            <div style="background:#fff;border-radius:10px;padding:10px 12px;
-                        border:1px solid #ede9fe;margin-bottom:8px">
+            <div style="background:rgba(255,255,255,0.6);border-radius:10px;padding:10px 12px;
+                        border:1px solid rgba(255,255,255,0.8);margin-bottom:8px">
                 ${lignes.join('')}
             </div>`;
     }
@@ -284,23 +282,19 @@ async function _renderBlocCycle(ownerId, token) {
             <div style="margin-bottom:10px">
                 ${titre}
                 ${carteInfos}
-                <div style="background:#fff;border-radius:10px;padding:10px 12px;
-                            border:1px solid #ede9fe;font-size:13px;color:#6b7280;margin-bottom:8px">
+                <div style="background:rgba(255,255,255,0.6);border-radius:10px;padding:10px 12px;
+                            border:1px solid rgba(255,255,255,0.8);font-size:13px;color:#6b7280;margin-bottom:8px">
                     Elle n'a pas encore renseigné son humeur aujourd'hui.
                 </div>
-                <button data-owner-id="${ownerId}"
-                    data-action="envoyer-coucou"
-                    style="width:100%;padding:10px;background:linear-gradient(135deg,#7c3aed,#6d28d9);
-                           color:#fff;border:none;border-radius:10px;font-size:13px;
-                           font-weight:600;cursor:pointer">
+                <button class="btn-save" data-owner-id="${ownerId}" data-action="envoyer-coucou" style="width:100%; margin-top:4px;">
                     Envoyer un coucou 💕
                 </button>
             </div>`;
     }
 
     const moodBadges = (d.moods || []).map(m =>
-        `<span style="background:#ede9fe;color:#7c3aed;border-radius:20px;
-                      padding:3px 8px;font-size:11px;font-weight:600">${m}</span>`
+        `<span style="background:rgba(237,233,254,0.8);color:#7c3aed;border-radius:20px;
+                      padding:3px 8px;font-size:11px;font-weight:600;border:1px solid rgba(167,139,250,0.2)">${m}</span>`
     ).join('');
 
     let conseilBloc = '';
@@ -319,7 +313,7 @@ async function _renderBlocCycle(ownerId, token) {
             : court;
 
         conseilBloc = `
-            <div style="margin-top:8px;padding:10px 12px;background:#fdf4ff;border-radius:10px;
+            <div style="margin-top:8px;padding:10px 12px;background:rgba(253,244,255,0.6);border-radius:10px;
                         border-left:3px solid #7c3aed;font-size:13px;color:#374151;line-height:1.6;
                         word-break:break-word;overflow-wrap:anywhere">
                 ${avecLien}
@@ -330,7 +324,7 @@ async function _renderBlocCycle(ownerId, token) {
         <div style="margin-bottom:10px">
             ${titre}
             ${carteInfos}
-            <div style="background:#fff;border-radius:10px;padding:12px;border:1px solid #ede9fe">
+            <div style="background:rgba(255,255,255,0.6);border-radius:10px;padding:12px;border:1px solid rgba(255,255,255,0.8)">
                 <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">
                     ${moodBadges}
                 </div>
@@ -422,8 +416,8 @@ async function _renderBlocAgenda(ownerId, token) {
             const infoLieu = e.praticien || e.lieu || null;
 
             return `
-                <div style="padding:8px 10px;background:${couleur}22;border-left:3px solid ${couleur};
-                            border-radius:8px;margin-bottom:4px;font-size:13px">
+                <div style="padding:8px 10px;background:${couleur}15;border-left:3px solid ${couleur};
+                            border-radius:8px;margin-bottom:4px;font-size:13px;backdrop-filter:blur(4px)">
                     <div style="font-weight:600;color:#1f2937">${icone} ${e.titre}</div>
                     <div style="color:#6b7280;font-size:12px">${sousCat}</div>
                     ${hDebut
@@ -434,8 +428,7 @@ async function _renderBlocAgenda(ownerId, token) {
                         : ''}
                 </div>`;
         }).join('');
-
-        return `
+                    return `
             <div style="margin-bottom:8px">
                 <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;
                             letter-spacing:.4px;margin-bottom:4px">${label}</div>
@@ -465,8 +458,8 @@ async function _renderBlocTaches(ownerId, token) {
             </div>`;
     }
     const items = d.data.map(t => `
-        <div style="padding:8px 10px;background:#fff;border-radius:8px;
-                    margin-bottom:4px;border:1px solid #f3f4f6;
+        <div style="padding:8px 10px;background:rgba(255,255,255,0.6);border-radius:8px;
+                    margin-bottom:4px;border:1px solid rgba(255,255,255,0.8);
                     display:flex;align-items:center;gap:8px;font-size:13px">
             <span style="color:${t.faite ? '#10b981' : '#9ca3af'};font-size:16px">
                 ${t.faite ? '✅' : '⬜'}
@@ -502,11 +495,11 @@ document.addEventListener('click', async e => {
         const d = await r.json();
         if (d.success) {
             btn.textContent      = 'Coucou envoyé 💕';
-            btn.style.background = '#10b981';
+            btn.style.background = 'rgba(16, 185, 129, 0.85)'; // Vert emeraude glass
             setTimeout(() => {
                 btn.disabled         = false;
                 btn.textContent      = 'Envoyer un coucou 💕';
-                btn.style.background = 'linear-gradient(135deg,#7c3aed,#6d28d9)';
+                btn.style.background = ''; // Restaure le style .btn-save (violet)
             }, 3000);
         } else {
             btn.disabled    = false;
@@ -529,12 +522,34 @@ async function _socialOnglet(tab) {
         await _injecterProfilPublicToggles();
     }
 
-    ['miens', 'nouveau'].forEach(t => {
-        const btn = document.getElementById(`social-tab-${t}`);
-        if (!btn) return;
-        btn.style.background = t === tab ? '#7c3aed' : '#f5f3ff';
-        btn.style.color      = t === tab ? '#fff'    : '#7c3aed';
-    });
+    // Bascule esthétique glassmorphism V3
+    const btnMiens = document.getElementById('social-tab-miens');
+    const btnNouv = document.getElementById('social-tab-nouveau');
+    
+    if (btnMiens && btnNouv) {
+        if (tab === 'miens') {
+            btnMiens.style.background = 'rgba(167,139,250,0.85)';
+            btnMiens.style.color = '#fff';
+            btnMiens.style.boxShadow = '0 8px 24px rgba(167,139,250,0.25)';
+            btnMiens.style.backdropFilter = 'blur(8px)';
+            
+            btnNouv.style.background = 'transparent';
+            btnNouv.style.color = '#6b7280';
+            btnNouv.style.boxShadow = 'none';
+            btnNouv.style.backdropFilter = 'none';
+        } else {
+            btnNouv.style.background = 'rgba(167,139,250,0.85)';
+            btnNouv.style.color = '#fff';
+            btnNouv.style.boxShadow = '0 8px 24px rgba(167,139,250,0.25)';
+            btnNouv.style.backdropFilter = 'blur(8px)';
+            
+            btnMiens.style.background = 'transparent';
+            btnMiens.style.color = '#6b7280';
+            btnMiens.style.boxShadow = 'none';
+            btnMiens.style.backdropFilter = 'none';
+        }
+    }
+
     if (tab === 'miens')   await _renderOngletMiens();
     if (tab === 'nouveau') await _renderOngletNouveau();
 }
@@ -607,7 +622,7 @@ function _htmlBlocViewer(v, typesDisponibles) {
     const nom    = [v.prenom, v.nom].filter(Boolean).join(' ') || v.username;
     const avatar = v.photo
         ? `<img src="${v.photo}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0" alt="">`
-        : `<div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#6d28d9);
+        : `<div style="width:34px;height:34px;border-radius:50%;background:rgba(167,139,250,0.85);
                        color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;
                        justify-content:center;flex-shrink:0">
                ${(v.prenom?.[0] || v.username[0]).toUpperCase()}
@@ -621,8 +636,8 @@ function _htmlBlocViewer(v, typesDisponibles) {
 
         return `
         <div style="display:flex;align-items:center;justify-content:space-between;
-                    padding:8px 10px;background:#fff;border-radius:8px;
-                    border:1px solid #f3f4f6;margin-bottom:4px;min-height:40px">
+                    padding:8px 10px;background:rgba(255,255,255,0.6);border-radius:8px;
+                    border:1px solid rgba(255,255,255,0.8);margin-bottom:4px;min-height:40px">
             <span style="font-size:13px;color:#374151;flex:1">${_SHARE_LABELS[l.type]}</span>
             <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
                 <label style="position:relative;display:inline-flex;align-items:center;
@@ -641,12 +656,10 @@ function _htmlBlocViewer(v, typesDisponibles) {
                                      transition:left .2s;display:block"></span>
                     </span>
                 </label>
-                <div style="width:65px;display:flex;justify-content:flex-end">
+                <div style="width:80px;display:flex;justify-content:flex-end">
                     ${existe
-                        ? `<button data-action="supprimer-partage"
-                                   data-del-id="${shareId}"
-                                   style="background:#fee2e2;color:#ef4444;border:none;border-radius:6px;
-                                          padding:4px 8px;font-size:11px;font-weight:600;cursor:pointer">
+                        ? `<button class="btn-delete" data-action="supprimer-partage"
+                                   data-del-id="${shareId}" style="width:auto; padding:4px 8px; font-size:11px;">
                                Supprimer
                            </button>`
                         : ''
@@ -657,7 +670,7 @@ function _htmlBlocViewer(v, typesDisponibles) {
     }).join('');
 
     return `
-        <div style="background:#faf5ff;border-radius:12px;padding:12px 14px;border:1px solid #ede9fe">
+        <div style="background:rgba(255,255,255,0.3);border-radius:12px;padding:12px 14px;border:1px solid rgba(255,255,255,0.5)">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
                 ${avatar}
                 <div style="font-size:14px;font-weight:700;color:#1f2937">${nom}</div>
@@ -718,8 +731,8 @@ function _supprimerPartage(id) {
         position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;
         display:flex;align-items:center;justify-content:center;padding:20px`;
     overlay.innerHTML = `
-        <div style="background:#fff;border-radius:16px;padding:24px;
-                    max-width:320px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,.18)">
+        <div style="background:rgba(255,255,255,0.85);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.9);border-radius:24px;padding:24px;
+                    max-width:320px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.15)">
             <div style="font-size:15px;font-weight:700;color:#1f2937;margin-bottom:8px">
                 Supprimer ce partage ?
             </div>
@@ -727,14 +740,10 @@ function _supprimerPartage(id) {
                 La personne ne pourra plus voir ce contenu.
             </p>
             <div style="display:flex;gap:10px">
-                <button data-action="confirmer-supprimer" data-id="${id}"
-                    style="flex:1;padding:11px;background:#ef4444;color:#fff;border:none;
-                           border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">
+                <button class="btn-delete" data-action="confirmer-supprimer" data-id="${id}" style="flex:1;">
                     Supprimer
                 </button>
-                <button data-action="annuler-supprimer"
-                    style="flex:1;padding:11px;background:#f3f4f6;color:#374151;border:none;
-                           border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">
+                <button class="btn-cancel" data-action="annuler-supprimer" style="flex:1;">
                     Annuler
                 </button>
             </div>
@@ -771,12 +780,12 @@ async function _renderOngletNouveau() {
                 type="text"
                 placeholder="Rechercher par nom d'utilisateur…"
                 style="width:100%;box-sizing:border-box;padding:10px 12px;
-                       border:1px solid #ede9fe;border-radius:10px;font-size:14px;
-                       outline:none;background:#faf5ff;color:#1f2937">
+                       border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;
+                       outline:none;background:rgba(255,255,255,0.8);color:#1f2937">
             <div id="social-search-results" style="margin-top:8px"></div>
         </div>
         <div id="social-nouveau-form" style="display:none">
-            <div style="background:#faf5ff;border-radius:12px;padding:14px;border:1px solid #ede9fe">
+            <div style="background:rgba(255,255,255,0.4);border-radius:12px;padding:14px;border:1px solid rgba(255,255,255,0.6)">
                 <div id="social-user-selectionne" style="margin-bottom:14px"></div>
                 <div style="font-size:12px;font-weight:700;color:#6b7280;
                             text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">
@@ -785,11 +794,7 @@ async function _renderOngletNouveau() {
                 <div id="social-types-list" style="display:flex;flex-direction:column;gap:8px"></div>
                 <div id="social-share-msg"
                     style="font-size:12px;min-height:16px;margin-top:10px;text-align:center"></div>
-                <button data-action="envoyer-partages"
-                    style="width:100%;margin-top:14px;padding:12px;
-                           background:linear-gradient(135deg,#7c3aed,#6d28d9);
-                           color:#fff;border:none;border-radius:10px;
-                           font-size:14px;font-weight:600;cursor:pointer">
+                <button class="btn-save" data-action="envoyer-partages" style="width:100%;margin-top:14px;">
                     Partager
                 </button>
             </div>
@@ -831,7 +836,7 @@ async function _socialRechercherUser(q) {
             const nom    = [u.prenom, u.nom].filter(Boolean).join(' ') || u.username;
             const avatar = u.photo
                 ? `<img src="${u.photo}" style="width:30px;height:30px;border-radius:50%;object-fit:cover" alt="">`
-                : `<div style="width:30px;height:30px;border-radius:50%;background:#7c3aed;
+                : `<div style="width:30px;height:30px;border-radius:50%;background:rgba(167,139,250,0.85);
                                color:#fff;font-size:12px;font-weight:700;display:flex;
                                align-items:center;justify-content:center">
                        ${(u.prenom?.[0] || u.username[0]).toUpperCase()}
@@ -844,7 +849,7 @@ async function _socialRechercherUser(q) {
                      data-nom="${u.nom || ''}"
                      data-photo="${u.photo || ''}"
                      style="display:flex;align-items:center;gap:10px;padding:10px 12px;
-                            background:#fff;border-radius:10px;border:1px solid #ede9fe;
+                            background:rgba(255,255,255,0.7);border-radius:10px;border:1px solid rgba(255,255,255,0.9);
                             margin-bottom:6px;cursor:pointer">
                     ${avatar}
                     <div>
@@ -880,19 +885,19 @@ async function _socialSelectionnerUser(el) {
     const nomAffiche = [prenom, nom].filter(Boolean).join(' ') || username;
     const avatar     = photo
         ? `<img src="${photo}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0" alt="">`
-        : `<div style="width:36px;height:36px;border-radius:50%;background:#7c3aed;
+        : `<div style="width:36px;height:36px;border-radius:50%;background:rgba(167,139,250,0.85);
                        color:#fff;font-size:14px;font-weight:700;display:flex;
                        align-items:center;justify-content:center;flex-shrink:0">
                ${(prenom?.[0] || username[0]).toUpperCase()}
            </div>`;
 
     document.getElementById('social-user-selectionne').innerHTML = `
-        <div style="display:flex;align-items:center;gap:10px;background:#fff;
-                    border-radius:10px;padding:10px 12px;border:1px solid #ede9fe">
+        <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.7);
+                    border-radius:10px;padding:10px 12px;border:1px solid rgba(255,255,255,0.9)">
             ${avatar}
             <div>
                 <div style="font-size:14px;font-weight:700;color:#1f2937">${nomAffiche}</div>
-                <div style="font-size:12px;color:#9ca3af">@${username}</div>
+                <div style"font-size:12px;color:#9ca3af">@${username}</div>
             </div>
             <button data-action="annuler-selection"
                 style="margin-left:auto;background:none;border:none;
@@ -924,8 +929,8 @@ async function _socialSelectionnerUser(el) {
 
     document.getElementById('social-types-list').innerHTML = typesDisponibles.map(l => `
         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;
-                      background:#fff;border-radius:8px;padding:10px 12px;
-                      border:1px solid ${dejaPartages.includes(l.type) ? '#a78bfa' : '#f3f4f6'}">
+                      background:rgba(255,255,255,0.7);border-radius:8px;padding:10px 12px;
+                      border:1px solid ${dejaPartages.includes(l.type) ? 'rgba(167,139,250,0.8)' : 'rgba(255,255,255,0.9)'}">
             <input type="checkbox"
                    value="${l.type}"
                    id="share-type-${l.type}"
@@ -1183,7 +1188,7 @@ function _renderNotifs() {
                 case 'share_request':
                     switchTab('profil');
                     break;
-                                case 'like':
+                case 'like':
                 case 'comment':
                 case 'mention_post':
                 case 'mention_comment':
@@ -1215,7 +1220,7 @@ function _htmlNotif(n) {
         ? `<img src="${n.sender_photo}"
                style="width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0" alt="">`
         : `<div style="width:44px;height:44px;border-radius:50%;
-                       background:linear-gradient(135deg,#7c3aed,#6d28d9);
+                       background:rgba(167,139,250,0.85);
                        color:#fff;font-size:16px;font-weight:700;
                        display:flex;align-items:center;justify-content:center;flex-shrink:0">
                ${(prenom?.[0] || '?').toUpperCase()}
@@ -1228,14 +1233,14 @@ function _htmlNotif(n) {
              style="
             display:flex;align-items:center;gap:12px;
             padding:10px 16px;cursor:pointer;
-            background:${nonLu ? '#f5f3ff' : '#fff'};
-            border-bottom:1px solid #f3f4f6;
+            background:${nonLu ? 'rgba(167,139,250,0.08)' : 'transparent'};
+            border-bottom:1px solid rgba(0,0,0,0.05);
             transition:background .15s;
-        " onmouseover="this.style.background='${nonLu ? '#ede9fe' : '#f9fafb'}'"
-           onmouseout="this.style.background='${nonLu ? '#f5f3ff' : '#fff'}'">
+        " onmouseover="this.style.background='${nonLu ? 'rgba(167,139,250,0.12)' : 'rgba(0,0,0,0.02)'}'"
+           onmouseout="this.style.background='${nonLu ? 'rgba(167,139,250,0.08)' : 'transparent'}'">
             <div style="position:relative;flex-shrink:0">
                 ${avatar}
-                                <div style="position:absolute;bottom:-2px;right:-2px;
+                <div style="position:absolute;bottom:-2px;right:-2px;
                             width:20px;height:20px;border-radius:50%;
                             background:#fff;border:2px solid #fff;
                             display:flex;align-items:center;justify-content:center;
@@ -1301,3 +1306,4 @@ async function toutMarquerVu() {
 }
 
 setInterval(chargerBadgeNotifs, 60000);
+
