@@ -255,13 +255,13 @@ function renderPost(p) {
             <div class="feed-contenu-text" id="post-contenu-${p.id}" style="display:none">${escapeHtml(p.contenu || '')}</div>
             <div class="feed-lieu-raw" id="post-lieu-raw-${p.id}" style="display:none">${escapeHtml(p.lieu || '')}</div>
             <div class="feed-lieulat-raw" id="post-lieulat-raw-${p.id}" style="display:none">${p.lieu_lat || ''}</div>
-                        <div class="feed-lieulon-raw" id="post-lieulon-raw-${p.id}" style="display:none">${p.lieu_lon || ''}</div>
+            <div class="feed-lieulon-raw" id="post-lieulon-raw-${p.id}" style="display:none">${p.lieu_lon || ''}</div>
             ${p.contenu ? `<div class="feed-contenu">${renderContenuAvecMentions(p.contenu, p.mentions_data)}</div>` : ''}
             ${p.photo_url ? `
             <div class="feed-photo-wrap" id="photo-wrap-${p.id}" data-post-id="${p.id}" data-photo-url="${escapeHtml(p.photo_url)}" data-ma-resonance="${escapeHtml(p.ma_resonance || '')}">
                 <img src="${p.photo_url}" class="feed-photo" alt="">
             </div>` : ''}
-            <div class="feed-footer">
+                        <div class="feed-footer">
                 <div class="feed-resonance-wrap" data-post-id="${p.id}">${_renderResonanceBouton(p.id, p.ma_resonance, p.resonances_stats)}</div>
                 <button class="feed-comment-btn" onclick="toggleCommentaires(${p.id})"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span>${p.nb_comments}</span></button>
                 <button class="feed-share-btn" onclick="partagerPost(${p.id})"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
@@ -409,14 +409,14 @@ async function rechercherLieuGeoloc(inputElId, latId, lonId, wrapId) {
             }
         }
 
-                drop.innerHTML = itemsHTML;
+        drop.innerHTML = itemsHTML;
         _bindLocItems(drop, inputElId, latId, lonId);
 
         document.addEventListener('click', function _closeLoc(e) {
             if (!wrap.contains(e.target)) { drop.style.display = 'none'; document.removeEventListener('click', _closeLoc); }
         });
 
-        } catch (err) {
+    } catch (err) {
         drop.innerHTML = '<div class="loc-item" style="text-align:center;color:#ef4444;">Erreur réseau OSM</div>';
         setTimeout(() => drop.style.display = 'none', 3000);
     }
@@ -509,7 +509,7 @@ async function _rechercherLieuTexte(q, inputElId, latId, lonId, wrapId) {
             if (!wrap.contains(e.target)) { drop.style.display = 'none'; document.removeEventListener('click', _closeLocTexte); }
         });
 
-        } catch (err) {
+    } catch (err) {
         drop.innerHTML = '<div class="loc-item" style="text-align:center;color:#ef4444;">Erreur réseau</div>';
     }
 }
@@ -544,7 +544,6 @@ function _ouvrirArcInline(postId, btn) {
     document.querySelectorAll('.resonance-picker').forEach(a => a.remove());
     const wrap = btn.closest('.feed-resonance-wrap');
     
-    // Création de la nouvelle pilule propre
     picker = document.createElement('div'); 
     picker.id = `resonance-picker-${postId}`; 
     picker.className = 'resonance-picker';
@@ -582,12 +581,6 @@ async function voirLikers(postId, e) {
         document.getElementById('overlay').classList.add('on');
     } catch {}
 }
-                    const res = RESONANCES.find(r => r.type === l.type);
-            return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f3f4f6">${av}<div style="flex:1"><div style="font-size:14px;font-weight:700;color:#111">${escapeHtml(l.prenom || '')} ${escapeHtml(l.nom || '')}</div><div style="font-size:12px;color:#9ca3af">@${escapeHtml(l.username)}</div></div>${res ? `<span style="font-size:20px">${res.icone}</span>` : ''}</div>`;
-        }).join('') : '<p style="text-align:center;color:#9ca3af;padding:20px">Aucune résonance pour l\'instant.</p>';
-        document.getElementById('overlay').classList.add('on');
-    } catch {}
-}
 
 // ── ÉDITER POST (LOC3 + LOC1) ─────────────────────────────────
 function editerPost(postId) {
@@ -608,7 +601,7 @@ function editerPost(postId) {
             <input type="hidden" id="edit-post-lat" value="${lieuLatActuel}">
             <input type="hidden" id="edit-post-lon" value="${lieuLonActuel}">
         </div>
-        ${photoActuelle ? `<div id="edit-photo-actuelle" style="margin-top:12px"><div style="font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;margin-bottom:6px">Photo actuelle</div><img src="${photoActuelle}" style="width:100%;border-radius:10px;max-height:200px;object-fit:contain;background:#f3f4f6"><button id="btn-suppr-photo" onclick="marquerSuppressionPhoto()" style="margin-top:8px;padding:7px 14px;background:#fee2e2;color:#ef4444;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Supprimer la photo</button></div>` : ''}
+                ${photoActuelle ? `<div id="edit-photo-actuelle" style="margin-top:12px"><div style="font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;margin-bottom:6px">Photo actuelle</div><img src="${photoActuelle}" style="width:100%;border-radius:10px;max-height:200px;object-fit:contain;background:#f3f4f6"><button id="btn-suppr-photo" onclick="marquerSuppressionPhoto()" style="margin-top:8px;padding:7px 14px;background:#fee2e2;color:#ef4444;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Supprimer la photo</button></div>` : ''}
         <div style="margin-top:12px"><label style="font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;display:block;margin-bottom:6px">${photoActuelle ? 'Remplacer la photo' : 'Ajouter une photo (optionnelle)'}</label><input type="file" id="edit-post-photo" accept="image/*" style="font-size:13px;color:#374151"></div>
         <div id="edit-post-preview" style="margin-top:10px"></div>
         <button onclick="sauvegarderEditionPost(${postId})" style="width:100%;margin-top:14px;padding:13px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:white;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer">Sauvegarder</button>
