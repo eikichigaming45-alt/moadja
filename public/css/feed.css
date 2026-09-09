@@ -573,19 +573,28 @@
 }
 
 /* ===================== @MENTION TAG ===================== */
+/* Halo retiré, couleur harmonisée avec Tous/+Post (v1.71.22) */
 .mention-tag {
     display: inline;
-    color: #7c3aed;
+    color: rgb(167, 139, 250);
     font-weight: 700;
     cursor: pointer;
-    border-radius: 6px;
-    padding: 2px 4px;
-    background: rgba(124,58,237,0.1);
-    transition: background .15s, color .15s;
 }
 
 .mention-tag:hover {
-    background: rgba(124,58,237,0.2);
+    text-decoration: underline;
+}
+
+/* ===================== #HASHTAG TAG ===================== */
+/* Nouvelle classe dédiée, même couleur uniforme, sans halo (v1.71.22) */
+.hashtag-tag {
+    color: rgb(167, 139, 250);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.hashtag-tag:hover {
+    text-decoration: underline;
 }
 
 /* ===================== @MENTION DROPDOWN ===================== */
@@ -631,20 +640,17 @@
 }
 
 /* ===================== BADGE LIEU (HEADER) ===================== */
+/* Halo retiré, couleur harmonisée avec Tous/+Post (v1.71.22) */
 .feed-lieu-badge {
-    color: #7c3aed;
+    color: rgb(167, 139, 250);
     font-weight: 600;
     cursor: pointer;
-    transition: color 0.2s, background 0.2s;
-    padding: 2px 8px;
-    border-radius: 8px;
-    background: rgba(124,58,237,0.1);
     display: inline-block;
     margin-left: 4px;
 }
 
 .feed-lieu-badge:hover {
-    background: rgba(124,58,237,0.2);
+    text-decoration: underline;
 }
 
 /* ===================== DROPDOWN GEOLOC (suggestions lieu) ===================== */
