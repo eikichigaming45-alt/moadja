@@ -133,7 +133,7 @@ async function chargerProfilHeader() {
             btn.innerHTML        = trigramme;
             btn.style.fontSize   = '11px';
             btn.style.fontWeight = '700';
-            btn.style.background = '#7c3aed';
+            btn.style.background = 'rgb(167, 139, 250)';
             btn.style.color      = '#fff';
         } else {
             btn.innerHTML        = '👤';
@@ -196,7 +196,7 @@ async function chargerProfilHeader() {
                 if (!tri) {
                     tri = document.createElement('div');
                     tri.className = 'im-trigramme';
-                    tri.style.cssText = 'width:100%;height:100%;border-radius:50%;background:#7C3AED;color:#fff;font-size:32px;font-weight:700;display:flex;align-items:center;justify-content:center;border:3px solid #fff;';
+                    tri.style.cssText = 'width:100%;height:100%;border-radius:50%;background:rgb(167, 139, 250);color:#fff;font-size:32px;font-weight:700;display:flex;align-items:center;justify-content:center;border:3px solid #fff;';
                     imAvatarImg.parentElement.appendChild(tri);
                 }
                 tri.textContent = trigramme || '👤';
@@ -346,7 +346,7 @@ async function validerCrop() {
                     const newImg         = document.createElement('img');
                     newImg.id            = 'profil-photo-preview';
                     newImg.src           = urlPhoto;
-                    newImg.style.cssText = 'width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid #4f46e5;cursor:pointer;box-shadow:0 4px 12px rgba(79,70,229,0.3)';
+                    newImg.style.cssText = 'width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid rgb(167, 139, 250);cursor:pointer;box-shadow:0 4px 12px rgba(167, 139, 250, 0.3)';
                     newImg.onclick       = () => document.getElementById('photo-input').click();
                     zone.replaceWith(newImg);
                     preview = newImg;
@@ -357,8 +357,9 @@ async function validerCrop() {
             if (!btnSuppr && preview) {
                 btnSuppr               = document.createElement('button');
                 btnSuppr.id            = 'btn-supprimer-photo';
+                btnSuppr.className     = 'btn-delete';
                 btnSuppr.onclick       = supprimerPhoto;
-                btnSuppr.style.cssText = 'margin-top:8px;background:#fee2e2;color:#ef4444;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer';
+                btnSuppr.style.cssText = 'margin-top:8px;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer';
                 btnSuppr.innerHTML     = '🗑️ Supprimer la photo';
                 preview.insertAdjacentElement('afterend', btnSuppr);
             }
@@ -424,7 +425,7 @@ async function _confirmerSupprimerPhoto() {
             if (preview) {
                 const div         = document.createElement('div');
                 div.className     = 'profil-widget-initiales';
-                div.style.cssText = 'width:90px;height:90px;font-size:24px;cursor:pointer;box-shadow:0 4px 12px rgba(79,70,229,0.3)';
+                div.style.cssText = 'width:90px;height:90px;font-size:24px;cursor:pointer;box-shadow:0 4px 12px rgba(167, 139, 250, 0.3)';
                 div.textContent   = trigramme || '👤';
                 div.onclick       = () => document.getElementById('photo-input').click();
                 preview.replaceWith(div);
@@ -464,7 +465,7 @@ async function sauvegarderProfil() {
         heure_naissance : document.getElementById('p-heure-naissance')?.value  || null,
         lieu_naissance  : document.getElementById('p-lieu-naissance')?.value   || null,
         naissance_lat   : document.getElementById('p-naissance-lat')?.value    ? parseFloat(document.getElementById('p-naissance-lat').value)  : null,
-                naissance_lon   : document.getElementById('p-naissance-lon')?.value    ? parseFloat(document.getElementById('p-naissance-lon').value)  : null,
+        naissance_lon   : document.getElementById('p-naissance-lon')?.value    ? parseFloat(document.getElementById('p-naissance-lon').value)  : null,
         email           : document.getElementById('p-email')?.value            || '',
         telephone       : document.getElementById('p-tel')?.value              || '',
         profession      : document.getElementById('p-prof')?.value             || '',
@@ -554,7 +555,7 @@ function _injecterChampsAllergies(p) {
     const allergiesVal       = Array.isArray(p?.allergies)       ? p.allergies.join(', ')       : '';
     const aliments_exclusVal = Array.isArray(p?.aliments_exclus) ? p.aliments_exclus.join(', ') : '';
 
-        const bloc = document.createElement('div');
+    const bloc = document.createElement('div');
     bloc.innerHTML = `
         <div class="form-group">
             <label for="p-allergies">Allergies <span style="font-size:11px;color:#9ca3af">(séparées par des virgules)</span></label>
@@ -566,7 +567,7 @@ function _injecterChampsAllergies(p) {
         </div>
     `;
 
-        const btnSave = container.querySelector('button[onclick="sauvegarderSante()"]');
+    const btnSave = container.querySelector('button[onclick="sauvegarderSante()"]');
     if (btnSave) {
         btnSave.parentNode.insertBefore(bloc, btnSave);
     } else {
@@ -611,7 +612,7 @@ async function afficherSectionWidgets() {
                         ${actif ? 'checked' : ''}
                         style="opacity:0;width:0;height:0;position:absolute">
                     <span style="position:absolute;inset:0;border-radius:22px;cursor:pointer;
-                                 background:${actif ? '#7c3aed' : '#d1d5db'};transition:background .2s">
+                                 background:${actif ? 'rgb(167, 139, 250)' : '#d1d5db'};transition:background .2s">
                         <span style="position:absolute;top:3px;left:${actif ? '19px' : '3px'};
                                      width:16px;height:16px;border-radius:50%;background:#fff;
                                      transition:left .2s;display:block"></span>
@@ -742,10 +743,8 @@ async function _injecterProfilPublicToggles() {
         <div id="profil-public-toggles-liste">
             <p style="color:#9ca3af;font-size:13px">Chargement...</p>
         </div>
-        <button id="btn-sauver-profil-public" onclick="_sauvegarderProfilPublicToggles()"
-            style="width:100%;padding:11px;background:linear-gradient(135deg,#7c3aed,#6d28d9);
-                   color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;
-                   cursor:pointer;margin-top:12px">
+        <button id="btn-sauver-profil-public" class="btn-save" onclick="_sauvegarderProfilPublicToggles()"
+            style="width:100%;margin-top:12px">
             💾 Sauvegarder
         </button>
         <div id="profil-public-toggles-msg" style="text-align:center;margin-top:8px;font-size:13px;min-height:16px"></div>
@@ -773,7 +772,7 @@ async function _injecterProfilPublicToggles() {
                         ${actif ? 'checked' : ''}
                         style="opacity:0;width:0;height:0;position:absolute">
                     <span style="position:absolute;inset:0;border-radius:22px;cursor:pointer;
-                                 background:${actif ? '#7c3aed' : '#d1d5db'};transition:background .2s">
+                                 background:${actif ? 'rgb(167, 139, 250)' : '#d1d5db'};transition:background .2s">
                         <span style="position:absolute;top:3px;left:${actif ? '19px' : '3px'};
                                      width:16px;height:16px;border-radius:50%;background:#fff;
                                      transition:left .2s;display:block"></span>
@@ -791,7 +790,7 @@ document.addEventListener('change', e => {
     if (!cb) return;
     const track = cb.nextElementSibling;
     const thumb = track?.querySelector('span');
-    if (track) track.style.background = cb.checked ? '#7c3aed' : '#d1d5db';
+    if (track) track.style.background = cb.checked ? 'rgb(167, 139, 250)' : '#d1d5db';
     if (thumb) thumb.style.left = cb.checked ? '19px' : '3px';
 });
 
@@ -838,11 +837,11 @@ async function _socialOnglet(onglet) {
     if (!zone) return;
 
     if (onglet === 'miens') {
-        btnMiens.style.background = '#7c3aed'; btnMiens.style.color = '#fff';
-        btnNouv.style.background  = '#f5f3ff'; btnNouv.style.color  = '#7c3aed';
+        btnMiens.style.background = 'rgb(167, 139, 250)'; btnMiens.style.color = '#fff';
+        btnNouv.style.background  = '#f5f3ff'; btnNouv.style.color  = 'rgb(167, 139, 250)';
     } else {
-        btnNouv.style.background  = '#7c3aed'; btnNouv.style.color  = '#fff';
-        btnMiens.style.background = '#f5f3ff'; btnMiens.style.color = '#7c3aed';
+        btnNouv.style.background  = 'rgb(167, 139, 250)'; btnNouv.style.color  = '#fff';
+        btnMiens.style.background = '#f5f3ff'; btnMiens.style.color = 'rgb(167, 139, 250)';
     }
 
     zone.innerHTML = '<p style="color:#9ca3af;font-size:13px">Chargement...</p>';
@@ -861,3 +860,27 @@ async function _socialOnglet(onglet) {
 document.addEventListener('DOMContentLoaded', () => {
     chargerProfilHeader();
 });
+/* ===================== CROP PHOTO ===================== */
+.crop-container { width: 100%; max-height: 300px; overflow: hidden; border-radius: 10px; margin-bottom: 12px; background: #000; }
+.crop-container img { max-width: 100%; display: block; }
+.crop-actions { display: flex; gap: 8px; margin-bottom: 12px; }
+.crop-actions button { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
+.btn-crop-ok { background: rgb(167, 139, 250); color: #fff; }
+.btn-crop-ok:hover { opacity: 0.9; }
+.btn-crop-cancel { background: #f3f4f6; color: #666; }
+.btn-crop-cancel:hover { background: #e5e7eb; }
+
+/* ===================== WIDGET PROFIL (Mobile) ===================== */
+.profil-widget { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; width: 100%; }
+.profil-widget-photo { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; border: 3px solid rgb(167, 139, 250); flex-shrink: 0; }
+.profil-widget-initiales { width: 64px; height: 64px; border-radius: 50%; background: rgb(167, 139, 250); color: #fff; font-size: 22px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.profil-widget-nom { font-size: 14px; font-weight: 700; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+.profil-widget-info { font-size: 12px; color: #6b7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+.profil-widget-bio { font-size: 12px; color: #9ca3af; line-height: 1.4; max-height: 100%; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.profil-widget-btn { padding: 7px 18px; background: rgb(167, 139, 250); color: #fff; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: background .2s; margin-top: 4px; }
+.profil-widget-btn:hover { opacity: 0.9; }
+
+/* ===================== ONGLETS PROFIL ===================== */
+.profil-tab { padding: 8px 16px; border: none; background: none; font-size: 14px; font-weight: 600; color: #9ca3af; cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; }
+.profil-tab.active { color: rgb(167, 139, 250); border-bottom-color: rgb(167, 139, 250); }
+.profil-tab-content { padding-top: 12px; }
