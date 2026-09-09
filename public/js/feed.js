@@ -284,7 +284,7 @@ function ouvrirCarte(lat, lon, nomLieu, e) {
     `;
     document.getElementById('overlay').classList.add('on');
 
-        setTimeout(() => {
+    setTimeout(() => {
         if (typeof L !== 'undefined') {
             const map = L.map('map-container').setView([lat, lon], 15);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -511,7 +511,6 @@ async function _rechercherLieuTexte(q, inputElId, latId, lonId, wrapId) {
 
     } catch (err) {
         drop.innerHTML = '<div class="loc-item" style="text-align:center;color:#ef4444;">Erreur réseau</div>';
-        setTimeout(() => drop.style.display = 'none', 3000);
     }
 }
 
@@ -544,12 +543,12 @@ function _ouvrirArcInline(postId, btn) {
     if (picker) { picker.remove(); return; }
     document.querySelectorAll('.resonance-picker').forEach(a => a.remove());
     const wrap = btn.closest('.feed-resonance-wrap');
-
-    picker = document.createElement('div');
-    picker.id = `resonance-picker-${postId}`;
+    
+    picker = document.createElement('div'); 
+    picker.id = `resonance-picker-${postId}`; 
     picker.className = 'resonance-picker';
     picker.innerHTML = RESONANCES.map(r => `<button class="resonance-picker-item" data-type="${r.type}" style="--r-color:${r.couleur}" onclick="choisirResonance(${postId}, '${r.type}', this, event)"><span class="resonance-picker-icone">${r.icone}</span><span class="resonance-picker-label">${r.label}</span></button>`).join('');
-
+    
     wrap.appendChild(picker);
 }
 
@@ -583,44 +582,54 @@ async function voirLikers(postId, e) {
     } catch {}
 }
 
-// ============================================================
-// PUBLICATION / SAUVEGARDE — branchées sur les ids des modales
-// migrées (ouvrirModalPost / editerPost déjà en place)
-// ============================================================
-async function publierPost() {
-    const user = getUser(), contenu = document.getElementById('post-contenu').value.trim(), photo = document.getElementById('post-photo').files[0], msg = document.getElementById('post-modal-msg');
-    let lieu = (document.getElementById('post-lieu')?.value || '').trim() || null;
-    let lieu_lat = document.getElementById('post-lieu-lat')?.value || null;
-    let lieu_lon = document.getElementById('post-lieu-lon')?.value || null;
-    if (lieu && (!lieu_lat || !lieu_lon)) { lieu = null; lieu_lat = null; lieu_lon = null; }
-    if (!contenu && !photo) { msg.style.color = '#ef4444'; msg.textContent = 'Le post ne peut pas être vide.'; return; }
-    try {
-        let photoB64 = null; if (photo) { photoB64 = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = e => resolve(e.target.result.split(',')[1]); reader.onerror = reject; reader.readAsDataURL(photo); }); }
-        const body = { contenu, lieu, lieu_lat, lieu_lon }; if (photoB64) body.photo = photoB64;
-        const r = await fetch('/api/feed', { method: 'POST', headers: { 'Authorization': `Bearer ${user.token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-        const d = await r.json();
-        if (d.success) { closeModal(); await chargerFeed(); } else { msg.style.color = '#ef4444'; msg.textContent = d.message || 'Erreur.'; }
-    } catch { msg.style.color = '#ef4444'; msg.textContent = 'Erreur réseau.'; }
+// ── ÉDITER POST (LOC3 + LOC1) ─────────────────────────────────
+function editerPost(postId) {
+    const contenuActuel = document.getElementById(`post-contenu-${postId}`)?.textContent || '';
+    const photoActuelle = document.getElementById(`post-${postId}`)?.dataset.photoUrl || '';
+    const lieuActuel = document.getElementById(`post-lieu-raw-${postId}`)?.textContent || '';
+    const lieuLatActuel = document.getElementById(`post-lieulat-raw-${postId}`)?.textContent || '';
+    const lieuLonActuel = document.getElementById(`post-lieulon-raw-${postId}`)?.textContent || '';
+
+    document.getElementById('modal-title').textContent = 'Modifier le post';
+    document.getElementById('modal-body').innerHTML = `
+        <div id="edit-post-wrap" style="position:relative">
+            <textarea id="edit-post-contenu" rows="4" style="width:100%;padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;resize:vertical;box-sizing:border-box;outline:none;font-family:inherit"></textarea>
+        </div>
+        <div id="edit-loc-wrap" class="loc-input-wrap" style="margin-top:10px">
+            <button type="button" class="loc-input-icone" onclick="rechercherLieuGeoloc('edit-post-lieu', 'edit-post-lat', 'edit-post-lon', 'edit-loc-wrap')" title="Me géolocaliser">📍</button>
+            <input type="text" id="edit-post-lieu" class="loc-input" placeholder="Lieu (optionnel)" value="${escapeHtml(lieuActuel)}">
+            <input type="hidden" id="edit-post-lat" value="${lieuLatActuel}">
+            <input type="hidden" id="edit-post-lon" value="${lieuLonActuel}">
+        </div>
+                ${photoActuelle ? `<div id="edit-photo-actuelle" style="margin-top:12px"><div style="font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;margin-bottom:6px">Photo actuelle</div><img src="${photoActuelle}" style="width:100%;border-radius:10px;max-height:200px;object-fit:contain;background:#f3f4f6"><button id="btn-suppr-photo" onclick="marquerSuppressionPhoto()" style="margin-top:8px;padding:7px 14px;background:#fee2e2;color:#ef4444;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Supprimer la photo</button></div>` : ''}
+        <div style="margin-top:12px"><label style="font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;display:block;margin-bottom:6px">${photoActuelle ? 'Remplacer la photo' : 'Ajouter une photo (optionnelle)'}</label><input type="file" id="edit-post-photo" accept="image/*" style="font-size:13px;color:#374151"></div>
+        <div id="edit-post-preview" style="margin-top:10px"></div>
+        <button onclick="sauvegarderEditionPost(${postId})" style="width:100%;margin-top:14px;padding:13px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:white;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer">Sauvegarder</button>
+        <div id="edit-post-msg" style="text-align:center;margin-top:10px;font-size:13px;min-height:18px"></div>
+    `;
+        const ta = document.getElementById('edit-post-contenu'); const wrap = document.getElementById('edit-post-wrap'); ta.value = contenuActuel; initMentions(ta, wrap);
+    _initLieuAutocomplete('edit-post-lieu', 'edit-post-lat', 'edit-post-lon', 'edit-loc-wrap');
+    document.getElementById('edit-post-photo').addEventListener('change', e => { const file = e.target.files[0]; const preview = document.getElementById('edit-post-preview'); if (file) { preview.innerHTML = `<img src="${URL.createObjectURL(file)}" style="width:100%;border-radius:10px;max-height:200px;object-fit:cover">`; } else { preview.innerHTML = ''; } });
+    document.getElementById('overlay').classList.add('on');
 }
 
-async function sauvegarderPost(postId) {
-    const user = getUser();
-    const contenu = document.getElementById(`edit-post-contenu-${postId}`).value.trim();
-    const photo = document.getElementById(`edit-post-photo-${postId}`).files[0];
-    const msg = document.getElementById(`edit-post-modal-msg-${postId}`);
-    const supprimerPhoto = document.getElementById(`edit-post-suppr-photo-${postId}`)?.value === '1';
-    let lieu = (document.getElementById(`edit-post-lieu-${postId}`)?.value || '').trim() || null;
-    let lieu_lat = document.getElementById(`edit-post-lieu-lat-${postId}`)?.value || null;
-    let lieu_lon = document.getElementById(`edit-post-lieu-lon-${postId}`)?.value || null;
+window._editSupprimerPhoto = false;
+function marquerSuppressionPhoto() { window._editSupprimerPhoto = true; const bloc = document.getElementById('edit-photo-actuelle'); if (bloc) bloc.innerHTML = `<div style="font-size:13px;color:#ef4444;font-weight:600;padding:8px 0">Photo supprimée à la sauvegarde</div>`; }
+
+async function sauvegarderEditionPost(postId) {
+    const user = getUser(), contenu = document.getElementById('edit-post-contenu').value.trim(), photo = document.getElementById('edit-post-photo').files[0], msg = document.getElementById('edit-post-msg');
+    let lieu = (document.getElementById('edit-post-lieu')?.value || '').trim() || null;
+    let lieu_lat = document.getElementById('edit-post-lat')?.value || null;
+    let lieu_lon = document.getElementById('edit-post-lon')?.value || null;
     if (lieu && (!lieu_lat || !lieu_lon)) { lieu = null; lieu_lat = null; lieu_lon = null; }
-    if (!contenu && !photo && supprimerPhoto) { msg.style.color = '#ef4444'; msg.textContent = 'Le post ne peut pas être vide.'; return; }
+    if (!contenu && !photo && window._editSupprimerPhoto) { msg.style.color = '#ef4444'; msg.textContent = 'Le post ne peut pas être vide.'; return; }
     try {
         let photoB64 = null; if (photo) { photoB64 = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = e => resolve(e.target.result.split(',')[1]); reader.onerror = reject; reader.readAsDataURL(photo); }); }
-        const body = { contenu, supprimer_photo: supprimerPhoto, lieu, lieu_lat, lieu_lon };
+        const body = { contenu, supprimer_photo: window._editSupprimerPhoto, lieu, lieu_lat, lieu_lon };
         if (photoB64) body.photo = photoB64;
         const r = await fetch(`/api/feed/${postId}`, { method: 'PUT', headers: { 'Authorization': `Bearer ${user.token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         const d = await r.json();
-        if (d.success) { closeModal(); await chargerFeed(); } else { msg.style.color = '#ef4444'; msg.textContent = d.message || 'Erreur.'; }
+        if (d.success) { window._editSupprimerPhoto = false; closeModal(); await chargerFeed(); } else { msg.style.color = '#ef4444'; msg.textContent = d.message || 'Erreur.'; }
     } catch { msg.style.color = '#ef4444'; msg.textContent = 'Erreur réseau.'; }
 }
 
@@ -726,6 +735,47 @@ async function toggleFollow(userId, btn) {
     } catch {}
 }
 
+// ── MODAL NOUVEAU POST (LOC1) ─────────────────────────────────
+function ouvrirModalPost() {
+    window._editSupprimerPhoto = false;
+    document.getElementById('overlay').classList.add('on');
+    document.getElementById('modal-title').textContent = 'Nouveau post';
+    document.getElementById('modal-body').innerHTML = `
+        <div id="new-post-wrap" style="position:relative">
+            <textarea id="post-contenu" placeholder="Quoi de neuf ? (@Prénom NOM pour mentionner)" rows="4" style="width:100%;padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;resize:vertical;box-sizing:border-box;outline:none;font-family:inherit"></textarea>
+        </div>
+        <div id="new-loc-wrap" class="loc-input-wrap" style="margin-top:10px">
+            <button type="button" class="loc-input-icone" onclick="rechercherLieuGeoloc('post-lieu', 'post-lat', 'post-lon', 'new-loc-wrap')" title="Me géolocaliser">📍</button>
+            <input type="text" id="post-lieu" class="loc-input" placeholder="Lieu (optionnel)">
+            <input type="hidden" id="post-lat" value="">
+            <input type="hidden" id="post-lon" value="">
+        </div>
+                <div style="margin-top:10px"><label style="font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;display:block;margin-bottom:6px">Photo (optionnelle)</label><input type="file" id="post-photo" accept="image/*" style="font-size:13px;color:#374151"></div>
+        <div id="post-preview" style="margin-top:10px"></div>
+        <button onclick="publierPost()" style="width:100%;margin-top:16px;padding:13px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:white;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer">Publier</button>
+        <div id="post-msg" style="text-align:center;margin-top:10px;font-size:13px;min-height:18px"></div>
+    `;
+    const ta = document.getElementById('post-contenu'), wrap = document.getElementById('new-post-wrap'); initMentions(ta, wrap);
+    _initLieuAutocomplete('post-lieu', 'post-lat', 'post-lon', 'new-loc-wrap');
+    document.getElementById('post-photo').addEventListener('change', e => { const file = e.target.files[0]; const preview = document.getElementById('post-preview'); if (file) { preview.innerHTML = `<img src="${URL.createObjectURL(file)}" style="width:100%;border-radius:10px;max-height:200px;object-fit:cover">`; } else { preview.innerHTML = ''; } });
+}
+
+async function publierPost() {
+    const user = getUser(), contenu = document.getElementById('post-contenu').value.trim(), photo = document.getElementById('post-photo').files[0], msg = document.getElementById('post-msg');
+    let lieu = (document.getElementById('post-lieu')?.value || '').trim() || null;
+    let lieu_lat = document.getElementById('post-lat')?.value || null;
+    let lieu_lon = document.getElementById('post-lon')?.value || null;
+    if (lieu && (!lieu_lat || !lieu_lon)) { lieu = null; lieu_lat = null; lieu_lon = null; }
+    if (!contenu && !photo) { msg.style.color = '#ef4444'; msg.textContent = 'Le post ne peut pas être vide.'; return; }
+    try {
+        let photoB64 = null; if (photo) { photoB64 = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = e => resolve(e.target.result.split(',')[1]); reader.onerror = reject; reader.readAsDataURL(photo); }); }
+        const body = { contenu, lieu, lieu_lat, lieu_lon }; if (photoB64) body.photo = photoB64;
+        const r = await fetch('/api/feed', { method: 'POST', headers: { 'Authorization': `Bearer ${user.token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        const d = await r.json();
+        if (d.success) { closeModal(); await chargerFeed(); } else { msg.style.color = '#ef4444'; msg.textContent = d.message || 'Erreur.'; }
+    } catch { msg.style.color = '#ef4444'; msg.textContent = 'Erreur réseau.'; }
+}
+
 // ── PROFIL PUBLIC (B4) ────────────────────────────────────────
 async function ouvrirProfilPublic(userId) {
     const user = getUser();
@@ -733,42 +783,74 @@ async function ouvrirProfilPublic(userId) {
         const r = await fetch(`/api/profil/public/${userId}`, { headers: { 'Authorization': `Bearer ${user.token}` } });
         const d = await r.json();
         if (!d.success) return;
-        const p = d.profil;
-        const avatar = p.avatar ? `<img src="${p.avatar}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;margin:0 auto 12px;display:block" alt="">` : `<div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-size:26px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 12px">${_feedTrigramme(p.prenom, p.nom, p.username)}</div>`;
-        const followed = feedFollowing.includes(userId), isSelf = user.username === p.username;
+        const p = d.profil, isSelf = String(user.userId) === String(p.id);
+        const avatar = p.photo ? `<img src="${p.photo}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid #7c3aed">` : `<div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#e9d5ff,#fbcfe8);color:#7c3aed;font-size:26px;font-weight:700;display:flex;align-items:center;justify-content:center">${_feedTrigramme(p.prenom, p.nom, p.username)}</div>`;
+        const abonnesEl = isSelf ? `<div style="cursor:pointer" onclick="voirAbonnes(${p.id})"><div style="font-size:20px;font-weight:800;color:#7c3aed">${p.nb_abonnes}</div><div style="font-size:11px;color:#7c3aed;font-weight:600;text-transform:uppercase;text-decoration:underline">Abonnés</div></div>` : `<div><div style="font-size:20px;font-weight:800;color:#111">${p.nb_abonnes}</div><div style="font-size:11px;color:#9ca3af;font-weight:600;text-transform:uppercase">Abonnés</div></div>`;
 
-        document.getElementById('modal-title').textContent = 'Profil';
+        const infosPubliques = [];
+        if (p.age) infosPubliques.push(`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span style="font-size:11px;font-weight:700;color:#7c3aed;text-transform:uppercase">Âge</span><span style="font-size:13px;color:#374151;text-align:right">${escapeHtml(String(p.age))} ans</span></div>`);
+        if (p.profession) infosPubliques.push(`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span style="font-size:11px;font-weight:700;color:#7c3aed;text-transform:uppercase">Profession</span><span style="font-size:13px;color:#374151;text-align:right">${escapeHtml(p.profession)}</span></div>`);
+        if (p.site_web) infosPubliques.push(`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span style="font-size:11px;font-weight:700;color:#7c3aed;text-transform:uppercase">Site</span><a href="${escapeHtml(p.site_web)}" target="_blank" rel="noopener" style="font-size:13px;color:#7c3aed;text-decoration:underline;text-align:right;word-break:break-all">${escapeHtml(p.site_web)}</a></div>`);
+        if (p.signe_astro && p.signe_astro.label) infosPubliques.push(`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span style="font-size:11px;font-weight:700;color:#7c3aed;text-transform:uppercase">Signe astro</span><span style="font-size:13px;color:#374151;text-align:right">${escapeHtml(p.signe_astro.emoji || '')} ${escapeHtml(p.signe_astro.label)}</span></div>`);
+        const blocInfos = infosPubliques.length ? `<div style="width:100%;display:flex;flex-direction:column;gap:8px;background:#f9fafb;border-radius:12px;padding:12px 14px;box-sizing:border-box">${infosPubliques.join('')}</div>` : '';
+
+        let btnMessageHTML = '';
+        if (!isSelf) {
+            btnMessageHTML = `
+                <button id="btn-profil-message" 
+                    onclick="document.getElementById('overlay').classList.remove('on'); Tchat.ouvrirConversation({id: ${p.id}, username: '${escapeHtml(p.username)}', prenom: '${escapeHtml(p.prenom || '')}', nom: '${escapeHtml(p.nom || '')}', photo: '${escapeHtml(p.photo || '')}'})"
+                    style="width:100%;padding:12px;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;background:#fff;color:#7c3aed;border:2px solid #7c3aed;margin-bottom:8px;">
+                    Envoyer un message
+                </button>
+            `;
+        }
+
+        document.getElementById('modal-title').textContent = '';
         document.getElementById('modal-body').innerHTML = `
-            <div style="text-align:center">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:8px 0">
                 ${avatar}
-                <div style="font-size:18px;font-weight:700;color:#111">${escapeHtml(p.prenom || '')} ${escapeHtml(p.nom || '')}</div>
-                <div style="font-size:13px;color:#9ca3af;margin-bottom:4px">@${escapeHtml(p.username)}</div>
-                ${p.metier ? `<div style="font-size:13px;color:#6b7280">${escapeHtml(p.metier)}</div>` : ''}
-                ${p.bio ? `<div style="font-size:13px;color:#374151;margin-top:10px;line-height:1.5">${escapeHtml(p.bio)}</div>` : ''}
-                ${!isSelf ? `<button class="feed-follow-btn ${followed ? 'following' : ''}" style="margin-top:16px" onclick="toggleFollow(${userId}, this)">${followed ? 'Abonné' : 'Suivre'}</button>` : ''}
+                <div style="text-align:center"><div style="font-size:18px;font-weight:700;color:#111">${escapeHtml(p.prenom || '')} ${escapeHtml(p.nom || '')}</div><div style="font-size:13px;color:#9ca3af;margin-top:2px">@${escapeHtml(p.username)}</div></div>
+                <div style="display:flex;gap:24px;text-align:center;background:#f9fafb;border-radius:14px;padding:14px 24px;width:100%;justify-content:center;box-sizing:border-box">
+                    <div><div style="font-size:20px;font-weight:800;color:#111">${p.nb_posts}</div><div style="font-size:11px;color:#9ca3af;font-weight:600;text-transform:uppercase">Posts</div></div>
+                    ${abonnesEl}
+                    <div><div style="font-size:20px;font-weight:800;color:#111">${p.nb_abonnements}</div><div style="font-size:11px;color:#9ca3af;font-weight:600;text-transform:uppercase">Abonnements</div></div>
+                </div>
+                ${blocInfos}
+                <div style="width:100%;display:flex;flex-direction:column;">
+                    ${btnMessageHTML}
+                    ${!isSelf ? `<button id="btn-profil-follow" onclick="toggleFollowDepuisProfil(${p.id}, this)" style="width:100%;padding:12px;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;background:${p.suivi ? '#f3f4f6' : 'linear-gradient(135deg,#7c3aed,#6d28d9)'};color:${p.suivi ? '#374151' : '#fff'}">${p.suivi ? 'Abonné' : 'Suivre'}</button>` : ''}
+                </div>
+                ${p.note ? `<div style="width:100%;background:#f9fafb;border-radius:12px;padding:12px 14px;border-left:3px solid #7c3aed;box-sizing:border-box"><div style="font-size:11px;font-weight:700;color:#7c3aed;text-transform:uppercase;margin-bottom:4px">Note</div><div style="font-size:13px;color:#555;line-height:1.5">${escapeHtml(p.note)}</div></div>` : ''}
             </div>
         `;
         document.getElementById('overlay').classList.add('on');
     } catch {}
 }
 
-// ── PARTAGE ────────────────────────────────────────────────────
-function partagerPost(postId) {
-    const url = `${window.location.origin}${window.location.pathname}#post-${postId}`;
-    if (navigator.clipboard) {
-        navigator.clipboard.writeText(url).then(() => {
-            const btn = document.querySelector(`#post-${postId} .feed-share-btn`);
-            if (btn) { const original = btn.innerHTML; btn.innerHTML = '<span style="font-size:12px">Copié !</span>'; setTimeout(() => btn.innerHTML = original, 1500); }
-        }).catch(() => {});
-    }
+async function voirAbonnes(userId) {
+    const user = getUser();
+    try {
+        const r = await fetch(`/api/profil/abonnes/${userId}`, { headers: { 'Authorization': `Bearer ${user.token}` } }), d = await r.json();
+        if (!d.success) return; document.getElementById('modal-title').textContent = 'Mes abonnés';
+        document.getElementById('modal-body').innerHTML = d.abonnes.length ? d.abonnes.map(a => { const av = a.photo ? `<img src="${a.photo}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0" alt="">` : `<div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#e9d5ff,#fbcfe8);color:#7c3aed;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0">${_feedTrigramme(a.prenom, a.nom, a.username)}</div>`; return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f3f4f6;cursor:pointer" onclick="ouvrirProfilPublic(${a.id})">${av}<div><div style="font-size:14px;font-weight:700;color:#111">${escapeHtml(a.prenom || '')} ${escapeHtml(a.nom || '')}</div><div style="font-size:12px;color:#9ca3af">@${escapeHtml(a.username)}</div></div></div>`; }).join('') : '<p style="text-align:center;color:#9ca3af;padding:24px 0">Aucun abonné pour l\'instant.</p>';
+        document.getElementById('overlay').classList.add('on');
+    } catch {}
 }
 
-// ── VISIONNEUSE PHOTO PLEIN ÉCRAN ───────────────────────────────
-function ouvrirPhoto(url) {
-    if (!url) return;
-    const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:zoom-out';
-    overlay.innerHTML = `<img src="${url}" style="max-width:92%;max-height:92%;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,0.5)" alt="">`;
-    overlay.addEventListener('click', () => overlay.remove());
-    document.body.appendChild(overlay);
+async function toggleFollowDepuisProfil(userId, btn) {
+    const user = getUser();
+    try {
+        const r = await fetch(`/api/feed/follow/${userId}`, { method: 'POST', headers: { 'Authorization': `Bearer ${user.token}` } }), d = await r.json(); if (!d.success) return;
+        if (d.following) { feedFollowing.push(userId); btn.textContent = 'Abonné'; btn.style.background = '#f3f4f6'; btn.style.color = '#374151'; } else { feedFollowing = feedFollowing.filter(id => id !== userId); btn.textContent = 'Suivre'; btn.style.background = 'linear-gradient(135deg,#7c3aed,#6d28d9)'; btn.style.color = '#fff'; }
+        const feedBtn = document.querySelector(`#feed-list .feed-follow-btn[onclick="toggleFollow(${userId}, this)"]`); if (feedBtn) { feedBtn.textContent = d.following ? 'Abonné' : 'Suivre'; feedBtn.classList.toggle('following', d.following); }
+    } catch {}
 }
+
+function ouvrirPhoto(url) { document.getElementById('overlay').classList.add('on'); document.getElementById('modal-title').textContent = ''; document.getElementById('modal-body').innerHTML = `<img src="${url}" style="width:100%;border-radius:10px;max-height:70vh;object-fit:contain">`; }
+
+async function partagerPost(postId) {
+    const card = document.getElementById(`post-${postId}`), contenuEl = document.getElementById(`post-contenu-${postId}`), contenu = contenuEl ? contenuEl.textContent.trim() : '', photoUrl = card?.dataset.photoUrl || '', text = contenu.substring(0, 100) || 'Regarde ce post sur MoaDja';
+    if (navigator.share) { try { const shareData = { title: 'MoaDja', text }; shareData.url = photoUrl || location.origin; await navigator.share(shareData); } catch (e) { if (e.name !== 'AbortError') console.error(e); } } else { try { await navigator.clipboard.writeText(`${text}\n${photoUrl || location.origin}`); document.getElementById('modal-title').textContent = 'Lien copié'; document.getElementById('modal-body').innerHTML = `<p style="text-align:center;color:#374151;padding:20px 0">Le lien a été copié dans le presse-papier.</p><button onclick="closeModal()" style="width:100%;padding:12px;background:#7c3aed;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer">OK</button>`; document.getElementById('overlay').classList.add('on'); } catch (e) { console.error('clipboard', e); } }
+}
+
+function escapeHtml(str) { return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
