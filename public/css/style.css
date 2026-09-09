@@ -623,34 +623,34 @@ input:focus { border-color: #7C3AED; background: #fff; }
   flex: 1;
   width: 100%;
   padding: 12px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
   border-radius: 12px;
   font-size: 14px;
   color: #1f2937;
   outline: none;
   margin: 0;
   margin-bottom: 16px;
-  background: rgba(255, 255, 255, 0.55);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+  background: rgba(255, 255, 255, 0.3) !important; /* Plus transparent pour l'effet verre */
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.04) !important; /* Ombre creusée plus marquée */
   transition: border-color .2s, background .2s, box-shadow .2s;
 }
 
 .form-row input:focus, .form-row select:focus, .form-group input:focus, .form-group select:focus, .modal input:not([type="checkbox"]):focus, .modal select:focus, .modal textarea:focus {
-  border-color: rgb(167, 139, 250);
-  background: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.02);
+  border-color: rgb(167, 139, 250) !important;
+  background: rgba(255, 255, 255, 0.7) !important;
+  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.02) !important;
 }
 
-/* Custom Select Arrow V3 (Écrase le style moche natif sur mobile) */
+/* Custom Select Arrow V3 (Écrase le style moche natif sur mobile ET bureau) */
 .form-row select, .form-group select, .modal select {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 12px center;
-  background-size: 16px;
-  padding-right: 40px;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 16px !important;
+  padding-right: 40px !important;
 }
 
 .section-title { font-size: 12px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: .5px; margin: 20px 0 10px; }
