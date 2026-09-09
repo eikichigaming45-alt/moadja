@@ -2,20 +2,27 @@
 // public/js/modal.js
 // Modales : météo, prière, islam, tâches, anniversaires,
 // cycle, profil, admin, astrologie, theme-astral, agenda-unifie.
-// Onglet Profil : infos + heure/lieu naissance + géocodage + site web.
-// Onglet Santé  : sexe, taille, poids, groupe sanguin,
-//                 niveau activité, objectif santé, signe zodiaque,
-//                 allergies, aliments exclus.
-// Mobile : onglets profil en icônes seules.
 // ============================================================
 
 const JOURS_MODAL = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+
+// ── ÉCOUTEUR RETOUR ANDROID (HISTORY API) ──
+window.addEventListener('popstate', (e) => {
+    // Si l'utilisateur fait "Retour" (geste ou bouton) et qu'une modale est ouverte
+    if (document.body.classList.contains('modal-open')) {
+        closeModal(true); // true = bypass l'appel history.back() car on y est déjà
+    }
+});
 
 // ===================== OUVERTURE MODALE ======================
 
 async function openModal(type) {
     document.getElementById('overlay').classList.add('on');
     document.body.classList.add('modal-open');
+    
+    // Ajout d'une entrée dans l'historique pour intercepter le retour Android
+    history.pushState({ modalOpen: true }, '', '');
+
     const titres = {
         meteo          : 'Météo du jour',
         priere         : 'Prière du jour',
@@ -48,10 +55,11 @@ async function openModal(type) {
                         ? `<div style="font-size:13px;font-weight:700;color:#78350f;line-height:1.4">📖 ${priere.titre}</div>`
                         : '<div></div>'}
                     <button onclick="lirePriereModal(event)" id="btn-speaker-modal"
-                        style="background:#fff8e1;border:none;border-radius:50%;
-                               width:36px;height:36px;cursor:pointer;font-size:18px;
+                        style="background:rgba(167,139,250,0.85);border:1px solid rgba(255,255,255,0.5);border-radius:50px;
+                               width:40px;height:40px;cursor:pointer;font-size:16px;color:#fff;
                                display:flex;align-items:center;justify-content:center;
-                               box-shadow:0 2px 4px rgba(0,0,0,0.1);flex-shrink:0;margin-left:10px">
+                               box-shadow:0 8px 24px rgba(167,139,250,0.25);backdrop-filter:blur(8px);
+                               flex-shrink:0;margin-left:10px;transition:all 0.2s">
                         🔊
                     </button>
                 </div>
@@ -118,15 +126,15 @@ async function openModal(type) {
                     <div class="islam-modal-date">${d.date || ''}</div>
                     <div style="text-align:center;margin-top:6px;">
                         <span style="font-size:12px;color:#059669;font-weight:600;">📍 ${coords.ville}</span>
-                        <button onclick="window._islamChangerVille()" style="margin-left:10px;background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.3);color:#059669;border-radius:50px;padding:4px 12px;font-size:11px;cursor:pointer;font-weight:600;backdrop-filter:blur(5px);">Changer</button>
+                        <button onclick="window._islamChangerVille()" style="margin-left:10px;background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.3);color:rgb(167, 139, 250);border-radius:50px;padding:4px 12px;font-size:11px;cursor:pointer;font-weight:600;backdrop-filter:blur(5px);">Changer</button>
                     </div>
                 </div>
                 <div id="islam-ville-form" style="display:none;background:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.8);backdrop-filter:blur(10px);border-radius:16px;padding:14px;margin:10px 0;box-shadow:0 4px 12px rgba(0,0,0,0.05);">
                     <div style="font-weight:700;font-size:13px;color:#333;margin-bottom:10px;">Changer la localisation</div>
-                    <button onclick="window._islamGeolocate()" style="width:100%;padding:10px;background:linear-gradient(135deg, #34d399, #10b981);color:#fff;border:none;border-radius:50px;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px;box-shadow:0 4px 10px rgba(16,185,129,0.3);">📍 Utiliser ma position GPS</button>
+                    <button class="add-btn" onclick="window._islamGeolocate()" style="margin-bottom:12px;">📍 Utiliser ma position GPS</button>
                     <div style="display:flex;gap:8px;">
                         <input id="islam-ville-input" placeholder="Nom de la ville..." style="flex:1;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:50px;font-size:13px;outline:none;">
-                        <button onclick="window._islamRechercherVille()" style="padding:10px 18px;background:linear-gradient(135deg, #a78bfa, #8b5cf6);color:#fff;border:none;border-radius:50px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 4px 10px rgba(139,92,246,0.3);">OK</button>
+                        <button class="btn-save" onclick="window._islamRechercherVille()">OK</button>
                     </div>
                     <div id="islam-ville-msg" style="font-size:12px;color:#ef4444;margin-top:6px;min-height:16px;padding-left:10px;"></div>
                 </div>
@@ -259,10 +267,7 @@ async function openModal(type) {
                                 onchange="previewPhoto(event)">
                             <span style="font-size:11px;color:#9ca3af;margin-top:8px">Appuyez sur la photo pour changer</span>
                             ${photoSrc
-                                ? `<button id="btn-supprimer-photo" onclick="supprimerPhoto()"
-                                    style="margin-top:10px;background:rgba(239, 68, 68, 0.1);color:#ef4444;border:1px solid rgba(239, 68, 68, 0.2);
-                                           border-radius:50px;padding:8px 16px;font-size:12px;
-                                           font-weight:600;cursor:pointer;backdrop-filter:blur(10px);transition:all 0.3s ease;">
+                                ? `<button id="btn-supprimer-photo" onclick="supprimerPhoto()" class="btn-delete" style="margin-top:12px; width:auto;">
                                     🗑️ Supprimer la photo
                                    </button>`
                                 : ''
@@ -333,10 +338,7 @@ async function openModal(type) {
                                 style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;
                                        font-size:14px;box-sizing:border-box;resize:none;outline:none;background:rgba(255,255,255,0.8)">${p.note||''}</textarea>
                         </div>
-                        <button onclick="sauvegarderProfil()"
-                            style="width:100%;padding:14px;background:linear-gradient(135deg,#a78bfa,#8b5cf6);
-                                   color:white;border:none;border-radius:50px;font-size:15px;
-                                   font-weight:600;cursor:pointer;box-shadow:0 6px 16px rgba(139,92,246,0.3);backdrop-filter:blur(10px);transition:all 0.3s ease;">
+                        <button class="btn-save" onclick="sauvegarderProfil()" style="width:100%;">
                             💾 Sauvegarder le profil
                         </button>
                         <div id="profil-msg" style="text-align:center;margin-top:10px;font-size:13px;min-height:18px"></div>
@@ -455,10 +457,7 @@ async function openModal(type) {
                             </div>
                         </div>
 
-                        <button onclick="sauvegarderSante()"
-                            style="width:100%;padding:14px;background:linear-gradient(135deg,#34d399,#10b981);
-                                   color:white;border:none;border-radius:50px;font-size:15px;
-                                   font-weight:600;cursor:pointer;box-shadow:0 6px 16px rgba(16,185,129,0.3);backdrop-filter:blur(10px);transition:all 0.3s ease;">
+                        <button class="btn-save" onclick="sauvegarderSante()" style="width:100%;">
                             💾 Sauvegarder la santé
                         </button>
                         <div id="sante-msg" style="text-align:center;margin-top:10px;font-size:13px;min-height:18px"></div>
@@ -492,10 +491,7 @@ async function openModal(type) {
                             <input type="password" id="mdp-confirm" placeholder="••••••••"
                                 style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
                         </div>
-                        <button onclick="changerMdp()"
-                            style="width:100%;padding:14px;background:linear-gradient(135deg,#fbbf24,#f59e0b);
-                                   color:white;border:none;border-radius:50px;font-size:15px;font-weight:600;
-                                   cursor:pointer;box-shadow:0 6px 16px rgba(245,158,11,0.3);backdrop-filter:blur(10px);transition:all 0.3s ease;">
+                        <button class="btn-save" onclick="changerMdp()" style="width:100%;">
                             🔑 Changer le mot de passe
                         </button>
                         <div id="mdp-msg" style="text-align:center;margin-top:10px;font-size:13px;min-height:18px"></div>
@@ -517,10 +513,7 @@ async function openModal(type) {
                         <div id="widgets-choix" class="widgets-choix-grid">
                             <p style="color:#9ca3af;font-size:13px">Chargement...</p>
                         </div>
-                        <button onclick="sauvegarderWidgetsVisibles()"
-                            style="width:100%;padding:14px;background:linear-gradient(135deg,#34d399,#10b981);
-                                   color:white;border:none;border-radius:50px;font-size:15px;font-weight:600;
-                                   cursor:pointer;margin-top:16px;box-shadow:0 6px 16px rgba(16,185,129,0.3);backdrop-filter:blur(10px);transition:all 0.3s ease;">
+                        <button class="btn-save" onclick="sauvegarderWidgetsVisibles()" style="width:100%; margin-top:16px;">
                             💾 Sauvegarder mes widgets
                         </button>
                         <div id="widgets-msg" style="text-align:center;margin-top:10px;font-size:13px;min-height:18px"></div>
@@ -533,8 +526,9 @@ async function openModal(type) {
                         <button id="social-tab-miens"
                             data-action="social-onglet"
                             data-onglet="miens"
-                            style="flex:1;padding:12px;border:none;background:linear-gradient(135deg,#a78bfa,#8b5cf6);
-                                   color:#fff;font-size:13px;font-weight:600;cursor:pointer;border-radius:50px;box-shadow:0 4px 10px rgba(139,92,246,0.3);transition:all 0.3s ease;">
+                            style="flex:1;padding:12px;border:none;background:rgba(167,139,250,0.85);
+                                   color:#fff;font-size:13px;font-weight:600;cursor:pointer;border-radius:50px;
+                                   box-shadow:0 8px 24px rgba(167,139,250,0.25);backdrop-filter:blur(8px);transition:all 0.3s ease;">
                             Ce que je partage
                         </button>
                         <button id="social-tab-nouveau"
@@ -569,18 +563,21 @@ async function openModal(type) {
             // ── Listeners onglets social ──────────────────────────
             document.querySelectorAll('[data-action="social-onglet"]').forEach(btn => {
                 btn.addEventListener('click', () => {
-                    // Mettre à jour visuellement les boutons pillules
+                    // Mettre à jour visuellement les boutons pillules (charte violet V3)
                     document.getElementById('social-tab-miens').style.background = 'transparent';
                     document.getElementById('social-tab-miens').style.color = '#6b7280';
                     document.getElementById('social-tab-miens').style.boxShadow = 'none';
+                    document.getElementById('social-tab-miens').style.backdropFilter = 'none';
                     
                     document.getElementById('social-tab-nouveau').style.background = 'transparent';
                     document.getElementById('social-tab-nouveau').style.color = '#6b7280';
                     document.getElementById('social-tab-nouveau').style.boxShadow = 'none';
+                    document.getElementById('social-tab-nouveau').style.backdropFilter = 'none';
                     
-                    btn.style.background = 'linear-gradient(135deg,#a78bfa,#8b5cf6)';
+                    btn.style.background = 'rgba(167,139,250,0.85)';
                     btn.style.color = '#fff';
-                    btn.style.boxShadow = '0 4px 10px rgba(139,92,246,0.3)';
+                    btn.style.boxShadow = '0 8px 24px rgba(167,139,250,0.25)';
+                    btn.style.backdropFilter = 'blur(8px)';
                     
                     _socialOnglet(btn.dataset.onglet);
                 });
@@ -662,13 +659,21 @@ function lirePriereModal(e) {
 
 // ===================== FERMETURE MODALE ======================
 
-function closeModal() {
+// Note : skipHistory=true permet de ne pas faire `history.back()` si l'appel vient déjà du bouton retour (popstate)
+function closeModal(skipHistory = false) {
     window.speechSynthesis?.cancel();
     document.getElementById('overlay').classList.remove('on');
     document.body.classList.remove('modal-open');
+    
+    // Si la modale est fermée via la croix (ou le fond) et non par le bouton retour Android,
+    // on retire l'état de l'historique pour ne pas casser la navigation.
+    if (!skipHistory && history.state && history.state.modalOpen) {
+        history.back();
+    }
 }
 
 function closeOutside(e) {
     if (e.target === document.getElementById('overlay')) closeModal();
 }
+
 
