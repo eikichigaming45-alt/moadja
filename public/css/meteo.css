@@ -52,7 +52,7 @@
     border-color: rgb(167, 139, 250);
 }
 
-/* Bouton "OK" — pilule glass violette V3 (remplace l'ancien #7C3AED plat) */
+/* Bouton "OK" — pilule glass violette V3 */
 .ville-form button {
     padding: 10px 20px;
     background: rgba(167, 139, 250, 0.85);
@@ -74,7 +74,7 @@
     box-shadow: 0 12px 28px rgba(167, 139, 250, 0.35);
 }
 
-/* Bouton "Utiliser ma position" — pilule glass violette V3 (remplace l'ancien vert plat) */
+/* Bouton "Utiliser ma position" — pilule glass violette V3 */
 .geo-btn {
     width: 100%;
     margin-top: 8px;
@@ -106,7 +106,6 @@
     gap: 14px;
 }
 
-/* Bloc "hero" (température principale) */
 .modal-meteo-hero {
     display: flex;
     align-items: center;
@@ -153,7 +152,6 @@
     line-height: 1;
 }
 
-/* Badges (humidité / vent / pluie) */
 .modal-meteo-badges {
     display: flex;
     gap: 8px;
@@ -165,7 +163,6 @@
     padding: 6px 12px;
 }
 
-/* Label section "Prévisions 6 jours" */
 .modal-meteo-section-label {
     font-size: 11px;
     font-weight: 700;
@@ -176,7 +173,6 @@
     margin-bottom: 8px;
 }
 
-/* Cartes des jours */
 .modal-meteo-jours {
     display: flex;
     gap: 6px;
@@ -201,10 +197,12 @@
     transform: translateY(-2px);
 }
 
+/* Jour sélectionné — Option B : contour fin + glow doux (pas de fond plein) */
 .modal-meteo-jour-card.active {
-    background: rgba(167, 139, 250, 0.18);
-    border: 1px solid rgba(167, 139, 250, 0.6);
-    box-shadow: 0 4px 16px rgba(167, 139, 250, 0.2);
+    background: var(--glass-bg);
+    border: 1.5px solid rgb(167, 139, 250);
+    box-shadow: 0 0 0 4px rgba(167, 139, 250, 0.15),
+                0 6px 16px rgba(167, 139, 250, 0.25);
 }
 
 .modal-meteo-jour-nom {
@@ -236,7 +234,6 @@
     opacity: .5;
 }
 
-/* Bloc détail du jour sélectionné ("Aujourd'hui" / date) */
 .modal-meteo-today {
     background: var(--glass-bg);
     backdrop-filter: blur(12px);
