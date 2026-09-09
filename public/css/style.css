@@ -521,7 +521,7 @@ input:focus { border-color: #7C3AED; background: #fff; }
 .modal h3 { font-size: 20px; color: #1f2937; margin-bottom: 16px; font-weight: 700; }
 .modal p { color: #4b5563; font-size: 15px; line-height: 1.6; }
 
-/* MODIFICATION: mclos hover passe en violet doux glass (Option 2) */
+/* MODIFICATION: mclos hover passe en violet doux glass */
 .mclos {
   position: absolute;
   top: 16px;
@@ -617,41 +617,43 @@ input:focus { border-color: #7C3AED; background: #fff; }
   margin-bottom: 6px;
 }
 
-/* Inputs & Selects V3 - Translucides, ombres internes, coins adoucis (12px) */
+/* Inputs & Selects V3 - Extrêmement translucides pour ne pas bloquer le fond */
 .form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
 .form-row input, .form-row select, .form-group input, .form-group select, .modal input:not([type="checkbox"]), .modal select, .modal textarea {
   flex: 1;
   width: 100%;
   padding: 12px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  border: 1px solid rgba(167, 139, 250, 0.2) !important; /* Bordure douce violette */
   border-radius: 12px;
   font-size: 14px;
   color: #1f2937;
   outline: none;
   margin: 0;
   margin-bottom: 16px;
-  background: rgba(255, 255, 255, 0.3) !important; /* Plus transparent pour l'effet verre */
-  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.04) !important; /* Ombre creusée plus marquée */
+  background: rgba(255, 255, 255, 0.15) !important; /* Quasi transparent */
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02) !important;
   transition: border-color .2s, background .2s, box-shadow .2s;
 }
 
 .form-row input:focus, .form-row select:focus, .form-group input:focus, .form-group select:focus, .modal input:not([type="checkbox"]):focus, .modal select:focus, .modal textarea:focus {
   border-color: rgb(167, 139, 250) !important;
-  background: rgba(255, 255, 255, 0.7) !important;
+  background: rgba(255, 255, 255, 0.6) !important;
   box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.15), inset 0 2px 4px rgba(0, 0, 0, 0.02) !important;
 }
 
-/* Custom Select Arrow V3 (Écrase le style moche natif sur mobile ET bureau) */
+/* Custom Select Arrow V3 */
 .form-row select, .form-group select, .modal select {
   appearance: none !important;
   -webkit-appearance: none !important;
   -moz-appearance: none !important;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23a78bfa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
   background-repeat: no-repeat !important;
   background-position: right 12px center !important;
   background-size: 16px !important;
   padding-right: 40px !important;
 }
+
+/* Le fond des options (liste déroulante native) restera blanc/gris par défaut du navigateur, c'est inévitable en CSS pur. */
 
 .section-title { font-size: 12px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: .5px; margin: 20px 0 10px; }
 .separateur { border: none; border-top: 1px solid rgba(0, 0, 0, 0.05); margin: 24px 0; }
@@ -696,5 +698,3 @@ input:focus { border-color: #7C3AED; background: #fff; }
     display: block;
   }
 }
-
-
