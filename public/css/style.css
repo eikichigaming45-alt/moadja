@@ -184,15 +184,18 @@ input:focus { border-color: #7C3AED; background: #fff; }
 }
 .topbar-search input::placeholder { color: #9ca3af; }
 
-/* Mobile : la pilule descend sous le header quand la checkbox est cochée */
+/* Mobile : bulle ancrée à droite, sous le header, du niveau des icônes jusqu'au bord droit (avatar) */
 @media (max-width: 1023px) {
   .topbar-search {
     position: absolute;
     top: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
-    width: min(260px, 75vw);
+    right: 0;
+    left: auto;
+    transform: none;
+    width: min(230px, 68vw);
     z-index: 210;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 12px 32px rgba(31, 38, 135, 0.18);
   }
   #search-toggle:checked ~ .topbar-search {
     display: flex;
