@@ -45,7 +45,7 @@ function _ouvrirModaleConseil(texte) {
     overlay.innerHTML = `
         <div style="background:rgba(255,255,255,0.85);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.9);border-radius:24px;padding:24px;
                     max-width:340px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,.15)">
-            <div style="font-size:14px;font-weight:700;color:#7c3aed;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">
+            <div style="font-size:14px;font-weight:700;color:rgb(167, 139, 250);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">
                 Conseil du jour
             </div>
             <p style="font-size:14px;color:#374151;line-height:1.7;margin:0 0 20px">
@@ -184,7 +184,7 @@ async function _renderBlocCycle(ownerId, token) {
     const ci = d.cycleInfo;
 
     const titre = `
-        <div style="font-size:11px;font-weight:700;color:#7c3aed;text-transform:uppercase;
+        <div style="font-size:11px;font-weight:700;color:rgb(167, 139, 250);text-transform:uppercase;
                     letter-spacing:.5px;margin-bottom:6px">Suivi du cycle</div>`;
 
     let carteInfos = '';
@@ -210,7 +210,7 @@ async function _renderBlocCycle(ownerId, token) {
             lignes.push(`
                 <div style="display:flex;align-items:center;justify-content:space-between;
                             margin-bottom:8px">
-                    <span style="font-size:12px;font-weight:700;color:#7c3aed">${ci.phaseLabel}</span>
+                    <span style="font-size:12px;font-weight:700;color:rgb(167, 139, 250)">${ci.phaseLabel}</span>
                     <span style="font-size:11px;color:#9ca3af">Jour ${ci.jourCycle} / ${ci.dureeCycle}</span>
                 </div>`);
         }
@@ -229,14 +229,14 @@ async function _renderBlocCycle(ownerId, token) {
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;
                             padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.05)">
                     <span style="font-size:12px;color:#6b7280;flex:1">${ci.labelOvulation}</span>
-                    <span style="font-size:12px;font-weight:600;color:#7c3aed;text-align:right">${ci.valeurOvulation}</span>
+                    <span style="font-size:12px;font-weight:600;color:rgb(167, 139, 250);text-align:right">${ci.valeurOvulation}</span>
                 </div>`);
 
             lignes.push(`
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;
                             padding:5px 0;border-bottom:1px solid rgba(0,0,0,0.05)">
                     <span style="font-size:12px;color:#6b7280;flex:1;padding-right:8px">${ci.labelFenetre}</span>
-                    <span style="font-size:12px;font-weight:600;color:#7c3aed;text-align:right;white-space:nowrap">${ci.valeurFenetre}</span>
+                    <span style="font-size:12px;font-weight:600;color:rgb(167, 139, 250);text-align:right;white-space:nowrap">${ci.valeurFenetre}</span>
                 </div>`);
         }
 
@@ -257,14 +257,14 @@ async function _renderBlocCycle(ownerId, token) {
             if (ci.enFenetre) {
                 lignes.push(`
                     <div style="margin-top:8px;padding:6px 10px;background:rgba(253,244,255,0.8);border-radius:8px;
-                                font-size:12px;color:#7c3aed;font-weight:600;text-align:center">
+                                font-size:12px;color:rgb(167, 139, 250);font-weight:600;text-align:center">
                         🌸 Fenêtre fertile en cours
                     </div>`);
             }
             if (ci.estOvulation) {
                 lignes.push(`
                     <div style="margin-top:8px;padding:6px 10px;background:rgba(253,244,255,0.8);border-radius:8px;
-                                font-size:12px;color:#7c3aed;font-weight:600;text-align:center">
+                                font-size:12px;color:rgb(167, 139, 250);font-weight:600;text-align:center">
                         🌟 Jour d'ovulation
                     </div>`);
             }
@@ -293,7 +293,7 @@ async function _renderBlocCycle(ownerId, token) {
     }
 
     const moodBadges = (d.moods || []).map(m =>
-        `<span style="background:rgba(237,233,254,0.8);color:#7c3aed;border-radius:20px;
+        `<span style="background:rgba(237,233,254,0.8);color:rgb(167, 139, 250);border-radius:20px;
                       padding:3px 8px;font-size:11px;font-weight:600;border:1px solid rgba(167,139,250,0.2)">${m}</span>`
     ).join('');
 
@@ -307,14 +307,14 @@ async function _renderBlocCycle(ownerId, token) {
         const avecLien     = texteComplet.length > SEUIL
             ? `${court} <span data-conseil-complet="${encodeURIComponent(texteComplet)}"
                               data-action="lire-conseil"
-                              style="color:#7c3aed;font-weight:600;cursor:pointer;white-space:nowrap">
+                              style="color:rgb(167, 139, 250);font-weight:600;cursor:pointer;white-space:nowrap">
                    Lire la suite
                </span>`
             : court;
 
         conseilBloc = `
             <div style="margin-top:8px;padding:10px 12px;background:rgba(253,244,255,0.6);border-radius:10px;
-                        border-left:3px solid #7c3aed;font-size:13px;color:#374151;line-height:1.6;
+                        border-left:3px solid rgb(167, 139, 250);font-size:13px;color:#374151;line-height:1.6;
                         word-break:break-word;overflow-wrap:anywhere">
                 ${avecLien}
             </div>`;
@@ -582,7 +582,7 @@ async function _renderOngletMiens() {
                     <div style="font-size:32px;margin-bottom:8px">🔒</div>
                     <div style="font-size:13px;line-height:1.6">
                         Tu ne partages encore rien avec personne.<br>
-                        Utilise l'onglet <strong style="color:#7c3aed">Partager avec…</strong> pour commencer.
+                        Utilise l'onglet <strong style="color:rgb(167, 139, 250)">Partager avec…</strong> pour commencer.
                     </div>
                 </div>`;
             return;
@@ -650,7 +650,7 @@ function _htmlBlocViewer(v, typesDisponibles) {
                         data-action="toggle-partage"
                         style="opacity:0;width:0;height:0;position:absolute">
                     <span style="position:absolute;inset:0;border-radius:22px;cursor:pointer;
-                                 background:${actif ? '#7c3aed' : '#d1d5db'};transition:background .2s">
+                                 background:${actif ? 'rgb(167, 139, 250)' : '#d1d5db'};transition:background .2s">
                         <span style="position:absolute;top:3px;left:${actif ? '19px' : '3px'};
                                      width:16px;height:16px;border-radius:50%;background:#fff;
                                      transition:left .2s;display:block"></span>
@@ -691,7 +691,7 @@ document.addEventListener('change', async e => {
     const { token }    = _socialAuth();
     const track        = cb.nextElementSibling;
     const thumb        = track?.querySelector('span');
-    if (track) track.style.background = active ? '#7c3aed' : '#d1d5db';
+    if (track) track.style.background = active ? 'rgb(167, 139, 250)' : '#d1d5db';
     if (thumb) thumb.style.left       = active ? '19px'   : '3px';
 
     try {
@@ -711,7 +711,7 @@ document.addEventListener('change', async e => {
         }
     } catch {
         cb.checked = !active;
-        if (track) track.style.background = !active ? '#7c3aed' : '#d1d5db';
+        if (track) track.style.background = !active ? 'rgb(167, 139, 250)' : '#d1d5db';
         if (thumb) thumb.style.left       = !active ? '19px'    : '3px';
     }
 });
@@ -897,7 +897,7 @@ async function _socialSelectionnerUser(el) {
             ${avatar}
             <div>
                 <div style="font-size:14px;font-weight:700;color:#1f2937">${nomAffiche}</div>
-                <div style"font-size:12px;color:#9ca3af">@${username}</div>
+                <div style="font-size:12px;color:#9ca3af">@${username}</div>
             </div>
             <button data-action="annuler-selection"
                 style="margin-left:auto;background:none;border:none;
@@ -935,10 +935,10 @@ async function _socialSelectionnerUser(el) {
                    value="${l.type}"
                    id="share-type-${l.type}"
                    ${dejaPartages.includes(l.type) ? 'checked' : ''}
-                   style="width:16px;height:16px;accent-color:#7c3aed;cursor:pointer;flex-shrink:0;margin:0">
+                   style="width:16px;height:16px;accent-color:rgb(167, 139, 250);cursor:pointer;flex-shrink:0;margin:0">
             <span style="font-size:13px;color:#374151;flex:1">${l.label}</span>
             ${dejaPartages.includes(l.type)
-                ? '<span style="font-size:11px;color:#7c3aed;font-weight:600">Déjà partagé</span>'
+                ? '<span style="font-size:11px;color:rgb(167, 139, 250);font-weight:600">Déjà partagé</span>'
                 : ''}
         </label>`).join('');
 }
@@ -1254,14 +1254,14 @@ function _htmlNotif(n) {
                     <span style="font-weight:700">${nomComp}</span>
                     <span style="font-weight:400"> ${infos.texte}</span>
                 </div>
-                <div style="font-size:11px;color:${nonLu ? '#7c3aed' : '#9ca3af'};
+                <div style="font-size:11px;color:${nonLu ? 'rgb(167, 139, 250)' : '#9ca3af'};
                             margin-top:3px;font-weight:${nonLu ? '600' : '400'}">
                     ${temps}
                 </div>
             </div>
             ${nonLu
                 ? `<div style="width:10px;height:10px;border-radius:50%;
-                               background:#7c3aed;flex-shrink:0"></div>`
+                               background:rgb(167, 139, 250);flex-shrink:0"></div>`
                 : ''}
         </div>`;
 }
@@ -1274,13 +1274,13 @@ function switchNotifTab(tab) {
     const btnNonlu = document.getElementById('notif-tab-nonlu');
 
     if (btnTout) {
-        btnTout.style.color             = tab === 'tout'  ? '#7c3aed' : '#9ca3af';
-        btnTout.style.borderBottomColor = tab === 'tout'  ? '#7c3aed' : 'transparent';
+        btnTout.style.color             = tab === 'tout'  ? 'rgb(167, 139, 250)' : '#9ca3af';
+        btnTout.style.borderBottomColor = tab === 'tout'  ? 'rgb(167, 139, 250)' : 'transparent';
         btnTout.style.fontWeight        = tab === 'tout'  ? '700'     : '600';
     }
     if (btnNonlu) {
-        btnNonlu.style.color             = tab === 'nonlu' ? '#7c3aed' : '#9ca3af';
-        btnNonlu.style.borderBottomColor = tab === 'nonlu' ? '#7c3aed' : 'transparent';
+        btnNonlu.style.color             = tab === 'nonlu' ? 'rgb(167, 139, 250)' : '#9ca3af';
+        btnNonlu.style.borderBottomColor = tab === 'nonlu' ? 'rgb(167, 139, 250)' : 'transparent';
         btnNonlu.style.fontWeight        = tab === 'nonlu' ? '700'     : '600';
     }
 
