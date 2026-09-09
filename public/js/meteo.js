@@ -101,7 +101,7 @@ async function chargerMeteo(lat, lon, nomVille, mode) {
         const r = await fetch(url);
         const d = await r.json();
 
-        meteoData = {
+                meteoData = {
             temp  : Math.round(d.current.temperature_2m),
             code  : d.current.weather_code,
             icon  : METEO_ICONS[d.current.weather_code] || '🌡️',
@@ -164,7 +164,7 @@ function _renderWidget() {
             </div>`;
     }).join('');
 
-        el.innerHTML = `
+    el.innerHTML = `
         <div style="display:flex;flex-direction:column;gap:8px">
             <div style="display:flex;align-items:flex-start;justify-content:space-between">
                 <div>
@@ -258,20 +258,23 @@ window.addEventListener('focus', () => {
     _refreshMeteoSiPerime();
 });
 
+// ── Modale météo — Glassmorphism V3 ─────────────────────────────
 function _renderModaleMeteo(selectedIdx) {
     const body = document.getElementById('modal-body');
     if (!body || !meteoData) {
         if (body) body.innerHTML = `
-            <p style="color:#555;margin-bottom:16px">Météo non disponible.</p>
-            <div class="ville-form">
-                <input type="text" id="ville-input" placeholder="Rechercher une ville...">
-                <button onclick="rechercherVille()">OK</button>
+            <div class="modal-meteo-wrap">
+                <p style="color:#555;margin-bottom:16px">Météo non disponible.</p>
+                <div class="ville-form">
+                    <input type="text" id="ville-input" placeholder="Rechercher une ville...">
+                    <button onclick="rechercherVille()">OK</button>
+                </div>
+                <button class="geo-btn" onclick="geoLocaliser()">📍 Utiliser ma position</button>
             </div>
-            <button class="geo-btn" onclick="geoLocaliser()">📍 Utiliser ma position</button>
         `;
         return;
     }
-        const d = meteoData;
+    const d = meteoData;
     const isToday = selectedIdx === 0;
 
     const t         = d.daily.time[selectedIdx];
@@ -293,56 +296,46 @@ function _renderModaleMeteo(selectedIdx) {
         const jIcon = i === 0 ? d.icon : (METEO_ICONS[d.daily.weather_code[i]] || '🌡️');
         const sel   = i === selectedIdx;
         return `
-            <div onclick="_selectJourModale(${i})" style="
-                display:flex;flex-direction:column;align-items:center;gap:2px;
-                padding:8px 4px;border-radius:10px;cursor:pointer;flex:1;min-width:0;
-                background:${sel ? '#eff6ff' : '#f8fafc'};
-                border:2px solid ${sel ? '#4f46e5' : '#e5e7eb'};
-                transition:all .15s">
-                <div style="font-size:10px;font-weight:700;color:${sel ? '#4f46e5' : '#888'}">${jour}</div>
-                <div style="font-size:20px;line-height:1.3">${jIcon}</div>
-                <div style="font-size:12px;font-weight:700;color:#1e3a5f">${jMax}°</div>
-                <div style="font-size:11px;color:#aaa">${jMin}°</div>
+            <div onclick="_selectJourModale(${i})" class="modal-meteo-jour-card${sel ? ' active' : ''}">
+                <div class="modal-meteo-jour-nom">${jour}</div>
+                <div class="modal-meteo-jour-icon">${jIcon}</div>
+                <div class="modal-meteo-jour-max">${jMax}°</div>
+                <div class="modal-meteo-jour-min">${jMin}°</div>
             </div>`;
     }).join('');
 
     body.innerHTML = `
-        <div style="display:flex;flex-direction:column;gap:14px">
-            <div style="display:flex;align-items:center;justify-content:space-between;
-                        background:#f0f9ff;border-radius:16px;padding:16px 20px">
+        <div class="modal-meteo-wrap">
+            <div class="modal-meteo-hero">
                 <div>
-                    <div style="font-size:54px;font-weight:900;color:#1e3a5f;line-height:1">
-                        ${isToday ? d.temp : iMax}°
-                    </div>
-                    <div style="font-size:14px;color:#555;margin-top:4px">${iIcon} ${desc}</div>
-                    <div style="font-size:13px;color:#888;margin-top:2px">↑${iMax}° ↓${iMin}°</div>
-                    <div style="font-size:12px;color:#e879a0;margin-top:4px;font-weight:600">📍 ${d.ville}</div>
+                    <div class="modal-meteo-temp">${isToday ? d.temp : iMax}°</div>
+                    <div class="modal-meteo-desc">${iIcon} ${desc}</div>
+                    <div class="modal-meteo-minmax">↑${iMax}° ↓${iMin}°</div>
+                    <div class="modal-meteo-ville">📍 ${d.ville}</div>
                 </div>
-                <div style="font-size:64px;line-height:1">${iIcon}</div>
+                <div class="modal-meteo-hero-icon">${iIcon}</div>
             </div>
             ${isToday ? `
-            <div style="display:flex;gap:8px;flex-wrap:wrap">
-                <span class="meteo-badge" style="font-size:13px;padding:6px 12px">💧 ${d.hum}%</span>
-                <span class="meteo-badge" style="font-size:13px;padding:6px 12px">💨 ${d.vent} km/h</span>
-                <span class="meteo-badge" style="font-size:13px;padding:6px 12px">🌧️ ${d.pluie}%</span>
+            <div class="modal-meteo-badges">
+                <span class="meteo-badge">💧 ${d.hum}%</span>
+                <span class="meteo-badge">💨 ${d.vent} km/h</span>
+                <span class="meteo-badge">🌧️ ${d.pluie}%</span>
             </div>` : ''}
             <div>
-                <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;
-                            letter-spacing:.5px;margin-bottom:8px">Prévisions 6 jours</div>
-                <div style="display:flex;gap:6px">${joursHTML}</div>
+                <div class="modal-meteo-section-label">Prévisions 6 jours</div>
+                <div class="modal-meteo-jours">${joursHTML}</div>
             </div>
-            <div style="background:#f0f9ff;border:2px solid #bae6fd;border-radius:14px;padding:16px">
-                <div style="font-size:13px;font-weight:700;color:#0369a1;
-                            text-transform:capitalize;margin-bottom:10px">${dateLabel}</div>
-                <div style="display:flex;justify-content:space-between;align-items:center">
+            <div class="modal-meteo-today">
+                <div class="modal-meteo-today-date">${dateLabel}</div>
+                <div class="modal-meteo-today-body">
                     <div>
-                        <div style="font-size:13px;color:#555;margin-bottom:6px">${iIcon} ${desc}</div>
-                        <div style="font-size:26px;font-weight:800;color:#1e3a5f">↑${iMax}° ↓${iMin}°</div>
-                        <div style="margin-top:8px">
+                        <div class="modal-meteo-today-desc">${iIcon} ${desc}</div>
+                        <div class="modal-meteo-today-minmax">↑${iMax}° ↓${iMin}°</div>
+                        <div class="modal-meteo-today-precip">
                             <span class="meteo-badge">🌧️ Précipitations : ${iPluie}%</span>
                         </div>
                     </div>
-                    <div style="font-size:52px;line-height:1">${iIcon}</div>
+                    <div class="modal-meteo-today-icon">${iIcon}</div>
                 </div>
             </div>
             <div class="ville-form">
@@ -389,7 +382,6 @@ async function chargerMeteoAuto() {
     // 1. Affichage immédiat (cache local) pour ne pas bloquer l'écran
     let affichageImmediatLance = false;
     if (ls?.lat && ls?.lon) {
-        // On lance le chargement météo avec les données en cache sans await (non-bloquant)
         chargerMeteo(ls.lat, ls.lon, ls.ville || 'Ma position', ls.mode || 'ville').catch(() => {});
         affichageImmediatLance = true;
     }
@@ -397,7 +389,6 @@ async function chargerMeteoAuto() {
     // 2. Si on est en mode ville (ou sans géoloc), on s'arrête là
     if (ls?.mode !== 'geoloc' || !navigator.geolocation) {
         if (!affichageImmediatLance) {
-            // Cas extrême : aucun cache et mode geoloc désactivé/impossible
             _tenterChargementProfilMeteo();
         } else {
             _demarrerRefreshAuto();
@@ -409,12 +400,10 @@ async function chargerMeteoAuto() {
     navigator.geolocation.getCurrentPosition(
         async pos => {
             const ville = await getNomVille(pos.coords.latitude, pos.coords.longitude);
-            // On bypass l'affichage "Chargement..." dans chargerMeteo pour que ça soit invisible
             await chargerMeteo(pos.coords.latitude, pos.coords.longitude, ville, 'geoloc');
             _demarrerRefreshAuto();
         },
         () => {
-            // Géoloc échouée en arrière-plan : on garde le cache (déjà affiché)
             if (!affichageImmediatLance) {
                 _afficherEtatMeteoVide();
             } else {
@@ -477,21 +466,25 @@ async function rechercherVille() {
             closeModal();
         } else {
             document.getElementById('modal-body').innerHTML = `
-                <p style="color:#ef4444;margin-bottom:16px">Aucune ville trouvée.</p>
+                <div class="modal-meteo-wrap">
+                    <p style="color:#ef4444;margin-bottom:16px">Aucune ville trouvée.</p>
+                    <div class="ville-form">
+                        <input type="text" id="ville-input" placeholder="Rechercher une ville...">
+                        <button onclick="rechercherVille()">OK</button>
+                    </div>
+                    <button class="geo-btn" onclick="geoLocaliser()">📍 Utiliser ma position</button>
+                </div>`;
+        }
+    } catch {
+        document.getElementById('modal-body').innerHTML = `
+            <div class="modal-meteo-wrap">
+                <p style="color:#ef4444;margin-bottom:16px">Erreur réseau.</p>
                 <div class="ville-form">
                     <input type="text" id="ville-input" placeholder="Rechercher une ville...">
                     <button onclick="rechercherVille()">OK</button>
                 </div>
-                <button class="geo-btn" onclick="geoLocaliser()">📍 Utiliser ma position</button>`;
-        }
-    } catch {
-        document.getElementById('modal-body').innerHTML = `
-            <p style="color:#ef4444;margin-bottom:16px">Erreur réseau.</p>
-            <div class="ville-form">
-                <input type="text" id="ville-input" placeholder="Rechercher une ville...">
-                <button onclick="rechercherVille()">OK</button>
-            </div>
-            <button class="geo-btn" onclick="geoLocaliser()">📍 Utiliser ma position</button>`;
+                <button class="geo-btn" onclick="geoLocaliser()">📍 Utiliser ma position</button>
+            </div>`;
     }
 }
 
@@ -505,12 +498,14 @@ async function geoLocaliser() {
         },
         () => {
             document.getElementById('modal-body').innerHTML = `
-                <p style="color:#ef4444;margin-bottom:16px">Localisation refusée.</p>
-                <div class="ville-form">
-                    <input type="text" id="ville-input" placeholder="Rechercher une ville...">
-                    <button onclick="rechercherVille()">OK</button>
-                </div>
-                <button class="geo-btn" onclick="geoLocaliser()">📍 Utiliser ma position</button>`;
+                <div class="modal-meteo-wrap">
+                    <p style="color:#ef4444;margin-bottom:16px">Localisation refusée.</p>
+                    <div class="ville-form">
+                        <input type="text" id="ville-input" placeholder="Rechercher une ville...">
+                        <button onclick="rechercherVille()">OK</button>
+                    </div>
+                    <button class="geo-btn" onclick="geoLocaliser()">📍 Utiliser ma position</button>
+                </div>`;
         }
     );
 }
