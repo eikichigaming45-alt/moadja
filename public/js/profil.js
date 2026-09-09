@@ -661,30 +661,20 @@ async function sauvegarderSante() {
 function _injecterChampsAllergies(p) {
     const container = document.getElementById('profil-tab-sante');
     if (!container) return;
-    if (document.getElementById('p-allergies')) return;
+    
+    // Si la section médicale existe déjà, on ne la remet pas
+    if (document.getElementById('p-traitements')) return;
 
-    const allergiesVal       = Array.isArray(p?.allergies)       ? p.allergies.join(', ')       : '';
-    const aliments_exclusVal = Array.isArray(p?.aliments_exclus) ? p.aliments_exclus.join(', ') : '';
-
-    const bloc = document.createElement('div');
-    bloc.innerHTML = `
-        <div class="form-group">
-            <label for="p-allergies">Allergies <span style="font-size:11px;color:#9ca3af">(séparées par des virgules)</span></label>
-            <input type="text" id="p-allergies" placeholder="gluten, arachides, lactose" value="${allergiesVal}">
+    // Création du bloc SUIVI MÉDICAL uniquement
+    const blocMedical = document.createElement('div');
+    blocMedical.style.cssText = 'margin-top:24px;margin-bottom:24px;border-top:1px solid #f3f4f6;padding-top:24px;';
+    blocMedical.innerHTML = `
+        <h3 style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">SUIVI MÉDICAL</h3>
+        <div class="form-group" style="margin-bottom:12px;">
+            <label>Traitements en cours</label>
+            <textarea id="p-traitements" rows="2" placeholder="Ex: Lévothyrox 50µg, etc." style="width:100%; border:1px solid #e5e7eb; border-radius:8px; padding:8px; font-family:inherit;">${p?.traitements_en_cours || ''}</textarea>
         </div>
-        <div class="form-group">
-            <label for="p-aliments-exclus">Aliments exclus <span style="font-size:11px;color:#9ca3af">(séparés par des virgules)</span></label>
-            <input type="text" id="p-aliments-exclus" placeholder="porc, alcool, café" value="${aliments_exclusVal}">
-        </div>
-        
-        <!-- SUIVI MÉDICAL INJECTÉ AVEC LE NOUVEAU DESIGN -->
-        <div style="margin-top:24px;margin-bottom:24px;border-top:1px solid #f3f4f6;padding-top:24px;">
-            <h3 style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">SUIVI MÉDICAL</h3>
-            <div class="form-group" style="margin-bottom:12px;">
-                <label>Traitements en cours</label>
-                <textarea id="p-traitements" rows="2" placeholder="Ex: Lévothyrox 50µg, etc.">${p?.traitements_en_cours || ''}</textarea>
-            </div>
-            <divclass="form-row" style="display:flex;gap:12px;margin-bottom:12px;">
+        <div class="form-row" style="display:flex;gap:12px;margin-bottom:12px;">
             <div class="form-group" style="flex:1;">
                 <label>Diabète</label>
                 <select id="p-diabete">
@@ -705,14 +695,14 @@ function _injecterChampsAllergies(p) {
                 </select>
             </div>
         </div>
-    </div>
     `;
 
+    // Trouver le bouton de sauvegarde pour insérer juste au-dessus
     const btnSave = container.querySelector('button[onclick="sauvegarderSante()"]');
     if (btnSave) {
-        btnSave.parentNode.insertBefore(bloc, btnSave);
+        btnSave.parentNode.insertBefore(blocMedical, btnSave);
     } else {
-        container.appendChild(bloc);
+        container.appendChild(blocMedical);
     }
 }
 
