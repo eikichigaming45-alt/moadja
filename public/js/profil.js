@@ -106,12 +106,11 @@ async function geocoderLieuNaissance() {
 }
 
 // === SYSTEME DE CUSTOM SELECT (GLASSMORPHISM) ===
-// Remplace toutes les listes déroulantes moches par des menus design
 function _initCustomSelects() {
     const selects = document.querySelectorAll('#profil-modal select:not(.customized)');
     selects.forEach(select => {
         select.classList.add('customized');
-        select.style.display = 'none'; // Cache la vraie liste
+        select.style.display = 'none';
 
         const wrapper = document.createElement('div');
         wrapper.className = 'custom-select-wrapper';
@@ -119,7 +118,6 @@ function _initCustomSelects() {
 
         const trigger = document.createElement('div');
         trigger.className = 'custom-select-trigger';
-        // Style Glassmorphism
         trigger.style.cssText = 'cursor:pointer; display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.7); border-radius:12px; padding:10px 14px; font-size:13px; color:#1f2937; box-shadow:inset 0 1px 2px rgba(255,255,255,0.8), 0 2px 6px rgba(0,0,0,0.02); transition:all 0.2s ease;';
 
         const selectedOpt = select.options[select.selectedIndex];
@@ -149,10 +147,8 @@ function _initCustomSelects() {
                 optionsList.style.display = 'none';
                 trigger.style.borderColor = 'rgba(255,255,255,0.7)';
                 
-                // Mettre à jour le vrai select pour la sauvegarde
                 select.dispatchEvent(new Event('change'));
                 
-                // Mettre à jour les couleurs des options
                 Array.from(optionsList.children).forEach(c => {
                     c.style.background = 'transparent';
                     c.style.color = '#374151';
@@ -170,7 +166,6 @@ function _initCustomSelects() {
         trigger.addEventListener('click', (e) => {
             e.stopPropagation();
             const isOpen = optionsList.style.display === 'block';
-            // Fermer tous les autres
             document.querySelectorAll('.custom-select-wrapper > div:nth-child(2)').forEach(l => l.style.display = 'none');
             document.querySelectorAll('.custom-select-trigger').forEach(t => t.style.borderColor = 'rgba(255,255,255,0.7)');
             
@@ -184,7 +179,6 @@ function _initCustomSelects() {
         wrapper.appendChild(optionsList);
         select.parentNode.insertBefore(wrapper, select.nextSibling);
         
-        // Gérer le préremplissage dynamique
         select.addEventListener('change', () => {
             const currentOpt = select.options[select.selectedIndex];
             if(currentOpt) trigger.querySelector('.custom-select-text').textContent = currentOpt.text;
@@ -202,7 +196,7 @@ function _initCustomSelects() {
         });
     });
 }
-// Fermer les menus si on clique ailleurs
+
 document.addEventListener('click', () => {
     document.querySelectorAll('.custom-select-wrapper > div:nth-child(2)').forEach(l => l.style.display = 'none');
     document.querySelectorAll('.custom-select-trigger').forEach(t => t.style.borderColor = 'rgba(255,255,255,0.7)');
@@ -225,9 +219,7 @@ async function chargerProfilHeader() {
         const p         = d.profil;
         const trigramme = construireTrigramme(p.prenom, p.nom);
 
-        try {
-            localStorage.setItem('moadja_profil', JSON.stringify({ photo: p.photo || null }));
-        } catch { /* silencieux */ }
+        try { localStorage.setItem('moadja_profil', JSON.stringify({ photo: p.photo || null })); } catch { }
 
         if (p.photo) {
             btn.innerHTML        = `<img src="${p.photo}" alt="profil">`;
@@ -261,7 +253,6 @@ async function chargerProfilHeader() {
 
         const signe = obtenirSigne(p);
 
-        // 1. Mise à jour du widget classique (pour Mobile)
         if (wc) {
             wc.innerHTML = `
                 <div class="profil-widget">
@@ -280,9 +271,6 @@ async function chargerProfilHeader() {
             `;
         }
 
-        // ==========================================
-        // 2. INJECTION DANS L'IDENTITY MIRROR (DESKTOP)
-        // ==========================================
         const imAvatarImg   = document.getElementById('im-avatar-img');
         const imUserName    = document.getElementById('im-user-name');
         const imTogglesList = document.querySelector('.im-toggles-list');
@@ -365,9 +353,8 @@ async function chargerProfilHeader() {
         }
 
         // --- Injection V3 : Initialiser les champs santé et custom selects une fois chargé ---
-        _injecterChampsAllergies(p); // Injectera aussi les champs médicaux
+        _injecterChampsAllergies(p);
         
-        // Déclencher les updates sur les listes pour préremplir les selects customs
         setTimeout(() => {
             _initCustomSelects();
             document.querySelectorAll('#profil-modal select').forEach(s => s.dispatchEvent(new Event('change')));
@@ -398,11 +385,11 @@ function previewPhoto(event) {
                     <img id="crop-img" src="">
                 </div>
                 <div class="crop-actions">
-			                    <button class="btn-crop-cancel" onclick="annulerCrop()">✕ Annuler</button>
+                    <button class="btn-crop-cancel" onclick="annulerCrop()">✕ Annuler</button>
                     <button class="btn-crop-ok"     onclick="validerCrop()">✅ Valider le recadrage</button>
                 </div>
             `;
-                    const tabInfos = document.getElementById('profil-tab-infos');
+            const tabInfos = document.getElementById('profil-tab-infos');
             if (tabInfos) tabInfos.insertBefore(cropZone, tabInfos.firstChild);
         }
         document.getElementById('crop-img').src = e.target.result;
@@ -479,7 +466,6 @@ async function validerCrop() {
                 btn.style.background = '';
             }
 
-            // Rafraîchit l'Identity Mirror
             chargerProfilHeader();
 
         } catch (err) {
@@ -661,12 +647,13 @@ async function sauvegarderSante() {
 function _injecterChampsAllergies(p) {
     const container = document.getElementById('profil-tab-sante');
     if (!container) return;
-    
-    // Si la section médicale existe déjà, on ne la remet pas
+
+    // Ce bloc ne s'occupe QUE du suivi médical. On ne bloque plus
+    // sur l'existence du champ "allergies" (déjà présent en dur dans le HTML).
     if (document.getElementById('p-traitements')) return;
 
-    // Création du bloc SUIVI MÉDICAL uniquement
     const blocMedical = document.createElement('div');
+    blocMedical.id = 'bloc-suivi-medical';
     blocMedical.style.cssText = 'margin-top:24px;margin-bottom:24px;border-top:1px solid #f3f4f6;padding-top:24px;';
     blocMedical.innerHTML = `
         <h3 style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">SUIVI MÉDICAL</h3>
@@ -992,13 +979,13 @@ document.addEventListener('DOMContentLoaded', () => {
     chargerProfilHeader();
     
     // Écouteur global pour intercepter l'ouverture de la modale Profil 
-    // et appliquer le design Glassmorphism aux listes déroulantes (car elles sont chargées dynamiquement)
-    const observer = new MutationObserver((mutations) => {
-        mutations.forEach(mutation => {
-            if (document.getElementById('profil-modal') && document.querySelector('#profil-modal select:not(.customized)')) {
-                _initCustomSelects();
-            }
-        });
+    // et appliquer le design Glassmorphism aux listes déroulantes (chargées dynamiquement)
+    const observer = new MutationObserver(() => {
+        if (document.querySelector('#profil-modal select:not(.customized)')) {
+            _initCustomSelects();
+        }
     });
     observer.observe(document.body, { childList: true, subtree: true });
 });
+
+
