@@ -151,21 +151,25 @@ input:focus { border-color: #7C3AED; background: #fff; }
 .topbar-search {
   display: none; /* Masquée par défaut sur mobile */
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   background: var(--glass-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: var(--glass-border);
   border-radius: 50px;
   box-shadow: var(--glass-shadow);
-  padding: 8px 20px;
+  padding: 9px 22px;
 }
-.topbar-search svg { color: #7C3AED; flex-shrink: 0; }
+.topbar-search svg {
+  color: #7C3AED;
+  flex-shrink: 0; /* Empêche l'icône de se compresser et de chevaucher le texte */
+}
 .topbar-search input {
   border: none;
   background: transparent;
   outline: none;
-  width: 100%;
+  flex: 1;       /* Prend l'espace restant proprement, au lieu de width:100% */
+  min-width: 0;  /* Corrige le bug Flexbox qui causait le chevauchement du "E" */
   margin: 0;
   padding: 0;
   font-size: 14px;
@@ -186,11 +190,9 @@ input:focus { border-color: #7C3AED; background: #fff; }
     background: rgba(255, 255, 255, 0.94);
     box-shadow: 0 12px 32px rgba(31, 38, 135, 0.18);
   }
-  /* La checkbox est un sibling de .topbar ; .topbar-search est nichée DANS .topbar */
   #search-toggle:checked ~ .topbar .topbar-search {
     display: flex;
   }
-  /* Pousse tout le contenu sous la topbar pour ne jamais chevaucher la météo */
   #search-toggle:checked ~ .app-layout-wrapper {
     margin-top: 56px;
   }
