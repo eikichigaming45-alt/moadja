@@ -105,6 +105,111 @@ async function geocoderLieuNaissance() {
     }
 }
 
+// === SYSTEME DE CUSTOM SELECT (GLASSMORPHISM) ===
+// Remplace toutes les listes déroulantes moches par des menus design
+function _initCustomSelects() {
+    const selects = document.querySelectorAll('#profil-modal select:not(.customized)');
+    selects.forEach(select => {
+        select.classList.add('customized');
+        select.style.display = 'none'; // Cache la vraie liste
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'custom-select-wrapper';
+        wrapper.style.cssText = 'position:relative; width:100%;';
+
+        const trigger = document.createElement('div');
+        trigger.className = 'custom-select-trigger';
+        // Style Glassmorphism
+        trigger.style.cssText = 'cursor:pointer; display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.7); border-radius:12px; padding:10px 14px; font-size:13px; color:#1f2937; box-shadow:inset 0 1px 2px rgba(255,255,255,0.8), 0 2px 6px rgba(0,0,0,0.02); transition:all 0.2s ease;';
+
+        const selectedOpt = select.options[select.selectedIndex];
+        trigger.innerHTML = `<span class="custom-select-text" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${selectedOpt ? selectedOpt.text : 'Sélectionner...'}</span> <span style="font-size:10px; color:#9ca3af; margin-left:8px;">▼</span>`;
+
+        const optionsList = document.createElement('div');
+        optionsList.style.cssText = 'position:absolute; top:calc(100% + 6px); left:0; right:0; background:rgba(255, 255, 255, 0.95); backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.9); border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,0.08); z-index:1000; display:none; max-height:220px; overflow-y:auto; padding:6px;';
+
+        Array.from(select.options).forEach((opt, index) => {
+            const optEl = document.createElement('div');
+            optEl.textContent = opt.text;
+            optEl.style.cssText = 'padding:10px 14px; font-size:13px; cursor:pointer; color:#374151; transition:all 0.2s ease; border-radius:8px; margin-bottom:2px;';
+            
+            if (opt.selected) {
+                optEl.style.background = 'rgba(167, 139, 250, 0.15)';
+                optEl.style.color = 'rgb(167, 139, 250)';
+                optEl.style.fontWeight = '600';
+            }
+
+            optEl.onmouseenter = () => { if(!opt.selected) optEl.style.background = 'rgba(167, 139, 250, 0.05)'; };
+            optEl.onmouseleave = () => { if(!opt.selected) optEl.style.background = 'transparent'; };
+
+            optEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                select.value = opt.value;
+                trigger.querySelector('.custom-select-text').textContent = opt.text;
+                optionsList.style.display = 'none';
+                trigger.style.borderColor = 'rgba(255,255,255,0.7)';
+                
+                // Mettre à jour le vrai select pour la sauvegarde
+                select.dispatchEvent(new Event('change'));
+                
+                // Mettre à jour les couleurs des options
+                Array.from(optionsList.children).forEach(c => {
+                    c.style.background = 'transparent';
+                    c.style.color = '#374151';
+                    c.style.fontWeight = '400';
+                    c.selected = false;
+                });
+                opt.selected = true;
+                optEl.style.background = 'rgba(167, 139, 250, 0.15)';
+                optEl.style.color = 'rgb(167, 139, 250)';
+                optEl.style.fontWeight = '600';
+            });
+            optionsList.appendChild(optEl);
+        });
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isOpen = optionsList.style.display === 'block';
+            // Fermer tous les autres
+            document.querySelectorAll('.custom-select-wrapper > div:nth-child(2)').forEach(l => l.style.display = 'none');
+            document.querySelectorAll('.custom-select-trigger').forEach(t => t.style.borderColor = 'rgba(255,255,255,0.7)');
+            
+            if (!isOpen) {
+                optionsList.style.display = 'block';
+                trigger.style.borderColor = 'rgb(167, 139, 250)';
+            }
+        });
+
+        wrapper.appendChild(trigger);
+        wrapper.appendChild(optionsList);
+        select.parentNode.insertBefore(wrapper, select.nextSibling);
+        
+        // Gérer le préremplissage dynamique
+        select.addEventListener('change', () => {
+            const currentOpt = select.options[select.selectedIndex];
+            if(currentOpt) trigger.querySelector('.custom-select-text').textContent = currentOpt.text;
+            Array.from(optionsList.children).forEach((c, idx) => {
+                if(idx === select.selectedIndex) {
+                    c.style.background = 'rgba(167, 139, 250, 0.15)';
+                    c.style.color = 'rgb(167, 139, 250)';
+                    c.style.fontWeight = '600';
+                } else {
+                    c.style.background = 'transparent';
+                    c.style.color = '#374151';
+                    c.style.fontWeight = '400';
+                }
+            });
+        });
+    });
+}
+// Fermer les menus si on clique ailleurs
+document.addEventListener('click', () => {
+    document.querySelectorAll('.custom-select-wrapper > div:nth-child(2)').forEach(l => l.style.display = 'none');
+    document.querySelectorAll('.custom-select-trigger').forEach(t => t.style.borderColor = 'rgba(255,255,255,0.7)');
+});
+// ==========================================
+
+
 async function chargerProfilHeader() {
     const user = getUser();
     if (!user?.token) return;
@@ -206,7 +311,6 @@ async function chargerProfilHeader() {
         if (imTogglesList) {
             imTogglesList.innerHTML = ''; 
             
-            // On transforme le conteneur pour afficher les infos sous forme de "pilules" alignées
             imTogglesList.style.display = 'flex';
             imTogglesList.style.flexDirection = 'row';
             imTogglesList.style.flexWrap = 'wrap';
@@ -223,14 +327,12 @@ async function chargerProfilHeader() {
                 </div>`;
             };
 
-            // Injection des pilules minimalistes (Icône + Valeur uniquement)
             if (age) addPill('🎂', '#f59e0b', `${age} ans`);
             if (signe) addPill(signe.emoji, '#8b5cf6', signe.signe);
             if (p.profession) addPill('💼', '#3b82f6', p.profession);
             if (p.telephone) addPill('📞', '#10b981', p.telephone);
             if (p.site_web) addPill('🔗', '#ec4899', `<a href="${p.site_web}" target="_blank" style="color:inherit;text-decoration:none">${p.site_web.replace(/^https?:\/\//,'')}</a>`);
 
-            // Note (Bio) centrée en dessous
             if (p.note) {
                 imTogglesList.innerHTML += `
                 <div style="width:100%; text-align:center; font-size:12px; color:#6b7280; line-height:1.4; margin-top:8px; font-style:italic; padding:0 10px;">
@@ -238,14 +340,12 @@ async function chargerProfilHeader() {
                 </div>`;
             }
 
-            // Bloc boutons (Modifier + Admin)
             let boutonsHtml = `
             <div style="width:100%; margin-top:16px; display:flex; flex-direction:column; gap:8px;">
                 <button onclick="openModal('profil')" style="padding:10px; background:rgba(255,255,255,0.8); border:none; border-radius:20px; font-size:13px; font-weight:600; color:#1f2937; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.05); transition:all .2s">
                     ✏️ Modifier mon profil
                 </button>`;
 
-            // Injection du bouton Administration si l'utilisateur est admin
             if (user?.role === 'admin') {
                 boutonsHtml += `
                 <button onclick="openModal('admin')" style="padding:10px; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); border-radius:20px; font-size:13px; font-weight:600; color:#d97706; cursor:pointer; transition:all .2s">
@@ -257,13 +357,21 @@ async function chargerProfilHeader() {
             imTogglesList.innerHTML += boutonsHtml;
         }
         
-        // 3. Injection du numéro de version dans le menu déroulant (pour Mobile & Desktop)
         const userMenu = document.getElementById('user-menu');
         if (userMenu && !document.getElementById('menu-version-display')) {
             const versionNode = document.getElementById('topbar-version');
             const vText = versionNode ? versionNode.textContent : '';
             userMenu.innerHTML += `<div id="menu-version-display" style="text-align:center; padding:10px; font-size:10px; color:#9ca3af; border-top:1px solid #f0f0f0; margin-top:4px; font-weight:600;">${vText}</div>`;
         }
+
+        // --- Injection V3 : Initialiser les champs santé et custom selects une fois chargé ---
+        _injecterChampsAllergies(p); // Injectera aussi les champs médicaux
+        
+        // Déclencher les updates sur les listes pour préremplir les selects customs
+        setTimeout(() => {
+            _initCustomSelects();
+            document.querySelectorAll('#profil-modal select').forEach(s => s.dispatchEvent(new Event('change')));
+        }, 100);
 
     } catch { /* silencieux */ }
 }
@@ -520,6 +628,9 @@ async function sauvegarderSante() {
         signe_zodiaque  : document.getElementById('p-signe')?.value           || null,
         allergies,
         aliments_exclus,
+        traitements_en_cours: document.getElementById('p-traitements')?.value || '',
+        diabete: document.getElementById('p-diabete')?.value || '',
+        cholesterol: document.getElementById('p-cholesterol')?.value || ''
     };
 
     try {
@@ -565,6 +676,36 @@ function _injecterChampsAllergies(p) {
             <label for="p-aliments-exclus">Aliments exclus <span style="font-size:11px;color:#9ca3af">(séparés par des virgules)</span></label>
             <input type="text" id="p-aliments-exclus" placeholder="porc, alcool, café" value="${aliments_exclusVal}">
         </div>
+        
+        <!-- SUIVI MÉDICAL INJECTÉ AVEC LE NOUVEAU DESIGN -->
+        <div style="margin-top:24px;margin-bottom:24px;border-top:1px solid #f3f4f6;padding-top:24px;">
+            <h3 style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">SUIVI MÉDICAL</h3>
+            <div class="form-group" style="margin-bottom:12px;">
+                <label>Traitements en cours</label>
+                <textarea id="p-traitements" rows="2" placeholder="Ex: Lévothyrox 50µg, etc.">${p?.traitements_en_cours || ''}</textarea>
+            </div>
+            <divclass="form-row" style="display:flex;gap:12px;margin-bottom:12px;">
+            <div class="form-group" style="flex:1;">
+                <label>Diabète</label>
+                <select id="p-diabete">
+                    <option value="" ${!p?.diabete ? 'selected' : ''}>— Non renseigné —</option>
+                    <option value="Non" ${p?.diabete === 'Non' ? 'selected' : ''}>Non</option>
+                    <option value="Type 1" ${p?.diabete === 'Type 1' ? 'selected' : ''}>Type 1</option>
+                    <option value="Type 2" ${p?.diabete === 'Type 2' ? 'selected' : ''}>Type 2</option>
+                    <option value="Gestationnel" ${p?.diabete === 'Gestationnel' ? 'selected' : ''}>Gestationnel</option>
+                </select>
+            </div>
+            <div class="form-group" style="flex:1;">
+                <label>Cholestérol</label>
+                <select id="p-cholesterol">
+                    <option value="" ${!p?.cholesterol ? 'selected' : ''}>— Non renseigné —</option>
+                    <option value="Normal" ${p?.cholesterol === 'Normal' ? 'selected' : ''}>Normal</option>
+                    <option value="Élevé" ${p?.cholesterol === 'Élevé' ? 'selected' : ''}>Élevé</option>
+                    <option value="Sous traitement" ${p?.cholesterol === 'Sous traitement' ? 'selected' : ''}>Sous traitement</option>
+                </select>
+            </div>
+        </div>
+    </div>
     `;
 
     const btnSave = container.querySelector('button[onclick="sauvegarderSante()"]');
@@ -744,7 +885,7 @@ async function _injecterProfilPublicToggles() {
             <p style="color:#9ca3af;font-size:13px">Chargement...</p>
         </div>
         <button id="btn-sauver-profil-public" class="btn-save" onclick="_sauvegarderProfilPublicToggles()"
-            style="width:100%;margin-top:12px">
+            style="width:100%;margin-top:12px;background:rgb(167, 139, 250);color:#fff;border:none;border-radius:12px;padding:10px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(167, 139, 250, 0.3);">
             💾 Sauvegarder
         </button>
         <div id="profil-public-toggles-msg" style="text-align:center;margin-top:8px;font-size:13px;min-height:16px"></div>
@@ -859,5 +1000,15 @@ async function _socialOnglet(onglet) {
 
 document.addEventListener('DOMContentLoaded', () => {
     chargerProfilHeader();
+    
+    // Écouteur global pour intercepter l'ouverture de la modale Profil 
+    // et appliquer le design Glassmorphism aux listes déroulantes (car elles sont chargées dynamiquement)
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach(mutation => {
+            if (document.getElementById('profil-modal') && document.querySelector('#profil-modal select:not(.customized)')) {
+                _initCustomSelects();
+            }
+        });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
 });
-
