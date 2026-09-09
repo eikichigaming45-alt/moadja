@@ -1,3 +1,10 @@
+## v1.71.22 - 09-09-2026
+
+### ✨ Nouveau
+- Harmonisation visuelle du fil d'actualité : les mentions (@Prénom Nom), les hashtags (#mot-clé) et les badges de lieu affichent désormais tous la même couleur violette douce, sans halo ni surbrillance, pour une lecture plus homogène avec le reste de l'interface.
+
+---
+
 ## v1.71.21 - 09-09-2026
 
 ### ✨ Nouveau
@@ -5,7 +12,6 @@
 - Sur ordinateur, elle est affichée en permanence, bien centrée en haut de l'écran.
 - Sur mobile, elle apparaît sous le menu du haut sans jamais gêner l'affichage de la météo ni du reste du contenu.
 - Elle se ferme automatiquement dès que vous ouvrez les notifications ou la messagerie, pour garder un écran bien rangé.
-
 ---
 
 ## v1.71.20 - 07-09-2026
