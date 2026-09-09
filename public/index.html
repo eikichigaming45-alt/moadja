@@ -67,11 +67,11 @@
 <!-- Application principale -->
 <div id="app">
 
+    <!-- Checkbox invisible pilotant l'ouverture/fermeture de la bulle de recherche (CSS-only, aucun JS) -->
+    <input type="checkbox" id="search-toggle" class="search-toggle-checkbox">
+
     <!-- Topbar épurée -->
     <div class="topbar">
-
-        <!-- Checkbox invisible pilotant l'ouverture/fermeture de la bulle de recherche (CSS-only, aucun JS) -->
-        <input type="checkbox" id="search-toggle" class="search-toggle-checkbox">
 
         <div class="topbar-left">
             <h2 id="topbar-title" onclick="switchTab('accueil');actualiser()" title="Accueil">MoaDja</h2>
@@ -87,14 +87,6 @@
         </div>
 
         <div class="topbar-right" style="position:relative; display:flex; align-items:center; gap:8px;">
-
-            <!-- Icône Recherche Mobile (label lié à la checkbox, même style que les autres icônes) -->
-            <label for="search-toggle" class="icon-btn mobile-search-btn" id="btn-recherche-mobile" title="Rechercher">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-            </label>
 
             <!-- Cloche notifications (icône vectorielle épurée) -->
             <div style="position:relative;display:inline-flex">
@@ -129,7 +121,7 @@
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                 </svg>
-                <span id="tchat-topbar-badge" style="
+                                <span id="tchat-topbar-badge" style="
                     display:none;
                     position:absolute;
                     top:-4px;right:-4px;
@@ -148,6 +140,14 @@
                     line-height:1;
                 "></span>
             </button>
+
+            <!-- Icône Recherche Mobile (label lié à la checkbox, même style que les autres icônes) — placée à droite du Tchat -->
+            <label for="search-toggle" class="icon-btn mobile-search-btn" id="btn-recherche-mobile" title="Rechercher">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            </label>
 
             <!-- Bouton profil (Mobile et Avatar Desktop) -->
             <button class="icon-btn" id="btn-profil-header" onclick="toggleUserMenu(event)" title="Mon compte">👤</button>
@@ -344,7 +344,7 @@
             </div>
         </main>
 
-                <!-- COLONNE DROITE (Human Link) -->
+        <!-- COLONNE DROITE (Human Link) -->
         <aside class="sidebar-col right-sidebar" id="human-link">
             <div class="glass-panel">
                 <h3 style="margin-top:0;font-weight:600;color:#1f2937;">Human Link</h3>
