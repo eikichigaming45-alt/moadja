@@ -238,17 +238,17 @@ async function chargerProfilHeader() {
                 </div>`;
             }
 
-            // Bloc boutons (Modifier + Admin)
+            // Bloc boutons (Modifier + Admin) harmonisé Glass V3
             let boutonsHtml = `
             <div style="width:100%; margin-top:16px; display:flex; flex-direction:column; gap:8px;">
-                <button onclick="openModal('profil')" style="padding:10px; background:rgba(255,255,255,0.8); border:none; border-radius:20px; font-size:13px; font-weight:600; color:#1f2937; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.05); transition:all .2s">
+                <button class="btn-save" onclick="openModal('profil')" style="width:100%; padding:10px 16px;">
                     ✏️ Modifier mon profil
                 </button>`;
 
-            // Injection du bouton Administration si l'utilisateur est admin
+            // Injection du bouton Administration si l'utilisateur est admin (version amber glass)
             if (user?.role === 'admin') {
                 boutonsHtml += `
-                <button onclick="openModal('admin')" style="padding:10px; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); border-radius:20px; font-size:13px; font-weight:600; color:#d97706; cursor:pointer; transition:all .2s">
+                <button class="btn-save" onclick="openModal('admin')" style="width:100%; padding:10px 16px; background:rgba(245,158,11,0.85); box-shadow:0 4px 15px rgba(245,158,11,0.25);">
                     ⚙️ Administration
                 </button>`;
             }
@@ -289,12 +289,12 @@ function previewPhoto(event) {
                 <div class="crop-container">
                     <img id="crop-img" src="">
                 </div>
-                <div class="crop-actions">
-			                    <button class="btn-crop-cancel" onclick="annulerCrop()">✕ Annuler</button>
-                    <button class="btn-crop-ok"     onclick="validerCrop()">✅ Valider le recadrage</button>
+                <div class="crop-actions" style="display:flex; gap:8px;">
+                    <button class="btn-cancel" onclick="annulerCrop()" style="flex:1;">✕ Annuler</button>
+                    <button class="btn-save" onclick="validerCrop()" style="flex:1;">✅ Valider le recadrage</button>
                 </div>
             `;
-                    const tabInfos = document.getElementById('profil-tab-infos');
+            const tabInfos = document.getElementById('profil-tab-infos');
             if (tabInfos) tabInfos.insertBefore(cropZone, tabInfos.firstChild);
         }
         document.getElementById('crop-img').src = e.target.result;
@@ -346,7 +346,7 @@ async function validerCrop() {
                     const newImg         = document.createElement('img');
                     newImg.id            = 'profil-photo-preview';
                     newImg.src           = urlPhoto;
-                    newImg.style.cssText = 'width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid #4f46e5;cursor:pointer;box-shadow:0 4px 12px rgba(79,70,229,0.3)';
+                    newImg.style.cssText = 'width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid #7c3aed;cursor:pointer;box-shadow:0 4px 12px rgba(124,58,237,0.3)';
                     newImg.onclick       = () => document.getElementById('photo-input').click();
                     zone.replaceWith(newImg);
                     preview = newImg;
@@ -357,8 +357,9 @@ async function validerCrop() {
             if (!btnSuppr && preview) {
                 btnSuppr               = document.createElement('button');
                 btnSuppr.id            = 'btn-supprimer-photo';
+                btnSuppr.className     = 'btn-delete';
                 btnSuppr.onclick       = supprimerPhoto;
-                btnSuppr.style.cssText = 'margin-top:8px;background:#fee2e2;color:#ef4444;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer';
+                btnSuppr.style.cssText = 'margin-top:12px; width:100%;';
                 btnSuppr.innerHTML     = '🗑️ Supprimer la photo';
                 preview.insertAdjacentElement('afterend', btnSuppr);
             }
@@ -395,9 +396,9 @@ function supprimerPhoto() {
     document.getElementById('modal-title').textContent = 'Confirmation';
     document.getElementById('modal-body').innerHTML = `
         <p style="color:#333;font-size:15px;margin-bottom:20px">Confirmer la suppression ?</p>
-        <div class="modal-actions">
-            <button class="btn-delete" id="btn-photo-oui">Confirmer</button>
-            <button class="btn-cancel" id="btn-photo-non">Annuler</button>
+        <div class="modal-actions" style="display:flex;gap:10px;">
+            <button class="btn-delete" id="btn-photo-oui" style="flex:1;">Confirmer</button>
+            <button class="btn-cancel" id="btn-photo-non" style="flex:1;">Annuler</button>
         </div>`;
     document.getElementById('overlay').classList.add('on');
     document.getElementById('btn-photo-oui').onclick = () => _confirmerSupprimerPhoto();
@@ -424,7 +425,7 @@ async function _confirmerSupprimerPhoto() {
             if (preview) {
                 const div         = document.createElement('div');
                 div.className     = 'profil-widget-initiales';
-                div.style.cssText = 'width:90px;height:90px;font-size:24px;cursor:pointer;box-shadow:0 4px 12px rgba(79,70,229,0.3)';
+                div.style.cssText = 'width:90px;height:90px;font-size:24px;cursor:pointer;box-shadow:0 4px 12px rgba(124,58,237,0.3)';
                 div.textContent   = trigramme || '👤';
                 div.onclick       = () => document.getElementById('photo-input').click();
                 preview.replaceWith(div);
@@ -438,7 +439,7 @@ async function _confirmerSupprimerPhoto() {
                     ${d.message || 'Erreur lors de la suppression.'}
                 </p>
                 <div class="modal-actions">
-                    <button class="btn-cancel" onclick="closeModal()">Fermer</button>
+                    <button class="btn-cancel" onclick="closeModal()" style="width:100%;">Fermer</button>
                 </div>`;
         }
     } catch {
@@ -446,7 +447,7 @@ async function _confirmerSupprimerPhoto() {
         document.getElementById('modal-body').innerHTML = `
             <p style="color:#ef4444;font-size:15px;margin-bottom:20px">Erreur réseau.</p>
             <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeModal()">Fermer</button>
+                <button class="btn-cancel" onclick="closeModal()" style="width:100%;">Fermer</button>
             </div>`;
     }
 }
@@ -511,18 +512,19 @@ async function sauvegarderSante() {
 
     const body = {
         sexe            : document.getElementById('p-sexe')?.value            || null,
-        taille          : document.getElementById('p-taille')?.value          ? parseInt(document.getElementById('p-taille').value)          : null,
-        poids           : document.getElementById('p-poids')?.value           ? parseFloat(document.getElementById('p-poids').value)         : null,
-        groupe_sanguin  : document.getElementById('p-groupe-sanguin')?.value  || null,
-        niveau_activite : document.getElementById('p-niveau-activite')?.value || null,
-        objectif_sante  : document.getElementById('p-objectif-sante')?.value  || null,
-        signe_zodiaque  : document.getElementById('p-signe')?.value           || null,
-        allergies,
-        aliments_exclus,
+        taille          : document.getElementById('p-taille')?.value          ? parseInt(document.getElementById('p-taille').value)            : null,
+        poids           : document.getElementById('p-poids')?.value           ? parseFloat(document.getElementById('p-poids').value) : null,
+        groupe_sanguin  : document.getElementById('p-sang')?.value            || null,
+        allergies       : allergies,
+        aliments_exclus : aliments_exclus,
+        traitement      : document.getElementById('p-traitement')?.value      || '',
+        maladie         : document.getElementById('p-maladie')?.value         || '',
+        medecin         : document.getElementById('p-medecin')?.value         || '',
+        contact_urgence : document.getElementById('p-contact-urgence')?.value || ''
     };
 
     try {
-        const r = await fetch('/api/profil', {
+        const r = await fetch('/api/profil/sante', {
             method  : 'POST',
             headers : {
                 'Content-Type'  : 'application/json',
@@ -532,7 +534,7 @@ async function sauvegarderSante() {
         });
         const d = await r.json();
         if (d.success) {
-            msg.textContent = '✅ Santé sauvegardée !';
+            msg.textContent = '✅ Données santé sauvegardées !';
             msg.style.color = '#10b981';
             profilCache     = { ...profilCache, ...body };
             _appliquerVisibiliteCycle(body.sexe);
@@ -546,281 +548,33 @@ async function sauvegarderSante() {
     }
 }
 
-function _injecterChampsAllergies(p) {
-    const container = document.getElementById('profil-tab-sante');
-    if (!container) return;
-    if (document.getElementById('p-allergies')) return;
-
-    const allergiesVal       = Array.isArray(p?.allergies)       ? p.allergies.join(', ')       : '';
-    const aliments_exclusVal = Array.isArray(p?.aliments_exclus) ? p.aliments_exclus.join(', ') : '';
-
-        const bloc = document.createElement('div');
-    bloc.innerHTML = `
-        <div class="form-group">
-            <label for="p-allergies">Allergies <span style="font-size:11px;color:#9ca3af">(séparées par des virgules)</span></label>
-            <input type="text" id="p-allergies" placeholder="gluten, arachides, lactose" value="${allergiesVal}">
-        </div>
-        <div class="form-group">
-            <label for="p-aliments-exclus">Aliments exclus <span style="font-size:11px;color:#9ca3af">(séparés par des virgules)</span></label>
-            <input type="text" id="p-aliments-exclus" placeholder="porc, alcool, café" value="${aliments_exclusVal}">
-        </div>
-    `;
-
-        const btnSave = container.querySelector('button[onclick="sauvegarderSante()"]');
-    if (btnSave) {
-        btnSave.parentNode.insertBefore(bloc, btnSave);
-    } else {
-        container.appendChild(bloc);
-    }
-}
-
-async function afficherSectionWidgets() {
-    const user = getUser();
-    const zone = document.getElementById('widgets-choix');
-    if (!zone || !user?.token) return;
-
-    const WIDGETS_DISPONIBLES = [
-        { id:'meteo',          label:'☁️ Météo' },
-        { id:'priere',         label:'🙏 Prière du jour' },
-        { id:'islam',          label:'🕌 Prières & Hadiths' },
-        { id:'taches',         label:'✅ Tâches du jour' },
-        { id:'anniversaires',  label:'🎂 Anniversaires' },
-        { id:'cycle',          label:'🌙 Suivi du cycle' },
-        { id:'astrologie',     label:'✨ Astrologie' },
-        { id:'theme-astral',   label:'🔮 Thème Astral' },
-        { id:'agenda-unifie',  label:'📅 Mon Agenda' },
-    ];
-
-    try {
-        const r = await fetch('/api/profil/widgets-visibles', {
-            headers: { 'Authorization': `Bearer ${user.token}` }
-        });
-        const d = await r.json();
-        const caches = Array.isArray(d.widgets_caches) ? d.widgets_caches : [];
-
-        zone.innerHTML = WIDGETS_DISPONIBLES.map(w => {
-            const actif = !caches.includes(w.id);
-            return `
-            <div style="display:flex;align-items:center;justify-content:space-between;
-                        padding:10px 12px;background:#fff;border-radius:10px;
-                        border:1px solid #f3f4f6;margin-bottom:6px;min-height:40px">
-                <span style="font-size:14px;color:#333;flex:1">${w.label}</span>
-                <label style="position:relative;display:inline-flex;align-items:center;
-                              width:38px;height:22px;flex-shrink:0;cursor:pointer">
-                    <input type="checkbox" class="widget-visible-check" data-id="${w.id}"
-                        ${actif ? 'checked' : ''}
-                        style="opacity:0;width:0;height:0;position:absolute">
-                    <span style="position:absolute;inset:0;border-radius:22px;cursor:pointer;
-                                 background:${actif ? '#7c3aed' : '#d1d5db'};transition:background .2s">
-                        <span style="position:absolute;top:3px;left:${actif ? '19px' : '3px'};
-                                     width:16px;height:16px;border-radius:50%;background:#fff;
-                                     transition:left .2s;display:block"></span>
-                    </span>
-                </label>
-            </div>`;
-        }).join('');
-    } catch {
-        zone.innerHTML = '<p style="color:#ef4444;font-size:13px">Erreur de chargement des widgets.</p>';
-    }
-}
-
-async function sauvegarderWidgetsVisibles() {
+async function sauvegarderWidgetPrefs() {
     const user = getUser();
     const msg  = document.getElementById('widgets-msg');
     msg.textContent = 'Sauvegarde...';
     msg.style.color = '#9ca3af';
 
-    const checks = document.querySelectorAll('.widget-visible-check');
-    const widgets_caches = [];
-    checks.forEach(c => {
-        if (!c.checked) widgets_caches.push(c.dataset.id);
+    const form             = document.getElementById('form-widgets');
+    const checkboxes       = form.querySelectorAll('input[type="checkbox"]');
+    const widgets_visibles = [];
+    checkboxes.forEach(cb => {
+        if (cb.checked) widgets_visibles.push(cb.value);
     });
 
     try {
-        const r = await fetch('/api/profil/widgets-visibles', {
-            method  : 'PATCH',
-            headers : {
-                'Content-Type'  : 'application/json',
-                'Authorization' : `Bearer ${user.token}`
-            },
-            body: JSON.stringify({ widgets_caches })
-        });
-        const d = await r.json();
-        if (d.success) {
-            msg.textContent = '✅ Widgets sauvegardés !';
-            msg.style.color = '#10b981';
-            if (typeof appliquerWidgetsVisibles === 'function') appliquerWidgetsVisibles(widgets_caches);
-        } else {
-            msg.textContent = '❌ ' + (d.message || 'Erreur.');
-            msg.style.color = '#ef4444';
-        }
-    } catch {
-        msg.textContent = '❌ Erreur réseau.';
-        msg.style.color = '#ef4444';
-    }
-}
-
-function appliquerWidgetsVisibles(widgets_caches) {
-    if (!Array.isArray(widgets_caches)) return;
-    widgets_caches.forEach(id => {
-        const widget = document.querySelector(`.widget[data-id="${id}"]`);
-        if (widget) widget.style.display = 'none';
-    });
-}
-
-async function changerMdp() {
-    const user     = getUser();
-    const msg      = document.getElementById('mdp-msg');
-    const ancien   = document.getElementById('mdp-ancien')?.value   || '';
-    const nouveau  = document.getElementById('mdp-nouveau')?.value  || '';
-    const confirm_ = document.getElementById('mdp-confirm')?.value  || '';
-
-    if (!ancien || !nouveau || !confirm_) {
-        msg.textContent = '❌ Tous les champs sont requis.';
-        msg.style.color = '#ef4444';
-        return;
-    }
-    if (nouveau !== confirm_) {
-        msg.textContent = '❌ Les mots de passe ne correspondent pas.';
-        msg.style.color = '#ef4444';
-        return;
-    }
-
-    msg.textContent = 'Changement en cours...';
-    msg.style.color = '#9ca3af';
-
-    try {
-        const r = await fetch('/api/profil/changer-mdp', {
+        const r = await fetch('/api/profil/widgets', {
             method  : 'POST',
             headers : {
                 'Content-Type'  : 'application/json',
                 'Authorization' : `Bearer ${user.token}`
             },
-            body: JSON.stringify({ ancienMdp: ancien, nouveauMdp: nouveau })
-        });
-        const d = await r.json();
-        if (d.success) {
-            msg.textContent = '✅ Mot de passe changé !';
-            msg.style.color = '#10b981';
-            document.getElementById('mdp-ancien').value  = '';
-            document.getElementById('mdp-nouveau').value = '';
-            document.getElementById('mdp-confirm').value = '';
-        } else {
-            msg.textContent = '❌ ' + (d.message || 'Erreur.');
-            msg.style.color = '#ef4444';
-        }
-    } catch {
-        msg.textContent = '❌ Erreur réseau.';
-        msg.style.color = '#ef4444';
-    }
-}
-
-const _PROFIL_PUBLIC_CHAMPS_DEF = [
-    { id: 'age',         label: 'Âge' },
-    { id: 'profession',  label: 'Profession' },
-    { id: 'site_web',    label: 'Site internet' },
-    { id: 'signe_astro', label: 'Signe astro' },
-    { id: 'note',        label: 'Note' },
-];
-
-async function _injecterProfilPublicToggles() {
-    const container = document.getElementById('profil-tab-social');
-    if (!container) return;
-    if (document.getElementById('profil-public-toggles-bloc')) return; 
-    const user = getUser();
-    if (!user?.token) return;
-
-    const bloc = document.createElement('div');
-    bloc.id = 'profil-public-toggles-bloc';
-    bloc.style.cssText = 'background:#f8fafc;border-radius:14px;padding:16px;margin-bottom:16px';
-    bloc.innerHTML = `
-        <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;
-                    letter-spacing:.5px;margin-bottom:4px">Mon Profil Public</div>
-        <div style="font-size:12px;color:#9ca3af;margin-bottom:12px">
-            Choisis les informations visibles par les autres sur ton profil public.
-        </div>
-        <div id="profil-public-toggles-liste">
-            <p style="color:#9ca3af;font-size:13px">Chargement...</p>
-        </div>
-        <button id="btn-sauver-profil-public" onclick="_sauvegarderProfilPublicToggles()"
-            style="width:100%;padding:11px;background:linear-gradient(135deg,#7c3aed,#6d28d9);
-                   color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;
-                   cursor:pointer;margin-top:12px">
-            💾 Sauvegarder
-        </button>
-        <div id="profil-public-toggles-msg" style="text-align:center;margin-top:8px;font-size:13px;min-height:16px"></div>
-    `;
-    container.insertBefore(bloc, container.firstChild);
-
-    const liste = document.getElementById('profil-public-toggles-liste');
-    try {
-        const r = await fetch('/api/profil/public-champs', {
-            headers: { 'Authorization': `Bearer ${user.token}` }
-        });
-        const d = await r.json();
-        const champsActifs = Array.isArray(d.champs) ? d.champs : [];
-
-        liste.innerHTML = _PROFIL_PUBLIC_CHAMPS_DEF.map(c => {
-            const actif = champsActifs.includes(c.id);
-            return `
-            <div style="display:flex;align-items:center;justify-content:space-between;
-                        padding:9px 12px;background:#fff;border-radius:8px;
-                        border:1px solid #f3f4f6;margin-bottom:6px;min-height:40px">
-                <span style="font-size:13px;color:#374151;flex:1">${c.label}</span>
-                <label style="position:relative;display:inline-flex;align-items:center;
-                              width:38px;height:22px;flex-shrink:0;cursor:pointer">
-                    <input type="checkbox" class="profil-public-toggle-check" data-champ="${c.id}"
-                        ${actif ? 'checked' : ''}
-                        style="opacity:0;width:0;height:0;position:absolute">
-                    <span style="position:absolute;inset:0;border-radius:22px;cursor:pointer;
-                                 background:${actif ? '#7c3aed' : '#d1d5db'};transition:background .2s">
-                        <span style="position:absolute;top:3px;left:${actif ? '19px' : '3px'};
-                                     width:16px;height:16px;border-radius:50%;background:#fff;
-                                     transition:left .2s;display:block"></span>
-                    </span>
-                </label>
-            </div>`;
-        }).join('');
-    } catch {
-        liste.innerHTML = '<p style="color:#ef4444;font-size:13px">Erreur de chargement des préférences.</p>';
-    }
-}
-
-document.addEventListener('change', e => {
-    const cb = e.target.closest('.profil-public-toggle-check, .widget-visible-check');
-    if (!cb) return;
-    const track = cb.nextElementSibling;
-    const thumb = track?.querySelector('span');
-    if (track) track.style.background = cb.checked ? '#7c3aed' : '#d1d5db';
-    if (thumb) thumb.style.left = cb.checked ? '19px' : '3px';
-});
-
-async function _sauvegarderProfilPublicToggles() {
-    const user = getUser();
-    const msg  = document.getElementById('profil-public-toggles-msg');
-    if (!msg) return;
-    msg.textContent = 'Sauvegarde...';
-    msg.style.color = '#9ca3af';
-
-    const checks = document.querySelectorAll('.profil-public-toggle-check');
-    const champs = [];
-    checks.forEach(c => {
-        if (c.checked) champs.push(c.dataset.champ);
-    });
-
-    try {
-        const r = await fetch('/api/profil/public-champs', {
-            method  : 'PATCH',
-            headers : {
-                'Content-Type'  : 'application/json',
-                'Authorization' : `Bearer ${user.token}`
-            },
-            body: JSON.stringify({ champs })
+            body: JSON.stringify({ widgets_visibles })
         });
         const d = await r.json();
         if (d.success) {
             msg.textContent = '✅ Préférences sauvegardées !';
             msg.style.color = '#10b981';
+            setTimeout(() => window.location.reload(), 1000);
         } else {
             msg.textContent = '❌ ' + (d.message || 'Erreur.');
             msg.style.color = '#ef4444';
@@ -831,33 +585,163 @@ async function _sauvegarderProfilPublicToggles() {
     }
 }
 
-async function _socialOnglet(onglet) {
-    const zone      = document.getElementById('social-tab-content');
-    const btnMiens  = document.getElementById('social-tab-miens');
-    const btnNouv   = document.getElementById('social-tab-nouveau');
-    if (!zone) return;
+async function changerMotDePasse() {
+    const user = getUser();
+    const msg  = document.getElementById('mdp-msg');
+    msg.textContent = 'Modification...';
+    msg.style.color = '#9ca3af';
 
-    if (onglet === 'miens') {
-        btnMiens.style.background = '#7c3aed'; btnMiens.style.color = '#fff';
-        btnNouv.style.background  = '#f5f3ff'; btnNouv.style.color  = '#7c3aed';
-    } else {
-        btnNouv.style.background  = '#7c3aed'; btnNouv.style.color  = '#fff';
-        btnMiens.style.background = '#f5f3ff'; btnMiens.style.color = '#7c3aed';
+    const actuel  = document.getElementById('p-mdp-actuel').value;
+    const nouveau = document.getElementById('p-mdp-nouveau').value;
+    const conf    = document.getElementById('p-mdp-conf').value;
+
+    if (!actuel || !nouveau || !conf) {
+        msg.textContent = '❌ Remplissez tous les champs.';
+        msg.style.color = '#ef4444';
+        return;
+    }
+    if (nouveau !== conf) {
+        msg.textContent = '❌ Les mots de passe ne correspondent pas.';
+        msg.style.color = '#ef4444';
+        return;
     }
 
-    zone.innerHTML = '<p style="color:#9ca3af;font-size:13px">Chargement...</p>';
-
-    if (typeof window._chargerSocialOnglet === 'function') {
-        await window._chargerSocialOnglet(onglet, zone);
-    } else {
-        zone.innerHTML = '<p style="color:#9ca3af;font-size:13px">Fonctionnalité en cours de chargement.</p>';
-    }
-
-    if (onglet === 'miens') {
-        await _injecterProfilPublicToggles();
+    try {
+        const r = await fetch('/api/profil/mdp', {
+            method  : 'POST',
+            headers : {
+                'Content-Type'  : 'application/json',
+                'Authorization' : `Bearer ${user.token}`
+            },
+            body: JSON.stringify({ actuel, nouveau })
+        });
+        const d = await r.json();
+        if (d.success) {
+            msg.textContent = '✅ Mot de passe modifié !';
+            msg.style.color = '#10b981';
+            document.getElementById('p-mdp-actuel').value  = '';
+            document.getElementById('p-mdp-nouveau').value = '';
+            document.getElementById('p-mdp-conf').value    = '';
+        } else {
+            msg.textContent = '❌ ' + (d.message || 'Erreur.');
+            msg.style.color = '#ef4444';
+        }
+    } catch {
+        msg.textContent = '❌ Erreur réseau.';
+        msg.style.color = '#ef4444';
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    chargerProfilHeader();
+// ============================================================
+// GESTION DU PROFIL PUBLIC (Appelé dans social.js)
+// ============================================================
+
+async function _injecterProfilPublicToggles() {
+    const container = document.getElementById('social-profil-public-container');
+    if (!container) return;
+
+    // Évite de recharger si déjà présent (optimisation)
+    if (container.dataset.loaded === 'true') return;
+
+    const user = getUser();
+    if (!user || !user.token) return;
+
+    try {
+        const r = await fetch('/api/profil/public-prefs', {
+            headers: { 'Authorization': `Bearer ${user.token}` }
+        });
+        const d = await r.json();
+        if (!d.success) return;
+
+        const prefs = d.prefs || {};
+
+        container.innerHTML = `
+            <div style="background:rgba(255,255,255,0.4); border-radius:12px; padding:14px; border:1px solid rgba(255,255,255,0.6); margin-bottom:16px;">
+                <div style="font-size:12px; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:.5px; margin-bottom:12px;">
+                    Mon Profil Public
+                </div>
+                <div style="font-size:13px; color:#374151; margin-bottom:12px; line-height:1.5;">
+                    Sélectionne les informations que les autres utilisateurs peuvent voir sur ton profil lorsqu'ils cliquent sur ton nom.
+                </div>
+                
+                <div style="display:flex; flex-direction:column; gap:8px;" id="public-prefs-list">
+                    ${_creerTogglePref('public_age', 'Âge / Date de naissance', prefs.public_age)}
+                    ${_creerTogglePref('public_signe', 'Signe astrologique', prefs.public_signe)}
+                    ${_creerTogglePref('public_profession', 'Profession', prefs.public_profession)}
+                    ${_creerTogglePref('public_telephone', 'Téléphone', prefs.public_telephone)}
+                    ${_creerTogglePref('public_siteweb', 'Site Web', prefs.public_siteweb)}
+                </div>
+                
+                <div id="public-prefs-msg" style="font-size:12px; min-height:16px; margin-top:10px; text-align:center;"></div>
+                <button class="btn-save" onclick="_sauvegarderProfilPublic()" style="width:100%; margin-top:10px;">
+                    Enregistrer les préférences
+                </button>
+            </div>
+        `;
+        container.dataset.loaded = 'true';
+    } catch { /* silencieux */ }
+}
+
+function _creerTogglePref(id, label, isChecked) {
+    return `
+    <label style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; background:rgba(255,255,255,0.7); border-radius:8px; padding:8px 12px; border:1px solid rgba(255,255,255,0.9);">
+        <span style="font-size:13px; color:#374151;">${label}</span>
+        <div style="position:relative; display:inline-flex; align-items:center; width:38px; height:22px; flex-shrink:0;">
+            <input type="checkbox" id="${id}" ${isChecked ? 'checked' : ''} style="opacity:0; width:0; height:0; position:absolute;">
+            <span style="position:absolute; inset:0; border-radius:22px; background:${isChecked ? '#7c3aed' : '#d1d5db'}; transition:background .2s;">
+                <span style="position:absolute; top:3px; left:${isChecked ? '19px' : '3px'}; width:16px; height:16px; border-radius:50%; background:#fff; transition:left .2s; display:block;"></span>
+            </span>
+        </div>
+    </label>`;
+}
+
+async function _sauvegarderProfilPublic() {
+    const user = getUser();
+    const msg  = document.getElementById('public-prefs-msg');
+    if (!msg || !user) return;
+    
+    msg.textContent = 'Enregistrement...';
+    msg.style.color = '#9ca3af';
+
+    const prefs = {
+        public_age:        document.getElementById('public_age')?.checked        || false,
+        public_signe:      document.getElementById('public_signe')?.checked      || false,
+        public_profession: document.getElementById('public_profession')?.checked || false,
+        public_telephone:  document.getElementById('public_telephone')?.checked  || false,
+        public_siteweb:    document.getElementById('public_siteweb')?.checked    || false
+    };
+
+    try {
+        const r = await fetch('/api/profil/public-prefs', {
+            method  : 'POST',
+            headers : {
+                'Authorization': `Bearer ${user.token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(prefs)
+        });
+        const d = await r.json();
+        if (d.success) {
+            msg.textContent = '✅ Préférences mises à jour !';
+            msg.style.color = '#10b981';
+            setTimeout(() => { msg.textContent = ''; }, 3000);
+        } else {
+            msg.textContent = '❌ Erreur lors de la sauvegarde.';
+            msg.style.color = '#ef4444';
+        }
+    } catch {
+        msg.textContent = '❌ Erreur réseau.';
+        msg.style.color = '#ef4444';
+    }
+}
+
+// Animation locale des toggles de préférences publiques
+document.addEventListener('change', e => {
+    const cb = e.target;
+    if (['public_age', 'public_signe', 'public_profession', 'public_telephone', 'public_siteweb'].includes(cb.id)) {
+        const track = cb.nextElementSibling;
+        const thumb = track?.querySelector('span');
+        if (track) track.style.background = cb.checked ? '#7c3aed' : '#d1d5db';
+        if (thumb) thumb.style.left       = cb.checked ? '19px'   : '3px';
+    }
 });
