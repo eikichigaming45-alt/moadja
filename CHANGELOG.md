@@ -1,3 +1,14 @@
+## v1.71.23 - 09-09-2026
+
+### ✨ Nouveau
+- Les fenêtres de la Météo et de "Mon Profil" adoptent le nouveau design doux et transparent de l'application.
+- Amélioration des couleurs et de la lisibilité des menus de navigation.
+
+### 🔧 Corrections
+- Sur Android, utiliser le geste ou le bouton "Retour" du téléphone ferme désormais correctement les fenêtres ouvertes (comme la météo ou le profil) au lieu de vous faire quitter l'application.
+
+---
+
 ## v1.71.22 - 09-09-2026
 
 ### ✨ Nouveau
