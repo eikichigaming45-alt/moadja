@@ -1,3 +1,13 @@
+## v1.71.21 - 09-09-2026
+
+### ✨ Nouveau
+- Ajout d'une barre de recherche en haut de l'écran, avec une icône loupe dédiée, dans le même style doux et harmonieux que le reste de l'application.
+- Sur ordinateur, elle est affichée en permanence, bien centrée en haut de l'écran.
+- Sur mobile, elle apparaît sous le menu du haut sans jamais gêner l'affichage de la météo ni du reste du contenu.
+- Elle se ferme automatiquement dès que vous ouvrez les notifications ou la messagerie, pour garder un écran bien rangé.
+
+---
+
 ## v1.71.20 - 07-09-2026
 
 ### ✨ Nouveau
