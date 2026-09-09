@@ -107,7 +107,7 @@ async function chargerMeteo(lat, lon, nomVille, mode) {
             icon  : METEO_ICONS[d.current.weather_code] || '🌡️',
             vent  : Math.round(d.current.wind_speed_10m),
             hum   : d.current.relative_humidity_2m,
-            pluie : d.current.precipitation_probability || 0,
+            pluie : d.daily.precipitation_probability_max?.[0] || 0,
             max   : Math.round(d.daily.temperature_2m_max[0]),
             min   : Math.round(d.daily.temperature_2m_min[0]),
             ville : nomVille,
@@ -271,7 +271,7 @@ function _renderModaleMeteo(selectedIdx) {
         `;
         return;
     }
-    const d = meteoData;
+        const d = meteoData;
     const isToday = selectedIdx === 0;
 
     const t         = d.daily.time[selectedIdx];
@@ -514,4 +514,3 @@ async function geoLocaliser() {
         }
     );
 }
-
