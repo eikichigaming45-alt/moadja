@@ -248,9 +248,9 @@ async function openModal(type) {
                     </button>
                 </div>
 
-                                <!-- ── ONGLET PROFIL ── -->
+                <!-- ── ONGLET PROFIL ── -->
                 <div id="profil-tab-infos" class="profil-tab-content">
-                    <div style="background:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.05);">
+                    <div style="background:rgba(255,255,255,0.92); border:1px solid rgba(255,255,255,0.95); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.08);">
                         <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:20px">
                             ${photoSrc
                                 ? `<img id="profil-photo-preview" src="${photoSrc}"
@@ -310,7 +310,7 @@ async function openModal(type) {
                                 ${p.naissance_lat ? '✅ Coordonnées enregistrées' : ''}
                             </div>
                         </div>
-                        <div style="margin-bottom:10px">
+                                                <div style="margin-bottom:10px">
                             <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Email</label>
                             <input id="p-email" placeholder="Email" value="${p.email||''}"
                                 style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
@@ -347,7 +347,7 @@ async function openModal(type) {
 
                 <!-- ── ONGLET SANTÉ ── -->
                 <div id="profil-tab-sante" class="profil-tab-content" style="display:none">
-                    <div style="background:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.05);">
+                    <div style="background:rgba(255,255,255,0.92); border:1px solid rgba(255,255,255,0.95); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.08);">
                         <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;
                                     letter-spacing:.5px;margin-bottom:10px">Identité biologique</div>
                         <div style="margin-bottom:10px">
@@ -466,7 +466,7 @@ async function openModal(type) {
 
                 <!-- ── ONGLET SÉCURITÉ ── -->
                 <div id="profil-tab-securite" class="profil-tab-content" style="display:none">
-                    <div style="background:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.05);">
+                    <div style="background:rgba(255,255,255,0.92); border:1px solid rgba(255,255,255,0.95); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.08);">
                         <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
                             <div style="width:48px;height:48px;background:linear-gradient(135deg,#fcd34d,#fbbf24);
                                         border-radius:14px;display:flex;align-items:center;justify-content:center;
@@ -476,7 +476,7 @@ async function openModal(type) {
                                 <div style="font-size:12px;color:#9ca3af;margin-top:2px">8 car. min · majuscule · minuscule · chiffre · caractère spécial</div>
                             </div>
                         </div>
-                                                <div style="margin-bottom:10px">
+                        <div style="margin-bottom:10px">
                             <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Ancien mot de passe</label>
                             <input type="password" id="mdp-ancien" placeholder="••••••••"
                                 style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
@@ -500,7 +500,7 @@ async function openModal(type) {
 
                 <!-- ── ONGLET WIDGETS ── -->
                 <div id="profil-tab-widgets" class="profil-tab-content" style="display:none">
-                    <div style="background:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.05);">
+                    <div style="background:rgba(255,255,255,0.92); border:1px solid rgba(255,255,255,0.95); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.08);">
                         <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
                             <div style="width:48px;height:48px;background:linear-gradient(135deg,#34d399,#10b981);
                                         border-radius:14px;display:flex;align-items:center;justify-content:center;
@@ -539,7 +539,7 @@ async function openModal(type) {
                             Partager avec…
                         </button>
                     </div>
-                    <div id="social-tab-content" style="background:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.05);"></div>
+                    <div id="social-tab-content" style="background:rgba(255,255,255,0.92); border:1px solid rgba(255,255,255,0.95); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.08);"></div>
                 </div>
             `;
 
@@ -548,7 +548,7 @@ async function openModal(type) {
             // (avec le "p" déjà récupéré ci-dessus par le fetch de cette fonction).
             _injecterChampsAllergies(p);
 
-            // ── Listeners onglets profil ───────────────────────────
+                        // ── Listeners onglets profil ───────────────────────────
             document.querySelectorAll('.profil-tab').forEach(tab => {
                 tab.addEventListener('click', () => {
                     document.querySelectorAll('.profil-tab').forEach(t => {
@@ -604,8 +604,8 @@ async function openModal(type) {
                 <button class="admin-tab active" data-tab="stats" onclick="switchAdminTab('stats')" style="flex:1;border-radius:50px;border:none;">📊 Stats</button>
                 <button class="admin-tab" data-tab="users"  onclick="switchAdminTab('users')" style="flex:1;border-radius:50px;border:none;">👥 Utilisateurs</button>
             </div>
-            <div id="admin-tab-stats" class="admin-tab-content active" style="background:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.05);"><p style="color:#9ca3af">Chargement...</p></div>
-            <div id="admin-tab-users" class="admin-tab-content" style="background:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.05);"><p style="color:#9ca3af">Chargement...</p></div>
+            <div id="admin-tab-stats" class="admin-tab-content active" style="background:rgba(255,255,255,0.92); border:1px solid rgba(255,255,255,0.95); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.08);"><p style="color:#9ca3af">Chargement...</p></div>
+            <div id="admin-tab-users" class="admin-tab-content" style="background:rgba(255,255,255,0.92); border:1px solid rgba(255,255,255,0.95); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.08);"><p style="color:#9ca3af">Chargement...</p></div>
         `;
         chargerAdminStats();
         chargerAdminUsers();
