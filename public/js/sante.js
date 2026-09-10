@@ -1,10 +1,10 @@
 // ============================================================
 // public/js/sante.js
-// Widget Santé — onglet Sport.
+// Widget Santé — onglet Bien-être.
 // Calculs locaux : IMC, BMR (Mifflin-St Jeor), TDEE, macros,
 // kcal objectif. Affichage instantané depuis profilCache.
 // Groq : 1 appel/semaine max — cache serveur (sante_plan_cache + sante_plan_date)
-// Plan hebdomadaire : Aujourd'hui / Semaine / Liste de courses.
+// Plan hebdomadaire : Aujourd'hui / Semaine / Liste de courses (avec quantités).
 // Dépend de : app.js (getUser, profilCache)
 // ============================================================
 
@@ -84,8 +84,9 @@ function _age(date_naissance) {
 
 // ===================== ÉTAT DU WIDGET (mémoire d'onglet) =====
 
-let _santePlanActuel  = null;
-let _santeOngletActif = 'jour';
+let _santePlanActuel   = null;
+let _santeOngletActif  = 'jour';
+let _santeCoursesMode  = 'restants'; // 'restants' ou 'semaine'
 
 // ===================== OUTILS DATES ==========================
 
@@ -103,6 +104,15 @@ function _trouverJourActuel(plan) {
     if (!plan?.jours?.length) return null;
     const today = _dateISOAujourdhui();
     return plan.jours.find(j => j.date === today) || plan.jours[0];
+}
+
+// Nombre de jours restants dans la semaine (aujourd'hui inclus, jusqu'à dimanche)
+function _joursRestantsSemaine(plan) {
+    if (!plan?.jours?.length) return 7;
+    const today = _dateISOAujourdhui();
+    const idx   = plan.jours.findIndex(j => j.date === today);
+    if (idx === -1) return 7; // plan d'une autre semaine (pas encore régénéré) — on ne prorata pas
+    return plan.jours.length - idx;
 }
 
 // ===================== RENDU WIDGET ==========================
@@ -150,7 +160,7 @@ async function chargerWidgetSante() {
     const profilComplet = p.taille && p.poids && p.sexe && p.date_naissance && p.niveau_activite && p.objectif_sante;
 
     // ── Récupération / génération du plan hebdomadaire ────────
-    let plan  = null;
+    let plan       = null;
     let erreurPlan = null;
 
     if (profilComplet) {
@@ -218,7 +228,7 @@ async function chargerWidgetSante() {
         </div>
     `;
 
-    // ── Conseil du jour — toujours visible, jamais replié ─────
+    // ── Conseil du jour + Activités — toujours visibles, jamais repliés ─
     const jourActuel = plan ? _trouverJourActuel(plan) : null;
     const htmlConseil = jourActuel?.conseil_du_jour ? `
         <div class="sante-conseil-card">
@@ -226,6 +236,11 @@ async function chargerWidgetSante() {
             <div class="sante-conseil-texte">
                 <div class="sante-conseil-titre">Conseil du jour</div>
                 <div class="sante-conseil-contenu">${jourActuel.conseil_du_jour}</div>
+                ${jourActuel.activites?.length ? `
+                <div class="sante-activites-mini">
+                    <span class="sante-activites-mini-titre">🏃 Activité du jour</span>
+                    ${jourActuel.activites.map(a => `<span class="sante-activite-pill">${a}</span>`).join('')}
+                </div>` : ''}
             </div>
         </div>
     ` : '';
@@ -294,7 +309,7 @@ function _renderContenuOnglet(id, plan) {
     return _renderJour(plan);
 }
 
-// ── Vue "Aujourd'hui" ──────────────────────────────────────────
+// ── Vue "Aujourd'hui" — repas uniquement (conseil+activités déjà en carte permanente) ──
 function _renderJour(plan) {
     const jour = _trouverJourActuel(plan);
     if (!jour) return '<div class="sante-empty">Aucun repas disponible pour aujourd\'hui.</div>';
@@ -312,15 +327,12 @@ function _renderJour(plan) {
             <div class="sante-plan-contenu">${jour.repas?.collation_soir || '—'}</div>
             <div class="sante-plan-section">🌙 Dîner</div>
             <div class="sante-plan-contenu">${jour.repas?.diner || '—'}</div>
-            ${jour.activites?.length ? `
-            <div class="sante-plan-section">🏃 Activités recommandées</div>
-            <div class="sante-plan-contenu">${jour.activites.join('<br>')}</div>
-            ` : ''}
         </div>
     `;
 }
 
 // ── Vue "Semaine" (accordéon, un jour ouvert à la fois) ────────
+// Ordre demandé : repas -> Conseil -> Activités (activités sous le conseil)
 function _renderSemaine(plan) {
     if (!plan?.jours?.length) return '<div class="sante-empty">Aucun plan hebdomadaire disponible.</div>';
     const today = _dateISOAujourdhui();
@@ -347,12 +359,12 @@ function _renderSemaine(plan) {
                         <div class="sante-plan-contenu">${j.repas?.collation_soir || '—'}</div>
                         <div class="sante-plan-section">🌙 Dîner</div>
                         <div class="sante-plan-contenu">${j.repas?.diner || '—'}</div>
-                        ${j.activites?.length ? `
-                        <div class="sante-plan-section">🏃 Activités</div>
-                        <div class="sante-plan-contenu">${j.activites.join('<br>')}</div>` : ''}
                         ${j.conseil_du_jour ? `
                         <div class="sante-plan-section">💡 Conseil</div>
                         <div class="sante-plan-contenu">${j.conseil_du_jour}</div>` : ''}
+                        ${j.activites?.length ? `
+                        <div class="sante-plan-section">🏃 Activité</div>
+                        <div class="sante-plan-contenu">${j.activites.join('<br>')}</div>` : ''}
                     </div>
                 </div>`;
             }).join('')}
@@ -374,9 +386,12 @@ function _toggleJourSemaine(i) {
     }
 }
 
-// ── Vue "Liste de courses" (par catégorie) ─────────────────────
+// ── Vue "Liste de courses" (par catégorie, avec quantités + toggle semaine/restants) ──
 function _renderCourses(plan) {
     if (!plan?.liste_courses?.length) return '<div class="sante-empty">Aucune liste de courses disponible.</div>';
+
+    const joursRestants = _joursRestantsSemaine(plan);
+    const ratio         = _santeCoursesMode === 'restants' ? (joursRestants / 7) : 1;
 
     const icones = {
         'fruits'    : '🥦',
@@ -390,16 +405,51 @@ function _renderCourses(plan) {
         return icones[clef] || '📦';
     };
 
+    // Arrondit la quantité proportionnelle à une valeur lisible (pas de décimales absurdes)
+    const arrondirQuantite = (val) => {
+        if (val < 1) return Math.ceil(val * 10) / 10; // ex : 0.3
+        if (val < 10) return Math.ceil(val * 2) / 2;  // pas de 0.5
+        return Math.ceil(val);
+    };
+
+    const formatItem = (item) => {
+        // Rétro-compatibilité : anciens plans en cache où item est une simple chaîne de texte
+        if (typeof item === 'string') return `<li>${item}</li>`;
+
+        const nom = item.nom || '—';
+        if (item.quantite_semaine === null || item.quantite_semaine === undefined) {
+            return `<li><span class="sante-course-nom">${nom}</span><span class="sante-course-qte sante-course-qte-libre">${item.unite || 'au besoin'}</span></li>`;
+        }
+        const qte = arrondirQuantite(item.quantite_semaine * ratio);
+        return `<li><span class="sante-course-nom">${nom}</span><span class="sante-course-qte">${qte} ${item.unite || ''}</span></li>`;
+    };
+
     return `
+        <div class="sante-courses-toggle">
+            <button class="sante-courses-toggle-btn ${_santeCoursesMode === 'restants' ? 'active' : ''}" onclick="_switchCoursesMode('restants')">
+                📌 Jours restants (${joursRestants}j)
+            </button>
+            <button class="sante-courses-toggle-btn ${_santeCoursesMode === 'semaine' ? 'active' : ''}" onclick="_switchCoursesMode('semaine')">
+                🗓️ Semaine complète
+            </button>
+        </div>
         <div class="sante-courses-liste">
             ${plan.liste_courses.map(cat => `
                 <div class="sante-courses-carte">
                     <div class="sante-courses-titre">${iconePourCategorie(cat.categorie)} ${cat.categorie}</div>
                     <ul class="sante-courses-items">
-                        ${(cat.items || []).map(item => `<li>${item}</li>`).join('')}
+                        ${(cat.items || []).map(formatItem).join('')}
                     </ul>
                 </div>
             `).join('')}
         </div>
     `;
+}
+
+function _switchCoursesMode(mode) {
+    _santeCoursesMode = mode;
+    const zone = document.getElementById('sante-tab-content');
+    if (zone && _santePlanActuel) {
+        zone.innerHTML = _renderCourses(_santePlanActuel);
+    }
 }

@@ -1,9 +1,8 @@
 // routes/sante.js
-// Module Santé — Plan hebdomadaire (7 jours) + liste de courses + conseil du jour via Groq
+// Module Santé — Plan hebdomadaire (7 jours) + liste de courses quantifiée + conseil du jour via Groq
 // Endpoint : POST /api/sante/plan
 // Cache serveur : sante_plan_cache (jsonb) + sante_plan_date (date = lundi de la semaine) dans profiles
 // 1 seul appel Groq/semaine — partagé tous appareils
-// max_tokens relevé pour laisser de la place au raisonnement interne du modèle + la sortie JSON complète
 
 const express               = require('express');
 const router                = express.Router();
@@ -107,8 +106,8 @@ router.post('/plan', authenticateToken, async (req, res) => {
       joursSemaine.push({ date: d.toISOString().split('T')[0], label: labelsJours[i] });
     }
 
-    // Construction du prompt Groq — compressé pour rester léger
-    const prompt = `Nutritionniste expert. Génère un plan alimentaire de 7 jours en JSON strict, ULTRA CONCIS (chaque repas en une courte formule de 6 à 10 mots maximum, pas de phrases longues).
+    // Construction du prompt Groq — compressé, avec quantités et variété d'activités
+    const prompt = `Nutritionniste expert. Génère un plan alimentaire de 7 jours en JSON strict, ULTRA CONCIS (chaque repas en 6-10 mots max).
 
 Profil : ${p.sexe}, ${age} ans, ${taille} cm, ${poids} kg, activité ${p.niveau_activite}, objectif ${p.objectif_sante}, ${cibles} kcal/j en moyenne.
 Allergies (interdit) : ${allergies}
@@ -120,20 +119,20 @@ Mois : ${moisActuel}
 
 Règles strictes :
 1. Jamais d'allergène ni d'aliment exclu.
-2. Adapte au diabète/cholestérol si renseignés (peu de sucre rapide si diabète, peu de graisses saturées si cholestérol élevé).
-3. Tiens compte des traitements sur l'appétit/métabolisme sans avis médical.
-4. 7 repas différents, pas de répétition, moyenne équilibrée sans jour trop restrictif.
-5. Fruits/légumes de saison (${moisActuel}, France).
-6. Économique, ingrédients courants.
-7. Liste de courses consolidée par catégorie, quantités totales, SANS doublons.
-8. Reste très bref partout (activités : 1 seule ligne courte, conseil : 1 phrase courte).
+2. Adapte au diabète/cholestérol si renseignés.
+3. Tiens compte des traitements sur l'appétit/métabolisme, sans avis médical.
+4. 7 repas différents, moyenne équilibrée sans jour trop restrictif.
+5. Fruits/légumes de saison (${moisActuel}, France). Reste économique, ingrédients courants.
+6. Activités variées et réalisables à la maison — alterne marche, yoga, pilates, gainage, étirements, mobilité, vélo d'appartement. PAS toujours de la marche.
+7. Un seul conseil court par jour (nutrition ou bien-être).
+8. Liste de courses consolidée SANS doublons, quantité totale pour toute la semaine par item, avec valeur numérique + unité séparées (ex nom:"Poulet", quantite_semaine:800, unite:"g"). Si non quantifiable (épice, sauce), quantite_semaine:null, unite:"au besoin".
 
 JSON attendu (rien d'autre, pas de markdown) :
-{"jours":[{"date":"${joursSemaine[0].date}","jour_label":"${joursSemaine[0].label}","repas":{"petit_dejeuner":"...","collation_matin":"...","dejeuner":"...","collation_soir":"...","diner":"..."},"activites":["..."],"conseil_du_jour":"..."}],"liste_courses":[{"categorie":"Fruits & légumes","items":["..."]},{"categorie":"Protéines","items":["..."]},{"categorie":"Féculents","items":["..."]},{"categorie":"Produits laitiers","items":["..."]},{"categorie":"Épicerie","items":["..."]}]}
+{"jours":[{"date":"${joursSemaine[0].date}","jour_label":"${joursSemaine[0].label}","repas":{"petit_dejeuner":"...","collation_matin":"...","dejeuner":"...","collation_soir":"...","diner":"..."},"activites":["..."],"conseil_du_jour":"..."}],"liste_courses":[{"categorie":"Fruits & légumes","items":[{"nom":"...","quantite_semaine":0,"unite":"g"}]},{"categorie":"Protéines","items":[]},{"categorie":"Féculents","items":[]},{"categorie":"Produits laitiers","items":[]},{"categorie":"Épicerie","items":[]}]}
 
-Génère bien les 7 jours dans l'ordre et dates : ${joursSemaine.map(j => j.label + ' ' + j.date).join(', ')}.`;
+Génère les 7 jours dans l'ordre : ${joursSemaine.map(j => j.label + ' ' + j.date).join(', ')}.`;
 
-    // Appel Groq — max_tokens relevé pour absorber le raisonnement interne du modèle + la sortie JSON complète
+    // Appel Groq
     const completion = await groq.chat.completions.create({
       model      : 'openai/gpt-oss-20b',
       messages   : [{ role: 'user', content: prompt }],
