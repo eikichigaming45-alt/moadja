@@ -967,30 +967,27 @@ function ouvrirPhoto(url) {
 }
 
 async function partagerPost(postId) {
-    const card = document.getElementById(`post-${postId}`), 
-          contenuEl = document.getElementById(`post-contenu-${postId}`), 
-          contenu = contenuEl ? contenuEl.textContent.trim() : '', 
-          photoUrl = card?.dataset.photoUrl || '', 
-          text = contenu.substring(0, 100) || 'Regarde ce post sur MoaDja';
-          
+    const contenuEl = document.getElementById(`post-contenu-${postId}`);
+    const contenu = contenuEl ? contenuEl.textContent.trim() : '';
+    const text = contenu.substring(0, 100) || 'Regarde ce post sur MoaDja';
+    
+    // NOUVEAU : On utilise la route publique de partage au lieu de l'URL de l'image
+    const shareUrl = `${location.origin}/api/feed/share/${postId}`;
+
     if (navigator.share) { 
         try { 
-            const shareData = { title: 'MoaDja', text }; 
-            // Note pour le Bug 2 : Actuellement, ça partage le lien direct de l'image (photoUrl).
-            // Pour avoir une belle carte WhatsApp, il faudra partager une route publique (ex: /post/ID)
-            shareData.url = photoUrl || location.origin; 
+            const shareData = { title: 'MoaDja', text: text, url: shareUrl }; 
             await navigator.share(shareData); 
         } catch (e) { 
             if (e.name !== 'AbortError') console.error(e); 
         } 
     } else { 
         try { 
-            await navigator.clipboard.writeText(`${text}\n${photoUrl || location.origin}`); 
+            await navigator.clipboard.writeText(`${text}\n${shareUrl}`); 
             document.getElementById('modal-title').textContent = 'Lien copié'; 
             
-            // Légère mise à jour Glassmorphism du bouton OK
             document.getElementById('modal-body').innerHTML = `
-                <p style="text-align:center;color:#374151;padding:20px 0;font-size:14px;">Le lien a été copié dans le presse-papier.</p>
+                <p style="text-align:center;color:#374151;padding:20px 0;font-size:14px;">Le lien de partage a été copié dans le presse-papier.</p>
                 <button onclick="closeModal()" style="width:100%;padding:14px;background:rgba(167,139,250,0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:white;border:1px solid rgba(255,255,255,0.5);border-radius:50px;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 8px 24px rgba(167,139,250,0.25);transition:all .2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">OK</button>
             `; 
             document.getElementById('overlay').classList.add('on'); 
