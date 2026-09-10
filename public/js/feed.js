@@ -210,7 +210,7 @@ function _insererToutLeMonde(inputEl, dropEl) {
     const newAvant = avant.replace(/@([a-zA-ZÀ-ÿ][a-zA-ZÀ-ÿ \t]{0,40})$/, '@toutlemonde ');
     inputEl.value = newAvant + apres;
     inputEl.setSelectionRange(newAvant.length, newAvant.length);
-    inputEl.focus(); _fermerDropdown(dropEl);
+    inputEl.focus();    _fermerDropdown(dropEl);
 }
 
 function _fermerDropdown(dropEl) { if (dropEl) { dropEl.innerHTML = ''; dropEl.style.display = 'none'; } }
@@ -591,30 +591,67 @@ function editerPost(postId) {
     const lieuLonActuel = document.getElementById(`post-lieulon-raw-${postId}`)?.textContent || '';
 
     document.getElementById('modal-title').textContent = 'Modifier le post';
+    
+    // CORRECTION BUG 1 : Application du Glassmorphism V3
     document.getElementById('modal-body').innerHTML = `
         <div id="edit-post-wrap" style="position:relative">
-            <textarea id="edit-post-contenu" rows="4" style="width:100%;padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;resize:vertical;box-sizing:border-box;outline:none;font-family:inherit"></textarea>
+            <textarea id="edit-post-contenu" rows="4" style="width:100%;padding:14px;background:rgba(255,255,255,0.6);border:var(--glass-border, 1px solid rgba(255,255,255,0.8));border-radius:16px;backdrop-filter:blur(8px);font-size:14px;resize:vertical;box-sizing:border-box;outline:none;font-family:inherit;transition:all .2s;"></textarea>
         </div>
-        <div id="edit-loc-wrap" class="loc-input-wrap" style="margin-top:10px">
-            <button type="button" class="loc-input-icone" onclick="rechercherLieuGeoloc('edit-post-lieu', 'edit-post-lat', 'edit-post-lon', 'edit-loc-wrap')" title="Me géolocaliser">📍</button>
-            <input type="text" id="edit-post-lieu" class="loc-input" placeholder="Lieu (optionnel)" value="${escapeHtml(lieuActuel)}">
+        <div id="edit-loc-wrap" class="loc-input-wrap" style="margin-top:12px">
+            <button type="button" class="loc-input-icone" onclick="rechercherLieuGeoloc('edit-post-lieu', 'edit-post-lat', 'edit-post-lon', 'edit-loc-wrap')" title="Me géolocaliser" style="border-radius:12px;">📍</button>
+            <input type="text" id="edit-post-lieu" class="loc-input" placeholder="Lieu (optionnel)" value="${escapeHtml(lieuActuel)}" style="border-radius:12px;">
             <input type="hidden" id="edit-post-lat" value="${lieuLatActuel}">
             <input type="hidden" id="edit-post-lon" value="${lieuLonActuel}">
         </div>
-                ${photoActuelle ? `<div id="edit-photo-actuelle" style="margin-top:12px"><div style="font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;margin-bottom:6px">Photo actuelle</div><img src="${photoActuelle}" style="width:100%;border-radius:10px;max-height:200px;object-fit:contain;background:#f3f4f6"><button id="btn-suppr-photo" onclick="marquerSuppressionPhoto()" style="margin-top:8px;padding:7px 14px;background:#fee2e2;color:#ef4444;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Supprimer la photo</button></div>` : ''}
-        <div style="margin-top:12px"><label style="font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;display:block;margin-bottom:6px">${photoActuelle ? 'Remplacer la photo' : 'Ajouter une photo (optionnelle)'}</label><input type="file" id="edit-post-photo" accept="image/*" style="font-size:13px;color:#374151"></div>
-        <div id="edit-post-preview" style="margin-top:10px"></div>
-        <button onclick="sauvegarderEditionPost(${postId})" style="width:100%;margin-top:14px;padding:13px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:white;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer">Sauvegarder</button>
-        <div id="edit-post-msg" style="text-align:center;margin-top:10px;font-size:13px;min-height:18px"></div>
+        ${photoActuelle ? `
+        <div id="edit-photo-actuelle" style="margin-top:16px;background:rgba(255,255,255,0.4);border:1px solid rgba(255,255,255,0.6);border-radius:16px;padding:12px;">
+            <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;margin-bottom:8px">Photo actuelle</div>
+            <img src="${photoActuelle}" style="width:100%;border-radius:12px;max-height:200px;object-fit:cover;box-shadow:0 4px 12px rgba(0,0,0,0.05);">
+            <button id="btn-suppr-photo" onclick="marquerSuppressionPhoto()" style="margin-top:10px;padding:8px 16px;background:rgba(239,68,68,0.1);color:#ef4444;border:1px solid rgba(239,68,68,0.2);border-radius:50px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;">
+                🗑️ Supprimer la photo
+            </button>
+        </div>` : ''}
+        <div style="margin-top:16px">
+            <label style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;display:block;margin-bottom:8px">${photoActuelle ? 'Remplacer la photo' : 'Ajouter une photo'}</label>
+            <label for="edit-post-photo" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;background:rgba(255,255,255,0.6);border:1px dashed #7c3aed;border-radius:16px;cursor:pointer;color:#7c3aed;font-weight:600;font-size:13px;transition:all .2s;">
+                📸 <span id="edit-post-photo-name">Choisir une image</span>
+            </label>
+            <input type="file" id="edit-post-photo" accept="image/*" style="display:none">
+        </div>
+        <div id="edit-post-preview" style="margin-top:12px"></div>
+        <button onclick="sauvegarderEditionPost(${postId})" style="width:100%;margin-top:20px;padding:14px;background:rgba(167,139,250,0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:white;border:1px solid rgba(255,255,255,0.5);border-radius:50px;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 8px 24px rgba(167,139,250,0.25);transition:all .2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">Sauvegarder</button>
+        <div id="edit-post-msg" style="text-align:center;margin-top:12px;font-size:13px;min-height:18px"></div>
     `;
-        const ta = document.getElementById('edit-post-contenu'); const wrap = document.getElementById('edit-post-wrap'); ta.value = contenuActuel; initMentions(ta, wrap);
+    
+    const ta = document.getElementById('edit-post-contenu'); 
+    const wrap = document.getElementById('edit-post-wrap'); 
+    ta.value = contenuActuel; 
+    initMentions(ta, wrap);
+    
     _initLieuAutocomplete('edit-post-lieu', 'edit-post-lat', 'edit-post-lon', 'edit-loc-wrap');
-    document.getElementById('edit-post-photo').addEventListener('change', e => { const file = e.target.files[0]; const preview = document.getElementById('edit-post-preview'); if (file) { preview.innerHTML = `<img src="${URL.createObjectURL(file)}" style="width:100%;border-radius:10px;max-height:200px;object-fit:cover">`; } else { preview.innerHTML = ''; } });
+    
+    document.getElementById('edit-post-photo').addEventListener('change', e => { 
+        const file = e.target.files[0]; 
+        const preview = document.getElementById('edit-post-preview'); 
+        const nameSpan = document.getElementById('edit-post-photo-name');
+        if (file) { 
+            nameSpan.textContent = file.name;
+            preview.innerHTML = `<img src="${URL.createObjectURL(file)}" style="width:100%;border-radius:12px;max-height:200px;object-fit:cover;box-shadow:0 4px 12px rgba(0,0,0,0.05);">`; 
+        } else { 
+            nameSpan.textContent = 'Choisir une image';
+            preview.innerHTML = ''; 
+        } 
+    });
+    
     document.getElementById('overlay').classList.add('on');
 }
 
 window._editSupprimerPhoto = false;
-function marquerSuppressionPhoto() { window._editSupprimerPhoto = true; const bloc = document.getElementById('edit-photo-actuelle'); if (bloc) bloc.innerHTML = `<div style="font-size:13px;color:#ef4444;font-weight:600;padding:8px 0">Photo supprimée à la sauvegarde</div>`; }
+function marquerSuppressionPhoto() { 
+    window._editSupprimerPhoto = true; 
+    const bloc = document.getElementById('edit-photo-actuelle'); 
+    if (bloc) bloc.innerHTML = `<div style="font-size:13px;color:#ef4444;font-weight:600;padding:8px 0;text-align:center;">Photo supprimée à la sauvegarde</div>`; 
+}
 
 async function sauvegarderEditionPost(postId) {
     const user = getUser(), contenu = document.getElementById('edit-post-contenu').value.trim(), photo = document.getElementById('edit-post-photo').files[0], msg = document.getElementById('edit-post-msg');
@@ -740,24 +777,43 @@ function ouvrirModalPost() {
     window._editSupprimerPhoto = false;
     document.getElementById('overlay').classList.add('on');
     document.getElementById('modal-title').textContent = 'Nouveau post';
+    
+    // CORRECTION BUG 1 : Application du Glassmorphism V3
     document.getElementById('modal-body').innerHTML = `
         <div id="new-post-wrap" style="position:relative">
-            <textarea id="post-contenu" placeholder="Quoi de neuf ? (@Prénom NOM pour mentionner)" rows="4" style="width:100%;padding:12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;resize:vertical;box-sizing:border-box;outline:none;font-family:inherit"></textarea>
+            <textarea id="post-contenu" placeholder="Quoi de neuf ? (@Prénom NOM pour mentionner)" rows="4" style="width:100%;padding:14px;background:rgba(255,255,255,0.6);border:var(--glass-border, 1px solid rgba(255,255,255,0.8));border-radius:16px;backdrop-filter:blur(8px);font-size:14px;resize:vertical;box-sizing:border-box;outline:none;font-family:inherit;transition:all .2s;"></textarea>
         </div>
-        <div id="new-loc-wrap" class="loc-input-wrap" style="margin-top:10px">
-            <button type="button" class="loc-input-icone" onclick="rechercherLieuGeoloc('post-lieu', 'post-lat', 'post-lon', 'new-loc-wrap')" title="Me géolocaliser">📍</button>
-            <input type="text" id="post-lieu" class="loc-input" placeholder="Lieu (optionnel)">
+        <div id="new-loc-wrap" class="loc-input-wrap" style="margin-top:12px">
+            <button type="button" class="loc-input-icone" onclick="rechercherLieuGeoloc('post-lieu', 'post-lat', 'post-lon', 'new-loc-wrap')" title="Me géolocaliser" style="border-radius:12px;">📍</button>
+            <input type="text" id="post-lieu" class="loc-input" placeholder="Lieu (optionnel)" style="border-radius:12px;">
             <input type="hidden" id="post-lat" value="">
             <input type="hidden" id="post-lon" value="">
         </div>
-                <div style="margin-top:10px"><label style="font-size:11px;color:#6b7280;font-weight:600;text-transform:uppercase;display:block;margin-bottom:6px">Photo (optionnelle)</label><input type="file" id="post-photo" accept="image/*" style="font-size:13px;color:#374151"></div>
-        <div id="post-preview" style="margin-top:10px"></div>
-        <button onclick="publierPost()" style="width:100%;margin-top:16px;padding:13px;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:white;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer">Publier</button>
-        <div id="post-msg" style="text-align:center;margin-top:10px;font-size:13px;min-height:18px"></div>
+        <div style="margin-top:16px">            <label style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;display:block;margin-bottom:8px">Photo (optionnelle)</label>
+            <label for="post-photo" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;background:rgba(255,255,255,0.6);border:1px dashed #7c3aed;border-radius:16px;cursor:pointer;color:#7c3aed;font-weight:600;font-size:13px;transition:all .2s;">
+                📸 <span id="post-photo-name">Choisir une image</span>
+            </label>
+            <input type="file" id="post-photo" accept="image/*" style="display:none">
+        </div>
+        <div id="post-preview" style="margin-top:12px"></div>
+        <button onclick="publierPost()" style="width:100%;margin-top:20px;padding:14px;background:rgba(167,139,250,0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:white;border:1px solid rgba(255,255,255,0.5);border-radius:50px;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 8px 24px rgba(167,139,250,0.25);transition:all .2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">Publier</button>
+        <div id="post-msg" style="text-align:center;margin-top:12px;font-size:13px;min-height:18px"></div>
     `;
     const ta = document.getElementById('post-contenu'), wrap = document.getElementById('new-post-wrap'); initMentions(ta, wrap);
     _initLieuAutocomplete('post-lieu', 'post-lat', 'post-lon', 'new-loc-wrap');
-    document.getElementById('post-photo').addEventListener('change', e => { const file = e.target.files[0]; const preview = document.getElementById('post-preview'); if (file) { preview.innerHTML = `<img src="${URL.createObjectURL(file)}" style="width:100%;border-radius:10px;max-height:200px;object-fit:cover">`; } else { preview.innerHTML = ''; } });
+    
+    document.getElementById('post-photo').addEventListener('change', e => { 
+        const file = e.target.files[0]; 
+        const preview = document.getElementById('post-preview'); 
+        const nameSpan = document.getElementById('post-photo-name');
+        if (file) { 
+            nameSpan.textContent = file.name;
+            preview.innerHTML = `<img src="${URL.createObjectURL(file)}" style="width:100%;border-radius:12px;max-height:200px;object-fit:cover;box-shadow:0 4px 12px rgba(0,0,0,0.05);">`; 
+        } else { 
+            nameSpan.textContent = 'Choisir une image';
+            preview.innerHTML = ''; 
+        } 
+    });
 }
 
 async function publierPost() {
@@ -855,8 +911,38 @@ function ouvrirPhoto(url) {
 }
 
 async function partagerPost(postId) {
-    const card = document.getElementById(`post-${postId}`), contenuEl = document.getElementById(`post-contenu-${postId}`), contenu = contenuEl ? contenuEl.textContent.trim() : '', photoUrl = card?.dataset.photoUrl || '', text = contenu.substring(0, 100) || 'Regarde ce post sur MoaDja';
-    if (navigator.share) { try { const shareData = { title: 'MoaDja', text }; shareData.url = photoUrl || location.origin; await navigator.share(shareData); } catch (e) { if (e.name !== 'AbortError') console.error(e); } } else { try { await navigator.clipboard.writeText(`${text}\n${photoUrl || location.origin}`); document.getElementById('modal-title').textContent = 'Lien copié'; document.getElementById('modal-body').innerHTML = `<p style="text-align:center;color:#374151;padding:20px 0">Le lien a été copié dans le presse-papier.</p><button onclick="closeModal()" style="width:100%;padding:12px;background:#7c3aed;color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer">OK</button>`; document.getElementById('overlay').classList.add('on'); } catch (e) { console.error('clipboard', e); } }
+    const card = document.getElementById(`post-${postId}`), 
+          contenuEl = document.getElementById(`post-contenu-${postId}`), 
+          contenu = contenuEl ? contenuEl.textContent.trim() : '', 
+          photoUrl = card?.dataset.photoUrl || '', 
+          text = contenu.substring(0, 100) || 'Regarde ce post sur MoaDja';
+          
+    if (navigator.share) { 
+        try { 
+            const shareData = { title: 'MoaDja', text }; 
+            // Note pour le Bug 2 : Actuellement, ça partage le lien direct de l'image (photoUrl).
+            // Pour avoir une belle carte WhatsApp, il faudra partager une route publique (ex: /post/ID)
+            shareData.url = photoUrl || location.origin; 
+            await navigator.share(shareData); 
+        } catch (e) { 
+            if (e.name !== 'AbortError') console.error(e); 
+        } 
+    } else { 
+        try { 
+            await navigator.clipboard.writeText(`${text}\n${photoUrl || location.origin}`); 
+            document.getElementById('modal-title').textContent = 'Lien copié'; 
+            
+            // Légère mise à jour Glassmorphism du bouton OK
+            document.getElementById('modal-body').innerHTML = `
+                <p style="text-align:center;color:#374151;padding:20px 0;font-size:14px;">Le lien a été copié dans le presse-papier.</p>
+                <button onclick="closeModal()" style="width:100%;padding:14px;background:rgba(167,139,250,0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:white;border:1px solid rgba(255,255,255,0.5);border-radius:50px;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 8px 24px rgba(167,139,250,0.25);transition:all .2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">OK</button>
+            `; 
+            document.getElementById('overlay').classList.add('on'); 
+        } catch (e) { 
+            console.error('clipboard', e); 
+        } 
+    }
 }
 
 function escapeHtml(str) { return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
