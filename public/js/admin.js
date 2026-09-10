@@ -259,11 +259,10 @@ function _renderAdminUsers() {
                 style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;
                        font-size:14px;outline:none;box-sizing:border-box;background:#f8fafc">
         </form>
-        <button onclick="_toggleCreerForm()" id="btn-creer-user"
-            style="width:100%;padding:11px;background:linear-gradient(135deg,#4f46e5,#7c3aed);
-                   color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;
-                   cursor:pointer;margin-bottom:12px;display:flex;align-items:center;
-                   justify-content:center;gap:6px">
+                <button onclick="_toggleCreerForm()" id="btn-creer-user"
+            style="width:100%;padding:14px;background:rgba(124, 58, 237, 0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:#fff;border:1px solid rgba(255,255,255,0.5);border-radius:50px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:6px;box-shadow:0 8px 24px rgba(124, 58, 237, 0.25);transition:all .3s ease;"
+            onmouseover="this.style.transform='translateY(-2px)'; this.style.background='rgba(109, 40, 217, 0.9)';" 
+            onmouseout="this.style.transform='none'; this.style.background='rgba(124, 58, 237, 0.85)';">
             ➕ Créer un utilisateur
         </button>
         <div id="admin-creer-form" style="display:none;background:#f8fafc;border-radius:12px;
@@ -286,8 +285,10 @@ function _renderAdminUsers() {
                 <option value="user">user</option>
                 <option value="admin">admin</option>
             </select>
-            <button onclick="creerUser()" class="ua-btn ua-btn-blue"
-                style="width:100%;padding:10px;font-size:13px;justify-content:center">
+                        <button onclick="creerUser()"
+                style="width:100%;padding:14px;background:rgba(124, 58, 237, 0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:white;border:1px solid rgba(255,255,255,0.5);border-radius:50px;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 24px rgba(124, 58, 237, 0.25);transition:all .3s ease;"
+                onmouseover="this.style.transform='translateY(-2px)'; this.style.background='rgba(109, 40, 217, 0.9)';" 
+                onmouseout="this.style.transform='none'; this.style.background='rgba(124, 58, 237, 0.85)';">
                 ✓ Créer l'utilisateur
             </button>
             <div id="create-msg" style="text-align:center;margin-top:10px;font-size:13px;min-height:18px"></div>
@@ -444,9 +445,19 @@ async function adminEditerProfil(id, username) {
                     <textarea id="edit-note" rows="3"
                         style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;resize:none;font-family:inherit;box-sizing:border-box">${p.note||''}</textarea>
                 </div>
-                <div style="display:flex;gap:8px">
-                    <button class="ua-btn ua-btn-blue" style="flex:1" onclick="adminSauvegarderProfil(${id})">💾 Sauvegarder</button>
-                    <button class="ua-btn" style="flex:1;background:#f3f4f6;color:#374151" onclick="chargerAdminUsers()">Annuler</button>
+                                <div style="display:flex;gap:8px">
+                    <button style="flex:1;padding:14px;background:rgba(124, 58, 237, 0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:white;border:1px solid rgba(255,255,255,0.5);border-radius:50px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(124, 58, 237, 0.25);transition:all .3s ease;" 
+                        onclick="adminSauvegarderProfil(${id})"
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.background='rgba(109, 40, 217, 0.9)';" 
+                        onmouseout="this.style.transform='none'; this.style.background='rgba(124, 58, 237, 0.85)';">
+                        💾 Sauvegarder
+                    </button>
+                    <button style="flex:1;padding:14px;background:rgba(255,255,255,0.6);color:#4b5563;border:1px solid rgba(0,0,0,0.05);border-radius:50px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.02);transition:all .3s ease;" 
+                        onclick="chargerAdminUsers()"
+                        onmouseover="this.style.background='#fff'; this.style.borderColor='rgba(0,0,0,0.1)';" 
+                        onmouseout="this.style.background='rgba(255,255,255,0.6)'; this.style.borderColor='rgba(0,0,0,0.05)';">
+                        Annuler
+                    </button>
                 </div>
                 <div id="edit-msg" style="margin-top:10px;font-size:13px;text-align:center"></div>
             </div>
