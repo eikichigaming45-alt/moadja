@@ -1,5 +1,19 @@
 ## MoaDja
 
+## v1.72.0 - 10-09-2026
+
+### 🔧 Corrections
+- Certains menus déroulants de "Mon Profil" (Sexe, Groupe sanguin, Niveau d'activité, Objectif santé, Signe du zodiaque, Diabète, Cholestérol) s'affichaient parfois avec l'apparence brute du navigateur au lieu du style habituel de l'application - corrigé sur tous les onglets.
+
+---
+
+## v1.71.38 - 10-09-2026
+
+### 🔧 Corrections
+- Le choix "Laisser calculer depuis la date de naissance" pour le signe du zodiaque ne se sauvegardait pas correctement : après rechargement, l'ancien signe choisi manuellement réapparaissait au lieu de repasser en calcul automatique - corrigé.
+
+---
+
 ## v1.71.33 - 10-09-2026
 
 ### ✨ Nouveau
@@ -11,6 +25,7 @@
 - Un incident technique temporaire empêchait l'ouverture complète de la fenêtre "Mon Profil" - résolu rapidement.
 
 ---
+
 
 ## v1.71.23 - 09-09-2026
 
