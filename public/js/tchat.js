@@ -7,7 +7,7 @@
 
     const LIMITE_PAR_PAGE = 40;
 
-        const EMOJIS_SELECTEUR = [
+    const EMOJIS_SELECTEUR = [
         '😊','😂','😍','😘','😎','🤔','😢','😭','😠','😡',
         '🥰','😋','😜','😝','🤗','😴','🤩','🥳','😏','😒',
         '👍','👎','👏','🙌','🙏','💪','🤝','✌️','🤞','👋',
@@ -72,6 +72,7 @@
     let _replyTo            = null;
     let _emojiOuvert        = false;
     let _usersEnLigne       = new Set();
+    let _historyDepth       = 0; // Gestion de l'historique pour le bouton retour
 
     function _token() {
         try { return JSON.parse(localStorage.getItem('moadja_user'))?.token || ''; }
@@ -148,46 +149,6 @@
             .replace(/'/g, '&#39;');
     }
 
-    // ── Lightbox ──────────────────────────────────────────────
-    function _initLightbox() {
-        if (document.getElementById('tchat-lightbox')) return;
-        const lb = document.createElement('div');
-        lb.id = 'tchat-lightbox';
-        lb.style.cssText = [
-            'display:none',
-            'position:fixed',
-            'inset:0',
-            'z-index:9999',
-            'background:rgba(0,0,0,0.88)',
-            'align-items:center',
-            'justify-content:center',
-            'cursor:zoom-out'
-        ].join(';');
-        lb.innerHTML = '<img id="tchat-lightbox-img" style="max-width:90vw;max-height:90vh;border-radius:12px;object-fit:contain;">';
-        lb.addEventListener('click', () => { _fermerLightbox(); });
-        document.body.appendChild(lb);
-    }
-
-    function _ouvrirLightbox(src) {
-        const lb  = document.getElementById('tchat-lightbox');
-        const img = document.getElementById('tchat-lightbox-img');
-        if (!lb || !img) return;
-        img.src = src;
-        lb.style.display = 'flex';
-        document.body.classList.add('modal-open');
-        history.pushState({ tchatLightboxOpen: true }, '', '');
-    }
-
-    // Note : skipHistory=true = appel déclenché depuis le bouton retour (popstate), on ne refait pas history.back()
-    function _fermerLightbox(skipHistory = false) {
-        const lb = document.getElementById('tchat-lightbox');
-        if (lb) lb.style.display = 'none';
-        document.body.classList.remove('modal-open');
-        if (!skipHistory && history.state && history.state.tchatLightboxOpen) {
-            history.back();
-        }
-    }
-
     function _construireDom() {
         if (document.getElementById('tchat-bulle')) return;
 
@@ -200,11 +161,11 @@
                 <path d="M20 2H4a2 2 0 00-2 2v18l4-4h14a2 2 0 002-2V4a2 2 0 00-2-2z"/>
             </svg>
             <span id="tchat-bulle-badge"></span>`;
-        bulle.addEventListener('click', _toggleTchat);
+        bulle.addEventListener('click', () => _ouvrirTchat());
 
         const overlay = document.createElement('div');
         overlay.id = 'tchat-overlay';
-        overlay.addEventListener('click', _fermerTchat);
+        overlay.addEventListener('click', () => _fermerTchat());
 
         const sheet = document.createElement('div');
         sheet.id = 'tchat-sheet';
@@ -243,7 +204,7 @@
                 <div id="tchat-emoji-panel" style="display:none"></div>
                 <div id="tchat-saisie-wrap">
                     <button id="tchat-btn-emoji" type="button" aria-label="Emojis" title="Emojis">😊</button>
-                                        <button id="tchat-btn-image" type="button" aria-label="Envoyer une image" title="Envoyer une image">
+                    <button id="tchat-btn-image" type="button" aria-label="Envoyer une image" title="Envoyer une image">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                              stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
                             <rect x="3" y="3" width="18" height="18" rx="3"/>
@@ -267,10 +228,22 @@
         document.body.appendChild(bulle);
         document.body.appendChild(overlay);
         document.body.appendChild(sheet);
-        _initLightbox();
+        
+        // SUPPRESSION: _initLightbox() n'est plus appelé. On utilise le modal global.
 
-        document.getElementById('tchat-btn-fermer').addEventListener('click', _fermerTchat);
-        document.getElementById('tchat-conv-back').addEventListener('click', _afficherVueListe);
+        // Actions Header
+        document.getElementById('tchat-btn-fermer').addEventListener('click', () => {
+            if (_historyDepth > 0) {
+                history.go(-_historyDepth); // Dépile tout l'historique tchat pour ne pas laisser de traces
+            } else {
+                _fermerTchat(true);
+            }
+        });
+        
+        document.getElementById('tchat-conv-back').addEventListener('click', () => {
+            history.back(); // Laisse le popstate gérer le retour à la liste
+        });
+
         document.getElementById('tchat-btn-nouvelle-conv').addEventListener('click', _ouvrirSelectUser);
         document.getElementById('tchat-btn-plus-anciens').addEventListener('click', _chargerPlusAnciens);
         document.getElementById('tchat-reply-annuler').addEventListener('click', _annulerReply);
@@ -344,7 +317,7 @@
         _emojiOuvert = true;
     }
 
-        function _fermerEmojiPanel() {
+    function _fermerEmojiPanel() {
         const panel = document.getElementById('tchat-emoji-panel');
         if (panel) panel.style.display = 'none';
         _emojiOuvert = false;
@@ -564,7 +537,6 @@
         }
     }
 
-    // ── Charger présence initiale ─────────────────────────────
     async function _chargerPresence() {
         try {
             const r = await fetch('/api/tchat/presence', { headers: _authHeaders() });
@@ -590,7 +562,6 @@
                 _usersEnLigne.delete(id);
             }
             _mettreAJourPointsPresence(id, enligne);
-            // Mettre à jour le statut dans l'en-tête de conv si c'est l'interlocuteur actif
             if (_interlocuteurActif && Number(_interlocuteurActif.id) === id) {
                 const statut = document.getElementById('tchat-conv-statut');
                 if (statut) {
@@ -656,7 +627,7 @@
         _socket.on('disconnect', () => console.log('[TCHAT] Socket déconnecté'));
     }
 
-        function _rejoindreRoom(userId, interlocuteurId) {
+    function _rejoindreRoom(userId, interlocuteurId) {
         if (!_socket) return;
         _socket.emit('tchat:rejoindre', { room: _roomName(userId, interlocuteurId) });
     }
@@ -666,7 +637,16 @@
         _socket.emit('tchat:quitter', { room: _roomName(userId, interlocuteurId) });
     }
 
-    function _toggleTchat() { _ouvert ? _fermerTchat() : _ouvrirTchat(); }
+    // ── GESTION HISTORIQUE & NAVIGATION ──
+    
+    function _toggleTchat() { 
+        if (_ouvert) {
+            if (_historyDepth > 0) history.go(-_historyDepth); // referme proprement en dépilant
+            else _fermerTchat(true);
+        } else {
+            _ouvrirTchat(); 
+        }
+    }
 
     function _ouvrirTchat() {
         _ouvert = true;
@@ -674,13 +654,14 @@
         document.getElementById('tchat-overlay').classList.add('visible');
         const bulle = document.getElementById('tchat-bulle');
         if (bulle) bulle.style.opacity = '0';
-        _afficherVueListe();
+        
+        _afficherVueListe(true); // true = push state
         _chargerConversations();
         _initSocket();
         _chargerPresence();
     }
 
-    function _fermerTchat() {
+    function _fermerTchat(skipHistory = false) {
         _ouvert = false;
         document.getElementById('tchat-sheet').classList.remove('ouvert');
         document.getElementById('tchat-overlay').classList.remove('visible');
@@ -692,9 +673,14 @@
         }
         _annulerReply();
         _fermerEmojiPanel();
+        
+        if (!skipHistory && _historyDepth > 0) {
+            // Optionnel: On pourrait history.back() ici, mais on l'a déjà géré dans les boutons.
+        }
+        _historyDepth = 0;
     }
 
-    function _afficherVueListe() {
+    function _afficherVueListe(pushState = false) {
         _vueActive = 'liste';
         document.getElementById('tchat-vue-liste').style.display = 'flex';
         document.getElementById('tchat-vue-conv').classList.remove('active');
@@ -706,9 +692,14 @@
         _annulerReply();
         _fermerEmojiPanel();
         _chargerConversations();
+
+        if (pushState) {
+            history.pushState({ tchat: 'liste' }, '', '');
+            _historyDepth++;
+        }
     }
 
-    function _afficherVueConv(interlocuteur) {
+    function _afficherVueConv(interlocuteur, pushState = true) {
         _vueActive          = 'conv';
         _interlocuteurActif = interlocuteur;
         _plusAncienMsgId    = null;
@@ -725,7 +716,6 @@
         avatarWrap.querySelector('#tchat-conv-avatar-img').innerHTML =
             _avatarHTML(interlocuteur.photo, interlocuteur.prenom, interlocuteur.nom, 36, interlocuteur.id);
 
-        // FIX B1 : avatar interlocuteur cliquable -> ouverture du profil public
         avatarWrap.style.cursor = 'pointer';
         avatarWrap.onclick = () => {
             if (typeof ouvrirProfilPublic === 'function') {
@@ -743,12 +733,18 @@
             <button id="tchat-btn-plus-anciens" style="display:none">
                 Charger les messages précédents
             </button>`;
-        document.getElementById('tchat-btn-plus-anciens')
-            .addEventListener('click', _chargerPlusAnciens);
+        document.getElementById('tchat-btn-plus-anciens').addEventListener('click', _chargerPlusAnciens);
 
+        // FIX BUG 3: Clic image => appel du Modal global (Feed)
         scroll.addEventListener('click', (e) => {
             const img = e.target.closest('[data-lightbox-src]');
-            if (img) _ouvrirLightbox(img.dataset.lightboxSrc);
+            if (img) {
+                if (typeof window.ouvrirPhoto === 'function') {
+                    window.ouvrirPhoto(img.dataset.lightboxSrc); // Utilise le modal joli du Feed
+                } else {
+                    console.error("Fonction ouvrirPhoto introuvable, impossible d'afficher l'image.");
+                }
+            }
         });
 
         _annulerReply();
@@ -756,6 +752,11 @@
         _rejoindreRoom(_userId(), interlocuteur.id);
         _chargerMessages();
         _marquerLu(interlocuteur.id);
+
+        if (pushState) {
+            history.pushState({ tchat: 'conv' }, '', '');
+            _historyDepth++;
+        }
     }
 
     async function _chargerConversations() {
@@ -775,7 +776,7 @@
                 return;
             }
 
-                        liste.innerHTML = d.conversations.map(c => {
+            liste.innerHTML = d.conversations.map(c => {
                 const moi    = _userId();
                 const nom    = c.prenom
                     ? `${c.prenom}${c.nom ? ' ' + c.nom : ''}`
@@ -823,7 +824,7 @@
                         prenom  : el.dataset.prenom || null,
                         nom     : el.dataset.nom    || null,
                         photo   : el.dataset.photo  || null
-                    });
+                    }, true);
                 });
             });
 
@@ -866,8 +867,7 @@
                         <div class="tchat-vide-icone">👋</div>
                         <div class="tchat-vide-texte">Dis bonjour !</div>
                     </div>`;
-                            document.getElementById('tchat-btn-plus-anciens')
-                    .addEventListener('click', _chargerPlusAnciens);
+                document.getElementById('tchat-btn-plus-anciens').addEventListener('click', _chargerPlusAnciens);
                 return;
             }
 
@@ -952,9 +952,11 @@
         if (supprime) {
             contenu = '<em class="tchat-msg-supprime-texte">Message supprimé</em>';
         } else if (msg.image_url) {
+            // FIX BUG 2/3 : Clic droit désactivé sur les images du tchat, et cursor pointer car cliquable
             contenu = `<img src="${_echapper(msg.image_url)}"
                 class="tchat-msg-image"
                 alt="image"
+                style="cursor:pointer;"
                 data-lightbox-src="${_echapper(msg.image_url)}"
                 oncontextmenu="return false;"
                 onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span style=\\'font-size:12px;color:#9ca3af;font-style:italic\\'>Image indisponible</span>')">`;
@@ -1129,7 +1131,7 @@
                             prenom  : el.dataset.prenom || null,
                             nom     : el.dataset.nom    || null,
                             photo   : el.dataset.photo  || null
-                        });
+                        }, true);
                     });
                 });
             };
@@ -1152,25 +1154,25 @@
                     </div>
                 </div>`;
 
-            document.getElementById('tchat-retour-select')
-                .addEventListener('click', _afficherVueListe);
+            document.getElementById('tchat-retour-select').addEventListener('click', () => {
+                _afficherVueListe(false);
+            });
 
-            document.getElementById('tchat-select-user-search')
-                .addEventListener('input', (e) => {
-                    const q = e.target.value.trim().toLowerCase();
-                    if (!q) {
-                        const zone = document.getElementById('tchat-select-user-liste');
-                        if (zone) zone.innerHTML = `<div class="tchat-vide" style="padding:20px 0">
-                            <div class="tchat-vide-texte">Tape un prénom ou un pseudo…</div>
-                        </div>`;
-                        return;
-                    }
-                    const filtres = users.filter(u => {
-                        const nom_complet = `${u.prenom || ''} ${u.nom || ''}`.toLowerCase();
-                        return nom_complet.includes(q) || u.username.toLowerCase().includes(q);
-                    });
-                    _renderUsers(filtres);
+            document.getElementById('tchat-select-user-search').addEventListener('input', (e) => {
+                const q = e.target.value.trim().toLowerCase();
+                if (!q) {
+                    const zone = document.getElementById('tchat-select-user-liste');
+                    if (zone) zone.innerHTML = `<div class="tchat-vide" style="padding:20px 0">
+                        <div class="tchat-vide-texte">Tape un prénom ou un pseudo…</div>
+                    </div>`;
+                    return;
+                }
+                const filtres = users.filter(u => {
+                    const nom_complet = `${u.prenom || ''} ${u.nom || ''}`.toLowerCase();
+                    return nom_complet.includes(q) || u.username.toLowerCase().includes(q);
                 });
+                _renderUsers(filtres);
+            });
 
         } catch (err) {
             console.error('[TCHAT] ouvrirSelectUser :', err.message);
@@ -1205,18 +1207,24 @@
         } catch { /* silencieux */ }
     }
 
-    // ── Gestion du bouton retour Android pour la lightbox du Tchat ──
-    window.addEventListener('popstate', () => {
-        const lb = document.getElementById('tchat-lightbox');
-        if (lb && lb.style.display === 'flex') {
-            _fermerLightbox(true);
+    // ── INTERCEPTION DU BOUTON RETOUR (POPSTATE) ──
+    window.addEventListener('popstate', (e) => {
+        if (_ouvert) {
+            if (e.state && e.state.tchat === 'liste') {
+                // On a fait "retour" depuis une conversation vers la liste
+                _afficherVueListe(false);
+                _historyDepth--;
+            } else if (!e.state || !e.state.tchat) {
+                // On a fait "retour" depuis la liste vers la fermeture du tchat
+                _fermerTchat(true);
+            }
         }
     });
 
     window.Tchat = {
         ouvrirConversation(interlocuteur) {
             if (!_ouvert) _ouvrirTchat();
-            _afficherVueConv(interlocuteur);
+            _afficherVueConv(interlocuteur, true);
         },
         toggle  : _toggleTchat,
         init() {
@@ -1228,3 +1236,5 @@
     };
 
 })();
+
+
