@@ -3,15 +3,10 @@
 // Endpoint : POST /api/sante/plan
 // Cache serveur : sante_plan_cache (jsonb) + sante_plan_date (date = lundi de la semaine) dans profiles
 // 1 seul appel Groq/semaine — partagé tous appareils
-// Chaque jour référence ses ingrédients clés (ingredients_jour), avec les mêmes noms
-// que dans liste_courses, pour permettre un calcul de courses fidèle aux jours restants.
 //
 // IMPORTANT — Calibrage TPM Groq :
 // Le rate-limit Groq (tokens/minute) compte (tokens du prompt + max_tokens demandé),
-// PAS la longueur réelle de la réponse. Un max_tokens surdimensionné (ex: 7000)
-// réserve donc un quota bien supérieur au besoin réel (~1200-1800 tokens pour ce JSON),
-// ce qui déclenche des 429/413 même quand l'organisation est peu sollicitée.
-// max_tokens est donc calibré au plus juste (2600) avec marge de sécurité.
+// PAS la longueur réelle de la réponse. max_tokens est calibré au plus juste (2600).
 
 const express               = require('express');
 const router                = express.Router();
@@ -23,7 +18,7 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const MOIS_FR = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
 
-const MAX_TOKENS_COMPLETION = 2600; // calibré au plus juste — voir note en tête de fichier
+const MAX_TOKENS_COMPLETION = 2600;
 
 function lundiSemaine(date) {
   const d = new Date(date);
@@ -43,7 +38,7 @@ router.post('/plan', authenticateToken, async (req, res) => {
       `SELECT sexe, date_naissance, taille, poids, niveau_activite, objectif_sante,
               allergies, aliments_exclus, traitements_en_cours, diabete, cholesterol,
               sante_plan_cache, sante_plan_date
-       FROM profiles WHERE user_id = \\$1`,
+       FROM profiles WHERE user_id = \$1`,
       [userId]
     );
 
@@ -104,8 +99,6 @@ router.post('/plan', authenticateToken, async (req, res) => {
       joursSemaine.push({ date: d.toISOString().split('T')[0], label: labelsJours[i] });
     }
 
-    // Prompt compressé au maximum — chaque mot compte pour le budget TPM.
-    // 4-8 mots par repas (au lieu de 6-10) pour réduire encore la taille de sortie.
     const prompt = `Nutritionniste expert. Génère un plan alimentaire de 7 jours en JSON strict, ULTRA CONCIS (chaque repas en 4-8 mots max, pas de phrases).
 
 Profil : ${p.sexe}, ${age} ans, ${taille} cm, ${poids} kg, activité ${p.niveau_activite}, objectif ${p.objectif_sante}, ${cibles} kcal/j en moyenne.
@@ -133,8 +126,6 @@ JSON attendu (rien d'autre, pas de markdown, pas d'espaces superflus) :
 
 Génère les 7 jours dans l'ordre : ${joursSemaine.map(j => j.label + ' ' + j.date).join(', ')}.`;
 
-    // Appel Groq — max_tokens calibré au plus juste (voir note en tête de fichier).
-    // Le TPM Groq compte (prompt + max_tokens demandé), pas la sortie réelle.
     let completion;
     try {
       completion = await groq.chat.completions.create({
@@ -144,7 +135,6 @@ Génère les 7 jours dans l'ordre : ${joursSemaine.map(j => j.label + ' ' + j.da
         max_tokens : MAX_TOKENS_COMPLETION
       });
     } catch (groqErr) {
-      // Rate limit Groq — on relaie le délai d'attente réel au frontend (retry-after)
       if (groqErr.status === 429 || groqErr.status === 413) {
         const retryAfter = groqErr.headers?.['retry-after'] || groqErr.response?.headers?.get?.('retry-after') || 30;
         console.error(`[SANTE] Groq rate-limit (${groqErr.status}) — retry-after: ${retryAfter}s`, groqErr.error?.error?.message || groqErr.message);
@@ -170,7 +160,6 @@ Génère les 7 jours dans l'ordre : ${joursSemaine.map(j => j.label + ' ' + j.da
       console.error(`[SANTE] Réponse Groq non-JSON — longueur totale: ${raw.length} caractères — finish_reason: ${completion.choices[0].finish_reason}`);
       console.error('[SANTE] DÉBUT :', raw.slice(0, 300));
       console.error('[SANTE] FIN   :', raw.slice(-300));
-      // Réponse tronquée (finish_reason: length) → probable dépassement de MAX_TOKENS_COMPLETION
       const tronque = completion.choices[0].finish_reason === 'length';
       return res.status(500).json({
         error: tronque
@@ -183,7 +172,7 @@ Génère les 7 jours dans l'ordre : ${joursSemaine.map(j => j.label + ' ' + j.da
     plan.semaine_debut   = lundiActuel;
 
     await pool.query(
-      `UPDATE profiles SET sante_plan_cache = \\$1, sante_plan_date = \\$2 WHERE user_id = \\$3`,
+      `UPDATE profiles SET sante_plan_cache = \$1, sante_plan_date = \$2 WHERE user_id = \$3`,
       [JSON.stringify(plan), lundiActuel, userId]
     );
 
