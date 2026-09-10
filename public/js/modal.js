@@ -310,7 +310,33 @@ async function openModal(type) {
                                 ${p.naissance_lat ? '✅ Coordonnées enregistrées' : ''}
                             </div>
                         </div>
-                                                <div style="margin-bottom:10px">
+
+                        <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;
+                                    letter-spacing:.5px;margin-bottom:10px;margin-top:4px">Astrologie</div>
+                        <div style="margin-bottom:16px">
+                            <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Signe du zodiaque</label>
+                            <select id="p-signe"
+                                style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
+                                <option value="">— Laisser calculer depuis la date de naissance —</option>
+                                <option value="belier"     ${p.signe_zodiaque==='belier'     ? 'selected':''}>♈ Bélier</option>
+                                <option value="taureau"    ${p.signe_zodiaque==='taureau'    ? 'selected':''}>♉ Taureau</option>
+                                <option value="gemeaux"    ${p.signe_zodiaque==='gemeaux'    ? 'selected':''}>♊ Gémeaux</option>
+                                <option value="cancer"     ${p.signe_zodiaque==='cancer'     ? 'selected':''}>♋ Cancer</option>
+                                                                <option value="lion"       ${p.signe_zodiaque==='lion'       ? 'selected':''}>♌ Lion</option>
+                                <option value="vierge"     ${p.signe_zodiaque==='vierge'     ? 'selected':''}>♍ Vierge</option>
+                                <option value="balance"    ${p.signe_zodiaque==='balance'    ? 'selected':''}>♎ Balance</option>
+                                <option value="scorpion"   ${p.signe_zodiaque==='scorpion'   ? 'selected':''}>♏ Scorpion</option>
+                                <option value="sagittaire" ${p.signe_zodiaque==='sagittaire' ? 'selected':''}>♐ Sagittaire</option>
+                                <option value="capricorne" ${p.signe_zodiaque==='capricorne' ? 'selected':''}>♑ Capricorne</option>
+                                <option value="verseau"    ${p.signe_zodiaque==='verseau'    ? 'selected':''}>♒ Verseau</option>
+                                <option value="poissons"   ${p.signe_zodiaque==='poissons'   ? 'selected':''}>♓ Poissons</option>
+                            </select>
+                            <div style="font-size:11px;color:#9ca3af;margin-top:4px">
+                                Utile uniquement si vous n'avez pas renseigné de date de naissance.
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom:10px">
                             <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Email</label>
                             <input id="p-email" placeholder="Email" value="${p.email||''}"
                                 style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
@@ -432,31 +458,6 @@ async function openModal(type) {
                                 style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
                         </div>
 
-                        <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;
-                                    letter-spacing:.5px;margin-bottom:10px;margin-top:4px">Astrologie</div>
-                        <div style="margin-bottom:16px">
-                            <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Signe du zodiaque</label>
-                            <select id="p-signe"
-                                style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
-                                <option value="">— Laisser calculer depuis la date de naissance —</option>
-                                <option value="belier"     ${p.signe_zodiaque==='belier'     ? 'selected':''}>♈ Bélier</option>
-                                <option value="taureau"    ${p.signe_zodiaque==='taureau'    ? 'selected':''}>♉ Taureau</option>
-                                <option value="gemeaux"    ${p.signe_zodiaque==='gemeaux'    ? 'selected':''}>♊ Gémeaux</option>
-                                <option value="cancer"     ${p.signe_zodiaque==='cancer'     ? 'selected':''}>♋ Cancer</option>
-                                <option value="lion"       ${p.signe_zodiaque==='lion'       ? 'selected':''}>♌ Lion</option>
-                                <option value="vierge"     ${p.signe_zodiaque==='vierge'     ? 'selected':''}>♍ Vierge</option>
-                                <option value="balance"    ${p.signe_zodiaque==='balance'    ? 'selected':''}>♎ Balance</option>
-                                <option value="scorpion"   ${p.signe_zodiaque==='scorpion'   ? 'selected':''}>♏ Scorpion</option>
-                                <option value="sagittaire" ${p.signe_zodiaque==='sagittaire' ? 'selected':''}>♐ Sagittaire</option>
-                                <option value="capricorne" ${p.signe_zodiaque==='capricorne' ? 'selected':''}>♑ Capricorne</option>
-                                <option value="verseau"    ${p.signe_zodiaque==='verseau'    ? 'selected':''}>♒ Verseau</option>
-                                <option value="poissons"   ${p.signe_zodiaque==='poissons'   ? 'selected':''}>♓ Poissons</option>
-                            </select>
-                            <div style="font-size:11px;color:#9ca3af;margin-top:4px">
-                                Utile uniquement si vous n'avez pas renseigné de date de naissance.
-                            </div>
-                        </div>
-
                         <button class="btn-save" onclick="sauvegarderSante()" style="width:100%;">
                             💾 Sauvegarder la santé
                         </button>
@@ -569,12 +570,7 @@ async function openModal(type) {
             document.querySelectorAll('[data-action="social-onglet"]').forEach(btn => {
                 btn.addEventListener('click', () => {
                     // Mettre à jour visuellement les boutons pillules (charte violet V3)
-                    document.getElementById('social-tab-miens').style.background = 'transparent';
-                    document.getElementById('social-tab-miens').style.color = '#6b7280';
-                    document.getElementById('social-tab-miens').style.boxShadow = 'none';
-                    document.getElementById('social-tab-miens').style.backdropFilter = 'none';
-                    
-                    document.getElementById('social-tab-nouveau').style.background = 'transparent';
+                                        document.getElementById('social-tab-nouveau').style.background = 'transparent';
                     document.getElementById('social-tab-nouveau').style.color = '#6b7280';
                     document.getElementById('social-tab-nouveau').style.boxShadow = 'none';
                     document.getElementById('social-tab-nouveau').style.backdropFilter = 'none';
