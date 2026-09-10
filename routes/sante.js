@@ -1,8 +1,8 @@
 // routes/sante.js
-// Module Santé — Plan repas + activités + conseil du jour via Groq
+// Module Santé — Plan hebdomadaire (7 jours) + liste de courses + conseil du jour via Groq
 // Endpoint : POST /api/sante/plan
-// Cache serveur : sante_plan_cache (jsonb) + sante_plan_date (date) dans profiles
-// 1 seul appel Groq/jour — partagé tous appareils
+// Cache serveur : sante_plan_cache (jsonb) + sante_plan_date (date = lundi de la semaine) dans profiles
+// 1 seul appel Groq/semaine — partagé tous appareils
 
 const express               = require('express');
 const router                = express.Router();
@@ -12,18 +12,31 @@ const Groq                  = require('groq-sdk');
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
+const MOIS_FR = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+
+// Retourne la date (YYYY-MM-DD) du lundi de la semaine contenant la date fournie
+function lundiSemaine(date) {
+  const d = new Date(date);
+  const jour = d.getDay(); // 0 = dimanche, 1 = lundi, ...
+  const diff = (jour === 0 ? -6 : 1 - jour);
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().split('T')[0];
+}
+
 // POST /api/sante/plan
-// Si un plan existe en base pour aujourd'hui, le retourne directement.
+// Si un plan existe en base pour la semaine en cours, le retourne directement.
 // Sinon, appelle Groq, sauvegarde en base, retourne le plan.
 router.post('/plan', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user.id;
-    const today  = new Date().toISOString().split('T')[0];
+    const userId      = req.user.id;
+    const today        = new Date();
+    const lundiActuel  = lundiSemaine(today);
 
     // Récupération du profil + cache éventuel
     const result = await pool.query(
       `SELECT sexe, date_naissance, taille, poids, niveau_activite, objectif_sante,
-              allergies, aliments_exclus, sante_plan_cache, sante_plan_date
+              allergies, aliments_exclus, traitements_en_cours, diabete, cholesterol,
+              sante_plan_cache, sante_plan_date
        FROM profiles WHERE user_id = \$1`,
       [userId]
     );
@@ -32,11 +45,11 @@ router.post('/plan', authenticateToken, async (req, res) => {
 
     const p = result.rows[0];
 
-    // Retour du cache si le plan du jour existe déjà en base
+    // Retour du cache si le plan de la semaine existe déjà en base
     if (p.sante_plan_cache && p.sante_plan_date) {
       const dateCache = new Date(p.sante_plan_date).toISOString().split('T')[0];
-      if (dateCache === today) {
-        return res.json({ plan: p.sante_plan_cache, calories_cibles: p.sante_plan_cache._calories_cibles || null, cached: true });
+      if (dateCache === lundiActuel) {
+        return res.json({ plan: p.sante_plan_cache, calories_cibles: p.sante_plan_cache.calories_cibles || null, cached: true });
       }
     }
 
@@ -76,12 +89,25 @@ router.post('/plan', authenticateToken, async (req, res) => {
     const tdee   = bmr * (coeffs[p.niveau_activite] || 1.2);
     const cibles = Math.round(tdee + (deltas[p.objectif_sante] || 0));
 
-    // Formatage allergies et aliments exclus pour le prompt
-    const allergies = (p.allergies || []).join(', ') || 'aucune';
-    const exclus    = (p.aliments_exclus || []).join(', ') || 'aucun';
+    // Formatage des champs libres pour le prompt
+    const allergies   = (p.allergies || []).join(', ') || 'aucune';
+    const exclus      = (p.aliments_exclus || []).join(', ') || 'aucun';
+    const traitements = p.traitements_en_cours || 'aucun';
+    const diabete     = p.diabete || 'non renseigné';
+    const cholesterol = p.cholesterol || 'non renseigné';
+    const moisActuel  = MOIS_FR[today.getMonth()];
+
+    // Liste des 7 jours de la semaine (lundi -> dimanche) avec leurs dates
+    const labelsJours = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+    const joursSemaine = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(lundiActuel);
+      d.setDate(d.getDate() + i);
+      joursSemaine.push({ date: d.toISOString().split('T')[0], label: labelsJours[i] });
+    }
 
     // Construction du prompt Groq
-    const prompt = `Tu es un nutritionniste expert. Génère un plan journalier personnalisé en JSON strict.
+    const prompt = `Tu es un nutritionniste expert. Génère un plan alimentaire complet pour 7 jours (une semaine), en JSON strict.
 
 Profil :
 - Sexe : ${p.sexe}
@@ -90,21 +116,48 @@ Profil :
 - Poids : ${poids} kg
 - Niveau d'activité : ${p.niveau_activite}
 - Objectif : ${p.objectif_sante}
-- Calories cibles : ${cibles} kcal/jour
+- Calories cibles : ${cibles} kcal/jour (en moyenne sur la semaine)
 - Allergies : ${allergies}
-- Aliments exclus : ${exclus}
+- Aliments exclus (n'aime pas / ne veut pas) : ${exclus}
+- Traitements en cours : ${traitements}
+- Diabète : ${diabete}
+- Cholestérol : ${cholesterol}
+- Mois actuel : ${moisActuel}
 
-Réponds UNIQUEMENT avec ce JSON, sans texte autour :
+Consignes impératives :
+1. Respecte STRICTEMENT les allergies et aliments exclus — ne les propose jamais.
+2. Adapte les repas au diabète et au cholestérol si renseignés (ex : éviter sucres rapides si diabète, limiter graisses saturées si cholestérol élevé).
+3. Tiens compte de l'impact possible des traitements en cours sur l'appétit ou le métabolisme, et adapte les conseils en conséquence, sans donner d'avis médical.
+4. Propose un repas différent chaque jour (pas de répétition sur la semaine), tout en gardant une moyenne calorique équilibrée sur les 7 jours pour éviter toute frustration (pas de jour trop restrictif).
+5. Privilégie les fruits et légumes de saison pour le mois de ${moisActuel} en France.
+6. Reste économique : ingrédients courants et abordables, évite le superflu ou les produits hors saison/coûteux.
+7. Fournis une liste de courses consolidée pour toute la semaine, regroupée par catégorie, avec quantités totales (évite les doublons entre les jours).
+
+Réponds UNIQUEMENT avec ce JSON, sans texte autour, sans markdown :
 {
-  "repas": {
-    "petit_dejeuner": "...",
-    "collation_matin": "...",
-    "dejeuner": "...",
-    "collation_soir": "...",
-    "diner": "..."
-  },
-  "activites": ["..."],
-  "conseil_du_jour": "..."
+  "jours": [
+    {
+      "date": "${joursSemaine[0].date}",
+      "jour_label": "${joursSemaine[0].label}",
+      "repas": {
+        "petit_dejeuner": "...",
+        "collation_matin": "...",
+        "dejeuner": "...",
+        "collation_soir": "...",
+        "diner": "..."
+      },
+      "activites": ["..."],
+      "conseil_du_jour": "..."
+    }
+    // ... un objet par jour, dans l'ordre exact : ${joursSemaine.map(j => j.label).join(', ')}, avec les dates respectives : ${joursSemaine.map(j => j.date).join(', ')}
+  ],
+  "liste_courses": [
+    { "categorie": "Fruits & légumes", "items": ["..."] },
+    { "categorie": "Protéines (viande, poisson, œufs, légumineuses)", "items": ["..."] },
+    { "categorie": "Féculents & céréales", "items": ["..."] },
+    { "categorie": "Produits laitiers", "items": ["..."] },
+    { "categorie": "Épicerie & autres", "items": ["..."] }
+  ]
 }`;
 
     // Appel Groq
@@ -112,7 +165,7 @@ Réponds UNIQUEMENT avec ce JSON, sans texte autour :
       model      : 'openai/gpt-oss-20b',
       messages   : [{ role: 'user', content: prompt }],
       temperature: 0.7,
-      max_tokens : 800
+      max_tokens : 4000
     });
 
     // Nettoyage de la réponse — suppression des blocs markdown éventuels
@@ -127,13 +180,14 @@ Réponds UNIQUEMENT avec ce JSON, sans texte autour :
       return res.status(500).json({ error: 'Réponse Groq invalide', raw });
     }
 
-    // Stockage des calories cibles dans le cache pour les retours suivants
-    plan._calories_cibles = cibles;
+    // Stockage des métadonnées dans le cache pour les retours suivants
+    plan.calories_cibles = cibles;
+    plan.semaine_debut   = lundiActuel;
 
     // Sauvegarde en base — écrase l'ancien cache
     await pool.query(
       `UPDATE profiles SET sante_plan_cache = \$1, sante_plan_date = \$2 WHERE user_id = \$3`,
-      [JSON.stringify(plan), today, userId]
+      [JSON.stringify(plan), lundiActuel, userId]
     );
 
     res.json({ plan, calories_cibles: cibles });
