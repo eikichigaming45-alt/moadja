@@ -105,102 +105,127 @@ async function geocoderLieuNaissance() {
     }
 }
 
-// === SYSTEME DE CUSTOM SELECT (GLASSMORPHISM) ===
+// ============================================================
+// === SYSTEME DE CUSTOM SELECT (GLASSMORPHISM V3) ===
+// Remplace les <select> natifs par un dropdown stylé : coche
+// visuelle sur l'option active, flèche animée à l'ouverture,
+// transition fluide, scrollbar custom, fermeture propre au
+// clic extérieur.
+// ============================================================
 function _initCustomSelects() {
     const selects = document.querySelectorAll('#profil-modal select:not(.customized)');
+
     selects.forEach(select => {
         select.classList.add('customized');
         select.style.display = 'none';
 
         const wrapper = document.createElement('div');
         wrapper.className = 'custom-select-wrapper';
-        wrapper.style.cssText = 'position:relative; width:100%;';
 
         const trigger = document.createElement('div');
         trigger.className = 'custom-select-trigger';
-        trigger.style.cssText = 'cursor:pointer; display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.7); border-radius:12px; padding:10px 14px; font-size:13px; color:#1f2937; box-shadow:inset 0 1px 2px rgba(255,255,255,0.8), 0 2px 6px rgba(0,0,0,0.02); transition:all 0.2s ease;';
+        if (select.disabled) trigger.classList.add('disabled');
 
-        const selectedOpt = select.options[select.selectedIndex];
-        trigger.innerHTML = `<span class="custom-select-text" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${selectedOpt ? selectedOpt.text : 'Sélectionner...'}</span> <span style="font-size:10px; color:#9ca3af; margin-left:8px;">▼</span>`;
+        const textSpan = document.createElement('span');
+        textSpan.className = 'custom-select-text';
+
+        const arrow = document.createElement('span');
+        arrow.className = 'custom-select-arrow';
+        arrow.textContent = '▾';
+
+        trigger.appendChild(textSpan);
+        trigger.appendChild(arrow);
 
         const optionsList = document.createElement('div');
-        optionsList.style.cssText = 'position:absolute; top:calc(100% + 6px); left:0; right:0; background:rgba(255, 255, 255, 0.95); backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.9); border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,0.08); z-index:1000; display:none; max-height:220px; overflow-y:auto; padding:6px;';
+        optionsList.className = 'custom-select-options';
 
-        Array.from(select.options).forEach((opt, index) => {
-            const optEl = document.createElement('div');
-            optEl.textContent = opt.text;
-            optEl.style.cssText = 'padding:10px 14px; font-size:13px; cursor:pointer; color:#374151; transition:all 0.2s ease; border-radius:8px; margin-bottom:2px;';
-            
-            if (opt.selected) {
-                optEl.style.background = 'rgba(167, 139, 250, 0.15)';
-                optEl.style.color = 'rgb(167, 139, 250)';
-                optEl.style.fontWeight = '600';
-            }
+        function syncTriggerText() {
+            const opt = select.options[select.selectedIndex];
+            textSpan.textContent = opt ? opt.text : 'Sélectionner...';
+        }
 
-            optEl.onmouseenter = () => { if(!opt.selected) optEl.style.background = 'rgba(167, 139, 250, 0.05)'; };
-            optEl.onmouseleave = () => { if(!opt.selected) optEl.style.background = 'transparent'; };
+        function closeList() {
+            optionsList.classList.remove('open');
+            trigger.classList.remove('active');
+            setTimeout(() => { optionsList.style.display = 'none'; }, 180);
+        }
 
-            optEl.addEventListener('click', (e) => {
-                e.stopPropagation();
-                select.value = opt.value;
-                trigger.querySelector('.custom-select-text').textContent = opt.text;
-                optionsList.style.display = 'none';
-                trigger.style.borderColor = 'rgba(255,255,255,0.7)';
-                
-                select.dispatchEvent(new Event('change'));
-                
-                Array.from(optionsList.children).forEach(c => {
-                    c.style.background = 'transparent';
-                    c.style.color = '#374151';
-                    c.style.fontWeight = '400';
-                    c.selected = false;
-                });
-                opt.selected = true;
-                optEl.style.background = 'rgba(167, 139, 250, 0.15)';
-                optEl.style.color = 'rgb(167, 139, 250)';
-                optEl.style.fontWeight = '600';
+        function openList() {
+            document.querySelectorAll('.custom-select-options.open').forEach(o => {
+                if (o !== optionsList) {
+                    o.classList.remove('open');
+                    o.style.display = 'none';
+                    o.closest('.custom-select-wrapper')?.querySelector('.custom-select-trigger')?.classList.remove('active');
+                }
             });
-            optionsList.appendChild(optEl);
-        });
+            optionsList.style.display = 'block';
+            requestAnimationFrame(() => optionsList.classList.add('open'));
+            trigger.classList.add('active');
+        }
+
+        function renderOptions() {
+            optionsList.innerHTML = '';
+            Array.from(select.options).forEach((opt) => {
+                const item = document.createElement('div');
+                item.className = 'custom-select-option';
+                if (opt.disabled) item.classList.add('disabled');
+                if (opt.index === select.selectedIndex) item.classList.add('selected');
+
+                const check = document.createElement('span');
+                check.className = 'check-mark';
+                check.textContent = '✓';
+
+                const label = document.createElement('span');
+                label.className = 'option-label';
+                label.textContent = opt.text;
+
+                item.appendChild(check);
+                item.appendChild(label);
+
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (opt.disabled) return;
+                    select.selectedIndex = opt.index;
+                    select.dispatchEvent(new Event('change', { bubbles: true }));
+                    syncTriggerText();
+                    renderOptions();
+                    closeList();
+                });
+
+                optionsList.appendChild(item);
+            });
+        }
 
         trigger.addEventListener('click', (e) => {
             e.stopPropagation();
-            const isOpen = optionsList.style.display === 'block';
-            document.querySelectorAll('.custom-select-wrapper > div:nth-child(2)').forEach(l => l.style.display = 'none');
-            document.querySelectorAll('.custom-select-trigger').forEach(t => t.style.borderColor = 'rgba(255,255,255,0.7)');
-            
-            if (!isOpen) {
-                optionsList.style.display = 'block';
-                trigger.style.borderColor = 'rgb(167, 139, 250)';
-            }
+            if (select.disabled) return;
+            const isOpen = optionsList.classList.contains('open');
+            isOpen ? closeList() : openList();
         });
+
+        syncTriggerText();
+        renderOptions();
 
         wrapper.appendChild(trigger);
         wrapper.appendChild(optionsList);
         select.parentNode.insertBefore(wrapper, select.nextSibling);
-        
-        select.addEventListener('change', () => {
-            const currentOpt = select.options[select.selectedIndex];
-            if(currentOpt) trigger.querySelector('.custom-select-text').textContent = currentOpt.text;
-            Array.from(optionsList.children).forEach((c, idx) => {
-                if(idx === select.selectedIndex) {
-                    c.style.background = 'rgba(167, 139, 250, 0.15)';
-                    c.style.color = 'rgb(167, 139, 250)';
-                    c.style.fontWeight = '600';
-                } else {
-                    c.style.background = 'transparent';
-                    c.style.color = '#374151';
-                    c.style.fontWeight = '400';
-                }
-            });
-        });
+
+        // Permet de resynchroniser si la valeur est changée par du JS externe
+        select._customSync = () => { syncTriggerText(); renderOptions(); };
     });
 }
 
-document.addEventListener('click', () => {
-    document.querySelectorAll('.custom-select-wrapper > div:nth-child(2)').forEach(l => l.style.display = 'none');
-    document.querySelectorAll('.custom-select-trigger').forEach(t => t.style.borderColor = 'rgba(255,255,255,0.7)');
-});
+// Fermeture globale au clic extérieur (bindée une seule fois)
+if (!window._customSelectGlobalClickBound) {
+    window._customSelectGlobalClickBound = true;
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.custom-select-options.open').forEach(o => {
+            o.classList.remove('open');
+            setTimeout(() => { o.style.display = 'none'; }, 180);
+        });
+        document.querySelectorAll('.custom-select-trigger.active').forEach(t => t.classList.remove('active'));
+    });
+}
 // ==========================================
 
 
@@ -440,7 +465,7 @@ async function validerCrop() {
                 if (zone) {
                     const newImg         = document.createElement('img');
                     newImg.id            = 'profil-photo-preview';
-                    newImg.src           = urlPhoto;
+                                        newImg.src           = urlPhoto;
                     newImg.style.cssText = 'width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid rgb(167, 139, 250);cursor:pointer;box-shadow:0 4px 12px rgba(167, 139, 250, 0.3)';
                     newImg.onclick       = () => document.getElementById('photo-input').click();
                     zone.replaceWith(newImg);
@@ -809,7 +834,7 @@ async function changerMdp() {
     msg.style.color = '#9ca3af';
 
     try {
-                const r = await fetch('/api/profil/changer-mdp', {
+        const r = await fetch('/api/profil/changer-mdp', {
             method  : 'POST',
             headers : {
                 'Content-Type'  : 'application/json',
@@ -886,7 +911,7 @@ async function _injecterProfilPublicToggles() {
                 <span style="font-size:13px;color:#374151;flex:1">${c.label}</span>
                 <label style="position:relative;display:inline-flex;align-items:center;
                               width:38px;height:22px;flex-shrink:0;cursor:pointer">
-                    <input type="checkbox" class="profil-public-toggle-check" data-champ="${c.id}"
+                                        <input type="checkbox" class="profil-public-toggle-check" data-champ="${c.id}"
                         ${actif ? 'checked' : ''}
                         style="opacity:0;width:0;height:0;position:absolute">
                     <span style="position:absolute;inset:0;border-radius:22px;cursor:pointer;
