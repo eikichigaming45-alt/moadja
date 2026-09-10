@@ -590,4 +590,73 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     }
 });
 
+// ── GET /api/feed/share/:id (Route publique pour prévisualisation WhatsApp) ──
+// Attention : Pas de middleware authenticateToken ici, car WhatsApp doit pouvoir lire les balises !
+router.get('/share/:id', async (req, res) => {
+    const postId = parseInt(req.params.id);
+    if (isNaN(postId)) return res.status(400).send('ID invalide');
+
+    try {
+        const { rows } = await pool.query(`
+            SELECT p.contenu, p.photo_url, pr.prenom, pr.nom, u.username
+            FROM posts p
+            JOIN users u ON u.id = p.user_id
+            LEFT JOIN profiles pr ON pr.user_id = p.user_id
+            WHERE p.id = \$1
+        `, [postId]);
+
+        if (!rows.length) return res.status(404).send('Post introuvable');
+
+        const post = rows[0];
+        const nomAuteur = [post.prenom, post.nom].filter(Boolean).join(' ') || post.username;
+        // Nettoyage du HTML (mentions, hashtags) pour le texte brut de description
+        const contenuBrut = post.contenu ? post.contenu.replace(/<[^>]*>?/gm, '').trim() : '';
+        const extrait = contenuBrut ? (contenuBrut.substring(0, 120) + '...') : `Voir la publication de ${nomAuteur}`;
+        const titre = `Post de ${nomAuteur} sur MoaDja`;
+        const imageUrl = post.photo_url ? `https://moadja.fr${post.photo_url}` : 'https://moadja.fr/images/logo.png'; // Fallback sur le logo si pas d'image
+
+        const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${titre}</title>
+    <!-- Open Graph / Facebook / WhatsApp -->
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="https://moadja.fr/api/feed/share/${postId}" />
+    <meta property="og:title" content="${titre}" />
+    <meta property="og:description" content="${extrait}" />
+    <meta property="og:image" content="${imageUrl}" />
+    <meta property="og:site_name" content="MoaDja" />
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${titre}" />
+    <meta name="twitter:description" content="${extrait}" />
+    <meta name="twitter:image" content="${imageUrl}" />
+    
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f3f4f6; color: #374151; margin:0; }
+        .card { background: white; padding: 24px; border-radius: 16px; box-shadow: 0 12px 32px rgba(0,0,0,0.1); text-align: center; }
+    </style>
+    <script>
+        // Redirection immédiate vers l'application (PWA) pour les vrais utilisateurs
+        window.location.replace("https://moadja.fr");
+    </script>
+</head>
+<body>
+    <div class="card">
+        <p style="font-size: 14px; margin-bottom: 12px;">Redirection vers l'application MoaDja en cours...</p>
+        <a href="https://moadja.fr" style="color: #7c3aed; text-decoration: none; font-weight: bold; font-size: 14px;">Cliquez ici si rien ne se passe</a>
+    </div>
+</body>
+</html>`;
+        res.send(html);
+    } catch (e) {
+        console.error('[FEED SHARE]', e.message);
+        res.status(500).send('Erreur serveur');
+    }
+});
+
+
 module.exports = router;
