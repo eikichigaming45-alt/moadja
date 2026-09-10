@@ -256,43 +256,46 @@ function _renderAdminUsers() {
                 placeholder="🔍 Rechercher un utilisateur..."
                 oninput="_filtrerAdminUsers()"
                 autocomplete="off"
-                style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;
-                       font-size:14px;outline:none;box-sizing:border-box;background:#f8fafc">
+                style="width:100%;padding:12px 16px;border:1px solid rgba(255,255,255,0.8);border-radius:50px;
+                       font-size:14px;outline:none;box-sizing:border-box;background:rgba(255,255,255,0.6);
+                       backdrop-filter:blur(8px);transition:all .2s;color:#1f2937">
         </form>
         <button onclick="_toggleCreerForm()" id="btn-creer-user"
-            style="width:100%;padding:11px;background:linear-gradient(135deg,#4f46e5,#7c3aed);
-                   color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;
-                   cursor:pointer;margin-bottom:12px;display:flex;align-items:center;
-                   justify-content:center;gap:6px">
+            style="width:100%;padding:12px;background:rgba(167,139,250,0.85);backdrop-filter:blur(8px);
+                   color:#fff;border:1px solid rgba(255,255,255,0.5);border-radius:50px;font-size:14px;font-weight:700;
+                   cursor:pointer;margin-bottom:16px;display:flex;align-items:center;
+                   justify-content:center;gap:6px;box-shadow:0 8px 24px rgba(167,139,250,0.25);transition:all .2s;"
+            onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
             ➕ Créer un utilisateur
         </button>
-        <div id="admin-creer-form" style="display:none;background:#f8fafc;border-radius:12px;
-             padding:16px;margin-bottom:12px;border:1.5px solid #e5e7eb">
-            <div style="font-size:13px;font-weight:700;color:#1e1b4b;margin-bottom:12px">Nouveau compte</div>
+        <div id="admin-creer-form" style="display:none;background:rgba(255,255,255,0.6);backdrop-filter:blur(12px);
+             border-radius:16px;padding:20px;margin-bottom:16px;border:1px solid rgba(255,255,255,0.8);box-shadow:0 4px 12px rgba(0,0,0,0.05)">
+            <div style="font-size:13px;font-weight:700;color:#1e1b4b;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">Nouveau compte</div>
             <input type="text" id="new-username" placeholder="Nom d'utilisateur"
                 autocomplete="off" name="new-username-field"
-                style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;
-                       font-size:14px;outline:none;box-sizing:border-box;margin-bottom:8px">
+                style="width:100%;padding:12px 14px;border:1px solid rgba(255,255,255,0.8);border-radius:12px;
+                       font-size:14px;outline:none;box-sizing:border-box;margin-bottom:10px;background:rgba(255,255,255,0.7);color:#1f2937;transition:all .2s;">
             <input type="text" id="new-password-fake"
                 style="display:none;position:absolute;left:-9999px" aria-hidden="true">
             <input type="password" id="new-password"
                 autocomplete="new-password" name="new-password-field"
                 placeholder="8 car. min · majuscule · minuscule · chiffre · spécial"
-                style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;
-                       font-size:14px;outline:none;box-sizing:border-box;margin-bottom:8px">
+                style="width:100%;padding:12px 14px;border:1px solid rgba(255,255,255,0.8);border-radius:12px;
+                       font-size:14px;outline:none;box-sizing:border-box;margin-bottom:10px;background:rgba(255,255,255,0.7);color:#1f2937;transition:all .2s;">
             <select id="new-role"
-                style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;
-                       font-size:14px;outline:none;box-sizing:border-box;margin-bottom:12px;background:#fff">
-                <option value="user">user</option>
-                <option value="admin">admin</option>
+                style="width:100%;padding:12px 14px;border:1px solid rgba(255,255,255,0.8);border-radius:12px;
+                       font-size:14px;outline:none;box-sizing:border-box;margin-bottom:16px;background:rgba(255,255,255,0.7);color:#1f2937;">
+                <option value="user">Utilisateur (user)</option>
+                <option value="admin">Administrateur (admin)</option>
             </select>
-            <button onclick="creerUser()" class="ua-btn ua-btn-blue"
-                style="width:100%;padding:10px;font-size:13px;justify-content:center">
+            <button onclick="creerUser()"
+                style="width:100%;padding:12px;font-size:14px;font-weight:600;background:#4f46e5;color:#fff;border:none;border-radius:50px;cursor:pointer;box-shadow:0 4px 12px rgba(79,70,229,0.3);transition:all .2s;"
+                onmouseover="this.style.background='#4338ca'" onmouseout="this.style.background='#4f46e5'">
                 ✓ Créer l'utilisateur
             </button>
-            <div id="create-msg" style="text-align:center;margin-top:10px;font-size:13px;min-height:18px"></div>
+            <div id="create-msg" style="text-align:center;margin-top:12px;font-size:13px;min-height:18px"></div>
         </div>
-        <div id="admin-users-liste"></div>
+        <div id="admin-users-liste" style="display:flex;flex-direction:column;gap:10px;"></div>
     `;
     setTimeout(() => {
         const s = document.getElementById('admin-search');
@@ -350,33 +353,38 @@ function _filtrerAdminUsers() {
             ? u.prenom + ' ' + u.nom.toUpperCase()
             : u.username;
         return `
-        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff;
-                    border:1px solid #e5e7eb;border-radius:10px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:12px;padding:12px;background:rgba(255,255,255,0.5);
+                    border:1px solid rgba(255,255,255,0.7);border-radius:16px;backdrop-filter:blur(4px);transition:all .2s;"
+             onmouseover="this.style.background='rgba(255,255,255,0.8)'" onmouseout="this.style.background='rgba(255,255,255,0.5)'">
             <div class="as-login-avatar ${u.role === 'admin' ? 'as-av-admin' : 'as-av-user'}"
-                 style="width:36px;height:36px;font-size:15px;flex-shrink:0">${initiale}</div>
+                 style="width:42px;height:42px;font-size:16px;flex-shrink:0;box-shadow:0 4px 10px rgba(0,0,0,0.05);">${initiale}</div>
             <div style="flex:1;min-width:0">
-                <div style="font-size:13px;font-weight:700;color:#1e1b4b;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                <div style="font-size:14px;font-weight:700;color:#1e1b4b;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                     ${affichage}
                     <span class="as-badge ${u.role === 'admin' ? 'as-badge-admin' : 'as-badge-user'}">${u.role}</span>
                 </div>
-                <div style="font-size:11px;color:#9ca3af;margin-top:2px">
+                <div style="font-size:12px;color:#6b7280;margin-top:4px;font-weight:500;">
                     ${u.lastActivity
-                        ? _formatDateComplete(u.lastActivity) + ' — ' + _formatDateRelative(u.lastActivity)
+                        ? _formatDateComplete(u.lastActivity) + ' <span style="color:#9ca3af;font-weight:400;">— ' + _formatDateRelative(u.lastActivity) + '</span>'
                         : 'Jamais actif'}
                 </div>
             </div>
-            <div style="display:flex;gap:4px;flex-shrink:0">
-                <button class="au-btn au-btn-role" title="${u.role === 'admin' ? 'Passer user' : 'Passer admin'}"
+            <div style="display:flex;gap:6px;flex-shrink:0">
+                <button class="au-btn au-btn-role" title="${u.role === 'admin' ? 'Rétrograder en user' : 'Promouvoir admin'}"
+                    style="border-radius:10px;"
                     onclick="adminToggleRole(${u.id},'${u.role}')">${u.role === 'admin' ? '↓' : '↑'}</button>
-                <button class="au-btn au-btn-key"  title="Changer MDP"
+                <button class="au-btn au-btn-key"  title="Changer le mot de passe"
+                    style="border-radius:10px;"
                     onclick="adminResetPwd(${u.id},'${u.username}')">🔑</button>
-                <button class="au-btn au-btn-edit" title="Éditer"
+                <button class="au-btn au-btn-edit" title="Modifier le profil"
+                    style="border-radius:10px;"
                     onclick="adminEditerProfil(${u.id},'${u.username}')">✏️</button>
-                <button class="au-btn au-btn-del"  title="Supprimer"
+                <button class="au-btn au-btn-del"  title="Supprimer le compte"
+                    style="border-radius:10px;"
                     onclick="adminSupprimerUser(${u.id},'${u.username}')">🗑️</button>
             </div>
         </div>`;
-    }).join('') : '<p style="color:#9ca3af;font-size:13px;text-align:center;padding:12px 0">Aucun résultat.</p>';
+    }).join('') : '<p style="color:#9ca3af;font-size:14px;text-align:center;padding:20px 0;font-weight:500;">Aucun utilisateur trouvé.</p>';
 }
 
 // ===================== ÉDITION PROFIL PAR ADMIN ==============
@@ -394,61 +402,63 @@ async function adminEditerProfil(id, username) {
         const p = d.profil || {};
         const u = d.user;
         el.innerHTML = `
-            <div class="user-card">
-                <div style="font-size:15px;font-weight:700;color:#1e1b4b;margin-bottom:16px">
-                    ✏️ Éditer — <span style="color:#4f46e5">${u.username}</span>
+            <div style="background:rgba(255,255,255,0.7);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.9);border-radius:20px;padding:20px;box-shadow:0 8px 32px rgba(0,0,0,0.05);">
+                <div style="font-size:16px;font-weight:800;color:#1e1b4b;margin-bottom:20px;text-align:center;">
+                    ✏️ Éditer — <span style="color:#7c3aed">${u.username}</span>
                 </div>
-                <div class="section-title">Compte</div>
-                <div style="margin-bottom:14px">
-                    <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Nom d'utilisateur</label>
+                
+                <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Identifiants</div>
+                <div style="margin-bottom:16px">
+                    <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:6px">Nom d'utilisateur</label>
                     <input id="edit-username" type="text" value="${u.username}"
-                        style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;box-sizing:border-box">
+                        style="width:100%;padding:12px 14px;border:1px solid rgba(255,255,255,0.8);border-radius:12px;font-size:14px;outline:none;box-sizing:border-box;background:rgba(255,255,255,0.8);transition:all .2s;">
                 </div>
-                <div class="section-title">Profil</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+                
+                <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Informations Profil</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
                     <div>
-                        <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Prénom</label>
+                        <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:6px">Prénom</label>
                         <input id="edit-prenom" type="text" value="${p.prenom||''}"
-                            style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;box-sizing:border-box">
+                            style="width:100%;padding:12px 14px;border:1px solid rgba(255,255,255,0.8);border-radius:12px;font-size:14px;outline:none;box-sizing:border-box;background:rgba(255,255,255,0.8);">
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Nom</label>
+                        <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:6px">Nom</label>
                         <input id="edit-nom" type="text" value="${p.nom||''}"
-                            style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;box-sizing:border-box">
+                            style="width:100%;padding:12px 14px;border:1px solid rgba(255,255,255,0.8);border-radius:12px;font-size:14px;outline:none;box-sizing:border-box;background:rgba(255,255,255,0.8);">
                     </div>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
                     <div>
-                        <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Téléphone</label>
+                        <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:6px">Téléphone</label>
                         <input id="edit-telephone" type="text" value="${p.telephone||''}"
-                            style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;box-sizing:border-box">
+                            style="width:100%;padding:12px 14px;border:1px solid rgba(255,255,255,0.8);border-radius:12px;font-size:14px;outline:none;box-sizing:border-box;background:rgba(255,255,255,0.8);">
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Profession</label>
+                        <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:6px">Profession</label>
                         <input id="edit-profession" type="text" value="${p.profession||''}"
-                            style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;box-sizing:border-box">
+                            style="width:100%;padding:12px 14px;border:1px solid rgba(255,255,255,0.8);border-radius:12px;font-size:14px;outline:none;box-sizing:border-box;background:rgba(255,255,255,0.8);">
                     </div>
                 </div>
-                <div style="margin-bottom:10px">
-                    <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Email</label>
+                <div style="margin-bottom:12px">
+                    <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:6px">Email</label>
                     <input id="edit-email" type="email" value="${p.email||''}"
-                        style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;box-sizing:border-box">
-                </div>
-                <div style="margin-bottom:10px">
-                    <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Date de naissance</label>
-                    <input id="edit-naissance" type="date" value="${p.date_naissance ? p.date_naissance.split('T')[0] : ''}"
-                        style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box">
+                        style="width:100%;padding:12px 14px;border:1px solid rgba(255,255,255,0.8);border-radius:12px;font-size:14px;outline:none;box-sizing:border-box;background:rgba(255,255,255,0.8);">
                 </div>
                 <div style="margin-bottom:16px">
-                    <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Note</label>
+                    <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:6px">Date de naissance</label>
+                    <input id="edit-naissance" type="date" value="${p.date_naissance ? p.date_naissance.split('T')[0] : ''}"
+                        style="width:100%;padding:12px 14px;border:1px solid rgba(255,255,255,0.8);border-radius:12px;font-size:14px;box-sizing:border-box;background:rgba(255,255,255,0.8);color:#374151;">
+                </div>
+                <div style="margin-bottom:20px">
+                    <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:6px">Note personnelle (visible par les admins)</label>
                     <textarea id="edit-note" rows="3"
-                        style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;resize:none;font-family:inherit;box-sizing:border-box">${p.note||''}</textarea>
+                        style="width:100%;padding:12px 14px;border:1px solid rgba(255,255,255,0.8);border-radius:12px;font-size:14px;outline:none;resize:none;font-family:inherit;box-sizing:border-box;background:rgba(255,255,255,0.8);">${p.note||''}</textarea>
                 </div>
-                <div style="display:flex;gap:8px">
-                    <button class="ua-btn ua-btn-blue" style="flex:1" onclick="adminSauvegarderProfil(${id})">💾 Sauvegarder</button>
-                    <button class="ua-btn" style="flex:1;background:#f3f4f6;color:#374151" onclick="chargerAdminUsers()">Annuler</button>
+                <div style="display:flex;gap:12px">
+                    <button style="flex:1;padding:12px;background:rgba(124,58,237,0.9);color:#fff;border:none;border-radius:50px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(124,58,237,0.3);transition:all .2s;" onclick="adminSauvegarderProfil(${id})">💾 Sauvegarder</button>
+                    <button style="flex:1;padding:12px;background:rgba(255,255,255,0.8);color:#4b5563;border:1px solid rgba(0,0,0,0.1);border-radius:50px;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;" onclick="chargerAdminUsers()">Annuler</button>
                 </div>
-                <div id="edit-msg" style="margin-top:10px;font-size:13px;text-align:center"></div>
+                <div id="edit-msg" style="margin-top:12px;font-size:13px;font-weight:600;text-align:center;min-height:18px"></div>
             </div>
         `;
     } catch {
@@ -478,8 +488,8 @@ async function adminSauvegarderProfil(id) {
         });
         const d = await r.json();
         if (msg) {
-            msg.style.color = d.success ? '#16a34a' : '#ef4444';
-            msg.textContent = d.success ? '✅ Profil mis à jour.' : (d.message || 'Erreur.');
+            msg.style.color = d.success ? '#059669' : '#ef4444';
+            msg.textContent = d.success ? '✅ Profil mis à jour avec succès.' : (d.message || 'Erreur.');
         }
         if (d.success) setTimeout(() => chargerAdminUsers(), 1200);
     } catch {
@@ -512,17 +522,22 @@ async function adminToggleRole(id, roleActuel) {
 function adminResetPwd(id, username) {
     const el = document.getElementById('admin-tab-users');
     el.innerHTML = `
-        <div class="user-card">
-            <div class="user-card-name" style="margin-bottom:4px">🔑 Nouveau MDP — <strong>${username}</strong></div>
-            <div style="font-size:11px;color:#9ca3af;margin-bottom:12px">8 car. min · majuscule · minuscule · chiffre · spécial</div>
-            <input type="password" id="admin-new-pwd" placeholder="Nouveau mot de passe"
-                autocomplete="new-password" name="admin-pwd-field"
-                style="width:100%;padding:10px 12px;font-size:14px;outline:none;box-sizing:border-box;margin-bottom:10px">
-            <div style="display:flex;gap:8px">
-                <button class="ua-btn ua-btn-blue" style="flex:1" onclick="adminConfirmResetPwd(${id})">✓ Confirmer</button>
-                <button class="ua-btn" style="flex:1;background:#f3f4f6;color:#374151" onclick="chargerAdminUsers()">Annuler</button>
+        <div style="background:rgba(255,255,255,0.7);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.9);border-radius:20px;padding:24px;box-shadow:0 8px 32px rgba(0,0,0,0.05);text-align:center;">
+            <div style="font-size:40px;margin-bottom:12px;">🔑</div>
+            <div style="font-size:16px;font-weight:800;color:#1e1b4b;margin-bottom:8px">
+                Nouveau mot de passe pour <span style="color:#d97706">${username}</span>
             </div>
-            <div id="admin-pwd-msg" style="margin-top:8px;font-size:13px;color:#ef4444;text-align:center"></div>
+            <div style="font-size:12px;color:#6b7280;margin-bottom:20px;line-height:1.5;">
+                8 caractères min. · 1 majuscule · 1 minuscule<br>1 chiffre · 1 caractère spécial
+            </div>
+            <input type="password" id="admin-new-pwd" placeholder="Saisir le nouveau mot de passe"
+                autocomplete="new-password" name="admin-pwd-field"
+                style="width:100%;padding:12px 14px;border:1px solid rgba(255,255,255,0.8);border-radius:12px;font-size:14px;outline:none;box-sizing:border-box;margin-bottom:20px;background:rgba(255,255,255,0.8);text-align:center;">
+            <div style="display:flex;gap:12px">
+                <button style="flex:1;padding:12px;background:#f59e0b;color:#fff;border:none;border-radius:50px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(245,158,11,0.3);transition:all .2s;" onclick="adminConfirmResetPwd(${id})">✓ Confirmer</button>
+                <button style="flex:1;padding:12px;background:rgba(255,255,255,0.8);color:#4b5563;border:1px solid rgba(0,0,0,0.1);border-radius:50px;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;" onclick="chargerAdminUsers()">Annuler</button>
+            </div>
+            <div id="admin-pwd-msg" style="margin-top:12px;font-size:13px;color:#ef4444;font-weight:600;min-height:18px;"></div>
         </div>
     `;
     setTimeout(() => {
@@ -559,14 +574,352 @@ async function adminConfirmResetPwd(id) {
 function adminSupprimerUser(id, username) {
     const el = document.getElementById('admin-tab-users');
     el.innerHTML = `
-        <div class="user-card" style="border-color:#fee2e2;background:#fff5f5">
-            <div style="font-size:32px;text-align:center;margin-bottom:8px">🗑️</div>
-            <div class="user-card-name" style="text-align:center;margin-bottom:16px">
-                Confirmer la suppression de <strong>${username}</strong> ?
+        <div style="background:rgba(254,242,242,0.8);backdrop-filter:blur(16px);border:1px solid rgba(254,226,226,1);border-radius:20px;padding:24px;box-shadow:0 8px 32px rgba(239,68,68,0.1);text-align:center;">
+            <div style="font-size:40px;margin-bottom:12px">⚠️</div>
+            <div style="font-size:16px;font-weight:800;color:#991b1b;margin-bottom:8px">
+                Suppression irréversible
             </div>
-            <div style="display:flex;gap:8px">
-                <button class="ua-btn ua-btn-red" style="flex:1" onclick="adminConfirmSupprimer(${id})">Confirmer</button>
-                <button class="ua-btn" style="flex:1;background:#f3f4f6;color:#374151" onclick="chargerAdminUsers()">Annuler</button>
+            <div style="font-size:14px;color:#7f1d1d;margin-bottom:24px;line-height:1.5;">
+                Confirmez-vous la suppression définitive du compte <strong>${username}</strong> ainsi que toutes ses données associées ?
+            </div>
+            <div style="display:flex;gap:12px">
+                <button style="flex:1;padding:12px;background:#ef4444;color:#fff;border:none;border-radius:50px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 ```javascript
+px;font-size:14px;font-weight:700;
+                   cursor:pointer;margin-bottom:16px;display:flex;align-items:center;
+                   justify-content:center;gap:6px;box-shadow:0 8px 24px rgba(167,139,250,0.25);transition:all .2s;"
+            onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+            ➕ Créer un utilisateur
+        </button>
+        <div id="admin-creer-form" style="display:none;background:rgba(255,255,255,0.4);border-radius:16px;
+             padding:16px;margin-bottom:16px;border:1px solid rgba(255,255,255,0.6)">
+            <div style="font-size:13px;font-weight:700;color:#1e1b4b;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.5px;">Nouveau compte</div>
+            <input type="text" id="new-username" placeholder="Nom d'utilisateur"
+                autocomplete="off" name="new-username-field"
+                style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.8);border-radius:12px;
+                       font-size:14px;outline:none;box-sizing:border-box;margin-bottom:10px;color:#1f2937;transition:all .2s;">
+            <input type="text" id="new-password-fake"
+                style="display:none;position:absolute;left:-9999px" aria-hidden="true">
+            <input type="password" id="new-password"
+                autocomplete="new-password" name="new-password-field"
+                placeholder="8 car. min · majuscule · minuscule · chiffre · spécial"
+                style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.8);border-radius:12px;
+                       font-size:14px;outline:none;box-sizing:border-box;margin-bottom:10px;color:#1f2937;transition:all .2s;">
+            <select id="new-role"
+                style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.8);border-radius:12px;
+                       font-size:14px;outline:none;box-sizing:border-box;margin-bottom:16px;color:#1f2937;cursor:pointer;">
+                <option value="user">user</option>
+                <option value="admin">admin</option>
+            </select>
+            <button onclick="creerUser()"
+                style="width:100%;padding:12px;background:rgba(167,139,250,0.85);color:#fff;border:none;border-radius:50px;
+                       font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(167,139,250,0.25);transition:all .2s;"
+                onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
+                ✓ Créer l'utilisateur
+            </button>
+            <div id="create-msg" style="text-align:center;margin-top:10px;font-size:13px;min-height:18px"></div>
+        </div>
+        <div id="admin-users-liste" style="display:flex;flex-direction:column;gap:8px;"></div>
+    `;
+    setTimeout(() => {
+        const s = document.getElementById('admin-search');
+        if (s) s.value = '';
+        _filtrerAdminUsers();
+    }, 50);
+}
+
+function _toggleCreerForm() {
+    const f = document.getElementById('admin-creer-form');
+    const b = document.getElementById('btn-creer-user');
+    if (!f || !b) return;
+    const visible = f.style.display !== 'none';
+    f.style.display = visible ? 'none' : 'block';
+    b.innerHTML     = visible ? '➕ Créer un utilisateur' : '✕ Fermer';
+    if (!visible) {
+        setTimeout(() => {
+            const u = document.getElementById('new-username');
+            const p = document.getElementById('new-password');
+            const r = document.getElementById('new-role');
+            const m = document.getElementById('create-msg');
+            if (u) u.value = '';
+            if (p) p.value = '';
+            if (r) r.value = 'user';
+            if (m) m.textContent = '';
+            if (u) u.focus();
+        }, 50);
+    }
+}
+
+function _filtrerAdminUsers() {
+    const q     = (document.getElementById('admin-search')?.value || '').toLowerCase().trim();
+    const users = (window._adminUsersCache || [])
+        .filter(u =>
+            !q
+            || u.username.toLowerCase().includes(q)
+            || (u.prenom && u.prenom.toLowerCase().includes(q))
+            || (u.nom    && u.nom.toLowerCase().includes(q))
+        )
+        .sort((a, b) => {
+            if (a.role === 'admin' && b.role !== 'admin') return -1;
+            if (a.role !== 'admin' && b.role === 'admin') return  1;
+            const nomA    = (a.nom    || a.username).toLowerCase();
+            const nomB    = (b.nom    || b.username).toLowerCase();
+            const prenomA = (a.prenom || '').toLowerCase();
+            const prenomB = (b.prenom || '').toLowerCase();
+            if (nomA !== nomB) return nomA.localeCompare(nomB, 'fr');
+            return prenomA.localeCompare(prenomB, 'fr');
+        });
+    const el = document.getElementById('admin-users-liste');
+    if (!el) return;
+    el.innerHTML = users.length ? users.map(u => {
+        const initiale  = (u.prenom ? u.prenom[0] : u.username[0]).toUpperCase();
+        const affichage = (u.prenom && u.nom)
+            ? u.prenom + ' ' + u.nom.toUpperCase()
+            : u.username;
+        return `
+        <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(255,255,255,0.6);
+                    border:1px solid rgba(255,255,255,0.9);border-radius:16px;backdrop-filter:blur(8px);">
+            <div class="as-login-avatar ${u.role === 'admin' ? 'as-av-admin' : 'as-av-user'}"
+                 style="width:40px;height:40px;font-size:16px;flex-shrink:0;box-shadow:0 4px 10px rgba(0,0,0,0.05);">${initiale}</div>
+            <div style="flex:1;min-width:0">
+                <div style="font-size:14px;font-weight:700;color:#1f2937;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                    ${affichage}
+                    <span class="as-badge ${u.role === 'admin' ? 'as-badge-admin' : 'as-badge-user'}">${u.role}</span>
+                </div>
+                <div style="font-size:11px;color:#6b7280;margin-top:4px;font-weight:500;">
+                    ${u.lastActivity
+                        ? _formatDateComplete(u.lastActivity) + ' — <span style="color:#9ca3af">' + _formatDateRelative(u.lastActivity) + '</span>'
+                        : 'Jamais actif'}
+                </div>
+            </div>
+            <div style="display:flex;gap:6px;flex-shrink:0">
+                <button class="au-btn au-btn-role" title="${u.role === 'admin' ? 'Passer user' : 'Passer admin'}"
+                    style="border-radius:10px;width:32px;height:32px;"
+                    onclick="adminToggleRole(${u.id},'${u.role}')">${u.role === 'admin' ? '↓' : '↑'}</button>
+                <button class="au-btn au-btn-key"  title="Changer MDP"
+                    style="border-radius:10px;width:32px;height:32px;"
+                    onclick="adminResetPwd(${u.id},'${u.username}')">🔑</button>
+                <button class="au-btn au-btn-edit" title="Éditer"
+                    style="border-radius:10px;width:32px;height:32px;"
+                    onclick="adminEditerProfil(${u.id},'${u.username}')">✏️</button>
+                <button class="au-btn au-btn-del"  title="Supprimer"
+                    style="border-radius:10px;width:32px;height:32px;"
+                    onclick="adminSupprimerUser(${u.id},'${u.username}')">🗑️</button>
+            </div>
+        </div>`;
+    }).join('') : '<p style="color:#9ca3af;font-size:13px;text-align:center;padding:24px 0">Aucun utilisateur trouvé.</p>';
+}
+
+// ===================== ÉDITION PROFIL PAR ADMIN ==============
+
+async function adminEditerProfil(id, username) {
+    const user = getUser();
+    const el   = document.getElementById('admin-tab-users');
+    el.innerHTML = '<p style="color:#9ca3af;text-align:center;padding:20px 0">Chargement...</p>';
+    try {
+        const r = await fetch(`/api/admin/users/${id}/profil`, {
+            headers: { 'Authorization': `Bearer ${user.token}` }
+        });
+        const d = await r.json();
+        if (!d.success) { el.innerHTML = `<p style="color:#ef4444">${d.message}</p>`; return; }
+        const p = d.profil || {};
+        const u = d.user;
+        el.innerHTML = `
+            <div style="background:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.9);border-radius:24px;padding:20px;backdrop-filter:blur(12px);box-shadow:0 8px 32px rgba(0,0,0,0.08);">
+                <div style="font-size:15px;font-weight:800;color:#1f2937;margin-bottom:20px;text-align:center;">
+                    ✏️ Éditer — <span style="color:#7c3aed">${u.username}</span>
+                </div>
+                
+                <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Compte</div>
+                <div style="margin-bottom:16px">
+                    <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:6px;text-transform:uppercase;">Nom d'utilisateur</label>
+                    <input id="edit-username" type="text" value="${u.username}"
+                        style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.8);border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;outline:none;box-sizing:border-box;color:#1f2937;transition:all .2s;">
+                </div>
+                
+                <div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Profil</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                    <div>
+                        <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:6px;text-transform:uppercase;">Prénom</label>
+                        <input id="edit-prenom" type="text" value="${p.prenom||''}"
+                            style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.8);border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;outline:none;box-sizing:border-box;color:#1f2937;transition:all .2s;">
+                    </div>
+                    <div>
+                        <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:6px;text-transform:uppercase;">Nom</label>
+                        <input id="edit-nom" type="text" value="${p.nom||''}"
+                            style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.8);border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;outline:none;box-sizing:border-box;color:#1f2937;transition:all .2s;">
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
+                    <div>
+                        <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:6px;text-transform:uppercase;">Téléphone</label>
+                        <input id="edit-telephone" type="text" value="${p.telephone||''}"
+                            style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.8);border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;outline:none;box-sizing:border-box;color:#1f2937;transition:all .2s;">
+                    </div>
+                    <div>
+                        <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:6px;text-transform:uppercase;">Profession</label>
+                        <input id="edit-profession" type="text" value="${p.profession||''}"
+                            style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.8);border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;outline:none;box-sizing:border-box;color:#1f2937;transition:all .2s;">
+                    </div>
+                </div>
+                <div style="margin-bottom:12px">
+                    <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:6px;text-transform:uppercase;">Email</label>
+                    <input id="edit-email" type="email" value="${p.email||''}"
+                        style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.8);border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;outline:none;box-sizing:border-box;color:#1f2937;transition:all .2s;">
+                </div>
+                <div style="margin-bottom:12px">
+                    <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:6px;text-transform:uppercase;">Date de naissance</label>
+                    <input id="edit-naissance" type="date" value="${p.date_naissance ? p.date_naissance.split('T')[0] : ''}"
+                        style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.8);border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;color:#1f2937;transition:all .2s;">
+                </div>
+                <div style="margin-bottom:20px">
+                    <label style="font-size:11px;font-weight:700;color:#6b7280;display:block;margin-bottom:6px;text-transform:uppercase;">Note</label>
+                    <textarea id="edit-note" rows="3"
+                        style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.8);border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;outline:none;resize:none;font-family:inherit;box-sizing:border-box;color:#1f2937;transition:all .2s;">${p.note||''}</textarea>
+                </div>
+                
+                <div style="display:flex;gap:10px;flex-direction:column;">
+                    <button style="width:100%;padding:14px;background:rgba(167,139,250,0.85);color:white;border:1px solid rgba(255,255,255,0.5);border-radius:50px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(167,139,250,0.25);transition:all .2s;"
+                        onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'"
+                        onclick="adminSauvegarderProfil(${id})">💾 Sauvegarder</button>
+                    <button style="width:100%;padding:14px;background:transparent;color:#6b7280;border:1.5px solid rgba(229,231,235,0.7);border-radius:50px;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;"
+                        onmouseover="this.style.background='rgba(255,255,255,0.5)'" onmouseout="this.style.background='transparent'"
+                        onclick="chargerAdminUsers()">Annuler</button>
+                </div>
+                <div id="edit-msg" style="margin-top:12px;font-size:13px;text-align:center;font-weight:600;"></div>
+            </div>
+        `;
+    } catch {
+        el.innerHTML = '<p style="color:#ef4444;font-size:13px;text-align:center">Erreur réseau.</p>';
+    }
+}
+
+async function adminSauvegarderProfil(id) {
+    const user       = getUser();
+    const msg        = document.getElementById('edit-msg');
+    const username   = document.getElementById('edit-username')?.value?.trim();
+    const prenom     = document.getElementById('edit-prenom')?.value?.trim();
+    const nom        = document.getElementById('edit-nom')?.value?.trim();
+    const telephone  = document.getElementById('edit-telephone')?.value?.trim();
+    const profession = document.getElementById('edit-profession')?.value?.trim();
+    const email      = document.getElementById('edit-email')?.value?.trim();
+    const naissance  = document.getElementById('edit-naissance')?.value;
+    const note       = document.getElementById('edit-note')?.value?.trim();
+    try {
+        const r = await fetch(`/api/admin/users/${id}/profil`, {
+            method : 'PATCH',
+            headers: {
+                'Content-Type' : 'application/json',
+                'Authorization': `Bearer ${user.token}`
+            },
+            body: JSON.stringify({ username, prenom, nom, telephone, profession, email, date_naissance: naissance, note })
+        });
+        const d = await r.json();
+        if (msg) {
+            msg.style.color = d.success ? '#10b981' : '#ef4444';
+            msg.textContent = d.success ? '✅ Profil mis à jour.' : (d.message || 'Erreur.');
+        }
+        if (d.success) setTimeout(() => chargerAdminUsers(), 1200);
+    } catch {
+        if (msg) { msg.style.color = '#ef4444'; msg.textContent = 'Erreur réseau.'; }
+    }
+}
+
+// ===================== TOGGLE ROLE ===========================
+
+async function adminToggleRole(id, roleActuel) {
+    const user    = getUser();
+    const newRole = roleActuel === 'admin' ? 'user' : 'admin';
+    try {
+        const r = await fetch(`/api/admin/users/${id}/role`, {
+            method : 'PATCH',
+            headers: {
+                'Content-Type' : 'application/json',
+                'Authorization': `Bearer ${user.token}`
+            },
+            body: JSON.stringify({ role: newRole })
+        });
+        const d = await r.json();
+        if (d.success) chargerAdminUsers();
+        else { const m = document.createElement('p'); m.textContent = d.message || 'Erreur.'; }
+    } catch { /* silencieux */ }
+}
+
+// ===================== RESET MOT DE PASSE ====================
+
+function adminResetPwd(id, username) {
+    const el = document.getElementById('admin-tab-users');
+    el.innerHTML = `
+        <div style="background:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.9);border-radius:24px;padding:24px;backdrop-filter:blur(12px);box-shadow:0 8px 32px rgba(0,0,0,0.08);text-align:center;">
+            <div style="font-size:40px;margin-bottom:12px;">🔑</div>
+            <div style="font-size:16px;font-weight:800;color:#1f2937;margin-bottom:8px">Nouveau mot de passe</div>
+            <div style="font-size:14px;color:#6b7280;margin-bottom:16px">Pour <strong>${username}</strong></div>
+            
+            <div style="font-size:11px;color:#9ca3af;margin-bottom:12px;font-weight:600;">8 car. min · majuscule · minuscule · chiffre · spécial</div>
+            
+            <input type="password" id="admin-new-pwd" placeholder="Nouveau mot de passe"
+                autocomplete="new-password" name="admin-pwd-field"
+                style="width:100%;padding:12px 16px;background:rgba(255,255,255,0.8);border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;outline:none;box-sizing:border-box;margin-bottom:20px;text-align:center;">
+            
+            <div style="display:flex;gap:10px;flex-direction:column;">
+                <button style="width:100%;padding:14px;background:rgba(167,139,250,0.85);color:white;border:1px solid rgba(255,255,255,0.5);border-radius:50px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(167,139,250,0.25);transition:all .2s;"
+                        onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'"
+                        onclick="adminConfirmResetPwd(${id})">✓ Confirmer</button>
+                <button style="width:100%;padding:14px;background:transparent;color:#6b7280;border:1.5px solid rgba(229,231,235,0.7);border-radius:50px;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;"
+                        onmouseover="this.style.background='rgba(255,255,255,0.5)'" onmouseout="this.style.background='transparent'"
+                        onclick="chargerAdminUsers()">Annuler</button>
+            </div>
+            <div id="admin-pwd-msg" style="margin-top:12px;font-size:13px;color:#ef4444;font-weight:600;"></div>
+        </div>
+    `;
+    setTimeout(() => {
+        const f = document.getElementById('admin-new-pwd');
+        if (f) { f.value = ''; f.focus(); }
+    }, 50);
+}
+
+async function adminConfirmResetPwd(id) {
+    const user   = getUser();
+    const pwd    = document.getElementById('admin-new-pwd')?.value;
+    const msg    = document.getElementById('admin-pwd-msg');
+    const erreur = validerMotDePasse(pwd || '');
+    if (erreur) { if (msg) msg.textContent = erreur; return; }
+    try {
+        const r = await fetch(`/api/admin/users/${id}/password`, {
+            method : 'PATCH',
+            headers: {
+                'Content-Type' : 'application/json',
+                'Authorization': `Bearer ${user.token}`
+            },
+            body: JSON.stringify({ password: pwd })
+        });
+        const d = await r.json();
+        if (d.success) chargerAdminUsers();
+        else if (msg) msg.textContent = d.message || 'Erreur.';
+    } catch {
+        if (msg) msg.textContent = 'Erreur réseau.';
+    }
+}
+
+// ===================== SUPPRIMER UTILISATEUR =================
+
+function adminSupprimerUser(id, username) {
+    const el = document.getElementById('admin-tab-users');
+    el.innerHTML = `
+        <div style="background:rgba(254,242,242,0.6);backdrop-filter:blur(16px);border:1px solid rgba(254,226,226,0.9);border-radius:24px;padding:24px;box-shadow:0 8px 32px rgba(239,68,68,0.1);text-align:center;">
+            <div style="font-size:40px;margin-bottom:12px">⚠️</div>
+            <div style="font-size:16px;font-weight:800;color:#991b1b;margin-bottom:8px">
+                Suppression irréversible
+            </div>
+            <div style="font-size:14px;color:#7f1d1d;margin-bottom:24px;line-height:1.5;">
+                Confirmez-vous la suppression définitive du compte <strong>${username}</strong> ainsi que toutes ses données associées ?
+            </div>
+            <div style="display:flex;gap:12px;flex-direction:column;">
+                <button style="width:100%;padding:14px;background:#ef4444;color:#fff;border:none;border-radius:50px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(239,68,68,0.3);transition:all .2s;"
+                        onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'"
+                        onclick="adminConfirmSupprimer(${id})">Confirmer la suppression</button>
+                <button style="width:100%;padding:14px;background:transparent;color:#991b1b;border:1.5px solid rgba(254,202,202,0.8);border-radius:50px;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;"
+                        onmouseover="this.style.background='rgba(254,226,226,0.5)'" onmouseout="this.style.background='transparent'"
+                        onclick="chargerAdminUsers()">Annuler</button>
             </div>
         </div>
     `;
@@ -586,7 +939,7 @@ async function adminConfirmSupprimer(id) {
         if (d.success) chargerAdminUsers();
         else {
             const el  = document.getElementById('admin-tab-users');
-            if (el) el.innerHTML += `<p style="color:#ef4444;font-size:13px;text-align:center;margin-top:8px">${d.message || 'Erreur.'}</p>`;
+            if (el) el.innerHTML += `<p style="color:#ef4444;font-size:13px;text-align:center;margin-top:12px;font-weight:600;">${d.message || 'Erreur.'}</p>`;
         }
     } catch { /* silencieux */ }
 }
@@ -599,6 +952,7 @@ async function creerUser() {
     const password = document.getElementById('new-password')?.value;
     const role     = document.getElementById('new-role')?.value;
     const msg      = document.getElementById('create-msg');
+    
     if (!username || !password) {
         if (msg) { msg.style.color = '#ef4444'; msg.textContent = 'Champs requis.'; }
         return;
@@ -608,6 +962,7 @@ async function creerUser() {
         if (msg) { msg.style.color = '#ef4444'; msg.textContent = erreur; }
         return;
     }
+    
     try {
         const r = await fetch('/api/admin/users', {
             method : 'POST',
@@ -619,7 +974,7 @@ async function creerUser() {
         });
         const d = await r.json();
         if (msg) {
-            msg.style.color = d.success ? '#16a34a' : '#ef4444';
+            msg.style.color = d.success ? '#10b981' : '#ef4444';
             msg.textContent = d.success
                 ? `✅ "${username}" créé avec succès.`
                 : (d.message || 'Erreur.');
@@ -642,6 +997,7 @@ function switchAdminTab(tab) {
     document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.remove('active'));
     document.querySelector(`.admin-tab[data-tab="${tab}"]`)?.classList.add('active');
     document.getElementById(`admin-tab-${tab}`)?.classList.add('active');
+    
     if (tab === 'stats') chargerAdminStats();
     if (tab === 'users') chargerAdminUsers();
 }
@@ -649,10 +1005,10 @@ function switchAdminTab(tab) {
 // ===================== VALIDATION MDP (client) ===============
 
 function validerMotDePasse(pwd) {
-    if (!pwd || pwd.length < 8)         return 'Minimum 8 caractères.';
-    if (!/[A-Z]/.test(pwd))             return 'Au moins une majuscule.';
-    if (!/[a-z]/.test(pwd))             return 'Au moins une minuscule.';
-    if (!/[0-9]/.test(pwd))             return 'Au moins un chiffre.';
+    if (!pwd || pwd.length < 8)        return 'Minimum 8 caractères.';
+    if (!/[A-Z]/.test(pwd))            return 'Au moins une majuscule.';
+    if (!/[a-z]/.test(pwd))            return 'Au moins une minuscule.';
+    if (!/[0-9]/.test(pwd))            return 'Au moins un chiffre.';
     if (!/[^A-Za-z0-9]/.test(pwd))     return 'Au moins un caractère spécial.';
     return null;
 }
