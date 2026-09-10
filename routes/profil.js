@@ -33,6 +33,11 @@ const upload  = multer({
 // ============================================================
 const CHAMPS_PUBLICS_VALIDES = ['age', 'profession', 'site_web', 'signe_astro', 'note'];
 
+// Sentinel utilisé pour distinguer "champ signe_zodiaque absent du body"
+// (ex: sauvegarde depuis l'onglet Santé) de "champ envoyé à null"
+// (ex: sauvegarde depuis l'onglet Profil avec "Laisser calculer" -> reset).
+const SENTINEL_NOCHANGE_SIGNE = '__NOCHANGE_SIGNE__';
+
 // Table des bornes de signes astrologiques (calcul depuis date_naissance uniquement)
 const SIGNES_ASTRO = [
     { cle: 'capricorne', label: 'Capricorne', emoji: '♑', mois: 1,  jour: 20 },
@@ -127,7 +132,7 @@ router.post('/', authenticateToken, async (req, res) => {
                 telephone       = CASE WHEN \$10::text IS NOT NULL THEN \$10::text    ELSE telephone       END,
                 profession      = CASE WHEN \$11::text IS NOT NULL THEN \$11::text    ELSE profession      END,
                 note            = CASE WHEN \$12::text IS NOT NULL THEN \$12::text    ELSE note            END,
-                signe_zodiaque  = CASE WHEN \$13::text IS NOT NULL THEN \$13::text    ELSE signe_zodiaque  END,
+                signe_zodiaque  = CASE WHEN \$13::text = '${SENTINEL_NOCHANGE_SIGNE}' THEN signe_zodiaque ELSE \$13::text END,
                 sexe            = CASE WHEN \$14::text IS NOT NULL THEN \$14::text    ELSE sexe            END,
                 taille          = CASE WHEN \$15::text IS NOT NULL THEN \$15::integer ELSE taille          END,
                 poids           = CASE WHEN \$16::text IS NOT NULL THEN \$16::numeric ELSE poids           END,
@@ -155,9 +160,10 @@ router.post('/', authenticateToken, async (req, res) => {
             telephone       != null && telephone       !== '' ? telephone       : null,
             profession      != null && profession      !== '' ? profession      : null,
             note            != null && note            !== '' ? note            : null,
-            // FIX signe_zodiaque : distinguer "champ absent" (undefined -> ne pas toucher)
-            // de "champ envoyé vide" ('' -> reset explicite vers calcul auto).
-            signe_zodiaque  !== undefined ? signe_zodiaque : null,
+            // FIX signe_zodiaque : le sentinel SENTINEL_NOCHANGE_SIGNE signifie
+            // "champ absent du body -> ne pas toucher à la colonne".
+            // Toute autre valeur (y compris null explicite pour reset) est appliquée telle quelle.
+            signe_zodiaque !== undefined ? (signe_zodiaque || null) : SENTINEL_NOCHANGE_SIGNE,
             sexe            != null && sexe            !== '' ? sexe            : null,
             taille          != null                           ? String(taille)  : null,
             poids           != null                           ? String(poids)   : null,
@@ -400,7 +406,7 @@ router.get('/public/:userId', authenticateToken, async (req, res) => {
              WHERE u.id = \$1`,
             [cibleId]
         );
-        if (profilRes.rows.length === 0) return res.status(404).json({ success: false, message: 'Utilisateur introuvable.' });
+                if (profilRes.rows.length === 0) return res.status(404).json({ success: false, message: 'Utilisateur introuvable.' });
         const profil = profilRes.rows[0];
         const champsAutorises = profil.profil_public_champs || [];
 
