@@ -190,9 +190,8 @@ async function chargerWidgetSante() {
         </div>
     `;
 
-    // ── Zone plan (repliée par défaut) + conseil (toujours visible) ─
-    const planHtml    = planCache ? _renderPlan(planCache, calesCache) : '';
-    const conseilHtml = planCache ? _renderConseil(planCache) : '';
+    // ── Zone plan — toujours repliée par défaut ───────────────
+    const planHtml = planCache ? _renderPlan(planCache, calesCache) : '';
 
     el.innerHTML = `
         ${!profilComplet ? `
@@ -204,11 +203,10 @@ async function chargerWidgetSante() {
         <button id="btn-sante-groq" onclick="genererPlanSante()"
             class="sante-btn-groq"
             ${planCache ? 'data-genere="1"' : ''}>
-            ${planCache ? '✅ Plan généré aujourd\'hui' : '✨ Générer mon plan du jour'}
+            ${planCache ? '🔄 Plan généré aujourd\'hui' : '✨ Générer mon plan du jour'}
         </button>
         <div id="sante-groq-msg" style="font-size:12px;color:#9ca3af;text-align:center;margin-top:6px;min-height:16px"></div>
         ` : ''}
-        <div id="sante-conseil-zone">${conseilHtml}</div>
         <div id="sante-plan-zone" class="sante-plan-replie">${planHtml}</div>
         ${planCache ? `
         <button class="sante-btn-toggle" id="btn-sante-toggle" onclick="togglePlanSante()">
@@ -262,16 +260,10 @@ function _renderPlan(plan, calories_cibles) {
             <div class="sante-plan-section">🏃 Activités recommandées</div>
             <div class="sante-plan-contenu">${plan.activites.join('<br>')}</div>
             ` : ''}
-        </div>
-    `;
-}
-
-function _renderConseil(plan) {
-    if (!plan?.conseil_du_jour) return '';
-    return `
-        <div class="sante-plan">
+            ${plan.conseil_du_jour ? `
             <div class="sante-plan-section">💡 Conseil du jour</div>
             <div class="sante-plan-contenu">${plan.conseil_du_jour}</div>
+            ` : ''}
         </div>
     `;
 }
@@ -302,10 +294,8 @@ async function genererPlanSante() {
         const d = await r.json();
 
         if (d.plan) {
-            const zone    = document.getElementById('sante-plan-zone');
-            const conseil = document.getElementById('sante-conseil-zone');
-            if (zone)    zone.innerHTML    = _renderPlan(d.plan, d.calories_cibles);
-            if (conseil) conseil.innerHTML = _renderConseil(d.plan);
+            const zone = document.getElementById('sante-plan-zone');
+            if (zone) zone.innerHTML = _renderPlan(d.plan, d.calories_cibles);
 
             // Afficher le bouton toggle s'il n'existe pas encore
             if (!document.getElementById('btn-sante-toggle')) {
@@ -320,7 +310,7 @@ async function genererPlanSante() {
             _depilerPlan();
 
             if (btn) {
-                btn.textContent    = '✅ Plan généré aujourd\'hui';
+                btn.textContent    = '🔄 Plan généré aujourd\'hui';
                 btn.dataset.genere = '1';
                 btn.disabled       = false;
             }
