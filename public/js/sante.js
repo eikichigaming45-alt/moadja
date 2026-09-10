@@ -4,7 +4,9 @@
 // Calculs locaux : IMC, BMR (Mifflin-St Jeor), TDEE, macros,
 // kcal objectif. Affichage instantané depuis profilCache.
 // Groq : 1 appel/semaine max — cache serveur (sante_plan_cache + sante_plan_date)
-// Plan hebdomadaire : Aujourd'hui / Semaine / Liste de courses (avec quantités).
+// Plan hebdomadaire : Aujourd'hui / Semaine / Liste de courses.
+// Liste de courses "Jours restants" calculée à partir des occurrences
+// réelles de chaque ingrédient dans ingredients_jour (pas un simple prorata).
 // Dépend de : app.js (getUser, profilCache)
 // ============================================================
 
@@ -111,8 +113,34 @@ function _joursRestantsSemaine(plan) {
     if (!plan?.jours?.length) return 7;
     const today = _dateISOAujourdhui();
     const idx   = plan.jours.findIndex(j => j.date === today);
-    if (idx === -1) return 7; // plan d'une autre semaine (pas encore régénéré) — on ne prorata pas
+    if (idx === -1) return 7; // plan d'une autre semaine (pas encore régénéré) — pas de prorata fiable
     return plan.jours.length - idx;
+}
+
+// Normalise un nom pour comparaison (minuscule, sans accents, sans espaces superflus)
+function _normaliserNom(nom) {
+    if (!nom) return '';
+    return nom
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // retire les accents
+        .trim();
+}
+
+// Compte le nombre de jours (parmi un sous-ensemble de jours) où un ingrédient apparaît
+// dans ingredients_jour. Comparaison souple (inclusion partielle des mots normalisés).
+function _compterOccurrences(nomItem, joursSubset) {
+    const cible = _normaliserNom(nomItem);
+    if (!cible) return 0;
+    let count = 0;
+    joursSubset.forEach(j => {
+        const liste = j.ingredients_jour || [];
+        const trouve = liste.some(ing => {
+            const n = _normaliserNom(ing);
+            return n === cible || n.includes(cible) || cible.includes(n);
+        });
+        if (trouve) count++;
+    });
+    return count;
 }
 
 // ===================== RENDU WIDGET ==========================
@@ -332,7 +360,6 @@ function _renderJour(plan) {
 }
 
 // ── Vue "Semaine" (accordéon, un jour ouvert à la fois) ────────
-// Ordre demandé : repas -> Conseil -> Activités (activités sous le conseil)
 function _renderSemaine(plan) {
     if (!plan?.jours?.length) return '<div class="sante-empty">Aucun plan hebdomadaire disponible.</div>';
     const today = _dateISOAujourdhui();
@@ -377,7 +404,6 @@ function _toggleJourSemaine(i) {
     const arrow = document.getElementById(`sante-jour-arrow-${i}`);
     if (!body) return;
     const ouvert = body.style.display === 'block';
-    // Ferme tous les autres jours (accordéon = un seul ouvert à la fois)
     document.querySelectorAll('.sante-jour-body').forEach(b => b.style.display = 'none');
     document.querySelectorAll('.sante-jour-arrow').forEach(a => a.textContent = '▾');
     if (!ouvert) {
@@ -386,12 +412,21 @@ function _toggleJourSemaine(i) {
     }
 }
 
-// ── Vue "Liste de courses" (par catégorie, avec quantités + toggle semaine/restants) ──
+// ── Vue "Liste de courses" (par catégorie, avec quantités fidèles aux jours restants) ──
 function _renderCourses(plan) {
     if (!plan?.liste_courses?.length) return '<div class="sante-empty">Aucune liste de courses disponible.</div>';
 
+    const today         = _dateISOAujourdhui();
+    const idxAujourdhui  = plan.jours?.findIndex(j => j.date === today) ?? -1;
+    const aPlanIngredients = plan.jours?.some(j => Array.isArray(j.ingredients_jour) && j.ingredients_jour.length);
+
+    // Sous-ensembles de jours pour le comptage d'occurrences
+    const joursRestantsListe = (idxAujourdhui >= 0 && plan.jours)
+        ? plan.jours.slice(idxAujourdhui)
+        : (plan.jours || []);
+    const joursTousListe = plan.jours || [];
+
     const joursRestants = _joursRestantsSemaine(plan);
-    const ratio         = _santeCoursesMode === 'restants' ? (joursRestants / 7) : 1;
 
     const icones = {
         'fruits'    : '🥦',
@@ -405,23 +440,61 @@ function _renderCourses(plan) {
         return icones[clef] || '📦';
     };
 
-    // Arrondit la quantité proportionnelle à une valeur lisible (pas de décimales absurdes)
-    const arrondirQuantite = (val) => {
-        if (val < 1) return Math.ceil(val * 10) / 10; // ex : 0.3
-        if (val < 10) return Math.ceil(val * 2) / 2;  // pas de 0.5
+        const arrondirQuantite = (val) => {
+        if (val <= 0) return 0;
+        if (val < 1) return Math.ceil(val * 10) / 10;
+        if (val < 10) return Math.ceil(val * 2) / 2;
         return Math.ceil(val);
     };
 
     const formatItem = (item) => {
         // Rétro-compatibilité : anciens plans en cache où item est une simple chaîne de texte
-        if (typeof item === 'string') return `<li>${item}</li>`;
+        if (typeof item === 'string') {
+            return `<li><span class="sante-course-nom">${item}</span></li>`;
+        }
 
         const nom = item.nom || '—';
+
+        // Item non quantifiable (épice, sauce...) — affiché tel quel, jamais masqué
         if (item.quantite_semaine === null || item.quantite_semaine === undefined) {
             return `<li><span class="sante-course-nom">${nom}</span><span class="sante-course-qte sante-course-qte-libre">${item.unite || 'au besoin'}</span></li>`;
         }
-        const qte = arrondirQuantite(item.quantite_semaine * ratio);
+
+        // Mode "Semaine complète" — quantité totale brute, sans filtrage
+        if (_santeCoursesMode === 'semaine' || !aPlanIngredients) {
+            const qte = arrondirQuantite(item.quantite_semaine);
+            return `<li><span class="sante-course-nom">${nom}</span><span class="sante-course-qte">${qte} ${item.unite || ''}</span></li>`;
+        }
+
+        // Mode "Jours restants" — calcul fidèle aux menus réels via ingredients_jour
+        const occTotal    = _compterOccurrences(nom, joursTousListe);
+        const occRestants  = _compterOccurrences(nom, joursRestantsListe);
+
+        if (occTotal === 0) {
+            // Ingrédient jamais rattaché à un jour précis — on retombe sur le prorata classique
+            const qte = arrondirQuantite(item.quantite_semaine * (joursRestants / 7));
+            return `<li><span class="sante-course-nom">${nom}</span><span class="sante-course-qte">${qte} ${item.unite || ''}</span></li>`;
+        }
+
+        if (occRestants === 0) {
+            // Ingrédient uniquement utilisé sur des jours déjà passés — plus besoin d'en racheter
+            return '';
+        }
+
+        const qte = arrondirQuantite(item.quantite_semaine * (occRestants / occTotal));
         return `<li><span class="sante-course-nom">${nom}</span><span class="sante-course-qte">${qte} ${item.unite || ''}</span></li>`;
+    };
+
+    const icones = {
+        'fruits'    : '🥦',
+        'protéines' : '🍗',
+        'féculents' : '🌾',
+        'laitiers'  : '🧀',
+        'épicerie'  : '🛒'
+    };
+    const iconePourCategorie = (nom) => {
+        const clef = Object.keys(icones).find(k => nom.toLowerCase().includes(k));
+        return icones[clef] || '📦';
     };
 
     return `
@@ -433,15 +506,19 @@ function _renderCourses(plan) {
                 🗓️ Semaine complète
             </button>
         </div>
+        ${_santeCoursesMode === 'restants' && !aPlanIngredients ? `
+        <div class="sante-courses-note">ℹ️ Estimation proportionnelle (détail des jours indisponible pour cet ancien plan).</div>
+        ` : ''}
         <div class="sante-courses-liste">
-            ${plan.liste_courses.map(cat => `
+            ${plan.liste_courses.map(cat => {
+                const itemsHtml = (cat.items || []).map(formatItem).filter(html => html !== '').join('');
+                if (!itemsHtml) return ''; // catégorie vide (tout déjà acheté) — masquée
+                return `
                 <div class="sante-courses-carte">
                     <div class="sante-courses-titre">${iconePourCategorie(cat.categorie)} ${cat.categorie}</div>
-                    <ul class="sante-courses-items">
-                        ${(cat.items || []).map(formatItem).join('')}
-                    </ul>
-                </div>
-            `).join('')}
+                    <ul class="sante-courses-items">${itemsHtml}</ul>
+                </div>`;
+            }).join('')}
         </div>
     `;
 }

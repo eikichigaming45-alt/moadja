@@ -3,7 +3,8 @@
 // Endpoint : POST /api/sante/plan
 // Cache serveur : sante_plan_cache (jsonb) + sante_plan_date (date = lundi de la semaine) dans profiles
 // 1 seul appel Groq/semaine — partagé tous appareils
-// max_tokens calibré sous la limite structurelle Groq (8000 tokens/min, prompt + max_tokens compris)
+// Chaque jour référence ses ingrédients clés (ingredients_jour), avec les mêmes noms
+// que dans liste_courses, pour permettre un calcul de courses fidèle aux jours restants.
 
 const express               = require('express');
 const router                = express.Router();
@@ -94,6 +95,8 @@ router.post('/plan', authenticateToken, async (req, res) => {
       joursSemaine.push({ date: d.toISOString().split('T')[0], label: labelsJours[i] });
     }
 
+    // Construction du prompt Groq — compressé, avec quantités, variété d'activités,
+    // et ingredients_jour pour permettre un calcul de courses fidèle aux jours restants.
     const prompt = `Nutritionniste expert. Génère un plan alimentaire de 7 jours en JSON strict, ULTRA CONCIS (chaque repas en 6-10 mots max).
 
 Profil : ${p.sexe}, ${age} ans, ${taille} cm, ${poids} kg, activité ${p.niveau_activite}, objectif ${p.objectif_sante}, ${cibles} kcal/j en moyenne.
@@ -112,10 +115,12 @@ Règles strictes :
 5. Fruits/légumes de saison (${moisActuel}, France). Reste économique, ingrédients courants.
 6. Activités variées et réalisables à la maison — alterne marche, yoga, pilates, gainage, étirements, mobilité, vélo d'appartement. PAS toujours de la marche.
 7. Un seul conseil court par jour (nutrition ou bien-être).
-8. Liste de courses consolidée SANS doublons, quantité totale pour toute la semaine par item, avec valeur numérique + unité séparées (ex nom:"Poulet", quantite_semaine:800, unite:"g"). Si non quantifiable (épice, sauce), quantite_semaine:null, unite:"au besoin".
+8. Pour chaque jour, liste dans "ingredients_jour" les ingrédients clés utilisés ce jour-là (noms courts, ex "poulet","riz").
+9. IMPÉRATIF : les noms utilisés dans "ingredients_jour" doivent être EXACTEMENT les mêmes mots que ceux utilisés dans "liste_courses" (mêmes noms, même orthographe, singulier), pour permettre un recoupement automatique.
+10. Liste de courses consolidée SANS doublons, quantité totale pour toute la semaine par item, avec valeur numérique + unité séparées (ex nom:"Poulet", quantite_semaine:800, unite:"g"). Si non quantifiable (épice, sauce), quantite_semaine:null, unite:"au besoin".
 
 JSON attendu (rien d'autre, pas de markdown) :
-{"jours":[{"date":"${joursSemaine[0].date}","jour_label":"${joursSemaine[0].label}","repas":{"petit_dejeuner":"...","collation_matin":"...","dejeuner":"...","collation_soir":"...","diner":"..."},"activites":["..."],"conseil_du_jour":"..."}],"liste_courses":[{"categorie":"Fruits & légumes","items":[{"nom":"...","quantite_semaine":0,"unite":"g"}]},{"categorie":"Protéines","items":[]},{"categorie":"Féculents","items":[]},{"categorie":"Produits laitiers","items":[]},{"categorie":"Épicerie","items":[]}]}
+{"jours":[{"date":"${joursSemaine[0].date}","jour_label":"${joursSemaine[0].label}","repas":{"petit_dejeuner":"...","collation_matin":"...","dejeuner":"...","collation_soir":"...","diner":"..."},"ingredients_jour":["..."],"activites":["..."],"conseil_du_jour":"..."}],"liste_courses":[{"categorie":"Fruits & légumes","items":[{"nom":"...","quantite_semaine":0,"unite":"g"}]},{"categorie":"Protéines","items":[]},{"categorie":"Féculents","items":[]},{"categorie":"Produits laitiers","items":[]},{"categorie":"Épicerie","items":[]}]}
 
 Génère les 7 jours dans l'ordre : ${joursSemaine.map(j => j.label + ' ' + j.date).join(', ')}.`;
 

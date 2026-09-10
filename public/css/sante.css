@@ -494,6 +494,18 @@
     font-style: italic;
 }
 
+/* Note d'information — plans en cache sans détail par jour (rétro-compatibilité) */
+.sante-courses-note {
+    font-size: 12px;
+    color: #6b7280;
+    background: rgba(124, 58, 237, 0.06);
+    border: 1px dashed rgba(124, 58, 237, 0.25);
+    border-radius: 10px;
+    padding: 8px 12px;
+    margin: 10px 0 14px;
+    text-align: center;
+}
+
 /* ===================== ÉTATS VIDES / ERREUR =============== */
 .sante-empty {
     color: #9ca3af;
