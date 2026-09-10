@@ -2,6 +2,7 @@
    public/css/sante.css
    Styles dédiés au widget Santé — onglet Sport.
    Ne modifie pas style.css.
+   Glassmorphism V3 appliqué : bandeau/bouton Groq, blocs calculs, macros.
    ============================================================ */
 
 /* ===================== WIDGET COULEUR ===================== */
@@ -35,14 +36,17 @@
 
 .sante-calcul-bloc {
     flex: 1;
-    background: #f8fafc;
-    border: 1.5px solid #e5e7eb;
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1.5px solid rgba(229, 231, 235, 0.6);
     border-radius: 12px;
     padding: 10px 8px;
     text-align: center;
     display: flex;
     flex-direction: column;
     gap: 2px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
 }
 
 .sante-calcul-label {
@@ -73,7 +77,10 @@
 
 .sante-macro-item {
     flex: 1;
-    background: #f5f3ff;
+    background: rgba(245, 243, 255, 0.55);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1.5px solid rgba(124, 58, 237, 0.15);
     border-radius: 10px;
     padding: 8px 6px;
     display: flex;
@@ -96,29 +103,34 @@
     color: #4c1d95;
 }
 
-/* ===================== BOUTON GROQ ======================== */
+/* ===================== BOUTON GROQ (GLASS V3) ============== */
 .sante-btn-groq {
     width: 100%;
     padding: 11px;
-    background: linear-gradient(135deg, #10b981, #059669);
-    color: #fff;
-    border: none;
+    background: rgba(16, 185, 129, 0.18);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    color: #059669;
+    border: 1.5px solid rgba(16, 185, 129, 0.35);
     border-radius: 12px;
     font-size: 14px;
     font-weight: 700;
     cursor: pointer;
     margin-top: 12px;
-    box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
-    transition: opacity .2s;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.15);
+    transition: background .2s, opacity .2s;
 }
 
 .sante-btn-groq:hover:not(:disabled) {
-    opacity: .9;
+    background: rgba(16, 185, 129, 0.26);
 }
 
 /* ===================== PLAN GROQ ========================== */
 .sante-plan {
-    background: #f8fafc;
+    background: rgba(248, 250, 252, 0.6);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(229, 231, 235, 0.5);
     border-radius: 14px;
     padding: 14px;
     margin-bottom: 4px;
