@@ -440,7 +440,7 @@ function _renderCourses(plan) {
         return icones[clef] || '📦';
     };
 
-        const arrondirQuantite = (val) => {
+    const arrondirQuantite = (val) => {
         if (val <= 0) return 0;
         if (val < 1) return Math.ceil(val * 10) / 10;
         if (val < 10) return Math.ceil(val * 2) / 2;
@@ -453,7 +453,7 @@ function _renderCourses(plan) {
             return `<li><span class="sante-course-nom">${item}</span></li>`;
         }
 
-        const nom = item.nom || '—';
+                const nom = item.nom || '—';
 
         // Item non quantifiable (épice, sauce...) — affiché tel quel, jamais masqué
         if (item.quantite_semaine === null || item.quantite_semaine === undefined) {
@@ -483,18 +483,6 @@ function _renderCourses(plan) {
 
         const qte = arrondirQuantite(item.quantite_semaine * (occRestants / occTotal));
         return `<li><span class="sante-course-nom">${nom}</span><span class="sante-course-qte">${qte} ${item.unite || ''}</span></li>`;
-    };
-
-    const icones = {
-        'fruits'    : '🥦',
-        'protéines' : '🍗',
-        'féculents' : '🌾',
-        'laitiers'  : '🧀',
-        'épicerie'  : '🛒'
-    };
-    const iconePourCategorie = (nom) => {
-        const clef = Object.keys(icones).find(k => nom.toLowerCase().includes(k));
-        return icones[clef] || '📦';
     };
 
     return `
