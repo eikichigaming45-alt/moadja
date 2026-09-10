@@ -280,7 +280,7 @@ async function openModal(type) {
                                 <input id="p-prenom" placeholder="Prénom" value="${p.prenom||''}"
                                     style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
                             </div>
-                            <div>
+                                                        <div>
                                 <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Nom</label>
                                 <input id="p-nom" placeholder="Nom" value="${p.nom||''}"
                                     style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
@@ -466,7 +466,7 @@ async function openModal(type) {
                     </div>
                 </div>
 
-                <!-- ── ONGLET SÉCURITÉ ── -->
+                                <!-- ── ONGLET SÉCURITÉ ── -->
                 <div id="profil-tab-securite" class="profil-tab-content" style="display:none">
                     <div style="background:rgba(255,255,255,0.92); border:1px solid rgba(255,255,255,0.95); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.08);">
                         <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
@@ -667,7 +667,8 @@ function closeModal(skipHistory = false) {
     window.speechSynthesis?.cancel();
     document.getElementById('overlay').classList.remove('on');
     document.body.classList.remove('modal-open');
-    
+    document.querySelector('.modal.modal-lightbox')?.classList.remove('modal-lightbox');
+
     // Si la modale est fermée via la croix (ou le fond) et non par le bouton retour Android,
     // on retire l'état de l'historique pour ne pas casser la navigation.
     if (!skipHistory && history.state && history.state.modalOpen) {
