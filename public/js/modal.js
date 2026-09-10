@@ -248,7 +248,7 @@ async function openModal(type) {
                     </button>
                 </div>
 
-                <!-- ── ONGLET PROFIL ── -->
+                                <!-- ── ONGLET PROFIL ── -->
                 <div id="profil-tab-infos" class="profil-tab-content">
                     <div style="background:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.05);">
                         <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:20px">
@@ -476,7 +476,7 @@ async function openModal(type) {
                                 <div style="font-size:12px;color:#9ca3af;margin-top:2px">8 car. min · majuscule · minuscule · chiffre · caractère spécial</div>
                             </div>
                         </div>
-                        <div style="margin-bottom:10px">
+                                                <div style="margin-bottom:10px">
                             <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Ancien mot de passe</label>
                             <input type="password" id="mdp-ancien" placeholder="••••••••"
                                 style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
@@ -542,6 +542,11 @@ async function openModal(type) {
                     <div id="social-tab-content" style="background:rgba(255,255,255,0.5); border:1px solid rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.05);"></div>
                 </div>
             `;
+
+            // ── Injection V3 : Bloc "Suivi Médical" dans l'onglet Santé ──
+            // Ajouté ici car openModal() reconstruit tout le HTML de la modale
+            // (avec le "p" déjà récupéré ci-dessus par le fetch de cette fonction).
+            _injecterChampsAllergies(p);
 
             // ── Listeners onglets profil ───────────────────────────
             document.querySelectorAll('.profil-tab').forEach(tab => {
@@ -675,5 +680,3 @@ function closeModal(skipHistory = false) {
 function closeOutside(e) {
     if (e.target === document.getElementById('overlay')) closeModal();
 }
-
-
