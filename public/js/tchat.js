@@ -55,11 +55,11 @@
         return html
             .replace(
                 /(https?:\/\/[^\s<>"']+)/g,
-                '<a href="\\$1" target="_blank" rel="noopener noreferrer" class="tchat-lien">\\$1</a>'
+                '<a href="\\\$1" target="_blank" rel="noopener noreferrer" class="tchat-lien">\\\$1</a>'
             )
             .replace(
                 /(?<![/"'=])\b(www\.[^\s<>"']+\.[^\s<>"']+)/g,
-                '<a href="https://\\$1" target="_blank" rel="noopener noreferrer" class="tchat-lien">\\$1</a>'
+                '<a href="https://\\\$1" target="_blank" rel="noopener noreferrer" class="tchat-lien">\\\$1</a>'
             );
     }
 
@@ -164,7 +164,7 @@
             'cursor:zoom-out'
         ].join(';');
         lb.innerHTML = '<img id="tchat-lightbox-img" style="max-width:90vw;max-height:90vh;border-radius:12px;object-fit:contain;">';
-        lb.addEventListener('click', () => { lb.style.display = 'none'; });
+        lb.addEventListener('click', () => { _fermerLightbox(); });
         document.body.appendChild(lb);
     }
 
@@ -174,6 +174,18 @@
         if (!lb || !img) return;
         img.src = src;
         lb.style.display = 'flex';
+        document.body.classList.add('modal-open');
+        history.pushState({ tchatLightboxOpen: true }, '', '');
+    }
+
+    // Note : skipHistory=true = appel déclenché depuis le bouton retour (popstate), on ne refait pas history.back()
+    function _fermerLightbox(skipHistory = false) {
+        const lb = document.getElementById('tchat-lightbox');
+        if (lb) lb.style.display = 'none';
+        document.body.classList.remove('modal-open');
+        if (!skipHistory && history.state && history.state.tchatLightboxOpen) {
+            history.back();
+        }
     }
 
     function _construireDom() {
@@ -231,7 +243,7 @@
                 <div id="tchat-emoji-panel" style="display:none"></div>
                 <div id="tchat-saisie-wrap">
                     <button id="tchat-btn-emoji" type="button" aria-label="Emojis" title="Emojis">😊</button>
-                    <button id="tchat-btn-image" type="button" aria-label="Envoyer une image" title="Envoyer une image">
+                                        <button id="tchat-btn-image" type="button" aria-label="Envoyer une image" title="Envoyer une image">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                              stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
                             <rect x="3" y="3" width="18" height="18" rx="3"/>
@@ -763,7 +775,7 @@
                 return;
             }
 
-            liste.innerHTML = d.conversations.map(c => {
+                        liste.innerHTML = d.conversations.map(c => {
                 const moi    = _userId();
                 const nom    = c.prenom
                     ? `${c.prenom}${c.nom ? ' ' + c.nom : ''}`
@@ -944,6 +956,7 @@
                 class="tchat-msg-image"
                 alt="image"
                 data-lightbox-src="${_echapper(msg.image_url)}"
+                oncontextmenu="return false;"
                 onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span style=\\'font-size:12px;color:#9ca3af;font-style:italic\\'>Image indisponible</span>')">`;
         } else {
             contenu = _renderLiens(_convertirEmojis(_echapper(msg.content || '')));
@@ -1191,6 +1204,14 @@
             }
         } catch { /* silencieux */ }
     }
+
+    // ── Gestion du bouton retour Android pour la lightbox du Tchat ──
+    window.addEventListener('popstate', () => {
+        const lb = document.getElementById('tchat-lightbox');
+        if (lb && lb.style.display === 'flex') {
+            _fermerLightbox(true);
+        }
+    });
 
     window.Tchat = {
         ouvrirConversation(interlocuteur) {
