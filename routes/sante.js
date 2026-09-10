@@ -3,6 +3,7 @@
 // Endpoint : POST /api/sante/plan
 // Cache serveur : sante_plan_cache (jsonb) + sante_plan_date (date = lundi de la semaine) dans profiles
 // 1 seul appel Groq/semaine — partagé tous appareils
+// Prompt compressé pour rester sous la limite Groq (8000 tokens/minute, palier gratuit)
 
 const express               = require('express');
 const router                = express.Router();
@@ -106,66 +107,38 @@ router.post('/plan', authenticateToken, async (req, res) => {
       joursSemaine.push({ date: d.toISOString().split('T')[0], label: labelsJours[i] });
     }
 
-    // Construction du prompt Groq
-    const prompt = `Tu es un nutritionniste expert. Génère un plan alimentaire complet pour 7 jours (une semaine), en JSON strict.
+    // Construction du prompt Groq — volontairement compressé (limite Groq : 8000 tokens/min)
+    const prompt = `Nutritionniste expert. Génère un plan alimentaire de 7 jours en JSON strict, ULTRA CONCIS (chaque repas en une courte formule de 6 à 10 mots maximum, pas de phrases longues).
 
-Profil :
-- Sexe : ${p.sexe}
-- Âge : ${age} ans
-- Taille : ${taille} cm
-- Poids : ${poids} kg
-- Niveau d'activité : ${p.niveau_activite}
-- Objectif : ${p.objectif_sante}
-- Calories cibles : ${cibles} kcal/jour (en moyenne sur la semaine)
-- Allergies : ${allergies}
-- Aliments exclus (n'aime pas / ne veut pas) : ${exclus}
-- Traitements en cours : ${traitements}
-- Diabète : ${diabete}
-- Cholestérol : ${cholesterol}
-- Mois actuel : ${moisActuel}
+Profil : ${p.sexe}, ${age} ans, ${taille} cm, ${poids} kg, activité ${p.niveau_activite}, objectif ${p.objectif_sante}, ${cibles} kcal/j en moyenne.
+Allergies (interdit) : ${allergies}
+Aliments exclus (interdit) : ${exclus}
+Traitements en cours : ${traitements}
+Diabète : ${diabete}
+Cholestérol : ${cholesterol}
+Mois : ${moisActuel}
 
-Consignes impératives :
-1. Respecte STRICTEMENT les allergies et aliments exclus — ne les propose jamais.
-2. Adapte les repas au diabète et au cholestérol si renseignés (ex : éviter sucres rapides si diabète, limiter graisses saturées si cholestérol élevé).
-3. Tiens compte de l'impact possible des traitements en cours sur l'appétit ou le métabolisme, et adapte les conseils en conséquence, sans donner d'avis médical.
-4. Propose un repas différent chaque jour (pas de répétition sur la semaine), tout en gardant une moyenne calorique équilibrée sur les 7 jours pour éviter toute frustration (pas de jour trop restrictif).
-5. Privilégie les fruits et légumes de saison pour le mois de ${moisActuel} en France.
-6. Reste économique : ingrédients courants et abordables, évite le superflu ou les produits hors saison/coûteux.
-7. Fournis une liste de courses consolidée pour toute la semaine, regroupée par catégorie, avec quantités totales (évite les doublons entre les jours).
+Règles strictes :
+1. Jamais d'allergène ni d'aliment exclu.
+2. Adapte au diabète/cholestérol si renseignés (peu de sucre rapide si diabète, peu de graisses saturées si cholestérol élevé).
+3. Tiens compte des traitements sur l'appétit/métabolisme sans avis médical.
+4. 7 repas différents, pas de répétition, moyenne équilibrée sans jour trop restrictif.
+5. Fruits/légumes de saison (${moisActuel}, France).
+6. Économique, ingrédients courants.
+7. Liste de courses consolidée par catégorie, quantités totales, SANS doublons.
+8. Reste très bref partout (activités : 1 seule ligne courte, conseil : 1 phrase courte).
 
-Réponds UNIQUEMENT avec ce JSON, sans texte autour, sans markdown :
-{
-  "jours": [
-    {
-      "date": "${joursSemaine[0].date}",
-      "jour_label": "${joursSemaine[0].label}",
-      "repas": {
-        "petit_dejeuner": "...",
-        "collation_matin": "...",
-        "dejeuner": "...",
-        "collation_soir": "...",
-        "diner": "..."
-      },
-      "activites": ["..."],
-      "conseil_du_jour": "..."
-    }
-    // ... un objet par jour, dans l'ordre exact : ${joursSemaine.map(j => j.label).join(', ')}, avec les dates respectives : ${joursSemaine.map(j => j.date).join(', ')}
-  ],
-  "liste_courses": [
-    { "categorie": "Fruits & légumes", "items": ["..."] },
-    { "categorie": "Protéines (viande, poisson, œufs, légumineuses)", "items": ["..."] },
-    { "categorie": "Féculents & céréales", "items": ["..."] },
-    { "categorie": "Produits laitiers", "items": ["..."] },
-    { "categorie": "Épicerie & autres", "items": ["..."] }
-  ]
-}`;
+JSON attendu (rien d'autre, pas de markdown) :
+{"jours":[{"date":"${joursSemaine[0].date}","jour_label":"${joursSemaine[0].label}","repas":{"petit_dejeuner":"...","collation_matin":"...","dejeuner":"...","collation_soir":"...","diner":"..."},"activites":["..."],"conseil_du_jour":"..."}],"liste_courses":[{"categorie":"Fruits & légumes","items":["..."]},{"categorie":"Protéines","items":["..."]},{"categorie":"Féculents","items":["..."]},{"categorie":"Produits laitiers","items":["..."]},{"categorie":"Épicerie","items":["..."]}]}
 
-    // Appel Groq
+Génère bien les 7 jours dans l'ordre et dates : ${joursSemaine.map(j => j.label + ' ' + j.date).join(', ')}.`;
+
+    // Appel Groq — max_tokens réduit pour rester sous la limite du palier gratuit (8000 tokens/min)
     const completion = await groq.chat.completions.create({
       model      : 'openai/gpt-oss-20b',
       messages   : [{ role: 'user', content: prompt }],
-      temperature: 0.7,
-      max_tokens : 4000
+      temperature: 0.5,
+      max_tokens : 2600
     });
 
     // Nettoyage de la réponse — suppression des blocs markdown éventuels
@@ -177,6 +150,7 @@ Réponds UNIQUEMENT avec ce JSON, sans texte autour, sans markdown :
     try {
       plan = JSON.parse(raw);
     } catch {
+      console.error('[SANTE] Réponse Groq non-JSON — extrait brut :', raw.slice(0, 500));
       return res.status(500).json({ error: 'Réponse Groq invalide', raw });
     }
 
@@ -193,7 +167,10 @@ Réponds UNIQUEMENT avec ce JSON, sans texte autour, sans markdown :
     res.json({ plan, calories_cibles: cibles });
 
   } catch (err) {
-    console.error('sante/plan :', err);
+    console.error('sante/plan :', err.message || err);
+    if (err.status === 429) {
+      return res.status(429).json({ error: 'Limite Groq atteinte, réessaie dans quelques secondes.' });
+    }
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
