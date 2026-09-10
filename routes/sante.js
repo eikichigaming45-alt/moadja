@@ -4,9 +4,14 @@
 // Cache serveur : sante_plan_cache (jsonb) + sante_plan_date (date = lundi de la semaine) dans profiles
 // 1 seul appel Groq/semaine — partagé tous appareils
 //
-// IMPORTANT — Calibrage TPM Groq :
-// Le rate-limit Groq (tokens/minute) compte (tokens du prompt + max_tokens demandé),
-// PAS la longueur réelle de la réponse. max_tokens est calibré au plus juste (2600).
+// IMPORTANT — openai/gpt-oss-20b est un modèle de RAISONNEMENT :
+// il consomme une partie du budget max_tokens pour une réflexion interne
+// (chain-of-thought) AVANT de produire le contenu final. Si max_tokens est
+// trop bas, tout le budget est épuisé par le raisonnement -> content vide,
+// finish_reason: "length". reasoning_effort:'low' réduit ce coût interne.
+//
+// Budget TPM Groq : (tokens du prompt + max_completion_tokens demandé) compte
+// dans la limite de 8000 TPM, pas la longueur réelle de la sortie.
 
 const express               = require('express');
 const router                = express.Router();
@@ -18,7 +23,7 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const MOIS_FR = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
 
-const MAX_TOKENS_COMPLETION = 2600;
+const MAX_TOKENS_COMPLETION = 3800; // raisonnement interne (low) + sortie JSON réelle, sous 8000 TPM
 
 function lundiSemaine(date) {
   const d = new Date(date);
@@ -129,10 +134,11 @@ Génère les 7 jours dans l'ordre : ${joursSemaine.map(j => j.label + ' ' + j.da
     let completion;
     try {
       completion = await groq.chat.completions.create({
-        model      : 'openai/gpt-oss-20b',
-        messages   : [{ role: 'user', content: prompt }],
-        temperature: 0.5,
-        max_tokens : MAX_TOKENS_COMPLETION
+        model                 : 'openai/gpt-oss-20b',
+        messages              : [{ role: 'user', content: prompt }],
+        temperature           : 0.5,
+        reasoning_effort      : 'low',
+        max_completion_tokens : MAX_TOKENS_COMPLETION
       });
     } catch (groqErr) {
       if (groqErr.status === 429 || groqErr.status === 413) {
@@ -150,20 +156,24 @@ Génère les 7 jours dans l'ordre : ${joursSemaine.map(j => j.label + ' ' + j.da
       throw groqErr;
     }
 
-    let raw = completion.choices[0].message.content.trim();
+    let raw = (completion.choices[0].message.content || '').trim();
     raw = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```$/i, '').trim();
 
     let plan;
     try {
+      if (!raw) throw new Error('Contenu vide');
       plan = JSON.parse(raw);
     } catch {
-      console.error(`[SANTE] Réponse Groq non-JSON — longueur totale: ${raw.length} caractères — finish_reason: ${completion.choices[0].finish_reason}`);
+      const finishReason = completion.choices[0].finish_reason;
+      console.error(`[SANTE] Réponse Groq non-JSON — longueur totale: ${raw.length} caractères — finish_reason: ${finishReason}`);
+      console.error('[SANTE] usage :', JSON.stringify(completion.usage || {}));
       console.error('[SANTE] DÉBUT :', raw.slice(0, 300));
       console.error('[SANTE] FIN   :', raw.slice(-300));
-      const tronque = completion.choices[0].finish_reason === 'length';
+
+      const tronque = finishReason === 'length';
       return res.status(500).json({
         error: tronque
-          ? 'Réponse IA tronquée (trop longue) — réessaie.'
+          ? 'Réponse IA tronquée (budget de raisonnement dépassé) — réessaie.'
           : 'Réponse Groq invalide — réessaie.'
       });
     }
