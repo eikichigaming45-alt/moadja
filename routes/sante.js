@@ -3,7 +3,7 @@
 // Endpoint : POST /api/sante/plan
 // Cache serveur : sante_plan_cache (jsonb) + sante_plan_date (date = lundi de la semaine) dans profiles
 // 1 seul appel Groq/semaine — partagé tous appareils
-// Modèle : llama-3.1-8b-instant (non-reasoning, gratuit, pas de tokens perdus en raisonnement interne)
+// max_tokens relevé pour laisser de la place au raisonnement interne du modèle + la sortie JSON complète
 
 const express               = require('express');
 const router                = express.Router();
@@ -133,12 +133,12 @@ JSON attendu (rien d'autre, pas de markdown) :
 
 Génère bien les 7 jours dans l'ordre et dates : ${joursSemaine.map(j => j.label + ' ' + j.date).join(', ')}.`;
 
-    // Appel Groq — modèle non-reasoning : tout le budget sert à écrire la réponse finale
+    // Appel Groq — max_tokens relevé pour absorber le raisonnement interne du modèle + la sortie JSON complète
     const completion = await groq.chat.completions.create({
-      model      : 'llama-3.1-8b-instant',
+      model      : 'openai/gpt-oss-20b',
       messages   : [{ role: 'user', content: prompt }],
       temperature: 0.5,
-      max_tokens : 4000
+      max_tokens : 7500
     });
 
     // Nettoyage de la réponse — suppression des blocs markdown éventuels
