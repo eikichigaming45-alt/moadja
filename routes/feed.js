@@ -590,15 +590,15 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     }
 });
 
-// ── GET /api/feed/share/:id (Route publique pour prévisualisation WhatsApp) ──
-// Attention : Pas de middleware authenticateToken ici, car WhatsApp doit pouvoir lire les balises !
+// ── GET /api/feed/share/:id (Route publique pour prévisualisation WhatsApp & affichage public) ──
+// Attention : Pas de middleware authenticateToken ici, car le post doit être visible publiquement par le lien
 router.get('/share/:id', async (req, res) => {
     const postId = parseInt(req.params.id);
     if (isNaN(postId)) return res.status(400).send('ID invalide');
 
     try {
         const { rows } = await pool.query(`
-            SELECT p.contenu, p.photo_url, pr.prenom, pr.nom, u.username
+            SELECT p.contenu, p.photo_url, pr.prenom, pr.nom, u.username, p.created_at
             FROM posts p
             JOIN users u ON u.id = p.user_id
             LEFT JOIN profiles pr ON pr.user_id = p.user_id
@@ -609,12 +609,15 @@ router.get('/share/:id', async (req, res) => {
 
         const post = rows[0];
         const nomAuteur = [post.prenom, post.nom].filter(Boolean).join(' ') || post.username;
-        // Nettoyage du HTML (mentions, hashtags) pour le texte brut de description
+        const initiale = (post.prenom ? post.prenom[0] : post.username[0]).toUpperCase();
+        
+        // Nettoyage du HTML (mentions, hashtags) pour le texte brut de description (balises meta)
         const contenuBrut = post.contenu ? post.contenu.replace(/<[^>]*>?/gm, '').trim() : '';
         const extrait = contenuBrut ? (contenuBrut.substring(0, 120) + '...') : `Voir la publication de ${nomAuteur}`;
         const titre = `Post de ${nomAuteur} sur MoaDja`;
-        const imageUrl = post.photo_url ? `https://moadja.fr${post.photo_url}` : 'https://moadja.fr/images/logo.png'; // Fallback sur le logo si pas d'image
+        const imageUrl = post.photo_url ? `https://moadja.fr${post.photo_url}` : 'https://moadja.fr/images/logo.png'; // Fallback
 
+        // Rendu HTML complet et public
         const html = `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -636,18 +639,118 @@ router.get('/share/:id', async (req, res) => {
     <meta name="twitter:image" content="${imageUrl}" />
     
     <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f3f4f6; color: #374151; margin:0; }
-        .card { background: white; padding: 24px; border-radius: 16px; box-shadow: 0 12px 32px rgba(0,0,0,0.1); text-align: center; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%); 
+            margin: 0; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            min-height: 100vh; 
+            box-sizing: border-box;
+        }
+        .logo { 
+            font-size: 24px; 
+            font-weight: 900; 
+            color: #7c3aed; 
+            margin-bottom: 30px; 
+            margin-top: 20px;
+            letter-spacing: -0.5px; 
+        }
+        .post-card { 
+            background: rgba(255, 255, 255, 0.7); 
+            backdrop-filter: blur(16px); 
+            -webkit-backdrop-filter: blur(16px); 
+            border: 1px solid rgba(255,255,255,0.8); 
+            border-radius: 24px; 
+            padding: 24px; 
+            max-width: 500px; 
+            width: 100%; 
+            box-shadow: 0 12px 32px rgba(0,0,0,0.08); 
+            box-sizing: border-box; 
+        }
+        .header { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            margin-bottom: 16px; 
+        }
+        .avatar { 
+            width: 48px; 
+            height: 48px; 
+            border-radius: 50%; 
+            background: linear-gradient(135deg, #7c3aed, #6d28d9); 
+            color: white; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: bold; 
+            font-size: 18px; 
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(124,58,237,0.3);
+        }
+        .author-name { 
+            font-weight: 800; 
+            color: #1f2937; 
+            font-size: 16px; 
+        }
+        .author-handle { 
+            color: #6b7280; 
+            font-size: 13px; 
+            margin-top: 2px;
+        }
+        .content { 
+            font-size: 15px; 
+            color: #374151; 
+            line-height: 1.6; 
+            margin-bottom: 16px; 
+            white-space: pre-wrap; 
+            word-break: break-word; 
+        }
+        .post-image { 
+            width: 100%; 
+            border-radius: 16px; 
+            margin-bottom: 20px; 
+            object-fit: cover; 
+            max-height: 500px; 
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        .cta-button { 
+            display: block; 
+            width: 100%; 
+            text-align: center; 
+            padding: 14px; 
+            background: rgba(167,139,250,0.85); 
+            color: white; 
+            text-decoration: none; 
+            border-radius: 50px; 
+            font-weight: 700; 
+            transition: all 0.2s; 
+            box-shadow: 0 8px 24px rgba(167,139,250,0.25); 
+            box-sizing: border-box; 
+        }
+        .cta-button:hover { 
+            transform: translateY(-2px); 
+            background: rgba(167,139,250,1);
+        }
     </style>
-    <script>
-        // Redirection immédiate vers l'application (PWA) pour les vrais utilisateurs
-        window.location.replace("https://moadja.fr");
-    </script>
 </head>
 <body>
-    <div class="card">
-        <p style="font-size: 14px; margin-bottom: 12px;">Redirection vers l'application MoaDja en cours...</p>
-        <a href="https://moadja.fr" style="color: #7c3aed; text-decoration: none; font-weight: bold; font-size: 14px;">Cliquez ici si rien ne se passe</a>
+    <div class="logo">MoaDja</div>
+    <div class="post-card">
+        <div class="header">
+            <div class="avatar">${initiale}</div>
+            <div>
+                <div class="author-name">${nomAuteur}</div>
+                <div class="author-handle">@${post.username}</div>
+            </div>
+        </div>
+        
+        ${post.contenu ? `<div class="content">${contenuBrut}</div>` : ''}
+        ${post.photo_url ? `<img src="${imageUrl}" class="post-image" alt="Photo du post">` : ''}
+        
+        <a href="https://moadja.fr" class="cta-button">Rejoindre MoaDja</a>
     </div>
 </body>
 </html>`;
@@ -657,6 +760,5 @@ router.get('/share/:id', async (req, res) => {
         res.status(500).send('Erreur serveur');
     }
 });
-
 
 module.exports = router;
