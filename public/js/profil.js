@@ -345,7 +345,7 @@ async function chargerProfilHeader() {
             imTogglesList.innerHTML += boutonsHtml;
         }
         
-        const userMenu = document.getElementById('user-menu');
+                const userMenu = document.getElementById('user-menu');
         if (userMenu && !document.getElementById('menu-version-display')) {
             const versionNode = document.getElementById('topbar-version');
             const vText = versionNode ? versionNode.textContent : '';
@@ -560,6 +560,7 @@ async function sauvegarderProfil() {
         lieu_naissance  : document.getElementById('p-lieu-naissance')?.value   || null,
         naissance_lat   : document.getElementById('p-naissance-lat')?.value    ? parseFloat(document.getElementById('p-naissance-lat').value)  : null,
         naissance_lon   : document.getElementById('p-naissance-lon')?.value    ? parseFloat(document.getElementById('p-naissance-lon').value)  : null,
+        signe_zodiaque  : document.getElementById('p-signe')?.value            || null,
         email           : document.getElementById('p-email')?.value            || '',
         telephone       : document.getElementById('p-tel')?.value              || '',
         profession      : document.getElementById('p-prof')?.value             || '',
@@ -611,7 +612,6 @@ async function sauvegarderSante() {
         groupe_sanguin  : document.getElementById('p-groupe-sanguin')?.value  || null,
         niveau_activite : document.getElementById('p-niveau-activite')?.value || null,
         objectif_sante  : document.getElementById('p-objectif-sante')?.value  || null,
-        signe_zodiaque  : document.getElementById('p-signe')?.value           || null,
         allergies,
         aliments_exclus,
         traitements_en_cours: document.getElementById('p-traitements')?.value || '',
@@ -809,7 +809,7 @@ async function changerMdp() {
     msg.style.color = '#9ca3af';
 
     try {
-        const r = await fetch('/api/profil/changer-mdp', {
+                const r = await fetch('/api/profil/changer-mdp', {
             method  : 'POST',
             headers : {
                 'Content-Type'  : 'application/json',
@@ -987,5 +987,3 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     observer.observe(document.body, { childList: true, subtree: true });
 });
-
-
