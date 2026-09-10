@@ -3,7 +3,7 @@
 // Endpoint : POST /api/sante/plan
 // Cache serveur : sante_plan_cache (jsonb) + sante_plan_date (date = lundi de la semaine) dans profiles
 // 1 seul appel Groq/semaine — partagé tous appareils
-// Prompt compressé pour rester sous la limite Groq (8000 tokens/minute, palier gratuit)
+// Modèle : llama-3.1-8b-instant (non-reasoning, gratuit, pas de tokens perdus en raisonnement interne)
 
 const express               = require('express');
 const router                = express.Router();
@@ -107,7 +107,7 @@ router.post('/plan', authenticateToken, async (req, res) => {
       joursSemaine.push({ date: d.toISOString().split('T')[0], label: labelsJours[i] });
     }
 
-    // Construction du prompt Groq — volontairement compressé (limite Groq : 8000 tokens/min)
+    // Construction du prompt Groq — compressé pour rester léger
     const prompt = `Nutritionniste expert. Génère un plan alimentaire de 7 jours en JSON strict, ULTRA CONCIS (chaque repas en une courte formule de 6 à 10 mots maximum, pas de phrases longues).
 
 Profil : ${p.sexe}, ${age} ans, ${taille} cm, ${poids} kg, activité ${p.niveau_activite}, objectif ${p.objectif_sante}, ${cibles} kcal/j en moyenne.
@@ -133,12 +133,12 @@ JSON attendu (rien d'autre, pas de markdown) :
 
 Génère bien les 7 jours dans l'ordre et dates : ${joursSemaine.map(j => j.label + ' ' + j.date).join(', ')}.`;
 
-    // Appel Groq — max_tokens réduit pour rester sous la limite du palier gratuit (8000 tokens/min)
+    // Appel Groq — modèle non-reasoning : tout le budget sert à écrire la réponse finale
     const completion = await groq.chat.completions.create({
-      model      : 'openai/gpt-oss-20b',
+      model      : 'llama-3.1-8b-instant',
       messages   : [{ role: 'user', content: prompt }],
       temperature: 0.5,
-      max_tokens : 2600
+      max_tokens : 4000
     });
 
     // Nettoyage de la réponse — suppression des blocs markdown éventuels
