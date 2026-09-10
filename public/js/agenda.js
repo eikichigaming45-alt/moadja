@@ -274,9 +274,9 @@ const Agenda = (() => {
                     aspect-ratio:1;min-height:44px;border-radius:10px;cursor:pointer;
                     display:flex;flex-direction:column;align-items:center;justify-content:center;
                     background:${couleur ? couleur + '33' : '#f9fafb'};
-                    border:2px solid ${isToday ? '#7c3aed' : (couleur ? couleur + '99' : '#e5e7eb')};
+                    border:2px solid ${isToday ? 'rgb(167, 139, 250)' : (couleur ? couleur + '99' : '#e5e7eb')};
                     font-size:12px;font-weight:600;color:#333;transition:opacity .15s">
-                    <div style="font-size:11px;font-weight:700;color:${isToday ? '#7c3aed' : '#444'}">${j}</div>
+                    <div style="font-size:11px;font-weight:700;color:${isToday ? 'rgb(167, 139, 250)' : '#444'}">${j}</div>
                     ${icone ? `<div style="font-size:14px;line-height:1">${icone}</div>` : ''}
                     ${plus}
                 </div>`;
@@ -302,10 +302,10 @@ const Agenda = (() => {
                 </div>
                 <button onclick="Agenda.ouvrirFormulaire(null)" style="
                     width:100%;padding:13px;
-                    background:linear-gradient(135deg,#4f46e5,#7c3aed);
+                    background:rgba(167, 139, 250, 0.85);
                     color:white;border:none;border-radius:12px;
                     font-size:15px;font-weight:600;cursor:pointer;
-                    box-shadow:0 4px 12px rgba(79,70,229,.3)">
+                    box-shadow:0 4px 12px rgba(167, 139, 250, 0.25)">
                     + Ajouter un événement
                 </button>
             </div>`;
@@ -377,7 +377,7 @@ const Agenda = (() => {
                             : ''}
                         <div style="display:flex;gap:8px;margin-top:10px">
                             <button onclick="Agenda.ouvrirFormulaire(${e.id},'${dateStr}')" style="
-                                flex:1;padding:8px;background:#4f46e5;color:white;
+                                flex:1;padding:8px;background:rgba(167, 139, 250, 0.85);color:white;
                                 border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600">
                                 ✏️ Modifier
                             </button>
@@ -391,11 +391,11 @@ const Agenda = (() => {
             });
         }
 
-        html += `
+                html += `
             <div style="display:flex;gap:8px;margin-top:12px">
                 <button onclick="Agenda.ouvrirFormulaire(null,'${dateStr}')" style="
                     flex:1;padding:11px;
-                    background:linear-gradient(135deg,#4f46e5,#7c3aed);
+                    background:rgba(167, 139, 250, 0.85);
                     color:white;border:none;border-radius:10px;
                     cursor:pointer;font-size:14px;font-weight:600">
                     + Ajouter
@@ -498,7 +498,7 @@ const Agenda = (() => {
                     <div id="ag-employeur-nouveau-wrap" style="display:none">
                         <input type="text" id="ag-employeur-nouveau"
                             placeholder="Nom de l'employeur"
-                            style="width:100%;padding:10px 12px;border:1.5px solid #4f46e5;border-radius:10px;font-size:14px;box-sizing:border-box;margin-bottom:6px">
+                            style="width:100%;padding:10px 12px;border:1.5px solid rgb(167, 139, 250);border-radius:10px;font-size:14px;box-sizing:border-box;margin-bottom:6px">
                         <input type="text" id="ag-employeur-adresse"
                             placeholder="Adresse (optionnel)"
                             style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box;margin-bottom:6px">
@@ -566,7 +566,7 @@ const Agenda = (() => {
                 <div style="display:flex;gap:8px">
                     <button onclick="Agenda.sauvegarder(${id || 'null'},'${dateDefaut || ''}')" style="
                         flex:1;padding:13px;
-                        background:linear-gradient(135deg,#4f46e5,#7c3aed);
+                        background:rgba(167, 139, 250, 0.85);
                         color:white;border:none;border-radius:12px;
                         font-size:15px;font-weight:600;cursor:pointer">
                         💾 Sauvegarder
