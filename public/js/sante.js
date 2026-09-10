@@ -8,6 +8,14 @@
 // Liste de courses "Jours restants" calculée à partir des occurrences
 // réelles de chaque ingrédient dans ingredients_jour (pas un simple prorata).
 // Dépend de : app.js (getUser, profilCache)
+//
+// Robustesse réseau/Groq :
+// - Timeout explicite (AbortController) sur l'appel /api/sante/plan pour ne
+//   jamais rester bloqué sur "Chargement..." si Groq/serveur ne répond pas.
+// - try/catch/finally global : garantit un rendu final (succès, erreur ou
+//   profil incomplet) quoi qu'il arrive.
+// - Gestion du 429 avec retryAfter (secondes) renvoyé par le backend :
+//   affichage d'un décompte + réessai automatique en fin de compte à rebours.
 // ============================================================
 
 // ===================== CALCULS LOCAUX ========================
@@ -86,9 +94,13 @@ function _age(date_naissance) {
 
 // ===================== ÉTAT DU WIDGET (mémoire d'onglet) =====
 
-let _santePlanActuel   = null;
-let _santeOngletActif  = 'jour';
-let _santeCoursesMode  = 'restants'; // 'restants' ou 'semaine'
+let _santePlanActuel     = null;
+let _santeOngletActif    = 'jour';
+let _santeCoursesMode    = 'restants'; // 'restants' ou 'semaine'
+let _santeRetryTimerId   = null;       // setInterval du décompte auto-retry
+let _santeRetryTimeoutId = null;       // setTimeout du réessai automatique
+
+const SANTE_FETCH_TIMEOUT_MS = 25000; // 25s — au-delà, on abandonne et on affiche une erreur
 
 // ===================== OUTILS DATES ==========================
 
@@ -149,162 +161,235 @@ async function chargerWidgetSante() {
     const el = document.getElementById('wc-sante');
     if (!el) return;
 
+    // Annule tout décompte/réessai automatique en cours d'un précédent rendu
+    _annulerRetryAutomatique();
+
     const user = getUser();
     if (!user?.token) {
         el.innerHTML = '<p class="rdv-empty">Non connecté</p>';
         return;
     }
 
-    // Utiliser profilCache si dispo, sinon fetch
-    let p = profilCache;
-    if (!p) {
-        try {
-            const r = await fetch('/api/profil', {
-                headers: { 'Authorization': `Bearer ${user.token}` }
-            });
-            const d = await r.json();
-            if (d.success && d.profil) { p = d.profil; profilCache = p; }
-        } catch {}
-    }
-
-    if (!p) {
-        el.innerHTML = `
-            <div class="sante-alerte">
-                ⚠️ Profil introuvable — complète ton profil pour activer le widget Santé.
-                <br><button class="ta-banner-btn" style="margin-top:8px" onclick="ouvrirMonProfil()">Compléter le profil</button>
-            </div>`;
-        return;
-    }
-
-    // ── Calculs locaux ────────────────────────────────────────
-    const age    = _age(p.date_naissance);
-    const imc    = _imc(p.poids, p.taille);
-    const imcCat = _imcCategorie(imc);
-    const bmr    = _bmr(p.poids, p.taille, age, p.sexe);
-    const tdee   = _tdee(bmr, p.niveau_activite);
-    const kcal   = _kcalObjectif(tdee, p.objectif_sante);
-    const macros = _macros(kcal, p.objectif_sante);
-
-    const profilComplet = p.taille && p.poids && p.sexe && p.date_naissance && p.niveau_activite && p.objectif_sante;
-
-    // ── Récupération / génération du plan hebdomadaire ────────
-    let plan       = null;
-    let erreurPlan = null;
-
-    if (profilComplet) {
-        try {
-            const rc = await fetch('/api/sante/plan', {
-                method  : 'POST',
-                headers : { 'Authorization': `Bearer ${user.token}` }
-            });
-            const dc = await rc.json();
-            if (dc.plan) {
-                plan = dc.plan;
-            } else {
-                erreurPlan = dc.error || 'Erreur lors de la génération du plan.';
-            }
-        } catch {
-            erreurPlan = 'Erreur réseau.';
+    // Sécurité absolue : quoi qu'il arrive dans le bloc ci-dessous, on ne doit
+    // JAMAIS laisser le widget bloqué sur son placeholder "Chargement...".
+    try {
+        // Utiliser profilCache si dispo, sinon fetch
+        let p = profilCache;
+        if (!p) {
+            try {
+                const r = await fetch('/api/profil', {
+                    headers: { 'Authorization': `Bearer ${user.token}` }
+                });
+                const d = await r.json();
+                if (d.success && d.profil) { p = d.profil; profilCache = p; }
+            } catch {}
         }
-    }
 
-    _santePlanActuel = plan;
+        if (!p) {
+            el.innerHTML = `
+                <div class="sante-alerte">
+                    ⚠️ Profil introuvable — complète ton profil pour activer le widget Santé.
+                    <br><button class="ta-banner-btn" style="margin-top:8px" onclick="ouvrirMonProfil()">Compléter le profil</button>
+                </div>`;
+            return;
+        }
 
-    // ── HTML calculs (inchangé) ────────────────────────────────
-    const htmlCalculs = `
-        <div class="sante-calculs">
-            <div class="sante-calcul-row">
-                <div class="sante-calcul-bloc">
-                    <div class="sante-calcul-label">IMC</div>
-                    <div class="sante-calcul-val" style="color:${imcCat?.color || '#9ca3af'}">
-                        ${imc || '—'}
-                    </div>
-                    <div class="sante-calcul-sub" style="color:${imcCat?.color || '#9ca3af'}">
-                        ${imcCat?.label || 'Profil incomplet'}
-                    </div>
-                </div>
-                <div class="sante-calcul-bloc">
-                    <div class="sante-calcul-label">TDEE</div>
-                    <div class="sante-calcul-val" style="color:#7c3aed">
-                        ${tdee ? tdee + ' kcal' : '—'}
-                    </div>
-                    <div class="sante-calcul-sub">Maintien / jour</div>
-                </div>
-                <div class="sante-calcul-bloc">
-                    <div class="sante-calcul-label">Objectif</div>
-                    <div class="sante-calcul-val" style="color:#10b981">
-                        ${kcal ? kcal + ' kcal' : '—'}
-                    </div>
-                    <div class="sante-calcul-sub">/ jour</div>
-                </div>
-            </div>
-            ${macros ? `
-            <div class="sante-macros">
-                <div class="sante-macro-item">
-                    <span class="sante-macro-label">Protéines</span>
-                    <span class="sante-macro-val">${macros.proteines} g</span>
-                </div>
-                <div class="sante-macro-item">
-                    <span class="sante-macro-label">Glucides</span>
-                    <span class="sante-macro-val">${macros.glucides} g</span>
-                </div>
-                <div class="sante-macro-item">
-                    <span class="sante-macro-label">Lipides</span>
-                    <span class="sante-macro-val">${macros.lipides} g</span>
-                </div>
-            </div>` : ''}
-        </div>
-    `;
+        // ── Calculs locaux ────────────────────────────────────────
+        const age    = _age(p.date_naissance);
+        const imc    = _imc(p.poids, p.taille);
+        const imcCat = _imcCategorie(imc);
+        const bmr    = _bmr(p.poids, p.taille, age, p.sexe);
+        const tdee   = _tdee(bmr, p.niveau_activite);
+        const kcal   = _kcalObjectif(tdee, p.objectif_sante);
+        const macros = _macros(kcal, p.objectif_sante);
 
-    // ── Conseil du jour + Activités — toujours visibles, jamais repliés ─
-    const jourActuel = plan ? _trouverJourActuel(plan) : null;
-    const htmlConseil = jourActuel?.conseil_du_jour ? `
-        <div class="sante-conseil-card">
-            <div class="sante-conseil-icone">💡</div>
-            <div class="sante-conseil-texte">
-                <div class="sante-conseil-titre">Conseil du jour</div>
-                <div class="sante-conseil-contenu">${jourActuel.conseil_du_jour}</div>
-                ${jourActuel.activites?.length ? `
-                <div class="sante-activites-mini">
-                    <span class="sante-activites-mini-titre">🏃 Activité du jour</span>
-                    ${jourActuel.activites.map(a => `<span class="sante-activite-pill">${a}</span>`).join('')}
+        const profilComplet = p.taille && p.poids && p.sexe && p.date_naissance && p.niveau_activite && p.objectif_sante;
+
+        // ── Récupération / génération du plan hebdomadaire ────────
+        let plan        = null;
+        let erreurPlan  = null;
+        let retryAfter  = null; // secondes avant réessai conseillé (429 Groq)
+
+        if (profilComplet) {
+            const controller = new AbortController();
+            const timeoutId  = setTimeout(() => controller.abort(), SANTE_FETCH_TIMEOUT_MS);
+
+            try {
+                const rc = await fetch('/api/sante/plan', {
+                    method  : 'POST',
+                    headers : { 'Authorization': `Bearer ${user.token}` },
+                    signal  : controller.signal
+                });
+                clearTimeout(timeoutId);
+
+                let dc = null;
+                try {
+                    dc = await rc.json();
+                } catch {
+                    erreurPlan = 'Réponse serveur illisible.';
+                }
+
+                if (dc) {
+                    if (dc.plan) {
+                        plan = dc.plan;
+                    } else {
+                        erreurPlan = dc.error || 'Erreur lors de la génération du plan.';
+                        if (dc.retryAfter) retryAfter = dc.retryAfter;
+                    }
+                }
+            } catch (fetchErr) {
+                clearTimeout(timeoutId);
+                erreurPlan = (fetchErr?.name === 'AbortError')
+                    ? 'Délai dépassé — le serveur met trop de temps à répondre.'
+                    : 'Erreur réseau.';
+            }
+        }
+
+        _santePlanActuel = plan;
+
+        // ── HTML calculs (inchangé) ────────────────────────────────
+        const htmlCalculs = `
+            <div class="sante-calculs">
+                <div class="sante-calcul-row">
+                    <div class="sante-calcul-bloc">
+                        <div class="sante-calcul-label">IMC</div>
+                        <div class="sante-calcul-val" style="color:${imcCat?.color || '#9ca3af'}">
+                            ${imc || '—'}
+                        </div>
+                        <div class="sante-calcul-sub" style="color:${imcCat?.color || '#9ca3af'}">
+                            ${imcCat?.label || 'Profil incomplet'}
+                        </div>
+                    </div>
+                    <div class="sante-calcul-bloc">
+                        <div class="sante-calcul-label">TDEE</div>
+                        <div class="sante-calcul-val" style="color:#7c3aed">
+                            ${tdee ? tdee + ' kcal' : '—'}
+                        </div>
+                        <div class="sante-calcul-sub">Maintien / jour</div>
+                    </div>
+                    <div class="sante-calcul-bloc">
+                        <div class="sante-calcul-label">Objectif</div>
+                        <div class="sante-calcul-val" style="color:#10b981">
+                            ${kcal ? kcal + ' kcal' : '—'}
+                        </div>
+                        <div class="sante-calcul-sub">/ jour</div>
+                    </div>
+                </div>
+                ${macros ? `
+                <div class="sante-macros">
+                    <div class="sante-macro-item">
+                        <span class="sante-macro-label">Protéines</span>
+                        <span class="sante-macro-val">${macros.proteines} g</span>
+                    </div>
+                    <div class="sante-macro-item">
+                        <span class="sante-macro-label">Glucides</span>
+                        <span class="sante-macro-val">${macros.glucides} g</span>
+                    </div>
+                    <div class="sante-macro-item">
+                        <span class="sante-macro-label">Lipides</span>
+                        <span class="sante-macro-val">${macros.lipides} g</span>
+                    </div>
                 </div>` : ''}
             </div>
-        </div>
-    ` : '';
+        `;
 
-    // ── Bloc plan (tabs) ou erreur ─────────────────────────────
-    let htmlPlanZone = '';
-    if (!profilComplet) {
-        htmlPlanZone = `
-        <div class="sante-alerte">
-            ⚠️ Complète ton profil Santé pour activer tous les calculs et générer ton plan.
-        </div>`;
-    } else if (erreurPlan) {
-        htmlPlanZone = `
-        <div class="sante-error">❌ ${erreurPlan}</div>
-        <button class="sante-btn-groq" onclick="chargerWidgetSante()">🔄 Réessayer</button>`;
-    } else if (plan) {
-        const semaineLabel = plan.jours?.length
-            ? `Semaine du ${_formatDateCourt(plan.jours[0].date)} au ${_formatDateCourt(plan.jours[6]?.date || plan.jours[plan.jours.length-1].date)}`
-            : '';
-        htmlPlanZone = `
-        <div class="sante-semaine-info">📅 ${semaineLabel} · ${plan.calories_cibles || kcal} kcal/j en moyenne</div>
-        <div class="sante-tabs" id="sante-tabs">
-            ${_renderTabButton('jour',    '📆', 'Aujourd\'hui')}
-            ${_renderTabButton('semaine', '🗓️', 'Semaine')}
-            ${_renderTabButton('courses', '🛒', 'Courses')}
-        </div>
-        <div id="sante-tab-content" class="sante-tab-content">
-            ${_renderContenuOnglet(_santeOngletActif, plan)}
-        </div>`;
+        // ── Conseil du jour + Activités — toujours visibles, jamais repliés ─
+        const jourActuel = plan ? _trouverJourActuel(plan) : null;
+        const htmlConseil = jourActuel?.conseil_du_jour ? `
+            <div class="sante-conseil-card">
+                <div class="sante-conseil-icone">💡</div>
+                <div class="sante-conseil-texte">
+                    <div class="sante-conseil-titre">Conseil du jour</div>
+                    <div class="sante-conseil-contenu">${jourActuel.conseil_du_jour}</div>
+                    ${jourActuel.activites?.length ? `
+                    <div class="sante-activites-mini">
+                        <span class="sante-activites-mini-titre">🏃 Activité du jour</span>
+                        ${jourActuel.activites.map(a => `<span class="sante-activite-pill">${a}</span>`).join('')}
+                    </div>` : ''}
+                </div>
+            </div>
+        ` : '';
+
+        // ── Bloc plan (tabs) ou erreur ─────────────────────────────
+        let htmlPlanZone = '';
+        if (!profilComplet) {
+            htmlPlanZone = `
+            <div class="sante-alerte">
+                ⚠️ Complète ton profil Santé pour activer tous les calculs et générer ton plan.
+            </div>`;
+        } else if (erreurPlan) {
+            if (retryAfter) {
+                htmlPlanZone = `
+                <div class="sante-error">⏳ ${erreurPlan}</div>
+                <button class="sante-btn-groq" id="sante-retry-btn" onclick="chargerWidgetSante()">
+                    🔄 Réessayer <span id="sante-retry-decompte">(${retryAfter}s)</span>
+                </button>`;
+            } else {
+                htmlPlanZone = `
+                <div class="sante-error">❌ ${erreurPlan}</div>
+                <button class="sante-btn-groq" onclick="chargerWidgetSante()">🔄 Réessayer</button>`;
+            }
+        } else if (plan) {
+            const semaineLabel = plan.jours?.length
+                ? `Semaine du ${_formatDateCourt(plan.jours[0].date)} au ${_formatDateCourt(plan.jours[6]?.date || plan.jours[plan.jours.length-1].date)}`
+                : '';
+            htmlPlanZone = `
+            <div class="sante-semaine-info">📅 ${semaineLabel} · ${plan.calories_cibles || kcal} kcal/j en moyenne</div>
+            <div class="sante-tabs" id="sante-tabs">
+                ${_renderTabButton('jour',    '📆', 'Aujourd\'hui')}
+                ${_renderTabButton('semaine', '🗓️', 'Semaine')}
+                ${_renderTabButton('courses', '🛒', 'Courses')}
+            </div>
+            <div id="sante-tab-content" class="sante-tab-content">
+                ${_renderContenuOnglet(_santeOngletActif, plan)}
+            </div>`;
+        }
+
+                el.innerHTML = `
+            ${htmlCalculs}
+            ${htmlConseil}
+            ${htmlPlanZone}
+        `;
+
+        // ── Décompte auto-retry si erreur 429 avec retryAfter connu ─
+        if (erreurPlan && retryAfter) {
+            _demarrerRetryAutomatique(retryAfter);
+        }
+
+    } catch (errFatal) {
+        // Filet de sécurité ultime : n'importe quelle exception imprévue dans
+        // le bloc ci-dessus tombe ici — le widget ne reste JAMAIS bloqué sur
+        // son placeholder "Chargement...".
+        console.error('[SANTE] Erreur inattendue dans chargerWidgetSante :', errFatal);
+        el.innerHTML = `
+            <div class="sante-error">❌ Une erreur inattendue est survenue.</div>
+            <button class="sante-btn-groq" onclick="chargerWidgetSante()">🔄 Réessayer</button>`;
     }
+}
 
-    el.innerHTML = `
-        ${htmlCalculs}
-        ${htmlConseil}
-        ${htmlPlanZone}
-    `;
+// ── Décompte + réessai automatique après un 429 Groq ────────────
+function _demarrerRetryAutomatique(secondes) {
+    let restant = secondes;
+    const el = document.getElementById('sante-retry-decompte');
+    if (el) el.textContent = `(${restant}s)`;
+
+    _santeRetryTimerId = setInterval(() => {
+        restant--;
+        const span = document.getElementById('sante-retry-decompte');
+        if (span) span.textContent = `(${Math.max(restant, 0)}s)`;
+        if (restant <= 0) clearInterval(_santeRetryTimerId);
+    }, 1000);
+
+    _santeRetryTimeoutId = setTimeout(() => {
+        chargerWidgetSante();
+    }, secondes * 1000);
+}
+
+function _annulerRetryAutomatique() {
+    if (_santeRetryTimerId)   clearInterval(_santeRetryTimerId);
+    if (_santeRetryTimeoutId) clearTimeout(_santeRetryTimeoutId);
+    _santeRetryTimerId   = null;
+    _santeRetryTimeoutId = null;
 }
 
 // ===================== NAVIGATION ONGLETS ====================
@@ -453,7 +538,7 @@ function _renderCourses(plan) {
             return `<li><span class="sante-course-nom">${item}</span></li>`;
         }
 
-                const nom = item.nom || '—';
+        const nom = item.nom || '—';
 
         // Item non quantifiable (épice, sauce...) — affiché tel quel, jamais masqué
         if (item.quantite_semaine === null || item.quantite_semaine === undefined) {
