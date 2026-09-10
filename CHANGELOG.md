@@ -1,5 +1,28 @@
 ## MoaDja
 
+## v1.80 - 10-09-2026
+
+### ✨ Nouveau
+- Le module Santé s'enrichit d'un vrai suivi sur la semaine : en plus du plan du jour, vous pouvez désormais consulter les repas prévus pour chaque jour de la semaine (du lundi au dimanche), regroupés dans un nouvel onglet "Semaine".
+- Chaque jour affiche désormais un conseil personnalisé ainsi qu'une activité recommandée, présentés dans un joli encadré permanent, sans avoir besoin de dérouler quoi que ce soit.
+- Nouvel onglet "Courses" : une liste de courses complète est générée automatiquement à partir de vos repas de la semaine, avec les quantités précises pour chaque ingrédient (fruits & légumes, protéines, féculents, produits laitiers, épicerie).
+- La liste de courses peut être affichée soit pour les "Jours restants" de la semaine, soit pour la "Semaine complète", selon vos besoins.
+- Le jour en cours est désormais mis en évidence avec un badge "Aujourd'hui" dans la vue Semaine.
+
+### 🔧 Corrections
+- Divers ajustements visuels pour harmoniser les nouveaux onglets (Aujourd'hui, Semaine, Courses) avec le reste du design de l'application.
+
+---
+
+## v1.80.1 - 10-09-2026
+
+### 🔧 Corrections
+- Le module Santé plantait souvent lors de la génération du plan de la semaine : écran bloqué sur "Chargement...", messages "Erreur serveur" ou "Réponse invalide". C'est maintenant réparé.
+- Le plan du jour, la semaine complète et la liste de courses se génèrent à nouveau correctement, sans blocage.
+- Si le service est temporairement surchargé, un bouton "Réessayer" propose désormais un nouvel essai simple, au lieu de rester figé.
+
+---
+
 ## v1.74.0 - 10-09-2026
 
 ### ✨ Nouveau
