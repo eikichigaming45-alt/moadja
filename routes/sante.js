@@ -20,11 +20,12 @@ router.post('/plan', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     const today  = new Date().toISOString().split('T')[0];
 
-    // Récupération du profil + cache éventuel
+    // Récupération du profil complet (santé + suivi médical) + cache éventuel
     const result = await pool.query(
       `SELECT sexe, date_naissance, taille, poids, niveau_activite, objectif_sante,
-              allergies, aliments_exclus, sante_plan_cache, sante_plan_date
-       FROM profiles WHERE user_id = \$1`,
+              allergies, aliments_exclus, groupe_sanguin, traitements_en_cours,
+              diabete, cholesterol, sante_plan_cache, sante_plan_date
+       FROM profiles WHERE user_id = \\$1`,
       [userId]
     );
 
@@ -76,9 +77,13 @@ router.post('/plan', authenticateToken, async (req, res) => {
     const tdee   = bmr * (coeffs[p.niveau_activite] || 1.2);
     const cibles = Math.round(tdee + (deltas[p.objectif_sante] || 0));
 
-    // Formatage allergies et aliments exclus pour le prompt
-    const allergies = (p.allergies || []).join(', ') || 'aucune';
-    const exclus    = (p.aliments_exclus || []).join(', ') || 'aucun';
+    // Formatage des données alimentaires et médicales pour le prompt
+    const allergies   = (p.allergies || []).join(', ') || 'aucune';
+    const exclus       = (p.aliments_exclus || []).join(', ') || 'aucun';
+    const groupeSanguin = p.groupe_sanguin || 'non renseigné';
+    const traitements   = p.traitements_en_cours || 'aucun';
+    const diabete        = p.diabete || 'non renseigné';
+    const cholesterol    = p.cholesterol || 'non renseigné';
 
     // Construction du prompt Groq
     const prompt = `Tu es un nutritionniste expert. Génère un plan journalier personnalisé en JSON strict.
@@ -88,11 +93,27 @@ Profil :
 - Âge : ${age} ans
 - Taille : ${taille} cm
 - Poids : ${poids} kg
+- Groupe sanguin : ${groupeSanguin}
 - Niveau d'activité : ${p.niveau_activite}
 - Objectif : ${p.objectif_sante}
 - Calories cibles : ${cibles} kcal/jour
+
+Contraintes médicales strictes (à respecter impérativement, aucune exception) :
 - Allergies : ${allergies}
-- Aliments exclus : ${exclus}
+- Aliments non aimés (à ne jamais proposer) : ${exclus}
+- Traitements en cours : ${traitements}
+- Diabète : ${diabete}
+- Cholestérol : ${cholesterol}
+
+Consignes de génération :
+- N'inclus JAMAIS un aliment lié à une allergie déclarée, même en trace ou en ingrédient secondaire.
+- N'inclus JAMAIS un aliment listé comme non aimé.
+- Si diabète renseigné (autre que "Non" ou "non renseigné") : privilégie des aliments à index glycémique bas, limite les sucres rapides.
+- Si cholestérol "Élevé" ou "Sous traitement" : limite les graisses saturées, privilégie les bonnes graisses (oméga-3, huile d'olive).
+- Tiens compte des traitements en cours si une interaction alimentaire notable existe (ex: pamplemousse avec certains médicaments), sinon ignore ce champ pour la composition du repas.
+- Varie les repas par rapport à une journée type — évite les répétitions systématiques d'un même aliment principal.
+- Propose des recettes simples et rapides à réaliser, avec des ingrédients courants.
+- Respecte les calories cibles pour atteindre l'objectif fixé.
 
 Réponds UNIQUEMENT avec ce JSON, sans texte autour :
 {
@@ -132,7 +153,7 @@ Réponds UNIQUEMENT avec ce JSON, sans texte autour :
 
     // Sauvegarde en base — écrase l'ancien cache
     await pool.query(
-      `UPDATE profiles SET sante_plan_cache = \$1, sante_plan_date = \$2 WHERE user_id = \$3`,
+      `UPDATE profiles SET sante_plan_cache = \\$1, sante_plan_date = \\$2 WHERE user_id = \\$3`,
       [JSON.stringify(plan), today, userId]
     );
 
