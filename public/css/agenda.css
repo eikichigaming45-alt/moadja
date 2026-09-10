@@ -10,7 +10,7 @@
 .btn-agenda-primary {
     width: 100%;
     padding: 9px;
-    background: #7c3aed;
+    background: rgba(167, 139, 250, 0.85);
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -20,7 +20,7 @@
     transition: background .2s;
     margin-top: 8px;
 }
-.btn-agenda-primary:hover { background: #6d28d9; }
+.btn-agenda-primary:hover { background: rgba(167, 139, 250, 1); }
 
 /* ── Carte événement widget ──────────────────────────────────── */
 .agenda-card {
@@ -112,13 +112,13 @@
     background: #f9fafb;
 }
 .agenda-cal-cell:hover { opacity: .8; }
-.agenda-cal-cell.today { border-color: #7c3aed; }
+.agenda-cal-cell.today { border-color: rgb(167, 139, 250); }
 .agenda-cal-cell-num {
     font-size: 11px;
     font-weight: 700;
     color: #444;
 }
-.agenda-cal-cell.today .agenda-cal-cell-num { color: #7c3aed; }
+.agenda-cal-cell.today .agenda-cal-cell-num { color: rgb(167, 139, 250); }
 .agenda-cal-cell-icon { font-size: 14px; line-height: 1; }
 .agenda-cal-cell-plus { font-size: 9px; color: #666; }
 
@@ -184,7 +184,7 @@
 }
 .agenda-form-input:focus,
 .agenda-form-select:focus,
-.agenda-form-textarea:focus { border-color: #7c3aed; }
+.agenda-form-textarea:focus { border-color: rgb(167, 139, 250); }
 
 /* ── États vide / erreur ─────────────────────────────────────── */
 .agenda-empty {
