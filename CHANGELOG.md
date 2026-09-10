@@ -1,5 +1,15 @@
 ## MoaDja
 
+## v1.74.0 - 10-09-2026
+
+### ✨ Nouveau
+- Les fenêtres permettant de créer ou de modifier un post ont été entièrement redessinées pour s'accorder avec le nouveau style visuel de l'application (champs de texte clairs, boutons harmonisés).
+- L'ajout, le remplacement ou la suppression d'une image sur un post existant est désormais plus clair, avec un bouton de confirmation sécurisé qui n'efface plus le texte en cours de saisie.
+- Le partage d'une publication vers l'extérieur (comme sur WhatsApp) génère désormais un bel aperçu contenant le titre, le début du texte et l'image.
+- Les personnes recevant un lien de partage sans être inscrites sont désormais accueillies sur une jolie page de présentation de la publication (au lieu d'une page blanche), avec un bouton les invitant à rejoindre l'application.
+
+---
+
 ## v1.73.0 - 10-09-2026
 
 ### ✨ Nouveau
