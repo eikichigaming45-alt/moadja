@@ -247,7 +247,7 @@ function renderPost(p) {
                         <div class="feed-handle">@${escapeHtml(p.username)} · ${date} ${p.personnes_taguees && p.personnes_taguees.length ? `· Avec l'équipe` : ''}</div>
                     </div>
                 </div>
-                <div class="feed-card-actions">
+                                <div class="feed-card-actions">
                     ${!isOwner ? `<button class="feed-follow-btn ${followed ? 'following' : ''}" onclick="toggleFollow(${p.user_id}, this)">${followed ? 'Abonné' : 'Suivre'}</button>` : ''}
                     ${isOwner || isAdmin ? `<button class="feed-action-btn" onclick="editerPost(${p.id})" title="Modifier"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="feed-delete-btn" onclick="supprimerPost(${p.id})" title="Supprimer"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>` : ''}
                 </div>
@@ -846,7 +846,13 @@ async function toggleFollowDepuisProfil(userId, btn) {
     } catch {}
 }
 
-function ouvrirPhoto(url) { document.getElementById('overlay').classList.add('on'); document.getElementById('modal-title').textContent = ''; document.getElementById('modal-body').innerHTML = `<img src="${url}" style="width:100%;border-radius:10px;max-height:70vh;object-fit:contain">`; }
+function ouvrirPhoto(url) {
+    document.getElementById('overlay').classList.add('on');
+    document.getElementById('modal-title').textContent = '';
+    const modalEl = document.getElementById('modal-body').closest('.modal');
+    if (modalEl) modalEl.classList.add('modal-lightbox');
+    document.getElementById('modal-body').innerHTML = `<img src="${url}" class="modal-photo-img" oncontextmenu="return false;">`;
+}
 
 async function partagerPost(postId) {
     const card = document.getElementById(`post-${postId}`), contenuEl = document.getElementById(`post-contenu-${postId}`), contenu = contenuEl ? contenuEl.textContent.trim() : '', photoUrl = card?.dataset.photoUrl || '', text = contenu.substring(0, 100) || 'Regarde ce post sur MoaDja';
