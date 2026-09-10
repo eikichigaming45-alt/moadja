@@ -84,7 +84,7 @@ router.get('/', authenticateToken, async (req, res) => {
                     niveau_activite, objectif_sante, allergies, aliments_exclus,
                     meteo_lat, meteo_lon, meteo_ville, site_web,
                     traitements_en_cours, diabete, cholesterol
-             FROM profiles WHERE user_id = \\$1`,
+             FROM profiles WHERE user_id = \$1`,
             [req.user.id]
         );
         if (result.rows.length === 0) return res.json({ success: true, profil: null });
@@ -110,38 +110,38 @@ router.post('/', authenticateToken, async (req, res) => {
 
     try {
         await pool.query(
-            `INSERT INTO profiles (user_id, updated_at) VALUES (\\$1, NOW()) ON CONFLICT (user_id) DO NOTHING`,
+            `INSERT INTO profiles (user_id, updated_at) VALUES (\$1, NOW()) ON CONFLICT (user_id) DO NOTHING`,
             [req.user.id]
         );
 
         await pool.query(`
             UPDATE profiles SET
-                prenom          = CASE WHEN \\$2::text  IS NOT NULL THEN \\$2::text     ELSE prenom          END,
-                nom             = CASE WHEN \\$3::text  IS NOT NULL THEN \\$3::text     ELSE nom             END,
-                date_naissance  = CASE WHEN \\$4::text  IS NOT NULL THEN \\$4::date     ELSE date_naissance  END,
-                heure_naissance = CASE WHEN \\$5::text  IS NOT NULL THEN \\$5::time     ELSE heure_naissance END,
-                lieu_naissance  = CASE WHEN \\$6::text  IS NOT NULL THEN \\$6::text     ELSE lieu_naissance  END,
-                naissance_lat   = CASE WHEN \\$7::text  IS NOT NULL THEN \\$7::numeric  ELSE naissance_lat   END,
-                naissance_lon   = CASE WHEN \\$8::text  IS NOT NULL THEN \\$8::numeric  ELSE naissance_lon   END,
-                email           = CASE WHEN \\$9::text  IS NOT NULL THEN \\$9::text     ELSE email           END,
-                telephone       = CASE WHEN \\$10::text IS NOT NULL THEN \\$10::text    ELSE telephone       END,
-                profession      = CASE WHEN \\$11::text IS NOT NULL THEN \\$11::text    ELSE profession      END,
-                note            = CASE WHEN \\$12::text IS NOT NULL THEN \\$12::text    ELSE note            END,
-                signe_zodiaque  = CASE WHEN \\$13::text IS NOT NULL THEN \\$13::text    ELSE signe_zodiaque  END,
-                sexe            = CASE WHEN \\$14::text IS NOT NULL THEN \\$14::text    ELSE sexe            END,
-                taille          = CASE WHEN \\$15::text IS NOT NULL THEN \\$15::integer ELSE taille          END,
-                poids           = CASE WHEN \\$16::text IS NOT NULL THEN \\$16::numeric ELSE poids           END,
-                groupe_sanguin  = CASE WHEN \\$17::text IS NOT NULL THEN \\$17::text    ELSE groupe_sanguin  END,
-                niveau_activite = CASE WHEN \\$18::text IS NOT NULL THEN \\$18::text    ELSE niveau_activite END,
-                objectif_sante  = CASE WHEN \\$19::text IS NOT NULL THEN \\$19::text    ELSE objectif_sante  END,
-                allergies       = CASE WHEN \\$20::text IS NOT NULL THEN \\$20::text[]  ELSE allergies       END,
-                aliments_exclus = CASE WHEN \\$21::text IS NOT NULL THEN \\$21::text[]  ELSE aliments_exclus END,
-                site_web        = CASE WHEN \\$22::text IS NOT NULL THEN \\$22::text    ELSE site_web        END,
-                traitements_en_cours = CASE WHEN \\$23::text IS NOT NULL THEN \\$23::text ELSE traitements_en_cours END,
-                diabete         = CASE WHEN \\$24::text IS NOT NULL THEN \\$24::text    ELSE diabete         END,
-                cholesterol     = CASE WHEN \\$25::text IS NOT NULL THEN \\$25::text    ELSE cholesterol     END,
+                prenom          = CASE WHEN \$2::text  IS NOT NULL THEN \$2::text     ELSE prenom          END,
+                nom             = CASE WHEN \$3::text  IS NOT NULL THEN \$3::text     ELSE nom             END,
+                date_naissance  = CASE WHEN \$4::text  IS NOT NULL THEN \$4::date     ELSE date_naissance  END,
+                heure_naissance = CASE WHEN \$5::text  IS NOT NULL THEN \$5::time     ELSE heure_naissance END,
+                lieu_naissance  = CASE WHEN \$6::text  IS NOT NULL THEN \$6::text     ELSE lieu_naissance  END,
+                naissance_lat   = CASE WHEN \$7::text  IS NOT NULL THEN \$7::numeric  ELSE naissance_lat   END,
+                naissance_lon   = CASE WHEN \$8::text  IS NOT NULL THEN \$8::numeric  ELSE naissance_lon   END,
+                email           = CASE WHEN \$9::text  IS NOT NULL THEN \$9::text     ELSE email           END,
+                telephone       = CASE WHEN \$10::text IS NOT NULL THEN \$10::text    ELSE telephone       END,
+                profession      = CASE WHEN \$11::text IS NOT NULL THEN \$11::text    ELSE profession      END,
+                note            = CASE WHEN \$12::text IS NOT NULL THEN \$12::text    ELSE note            END,
+                signe_zodiaque  = CASE WHEN \$13::text IS NOT NULL THEN \$13::text    ELSE signe_zodiaque  END,
+                sexe            = CASE WHEN \$14::text IS NOT NULL THEN \$14::text    ELSE sexe            END,
+                taille          = CASE WHEN \$15::text IS NOT NULL THEN \$15::integer ELSE taille          END,
+                poids           = CASE WHEN \$16::text IS NOT NULL THEN \$16::numeric ELSE poids           END,
+                groupe_sanguin  = CASE WHEN \$17::text IS NOT NULL THEN \$17::text    ELSE groupe_sanguin  END,
+                niveau_activite = CASE WHEN \$18::text IS NOT NULL THEN \$18::text    ELSE niveau_activite END,
+                objectif_sante  = CASE WHEN \$19::text IS NOT NULL THEN \$19::text    ELSE objectif_sante  END,
+                allergies       = CASE WHEN \$20::text IS NOT NULL THEN \$20::text[]  ELSE allergies       END,
+                aliments_exclus = CASE WHEN \$21::text IS NOT NULL THEN \$21::text[]  ELSE aliments_exclus END,
+                site_web        = CASE WHEN \$22::text IS NOT NULL THEN \$22::text    ELSE site_web        END,
+                traitements_en_cours = CASE WHEN \$23::text IS NOT NULL THEN \$23::text ELSE traitements_en_cours END,
+                diabete         = CASE WHEN \$24::text IS NOT NULL THEN \$24::text    ELSE diabete         END,
+                cholesterol     = CASE WHEN \$25::text IS NOT NULL THEN \$25::text    ELSE cholesterol     END,
                 updated_at      = NOW()
-            WHERE user_id = \\$1
+            WHERE user_id = \$1
         `, [
             req.user.id,
             prenom          != null && prenom          !== '' ? prenom          : null,
@@ -157,7 +157,7 @@ router.post('/', authenticateToken, async (req, res) => {
             note            != null && note            !== '' ? note            : null,
             signe_zodiaque  != null && signe_zodiaque  !== '' ? signe_zodiaque  : null,
             sexe            != null && sexe            !== '' ? sexe            : null,
-            taille          != null                           ? String(taille)  : null,
+                        taille          != null                           ? String(taille)  : null,
             poids           != null                           ? String(poids)   : null,
             groupe_sanguin  != null && groupe_sanguin  !== '' ? groupe_sanguin  : null,
             niveau_activite != null && niveau_activite !== '' ? niveau_activite : null,
@@ -182,7 +182,7 @@ router.post('/photo', authenticateToken, upload.single('photo'), async (req, res
     if (!req.file) return res.status(400).json({ success: false, message: 'Aucun fichier reçu.' });
     try {
         const ancienRes = await pool.query(
-            'SELECT photo FROM profiles WHERE user_id = \\$1',
+            'SELECT photo FROM profiles WHERE user_id = \$1',
             [req.user.id]
         );
         const anciennePhoto = ancienRes.rows[0]?.photo;
@@ -198,7 +198,7 @@ router.post('/photo', authenticateToken, upload.single('photo'), async (req, res
         const urlPhoto = `/uploads/avatars/${nomFichier}`;
 
         await pool.query(
-            'UPDATE profiles SET photo = \\$1, updated_at = NOW() WHERE user_id = \\$2',
+            'UPDATE profiles SET photo = \$1, updated_at = NOW() WHERE user_id = \$2',
             [urlPhoto, req.user.id]
         );
 
@@ -220,7 +220,7 @@ router.patch('/meteo-ville', authenticateToken, async (req, res) => {
     if (!lat || !lon) return res.status(400).json({ success: false, message: 'Coordonnées manquantes.' });
     try {
         await pool.query(
-            `UPDATE profiles SET meteo_lat = \\$1, meteo_lon = \\$2, meteo_ville = \\$3, updated_at = NOW() WHERE user_id = \\$4`,
+            `UPDATE profiles SET meteo_lat = \$1, meteo_lon = \$2, meteo_ville = \$3, updated_at = NOW() WHERE user_id = \$4`,
             [lat, lon, ville || null, req.user.id]
         );
         res.json({ success: true });
@@ -234,13 +234,13 @@ router.patch('/meteo-ville', authenticateToken, async (req, res) => {
 router.delete('/photo', authenticateToken, async (req, res) => {
     try {
         const ancienRes = await pool.query(
-            'SELECT photo FROM profiles WHERE user_id = \\$1',
+            'SELECT photo FROM profiles WHERE user_id = \$1',
             [req.user.id]
         );
         const anciennePhoto = ancienRes.rows[0]?.photo;
 
         await pool.query(
-            'UPDATE profiles SET photo = NULL, updated_at = NOW() WHERE user_id = \\$1',
+            'UPDATE profiles SET photo = NULL, updated_at = NOW() WHERE user_id = \$1',
             [req.user.id]
         );
 
@@ -264,7 +264,7 @@ router.post('/changer-mdp', authenticateToken, async (req, res) => {
     if (erreur) return res.status(400).json({ success: false, message: erreur });
     try {
         const result = await pool.query(
-            'SELECT password FROM users WHERE id = \\$1',
+            'SELECT password FROM users WHERE id = \$1',
             [req.user.id]
         );
         if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'Utilisateur introuvable.' });
@@ -272,7 +272,7 @@ router.post('/changer-mdp', authenticateToken, async (req, res) => {
         if (!match) return res.status(401).json({ success: false, message: 'Ancien mot de passe incorrect.' });
         const hash = await bcrypt.hash(nouveauMdp, 10);
         await pool.query(
-            'UPDATE users SET password = \\$1, must_change_password = FALSE WHERE id = \\$2',
+            'UPDATE users SET password = \$1, must_change_password = FALSE WHERE id = \$2',
             [hash, req.user.id]
         );
         res.json({ success: true });
@@ -286,7 +286,7 @@ router.post('/changer-mdp', authenticateToken, async (req, res) => {
 router.get('/widgets-visibles', authenticateToken, async (req, res) => {
     try {
         const result = await pool.query(
-            'SELECT widgets_visibles FROM profiles WHERE user_id = \\$1',
+            'SELECT widgets_visibles FROM profiles WHERE user_id = \$1',
             [req.user.id]
         );
         const widgets_caches = result.rows[0]?.widgets_visibles || [];
@@ -303,7 +303,7 @@ router.patch('/widgets-visibles', authenticateToken, async (req, res) => {
     if (!Array.isArray(widgets_caches)) return res.status(400).json({ success: false, message: 'Format invalide.' });
     try {
         await pool.query(
-            'UPDATE profiles SET widgets_visibles = \\$1, updated_at = NOW() WHERE user_id = \\$2',
+            'UPDATE profiles SET widgets_visibles = \$1, updated_at = NOW() WHERE user_id = \$2',
             [widgets_caches, req.user.id]
         );
         res.json({ success: true });
@@ -324,7 +324,7 @@ router.get('/abonnes/:userId', authenticateToken, async (req, res) => {
             FROM follows f
             JOIN users u ON u.id = f.follower_id
             LEFT JOIN profiles p ON p.user_id = f.follower_id
-            WHERE f.following_id = \\$1
+            WHERE f.following_id = \$1
             ORDER BY u.username ASC
         `, [cibleId]);
         res.json({ success: true, abonnes: rows });
@@ -341,7 +341,7 @@ router.get('/abonnes/:userId', authenticateToken, async (req, res) => {
 router.get('/public-champs', authenticateToken, async (req, res) => {
     try {
         const result = await pool.query(
-            'SELECT profil_public_champs FROM profiles WHERE user_id = \\$1',
+            'SELECT profil_public_champs FROM profiles WHERE user_id = \$1',
             [req.user.id]
         );
         const champs = result.rows[0]?.profil_public_champs || [];
@@ -364,10 +364,10 @@ router.patch('/public-champs', authenticateToken, async (req, res) => {
     if (!Array.isArray(champs)) {
         return res.status(400).json({ success: false, message: 'Format invalide.' });
     }
-        const champsFiltres = champs.filter(c => CHAMPS_PUBLICS_VALIDES.includes(c));
+    const champsFiltres = champs.filter(c => CHAMPS_PUBLICS_VALIDES.includes(c));
     try {
         await pool.query(
-            'UPDATE profiles SET profil_public_champs = \\$1, updated_at = NOW() WHERE user_id = \\$2',
+            'UPDATE profiles SET profil_public_champs = \$1, updated_at = NOW() WHERE user_id = \$2',
             [champsFiltres, req.user.id]
         );
         res.json({ success: true, champs: champsFiltres });
@@ -395,7 +395,7 @@ router.get('/public/:userId', authenticateToken, async (req, res) => {
                     p.profil_public_champs
              FROM users u
              LEFT JOIN profiles p ON p.user_id = u.id
-             WHERE u.id = \\$1`,
+             WHERE u.id = \$1`,
             [cibleId]
         );
         if (profilRes.rows.length === 0) return res.status(404).json({ success: false, message: 'Utilisateur introuvable.' });
@@ -403,10 +403,10 @@ router.get('/public/:userId', authenticateToken, async (req, res) => {
         const champsAutorises = profil.profil_public_champs || [];
 
         const [[postsRes], [abonnesRes], [abonnementsRes], [suiviRes]] = await Promise.all([
-            pool.query('SELECT COUNT(*) FROM posts WHERE user_id = \\$1',                              [cibleId]),
-            pool.query('SELECT COUNT(*) FROM follows WHERE following_id = \\$1',                       [cibleId]),
-            pool.query('SELECT COUNT(*) FROM follows WHERE follower_id = \\$1',                        [cibleId]),
-            pool.query('SELECT 1 FROM follows WHERE follower_id = \\$1 AND following_id = \\$2', [moi, cibleId])
+            pool.query('SELECT COUNT(*) FROM posts WHERE user_id = \$1',                              [cibleId]),
+            pool.query('SELECT COUNT(*) FROM follows WHERE following_id = \$1',                       [cibleId]),
+            pool.query('SELECT COUNT(*) FROM follows WHERE follower_id = \$1',                        [cibleId]),
+            pool.query('SELECT 1 FROM follows WHERE follower_id = \$1 AND following_id = \$2', [moi, cibleId])
         ].map(p => p.then(r => [r])));
 
         // ── Âge (toggle + date_naissance renseignée) ──────────
