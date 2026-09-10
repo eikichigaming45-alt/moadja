@@ -1,20 +1,19 @@
 /* ============================================================
    public/css/admin.css
    Styles dédiés au widget et à la modale Administration.
+   Suppression activité globale, ajout contrib + widgets
    ============================================================ */
 
 /* ===================== WIDGET ============================= */
 .wa-stats-row { display: flex; gap: 6px; margin-bottom: 12px; }
 .wa-stat {
-    flex: 1; border-radius: 12px; padding: 10px 6px;
+    flex: 1; border-radius: 10px; padding: 8px 6px;
     text-align: center; display: flex; flex-direction: column; gap: 2px;
-    background: rgba(255, 255, 255, 0.6); backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
 }
-.wa-stat-blue   { background: rgba(219, 234, 254, 0.7); }
-.wa-stat-purple { background: rgba(237, 233, 254, 0.7); }
-.wa-stat-green  { background: rgba(209, 250, 229, 0.7); }
-.wa-stat-orange { background: rgba(254, 243, 199, 0.7); }
+.wa-stat-blue   { background: #dbeafe; }
+.wa-stat-purple { background: #ede9fe; }
+.wa-stat-green  { background: #d1fae5; }
+.wa-stat-orange { background: #fef3c7; }
 .wa-stat-val { font-size: 20px; font-weight: 800; color: #1f2937; }
 .wa-stat-lbl { font-size: 10px; font-weight: 600; color: #6b7280; text-transform: uppercase; }
 
@@ -24,415 +23,797 @@
 }
 .wa-activity-row {
     display: flex; align-items: center; gap: 8px;
-    padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.4);
+    padding: 6px 0; border-bottom: 1px solid #f3f4f6;
 }
 .wa-activity-row:last-child { border-bottom: none; }
 
 .wa-avatar {
-    width: 32px; height: 32px; border-radius: 50%;
+    width: 30px; height: 30px; border-radius: 50%;
     font-size: 13px; font-weight: 700;
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 .wa-avatar-admin { background: #ede9fe; color: #7c3aed; }
 .wa-avatar-user  { background: #dbeafe; color: #2563eb; }
 
 .wa-username {
-    flex: 1; font-size: 12px; font-weight: 700; color: #1f2937;
+    flex: 1; font-size: 12px; font-weight: 600; color: #1f2937;
     min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .wa-badge { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 8px; flex-shrink: 0; }
-.badge-admin { background: rgba(237,233,254,0.8); color: #7c3aed; }
-.badge-user  { background: rgba(219,234,254,0.8); color: #2563eb; }
-.wa-date  { font-size: 11px; color: #6b7280; flex-shrink: 0; }
-.wa-error { color: #ef4444; font-size: 13px; text-align: center; margin-top: 10px; }
+.badge-admin { background: #ede9fe; color: #7c3aed; }
+.badge-user  { background: #dbeafe; color: #2563eb; }
+.wa-date  { font-size: 11px; color: #9ca3af; flex-shrink: 0; }
+.wa-error { color: #ef4444; font-size: 13px; text-align: center; }
 
 /* ===================== MODALE — ONGLETS =================== */
-.admin-tabs { 
-    display: flex; gap: 8px; margin-bottom: 20px; border-bottom: none; 
-    background: rgba(255, 255, 255, 0.4); padding: 6px; 
-    border-radius: 50px; border: 1px solid rgba(255, 255, 255, 0.6);
-}
+.admin-tabs { display: flex; gap: 0; margin-bottom: 16px; border-bottom: 2px solid #f3f4f6; }
 .admin-tab {
-    flex: 1; padding: 10px 16px; border: none; background: transparent;
-    font-size: 13px; font-weight: 700; color: #6b7280;
-    cursor: pointer; border-radius: 50px; transition: all 0.3s ease; margin-bottom: 0;
+    flex: 1; padding: 10px; border: none; background: none;
+    font-size: 13px; font-weight: 600; color: #9ca3af;
+    cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px;
 }
-.admin-tab.active { 
-    background: #fff; color: #7c3aed; 
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
+.admin-tab.active { color: #7c3aed; border-bottom-color: #7c3aed; }
 .admin-tab-content { display: none; }
-.admin-tab-content.active { display: block; animation: fadeInAdmin 0.3s ease-in-out; }
-@keyframes fadeInAdmin { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+.admin-tab-content.active { display: block; }
 
 /* ===================== MODALE — STATS ===================== */
 .as-section-title {
-    font-size: 11px; font-weight: 800; color: #9ca3af;
-    text-transform: uppercase; letter-spacing: .5px; margin-bottom: 12px;
+    font-size: 11px; font-weight: 700; color: #9ca3af;
+    text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px;
 }
 
 /* Cartes chiffres */
-.as-cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+.as-cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
 .as-card {
-    border-radius: 16px; padding: 16px;
-    display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
-    background: rgba(255, 255, 255, 0.6) !important;
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    border-radius: 12px; padding: 12px;
+    display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center;
 }
-.as-card-blue   { background: rgba(219, 234, 254, 0.6) !important; }
-.as-card-purple { background: rgba(237, 233, 254, 0.6) !important; }
-.as-card-green  { background: rgba(209, 250, 229, 0.6) !important; }
-.as-card-red    { background: rgba(254, 226, 226, 0.6) !important; }
-.as-card-icon { font-size: 24px; }
-.as-card-val  { font-size: 24px; font-weight: 800; color: #1f2937; }
-.as-card-lbl  { font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; }
+.as-card-blue   { background: #dbeafe; }
+.as-card-purple { background: #ede9fe; }
+.as-card-green  { background: #d1fae5; }
+.as-card-red    { background: #fee2e2; }
+.as-card-icon { font-size: 20px; }
+.as-card-val  { font-size: 22px; font-weight: 800; color: #1f2937; }
+.as-card-lbl  { font-size: 11px; font-weight: 600; color: #6b7280; }
 
 /* Barre profils remplis */
-.as-progress-bloc { margin-bottom: 20px; background: rgba(255, 255, 255, 0.6); padding: 16px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.8); }
-.as-progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.as-progress-label { font-size: 13px; font-weight: 700; color: #374151; }
-.as-progress-pct   { font-size: 12px; color: #6b7280; font-weight: 600; }
-.as-progress-bar   { height: 10px; background: rgba(229, 231, 235, 0.5); border-radius: 50px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); }
-.as-progress-fill  { height: 100%; border-radius: 50px; transition: width 0.6s ease; }
-.as-fill-blue { background: linear-gradient(90deg, #8b5cf6, #c084fc); }
+.as-progress-bloc { margin-bottom: 14px; }
+.as-progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+.as-progress-label { font-size: 13px; font-weight: 600; color: #374151; }
+.as-progress-pct   { font-size: 12px; color: #6b7280; }
+.as-progress-bar   { height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
+.as-progress-fill  { height: 100%; border-radius: 4px; transition: width .4s; }
+.as-fill-blue { background: linear-gradient(90deg, #3b82f6, #7c3aed); }
 
 /* Top contributeurs */
-.as-contrib-list { display: flex; flex-direction: column; gap: 10px; }
+.as-contrib-list { display: flex; flex-direction: column; gap: 8px; }
 .as-contrib-row {
-    display: flex; align-items: center; gap: 12px; padding: 12px 14px;
-    background: rgba(255, 255, 255, 0.6) !important;
-    border: 1px solid rgba(255, 255, 255, 0.8) !important;
-    border-radius: 16px !important;
-    backdrop-filter: blur(8px);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
 }
-.as-contrib-medal  { font-size: 20px; width: 28px; text-align: center; flex-shrink: 0; }
+.as-contrib-medal  { font-size: 18px; width: 24px; text-align: center; flex-shrink: 0; }
 .as-contrib-info   { flex: 1; min-width: 0; }
 .as-contrib-name   {
-    font-size: 14px; font-weight: 700; color: #1e1b4b;
-    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    font-size: 13px; font-weight: 700; color: #1e1b4b;
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
 }
-.as-contrib-detail { font-size: 12px; color: #6b7280; margin-top: 4px; font-weight: 500; }
-.as-contrib-score  { font-size: 14px; font-weight: 800; color: #7c3aed; white-space: nowrap; flex-shrink: 0; background: rgba(124, 58, 237, 0.1); padding: 4px 10px; border-radius: 20px; }
+.as-contrib-detail { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+.as-contrib-score  { font-size: 13px; font-weight: 800; color: #4f46e5; white-space: nowrap; flex-shrink: 0; }
 
 /* Widgets populaires */
-.as-widgets-list { display: flex; flex-direction: column; gap: 10px; background: rgba(255,255,255,0.6); padding: 16px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.8); }
-.as-widget-row   { display: flex; align-items: center; gap: 12px; }
+.as-widgets-list { display: flex; flex-direction: column; gap: 8px; }
+.as-widget-row   { display: flex; align-items: center; gap: 10px; }
 .as-widget-label {
-    font-size: 13px; color: #374151; font-weight: 600;
-    width: 140px; flex-shrink: 0;
+    font-size: 13px; color: #374151;
+    width: 160px; flex-shrink: 0;
 }
-.as-widget-bar-wrap { flex: 1; background: rgba(229, 231, 235, 0.5); border-radius: 50px; height: 10px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); }
-.as-widget-bar-fill { height: 100%; border-radius: 50px; transition: width .4s ease; }
-.as-widget-count    { font-size: 12px; font-weight: 800; color: #6b7280; width: 40px; text-align: right; flex-shrink: 0; }
+.as-widget-bar-wrap { flex: 1; background: #f3f4f6; border-radius: 99px; height: 8px; overflow: hidden; }
+.as-widget-bar-fill { height: 100%; border-radius: 99px; transition: width .4s ease; }
+.as-widget-count    { font-size: 12px; font-weight: 700; color: #6b7280; width: 40px; text-align: right; flex-shrink: 0; }
 
 /* Dernière activité */
-.as-logins-list { display: flex; flex-direction: column; gap: 10px; }
+.as-logins-list { display: flex; flex-direction: column; gap: 8px; }
 .as-login-row {
-    display: flex; align-items: center; gap: 12px;
-    padding: 12px 14px;
-    background: rgba(255, 255, 255, 0.6) !important;
-    border: 1px solid rgba(255, 255, 255, 0.8) !important;
-    border-radius: 16px !important;
-    backdrop-filter: blur(8px);
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; background: #f8fafc; border-radius: 10px;
 }
 .as-login-avatar {
-    width: 40px; height: 40px; border-radius: 50%;
-    font-size: 15px; font-weight: 700;
+    width: 36px; height: 36px; border-radius: 50%;
+    font-size: 14px; font-weight: 700;
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
 }
-.as-av-admin { background: rgba(237, 233, 254, 0.8) !important; color: #7c3aed !important; }
-.as-av-user  { background: rgba(219, 234, 254, 0.8) !important; color: #2563eb !important; }
+.as-av-admin { background: #ede9fe; color: #7c3aed; }
+.as-av-user  { background: #dbeafe; color: #2563eb; }
 .as-login-info     { flex: 1; min-width: 0; }
-.as-login-name     { font-size: 14px; font-weight: 700; color: #1f2937; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.as-login-date     { font-size: 12px; color: #6b7280; margin-top: 4px; font-weight: 500; }
-.as-login-relative { font-size: 12px; flex-shrink: 0; font-weight: 600; }
-.as-badge       { font-size: 9px; font-weight: 700; padding: 4px 8px; border-radius: 12px; }
-.as-badge-admin { background: rgba(237, 233, 254, 0.8) !important; color: #7c3aed !important; }
-.as-badge-user  { background: rgba(219, 234, 254, 0.8) !important; color: #2563eb !important; }
+.as-login-name     { font-size: 13px; font-weight: 700; color: #1f2937; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.as-login-date     { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+.as-login-relative { font-size: 11px; flex-shrink: 0; }
+.as-badge       { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 8px; }
+.as-badge-admin { background: #ede9fe; color: #7c3aed; }
+.as-badge-user  { background: #dbeafe; color: #2563eb; }
 
-/* ===================== MODALE — USERS (SURCHARGES GLASSMORPHISM) ===================== */
-/* Ces règles utilisent !important pour écraser les styles bruts intégrés dans admin.js */
+/* ===================== MODALE — USERS ===================== */
+.user-card { background: #f8fafc; border-radius: 14px; padding: 16px; border: 1.5px solid #e5e7eb; }
 
-/* Barre de recherche */
-#admin-search {
-    background: rgba(255, 255, 255, 0.6) !important;
-    backdrop-filter: blur(12px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.8) !important;
-    border-radius: 50px !important;
-    padding: 12px 18px !important;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02), 0 2px 10px rgba(0,0,0,0.02) !important;
-    transition: all 0.3s ease !important;
-    color: #1f2937 !important;
+.ua-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 8px 12px; border: none; border-radius: 8px;
+    font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s;
 }
-#admin-search:focus { 
-    background: rgba(255, 255, 255, 0.9) !important; 
-    box-shadow: 0 4px 12px rgba(124,58,237,0.1) !important; 
-    border-color: rgba(124,58,237,0.3) !important; 
-}
+.ua-btn-blue      { background: #4f46e5; color: #fff; }
+.ua-btn-blue:hover { background: #4338ca; }
+.ua-btn-red       { background: #ef4444; color: #fff; }
+.ua-btn-red:hover  { background: #dc2626; }
 
-/* Bouton Créer un utilisateur */
-#btn-creer-user {
-    background: rgba(124, 58, 237, 0.85) !important;
-    backdrop-filter: blur(8px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    border-radius: 50px !important;
-    padding: 12px !important;
-    box-shadow: 0 8px 24px rgba(124, 58, 237, 0.25) !important;
-    transition: all 0.3s ease !important;
-}
-#btn-creer-user:hover { 
-    transform: translateY(-2px) !important; 
-    box-shadow: 0 10px 28px rgba(124, 58, 237, 0.35) !important; 
-    background: rgba(109, 40, 217, 0.9) !important;
-}
-
-/* Formulaire de création */
-#admin-creer-form {
-    background: rgba(255, 255, 255, 0.5) !important;
-    backdrop-filter: blur(16px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.8) !important;
-    border-radius: 24px !important;
-    padding: 20px !important;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.05) !important;
-}
-#admin-creer-form input, #admin-creer-form select {
-    background: rgba(255, 255, 255, 0.7) !important;
-    border: 1.5px solid rgba(229, 231, 235, 0.6) !important;
-    border-radius: 12px !important;
-    padding: 12px 14px !important;
-    color: #1f2937 !important;
-    transition: all 0.2s ease !important;
-}
-#admin-creer-form input:focus, #admin-creer-form select:focus {
-    background: #fff !important;
-    border-color: #a78bfa !important;
-}
-#admin-creer-form .ua-btn {
-    border-radius: 50px !important;
-    padding: 12px !important;
-    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25) !important;
-}
-
-/* Liste des utilisateurs (Lignes générées par JS) */
-#admin-users-liste { display: flex !important; flex-direction: column !important; gap: 10px !important; margin-top: 16px !important; }
-#admin-users-liste > div {
-    background: rgba(255, 255, 255, 0.55) !important;
-    backdrop-filter: blur(10px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.9) !important;
-    border-radius: 18px !important;
-    padding: 14px 16px !important;
-    margin-bottom: 0 !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
-    transition: all 0.3s ease !important;
-}
-#admin-users-liste > div:hover { 
-    background: rgba(255, 255, 255, 0.85) !important; 
-    transform: translateY(-2px) !important; 
-    box-shadow: 0 8px 24px rgba(0,0,0,0.06) !important; 
-}
-
-/* Boutons d'action rapides (Rôle, Clé, Éditer, Supprimer) */
 .au-btn {
-    width: 36px !important; height: 36px !important; 
-    border-radius: 12px !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04) !important;
-    transition: all 0.2s ease !important;
-    backdrop-filter: blur(4px) !important;
+    width: 30px; height: 30px; border: none; border-radius: 8px;
+    cursor: pointer; font-size: 14px;
+    display: flex; align-items: center; justify-content: center; transition: background .15s;
 }
-.au-btn:hover { transform: translateY(-1px) !important; }
-.au-btn-role       { background: rgba(237, 233, 254, 0.7) !important; color: #7c3aed !important; }
-.au-btn-role:hover { background: rgba(221, 214, 254, 1) !important; }
-.au-btn-key        { background: rgba(254, 243, 199, 0.7) !important; color: #d97706 !important; }
-.au-btn-key:hover  { background: rgba(253, 230, 138, 1) !important; }
-.au-btn-edit       { background: rgba(219, 234, 254, 0.7) !important; color: #2563eb !important; }
-.au-btn-edit:hover { background: rgba(191, 219, 254, 1) !important; }
-.au-btn-del        { background: rgba(254, 226, 226, 0.7) !important; color: #ef4444 !important; }
-.au-btn-del:hover  { background: rgba(254, 202, 202, 1) !important; }
+.au-btn-role       { background: #ede9fe; color: #7c3aed; }
+.au-btn-role:hover { background: #ddd6fe; }
+.au-btn-key        { background: #fef3c7; color: #d97706; }
+.au-btn-key:hover  { background: #fde68a; }
+.au-btn-edit       { background: #dbeafe; color: #2563eb; }
+.au-btn-edit:hover { background: #bfdbfe; }
+.au-btn-del        { background: #fee2e2; color: #ef4444; }
+.au-btn-del:hover  { background: #fecaca; }
 
-/* Modales internes d'édition et suppression (générées par JS) */
-.user-card { 
-    background: rgba(255, 255, 255, 0.65) !important; 
-    backdrop-filter: blur(20px) !important; 
-    border: 1px solid rgba(255, 255, 255, 0.9) !important; 
-    border-radius: 24px !important; 
-    padding: 24px !important; 
-    box-shadow: 0 12px 40px rgba(0,0,0,0.08) !important; 
-}
+// ============================================================
+// public/js/admin.js
+// Dashboard admin — widget + modale stats/users + CRUD.
+// ============================================================
 
-/* Modale de suppression spécifique (fond rouge) */
-.user-card[style*="border-color:#fee2e2"] {
-    background: rgba(254, 242, 242, 0.7) !important;
-    border: 1px solid rgba(254, 226, 226, 0.9) !important;
-    box-shadow: 0 12px 40px rgba(239, 68, 68, 0.1) !important;
-}
+// ===================== WIDGET ADMIN (dashboard) ==============
 
-/* Champs dans l'édition de profil */
-.user-card input, .user-card textarea {
-    background: rgba(255, 255, 255, 0.75) !important;
-    border: 1.5px solid rgba(229, 231, 235, 0.6) !important;
-    border-radius: 12px !important;
-    padding: 12px 14px !important;
-    color: #1f2937 !important;
-    transition: all 0.2s ease !important;
-}
-.user-card input:focus, .user-card textarea:focus {
-    background: #fff !important;
-    border-color: #a78bfa !important;
-}
-.user-card label {
-    font-size: 11px !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.5px !important;
-    font-weight: 700 !important;
-    color: #6b7280 !important;
-}
-.user-card .section-title {
-    font-size: 12px !important;
-    font-weight: 800 !important;
-    color: #9ca3af !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.5px !important;
-    margin-bottom: 12px !important;
-    margin-top: 16px !important;
-}
-
-/* Boutons principaux dans les cartes (Sauvegarder, Annuler, Confirmer) */
-.ua-btn { 
-    border-radius: 50px !important; 
-    font-weight: 700 !important; 
-    padding: 14px 20px !important; 
-    border: none !important; 
-    transition: all 0.3s ease !important;
-}
-.ua-btn-blue { 
-    background: rgba(124, 58, 237, 0.85) !important; 
-    box-shadow: 0 6px 20px rgba(124, 58, 237, 0.25) !important; 
-}
-.ua-btn-blue:hover { background: rgba(109, 40, 217, 1) !important; transform: translateY(-2px) !important; }
-
-.ua-btn-red { 
-    background: rgba(239, 68, 68, 0.9) !important; 
-    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.25) !important; 
-}
-.ua-btn-red:hover { background: rgba(220, 38, 38, 1) !important; transform: translateY(-2px) !important; }
-
-/* Bouton Annuler (ciblé via son onclick dans le JS) */
-.user-card button[onclick="chargerAdminUsers()"],
-.user-card button[style*="background:#f3f4f6"] {
-    background: rgba(255, 255, 255, 0.6) !important;
-    border: 1px solid rgba(0,0,0,0.05) !important;
-    color: #4b5563 !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.02) !important;
-}
-.user-card button[onclick="chargerAdminUsers()"]:hover {
-    background: #fff !important;
-    border-color: rgba(0,0,0,0.1) !important;
-}
-
-/* ===================== SCROLLBARS PERSONNALISÉES ===================== */
-/* Pour s'intégrer parfaitement au style Glassmorphism */
-#admin-users-liste, .admin-tab-content, .as-logins-list, .as-contrib-list, .as-widgets-list {
-    max-height: 60vh;
-    overflow-y: auto;
-    padding-right: 4px;
-}
-
-#admin-users-liste::-webkit-scrollbar,
-.admin-tab-content::-webkit-scrollbar,
-.as-logins-list::-webkit-scrollbar,
-.as-contrib-list::-webkit-scrollbar,
-.as-widgets-list::-webkit-scrollbar {
-    width: 6px;
-}
-
-#admin-users-liste::-webkit-scrollbar-track,
-.admin-tab-content::-webkit-scrollbar-track,
-.as-logins-list::-webkit-scrollbar-track,
-.as-contrib-list::-webkit-scrollbar-track,
-.as-widgets-list::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 10px;
-}
-
-#admin-users-liste::-webkit-scrollbar-thumb,
-.admin-tab-content::-webkit-scrollbar-thumb,
-.as-logins-list::-webkit-scrollbar-thumb,
-.as-contrib-list::-webkit-scrollbar-thumb,
-.as-widgets-list::-webkit-scrollbar-thumb {
-    background: rgba(167, 139, 250, 0.4);
-    border-radius: 10px;
-}
-
-#admin-users-liste::-webkit-scrollbar-thumb:hover,
-.admin-tab-content::-webkit-scrollbar-thumb:hover,
-.as-logins-list::-webkit-scrollbar-thumb:hover,
-.as-contrib-list::-webkit-scrollbar-thumb:hover,
-.as-widgets-list::-webkit-scrollbar-thumb:hover {
-    background: rgba(139, 92, 246, 0.6);
-}
-
-/* ===================== CONTENEUR GLOBAL MODALE ADMIN ===================== */
-/* Assure que le fond de la modale d'administration elle-même (si elle a une classe spécifique) 
-   soit bien flouté et s'accorde avec le Glassmorphism V3 */
-.modal-admin-container {
-    background: rgba(255, 255, 255, 0.45) !important;
-    backdrop-filter: blur(24px) !important;
-    -webkit-backdrop-filter: blur(24px) !important;
-    border: 1px solid rgba(255, 255, 255, 0.6) !important;
-    box-shadow: 0 24px 48px rgba(31, 41, 55, 0.1) !important;
-    border-radius: 24px !important;
-}
-
-/* ===================== RESPONSIVITÉ (MOBILE) ===================== */
-@media (max-width: 600px) {
-    .as-cards-grid { 
-        grid-template-columns: 1fr; 
-    }
-    
-    .wa-stats-row { 
-        flex-wrap: wrap; 
-    }
-    
-    .wa-stat { 
-        min-width: 45%; 
-    }
-    
-    .as-widget-label { 
-        width: 100px; 
-        font-size: 11px; 
-    }
-    
-    /* Adaptation de la liste des utilisateurs sur petit écran */
-    #admin-users-liste > div {
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 12px !important;
-    }
-    
-    #admin-users-liste > div > div:last-child {
-        width: 100% !important;
-        justify-content: space-between !important;
-        background: rgba(255, 255, 255, 0.4) !important;
-        padding: 8px !important;
-        border-radius: 16px !important;
-    }
-
-    .as-contrib-row, .as-login-row {
-        gap: 8px;
-        padding: 10px;
-    }
-    
-    .as-contrib-medal { 
-        display: none; 
-    }
-    
-    .user-card {
-        padding: 16px !important;
+async function chargerWidgetAdmin() {
+    const user = getUser();
+    if (!user?.token || user.role !== 'admin') return;
+    const el = document.getElementById('wc-admin');
+    if (!el) return;
+    try {
+        const r = await fetch('/api/admin/stats', {
+            headers: { 'Authorization': `Bearer ${user.token}` }
+        });
+        const d = await r.json();
+        if (!d.success) { el.innerHTML = '<p class="wa-error">Erreur serveur</p>'; return; }
+        el.innerHTML = `
+            <div class="wa-stats-row">
+                <div class="wa-stat wa-stat-blue">
+                    <div class="wa-stat-val">${d.totalUsers}</div>
+                    <div class="wa-stat-lbl">Utilisateurs</div>
+                </div>
+                <div class="wa-stat wa-stat-purple">
+                    <div class="wa-stat-val">${d.actifsRecents}</div>
+                    <div class="wa-stat-lbl">Actifs 7j</div>
+                </div>
+                <div class="wa-stat wa-stat-green">
+                    <div class="wa-stat-val">${d.profilsRemplis}</div>
+                    <div class="wa-stat-lbl">Profils</div>
+                </div>
+                <div class="wa-stat wa-stat-orange">
+                    <div class="wa-stat-val">${d.jamaisActifs}</div>
+                    <div class="wa-stat-lbl">Inactifs</div>
+                </div>
+            </div>
+            <div class="wa-activity-title">Dernière activité</div>
+            ${(d.lastActivity || []).map(u => {
+                const initiale  = (u.prenom ? u.prenom[0] : u.username[0]).toUpperCase();
+                const affichage = (u.prenom && u.nom)
+                    ? u.prenom + ' ' + u.nom.toUpperCase()
+                    : u.username;
+                return `
+                <div class="wa-activity-row">
+                    <div class="wa-avatar ${u.role === 'admin' ? 'wa-avatar-admin' : 'wa-avatar-user'}">${initiale}</div>
+                    <div class="wa-username">${affichage}</div>
+                    <span class="wa-badge ${u.role === 'admin' ? 'badge-admin' : 'badge-user'}">${u.role}</span>
+                    <div class="wa-date">${u.lastActivity ? _formatDateRelative(u.lastActivity) : '<span style="color:#d1d5db">Jamais</span>'}</div>
+                </div>`;
+            }).join('')}
+        `;
+    } catch {
+        el.innerHTML = '<p class="wa-error">Erreur réseau</p>';
     }
 }
 
+// ===================== UTILITAIRES DATE ======================
+
+function _formatDateRelative(dateStr) {
+    if (!dateStr) return '—';
+    const date    = new Date(dateStr);
+    const now     = new Date();
+    const diffMs  = now - date;
+    const diffMin = Math.floor(diffMs / 60000);
+    const diffH   = Math.floor(diffMs / 3600000);
+    const diffJ   = Math.floor(diffMs / 86400000);
+    if (diffMin < 2)  return '<span style="color:#10b981;font-weight:700">À l\'instant</span>';
+    if (diffMin < 60) return `<span style="color:#10b981;font-weight:600">Il y a ${diffMin} min</span>`;
+    if (diffH < 24)   return `<span style="color:#f59e0b;font-weight:600">Il y a ${diffH}h</span>`;
+    if (diffJ === 1)  return '<span style="color:#6b7280">Hier</span>';
+    if (diffJ < 7)    return `<span style="color:#6b7280">Il y a ${diffJ} jours</span>`;
+    return `<span style="color:#9ca3af">${date.toLocaleDateString('fr-FR')}</span>`;
+}
+
+function _formatDateComplete(dateStr) {
+    if (!dateStr) return 'Jamais';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+        + ' à ' + date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+// ===================== MODALE ADMIN — STATS ==================
+
+async function chargerAdminStats() {
+    const user = getUser();
+    const el   = document.getElementById('admin-tab-stats');
+    if (!el) return;
+    el.innerHTML = '<p style="color:#9ca3af;text-align:center;padding:20px 0">Chargement...</p>';
+    try {
+        const r = await fetch('/api/admin/stats', {
+            headers: { 'Authorization': `Bearer ${user.token}` }
+        });
+        const d = await r.json();
+        if (!d.success) { el.innerHTML = `<p style="color:#ef4444">${d.message}</p>`; return; }
+
+        const tauxProfils = d.totalUsers > 0
+            ? Math.round((d.profilsRemplis / d.totalUsers) * 100)
+            : 0;
+
+        const medailles = ['🥇', '🥈', '🥉', '4.', '5.'];
+
+        const widgetLabels = {
+    'agenda'        : '📅 Agenda',
+    'anniversaires' : '🎂 Anniversaires',
+    'astrologie'    : '✨ Astrologie',
+    'priere'        : '🙏 Prière du jour',
+    'islam'         : '🌙 Prières & Hadiths',
+    'sante'         : '🥗 Santé',
+    'social'        : '🤝 Social',
+    'cycle'         : '🌸 Suivi du cycle',
+    'taches'        : '✅ Tâches',
+    'admin'         : '⚙️ Administration',
+    'meteo'         : '🌤️ Météo',
+    'theme-astral'  : '🔯 Thème Astral',
+    'profil'        : '👤 Profil'
+};
+
+        el.innerHTML = `
+            <div class="as-section-title">Utilisateurs</div>
+            <div class="as-cards-grid">
+                <div class="as-card as-card-blue">
+                    <div class="as-card-icon">👥</div>
+                    <div class="as-card-val">${d.totalUsers}</div>
+                    <div class="as-card-lbl">Total</div>
+                </div>
+                <div class="as-card as-card-purple">
+                    <div class="as-card-icon">⚙️</div>
+                    <div class="as-card-val">${d.totalAdmins}</div>
+                    <div class="as-card-lbl">Admins</div>
+                </div>
+                <div class="as-card as-card-green">
+                    <div class="as-card-icon">🟢</div>
+                    <div class="as-card-val">${d.actifsRecents}</div>
+                    <div class="as-card-lbl">Actifs 7j</div>
+                </div>
+                <div class="as-card as-card-red">
+                    <div class="as-card-icon">💤</div>
+                    <div class="as-card-val">${d.jamaisActifs}</div>
+                    <div class="as-card-lbl">Jamais actifs</div>
+                </div>
+            </div>
+
+            <div class="as-progress-bloc">
+                <div class="as-progress-header">
+                    <span class="as-progress-label">Profils remplis</span>
+                    <span class="as-progress-pct">${d.profilsRemplis}/${d.totalUsers} — ${tauxProfils}%</span>
+                </div>
+                <div class="as-progress-bar">
+                    <div class="as-progress-fill as-fill-blue" style="width:${tauxProfils}%"></div>
+                </div>
+            </div>
+
+            <div class="as-section-title" style="margin-top:20px">Top contributeurs</div>
+            <div class="as-contrib-list">
+                ${(d.topContributeurs || []).map((u, i) => {
+                    const affichage = (u.prenom && u.nom)
+                        ? u.prenom + ' ' + u.nom.toUpperCase()
+                        : u.username;
+                    const initiale = (u.prenom ? u.prenom[0] : u.username[0]).toUpperCase();
+                    const details = [
+                        u.posts         > 0 ? `${u.posts} post${u.posts > 1 ? 's' : ''}`          : null,
+                        u.commentaires  > 0 ? `${u.commentaires} comment.`                          : null,
+                        u.likes         > 0 ? `${u.likes} like${u.likes > 1 ? 's' : ''}`           : null,
+                        u.rdv           > 0 ? `${u.rdv} RDV`                                        : null,
+                        u.taches        > 0 ? `${u.taches} tâche${u.taches > 1 ? 's' : ''}`        : null,
+                        u.anniversaires > 0 ? `${u.anniversaires} anniv.`                           : null,
+                    ].filter(Boolean).join(' · ');
+                    return `
+                    <div class="as-contrib-row">
+                        <div class="as-contrib-medal">${medailles[i]}</div>
+                        <div class="as-login-avatar ${u.role === 'admin' ? 'as-av-admin' : 'as-av-user'}">${initiale}</div>
+                        <div class="as-contrib-info">
+                            <div class="as-contrib-name">${affichage}
+                                <span class="as-badge ${u.role === 'admin' ? 'as-badge-admin' : 'as-badge-user'}">${u.role}</span>
+                            </div>
+                            <div class="as-contrib-detail">${details || 'Aucune activité'}</div>
+                        </div>
+                        <div class="as-contrib-score">${u.score} pts</div>
+                    </div>`;
+                }).join('') || '<p style="color:#9ca3af;font-size:13px;text-align:center;padding:12px 0">Aucune donnée.</p>'}
+            </div>
+
+            <div class="as-section-title" style="margin-top:20px">Widgets les plus utilisés</div>
+            <div class="as-widgets-list">
+                ${(d.widgetsPopulaires || []).length === 0
+                    ? '<p style="color:#9ca3af;font-size:13px;text-align:center;padding:12px 0">Aucune ouverture enregistrée pour le moment.</p>'
+                    : (d.widgetsPopulaires || []).map((w, i) => {
+                        const label = widgetLabels[w.widget] || w.widget;
+                        const maxNb = parseInt(d.widgetsPopulaires[0]?.nb) || 1;
+                        const pct   = Math.round((parseInt(w.nb) / maxNb) * 100);
+                        return `
+                        <div class="as-widget-row">
+                            <div class="as-widget-label">${label}</div>
+                            <div class="as-widget-bar-wrap">
+                                <div class="as-widget-bar-fill" style="width:${pct}%;background:${i === 0 ? '#4f46e5' : i === 1 ? '#7c3aed' : '#a78bfa'}"></div>
+                            </div>
+                            <div class="as-widget-count">${w.nb}</div>
+                        </div>`;
+                    }).join('')
+                }
+            </div>
+
+            <div class="as-section-title" style="margin-top:20px">Dernière activité</div>
+            <div class="as-logins-list">
+                ${(d.lastActivity || []).map(u => {
+                    const initiale  = (u.prenom ? u.prenom[0] : u.username[0]).toUpperCase();
+                    const affichage = (u.prenom && u.nom)
+                        ? u.prenom + ' ' + u.nom.toUpperCase()
+                        : u.username;
+                    return `
+                    <div class="as-login-row">
+                        <div class="as-login-avatar ${u.role === 'admin' ? 'as-av-admin' : 'as-av-user'}">${initiale}</div>
+                        <div class="as-login-info">
+                            <div class="as-login-name">${affichage}
+                                <span class="as-badge ${u.role === 'admin' ? 'as-badge-admin' : 'as-badge-user'}">${u.role}</span>
+                            </div>
+                            <div class="as-login-date">${u.lastActivity ? _formatDateComplete(u.lastActivity) : 'Jamais actif'}</div>
+                        </div>
+                        <div class="as-login-relative">${_formatDateRelative(u.lastActivity)}</div>
+                    </div>`;
+                }).join('') || '<p style="color:#9ca3af;font-size:13px;text-align:center;padding:12px 0">Aucune activité.</p>'}
+            </div>
+        `;
+    } catch {
+        el.innerHTML = '<p style="color:#ef4444;font-size:13px;text-align:center">Erreur réseau.</p>';
+    }
+}
+
+// ===================== MODALE ADMIN — UTILISATEURS ===========
+
+async function chargerAdminUsers() {
+    const user = getUser();
+    const el   = document.getElementById('admin-tab-users');
+    if (!el) return;
+    el.innerHTML = '<p style="color:#9ca3af;text-align:center;padding:20px 0">Chargement...</p>';
+    try {
+        const r = await fetch('/api/admin/users', {
+            headers: { 'Authorization': `Bearer ${user.token}` }
+        });
+        const d = await r.json();
+        if (!d.success) { el.innerHTML = `<p style="color:#ef4444">${d.message}</p>`; return; }
+        window._adminUsersCache = d.users || [];
+        _renderAdminUsers();
+    } catch {
+        el.innerHTML = '<p style="color:#ef4444;font-size:13px;text-align:center">Erreur réseau.</p>';
+    }
+}
+
+function _renderAdminUsers() {
+    const el = document.getElementById('admin-tab-users');
+    if (!el) return;
+    el.innerHTML = `
+        <form autocomplete="off" onsubmit="return false" style="margin-bottom:12px">
+            <input type="text" id="admin-search"
+                placeholder="🔍 Rechercher un utilisateur..."
+                oninput="_filtrerAdminUsers()"
+                autocomplete="off"
+                style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;
+                       font-size:14px;outline:none;box-sizing:border-box;background:#f8fafc">
+        </form>
+        <button onclick="_toggleCreerForm()" id="btn-creer-user"
+            style="width:100%;padding:11px;background:linear-gradient(135deg,#4f46e5,#7c3aed);
+                   color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;
+                   cursor:pointer;margin-bottom:12px;display:flex;align-items:center;
+                   justify-content:center;gap:6px">
+            ➕ Créer un utilisateur
+        </button>
+        <div id="admin-creer-form" style="display:none;background:#f8fafc;border-radius:12px;
+             padding:16px;margin-bottom:12px;border:1.5px solid #e5e7eb">
+            <div style="font-size:13px;font-weight:700;color:#1e1b4b;margin-bottom:12px">Nouveau compte</div>
+            <input type="text" id="new-username" placeholder="Nom d'utilisateur"
+                autocomplete="off" name="new-username-field"
+                style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;
+                       font-size:14px;outline:none;box-sizing:border-box;margin-bottom:8px">
+            <input type="text" id="new-password-fake"
+                style="display:none;position:absolute;left:-9999px" aria-hidden="true">
+            <input type="password" id="new-password"
+                autocomplete="new-password" name="new-password-field"
+                placeholder="8 car. min · majuscule · minuscule · chiffre · spécial"
+                style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;
+                       font-size:14px;outline:none;box-sizing:border-box;margin-bottom:8px">
+            <select id="new-role"
+                style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;
+                       font-size:14px;outline:none;box-sizing:border-box;margin-bottom:12px;background:#fff">
+                <option value="user">user</option>
+                <option value="admin">admin</option>
+            </select>
+            <button onclick="creerUser()" class="ua-btn ua-btn-blue"
+                style="width:100%;padding:10px;font-size:13px;justify-content:center">
+                ✓ Créer l'utilisateur
+            </button>
+            <div id="create-msg" style="text-align:center;margin-top:10px;font-size:13px;min-height:18px"></div>
+        </div>
+        <div id="admin-users-liste"></div>
+    `;
+    setTimeout(() => {
+        const s = document.getElementById('admin-search');
+        if (s) s.value = '';
+        _filtrerAdminUsers();
+    }, 50);
+}
+
+function _toggleCreerForm() {
+    const f = document.getElementById('admin-creer-form');
+    const b = document.getElementById('btn-creer-user');
+    if (!f || !b) return;
+    const visible = f.style.display !== 'none';
+    f.style.display = visible ? 'none' : 'block';
+    b.innerHTML     = visible ? '➕ Créer un utilisateur' : '✕ Fermer';
+    if (!visible) {
+        setTimeout(() => {
+            const u = document.getElementById('new-username');
+            const p = document.getElementById('new-password');
+            const r = document.getElementById('new-role');
+            const m = document.getElementById('create-msg');
+            if (u) u.value = '';
+            if (p) p.value = '';
+            if (r) r.value = 'user';
+            if (m) m.textContent = '';
+            if (u) u.focus();
+        }, 50);
+    }
+}
+
+function _filtrerAdminUsers() {
+    const q     = (document.getElementById('admin-search')?.value || '').toLowerCase().trim();
+    const users = (window._adminUsersCache || [])
+        .filter(u =>
+            !q
+            || u.username.toLowerCase().includes(q)
+            || (u.prenom && u.prenom.toLowerCase().includes(q))
+            || (u.nom    && u.nom.toLowerCase().includes(q))
+        )
+        .sort((a, b) => {
+            if (a.role === 'admin' && b.role !== 'admin') return -1;
+            if (a.role !== 'admin' && b.role === 'admin') return  1;
+            const nomA    = (a.nom    || a.username).toLowerCase();
+            const nomB    = (b.nom    || b.username).toLowerCase();
+            const prenomA = (a.prenom || '').toLowerCase();
+            const prenomB = (b.prenom || '').toLowerCase();
+            if (nomA !== nomB) return nomA.localeCompare(nomB, 'fr');
+            return prenomA.localeCompare(prenomB, 'fr');
+        });
+    const el = document.getElementById('admin-users-liste');
+    if (!el) return;
+    el.innerHTML = users.length ? users.map(u => {
+        const initiale  = (u.prenom ? u.prenom[0] : u.username[0]).toUpperCase();
+        const affichage = (u.prenom && u.nom)
+            ? u.prenom + ' ' + u.nom.toUpperCase()
+            : u.username;
+        return `
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff;
+                    border:1px solid #e5e7eb;border-radius:10px;margin-bottom:8px">
+            <div class="as-login-avatar ${u.role === 'admin' ? 'as-av-admin' : 'as-av-user'}"
+                 style="width:36px;height:36px;font-size:15px;flex-shrink:0">${initiale}</div>
+            <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:700;color:#1e1b4b;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                    ${affichage}
+                    <span class="as-badge ${u.role === 'admin' ? 'as-badge-admin' : 'as-badge-user'}">${u.role}</span>
+                </div>
+                <div style="font-size:11px;color:#9ca3af;margin-top:2px">
+                    ${u.lastActivity
+                        ? _formatDateComplete(u.lastActivity) + ' — ' + _formatDateRelative(u.lastActivity)
+                        : 'Jamais actif'}
+                </div>
+            </div>
+            <div style="display:flex;gap:4px;flex-shrink:0">
+                <button class="au-btn au-btn-role" title="${u.role === 'admin' ? 'Passer user' : 'Passer admin'}"
+                    onclick="adminToggleRole(${u.id},'${u.role}')">${u.role === 'admin' ? '↓' : '↑'}</button>
+                <button class="au-btn au-btn-key"  title="Changer MDP"
+                    onclick="adminResetPwd(${u.id},'${u.username}')">🔑</button>
+                <button class="au-btn au-btn-edit" title="Éditer"
+                    onclick="adminEditerProfil(${u.id},'${u.username}')">✏️</button>
+                <button class="au-btn au-btn-del"  title="Supprimer"
+                    onclick="adminSupprimerUser(${u.id},'${u.username}')">🗑️</button>
+            </div>
+        </div>`;
+    }).join('') : '<p style="color:#9ca3af;font-size:13px;text-align:center;padding:12px 0">Aucun résultat.</p>';
+}
+
+// ===================== ÉDITION PROFIL PAR ADMIN ==============
+
+async function adminEditerProfil(id, username) {
+    const user = getUser();
+    const el   = document.getElementById('admin-tab-users');
+    el.innerHTML = '<p style="color:#9ca3af;text-align:center;padding:20px 0">Chargement...</p>';
+    try {
+        const r = await fetch(`/api/admin/users/${id}/profil`, {
+            headers: { 'Authorization': `Bearer ${user.token}` }
+        });
+        const d = await r.json();
+        if (!d.success) { el.innerHTML = `<p style="color:#ef4444">${d.message}</p>`; return; }
+        const p = d.profil || {};
+        const u = d.user;
+        el.innerHTML = `
+            <div class="user-card">
+                <div style="font-size:15px;font-weight:700;color:#1e1b4b;margin-bottom:16px">
+                    ✏️ Éditer — <span style="color:#4f46e5">${u.username}</span>
+                </div>
+                <div class="section-title">Compte</div>
+                <div style="margin-bottom:14px">
+                    <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Nom d'utilisateur</label>
+                    <input id="edit-username" type="text" value="${u.username}"
+                        style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;box-sizing:border-box">
+                </div>
+                <div class="section-title">Profil</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+                    <div>
+                        <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Prénom</label>
+                        <input id="edit-prenom" type="text" value="${p.prenom||''}"
+                            style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;box-sizing:border-box">
+                    </div>
+                    <div>
+                        <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Nom</label>
+                        <input id="edit-nom" type="text" value="${p.nom||''}"
+                            style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;box-sizing:border-box">
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+                    <div>
+                        <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Téléphone</label>
+                        <input id="edit-telephone" type="text" value="${p.telephone||''}"
+                            style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;box-sizing:border-box">
+                    </div>
+                    <div>
+                        <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Profession</label>
+                        <input id="edit-profession" type="text" value="${p.profession||''}"
+                            style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;box-sizing:border-box">
+                    </div>
+                </div>
+                <div style="margin-bottom:10px">
+                    <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Email</label>
+                    <input id="edit-email" type="email" value="${p.email||''}"
+                        style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;box-sizing:border-box">
+                </div>
+                <div style="margin-bottom:10px">
+                    <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Date de naissance</label>
+                    <input id="edit-naissance" type="date" value="${p.date_naissance ? p.date_naissance.split('T')[0] : ''}"
+                        style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box">
+                </div>
+                <div style="margin-bottom:16px">
+                    <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Note</label>
+                    <textarea id="edit-note" rows="3"
+                        style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;resize:none;font-family:inherit;box-sizing:border-box">${p.note||''}</textarea>
+                </div>
+                <div style="display:flex;gap:8px">
+                    <button class="ua-btn ua-btn-blue" style="flex:1" onclick="adminSauvegarderProfil(${id})">💾 Sauvegarder</button>
+                    <button class="ua-btn" style="flex:1;background:#f3f4f6;color:#374151" onclick="chargerAdminUsers()">Annuler</button>
+                </div>
+                <div id="edit-msg" style="margin-top:10px;font-size:13px;text-align:center"></div>
+            </div>
+        `;
+    } catch {
+        el.innerHTML = '<p style="color:#ef4444;font-size:13px;text-align:center">Erreur réseau.</p>';
+    }
+}
+
+async function adminSauvegarderProfil(id) {
+    const user       = getUser();
+    const msg        = document.getElementById('edit-msg');
+    const username   = document.getElementById('edit-username')?.value?.trim();
+    const prenom     = document.getElementById('edit-prenom')?.value?.trim();
+    const nom        = document.getElementById('edit-nom')?.value?.trim();
+    const telephone  = document.getElementById('edit-telephone')?.value?.trim();
+    const profession = document.getElementById('edit-profession')?.value?.trim();
+    const email      = document.getElementById('edit-email')?.value?.trim();
+    const naissance  = document.getElementById('edit-naissance')?.value;
+    const note       = document.getElementById('edit-note')?.value?.trim();
+    try {
+        const r = await fetch(`/api/admin/users/${id}/profil`, {
+            method : 'PATCH',
+            headers: {
+                'Content-Type' : 'application/json',
+                'Authorization': `Bearer ${user.token}`
+            },
+            body: JSON.stringify({ username, prenom, nom, telephone, profession, email, date_naissance: naissance, note })
+        });
+        const d = await r.json();
+        if (msg) {
+            msg.style.color = d.success ? '#16a34a' : '#ef4444';
+            msg.textContent = d.success ? '✅ Profil mis à jour.' : (d.message || 'Erreur.');
+        }
+        if (d.success) setTimeout(() => chargerAdminUsers(), 1200);
+    } catch {
+        if (msg) { msg.style.color = '#ef4444'; msg.textContent = 'Erreur réseau.'; }
+    }
+}
+
+// ===================== TOGGLE ROLE ===========================
+
+async function adminToggleRole(id, roleActuel) {
+    const user    = getUser();
+    const newRole = roleActuel === 'admin' ? 'user' : 'admin';
+    try {
+        const r = await fetch(`/api/admin/users/${id}/role`, {
+            method : 'PATCH',
+            headers: {
+                'Content-Type' : 'application/json',
+                'Authorization': `Bearer ${user.token}`
+            },
+            body: JSON.stringify({ role: newRole })
+        });
+        const d = await r.json();
+        if (d.success) chargerAdminUsers();
+        else { const m = document.createElement('p'); m.textContent = d.message || 'Erreur.'; }
+    } catch { /* silencieux */ }
+}
+
+// ===================== RESET MOT DE PASSE ====================
+
+function adminResetPwd(id, username) {
+    const el = document.getElementById('admin-tab-users');
+    el.innerHTML = `
+        <div class="user-card">
+            <div class="user-card-name" style="margin-bottom:4px">🔑 Nouveau MDP — <strong>${username}</strong></div>
+            <div style="font-size:11px;color:#9ca3af;margin-bottom:12px">8 car. min · majuscule · minuscule · chiffre · spécial</div>
+            <input type="password" id="admin-new-pwd" placeholder="Nouveau mot de passe"
+                autocomplete="new-password" name="admin-pwd-field"
+                style="width:100%;padding:10px 12px;font-size:14px;outline:none;box-sizing:border-box;margin-bottom:10px">
+            <div style="display:flex;gap:8px">
+                <button class="ua-btn ua-btn-blue" style="flex:1" onclick="adminConfirmResetPwd(${id})">✓ Confirmer</button>
+                <button class="ua-btn" style="flex:1;background:#f3f4f6;color:#374151" onclick="chargerAdminUsers()">Annuler</button>
+            </div>
+            <div id="admin-pwd-msg" style="margin-top:8px;font-size:13px;color:#ef4444;text-align:center"></div>
+        </div>
+    `;
+    setTimeout(() => {
+        const f = document.getElementById('admin-new-pwd');
+        if (f) { f.value = ''; f.focus(); }
+    }, 50);
+}
+
+async function adminConfirmResetPwd(id) {
+    const user   = getUser();
+    const pwd    = document.getElementById('admin-new-pwd')?.value;
+    const msg    = document.getElementById('admin-pwd-msg');
+    const erreur = validerMotDePasse(pwd || '');
+    if (erreur) { if (msg) msg.textContent = erreur; return; }
+    try {
+        const r = await fetch(`/api/admin/users/${id}/password`, {
+            method : 'PATCH',
+            headers: {
+                'Content-Type' : 'application/json',
+                'Authorization': `Bearer ${user.token}`
+            },
+            body: JSON.stringify({ password: pwd })
+        });
+        const d = await r.json();
+        if (d.success) chargerAdminUsers();
+        else if (msg) msg.textContent = d.message || 'Erreur.';
+    } catch {
+        if (msg) msg.textContent = 'Erreur réseau.';
+    }
+}
+
+// ===================== SUPPRIMER UTILISATEUR =================
+
+function adminSupprimerUser(id, username) {
+    const el = document.getElementById('admin-tab-users');
+    el.innerHTML = `
+        <div class="user-card" style="border-color:#fee2e2;background:#fff5f5">
+            <div style="font-size:32px;text-align:center;margin-bottom:8px">🗑️</div>
+            <div class="user-card-name" style="text-align:center;margin-bottom:16px">
+                Confirmer la suppression de <strong>${username}</strong> ?
+            </div>
+            <div style="display:flex;gap:8px">
+                <button class="ua-btn ua-btn-red" style="flex:1" onclick="adminConfirmSupprimer(${id})">Confirmer</button>
+                <button class="ua-btn" style="flex:1;background:#f3f4f6;color:#374151" onclick="chargerAdminUsers()">Annuler</button>
+            </div>
+        </div>
+    `;
+}
+
+async function adminConfirmSupprimer(id) {
+    const user = getUser();
+    try {
+        const r = await fetch(`/api/admin/users/${id}`, {
+            method : 'DELETE',
+            headers: {
+                'Content-Type' : 'application/json',
+                'Authorization': `Bearer ${user.token}`
+            }
+        });
+        const d = await r.json();
+        if (d.success) chargerAdminUsers();
+        else {
+            const el  = document.getElementById('admin-tab-users');
+            if (el) el.innerHTML += `<p style="color:#ef4444;font-size:13px;text-align:center;margin-top:8px">${d.message || 'Erreur.'}</p>`;
+        }
+    } catch { /* silencieux */ }
+}
+
+// ===================== CRÉER UTILISATEUR =====================
+
+async function creerUser() {
+    const user     = getUser();
+    const username = document.getElementById('new-username')?.value?.trim();
+    const password = document.getElementById('new-password')?.value;
+    const role     = document.getElementById('new-role')?.value;
+    const msg      = document.getElementById('create-msg');
+    if (!username || !password) {
+        if (msg) { msg.style.color = '#ef4444'; msg.textContent = 'Champs requis.'; }
+        return;
+    }
+    const erreur = validerMotDePasse(password);
+    if (erreur) {
+        if (msg) { msg.style.color = '#ef4444'; msg.textContent = erreur; }
+        return;
+    }
+    try {
+        const r = await fetch('/api/admin/users', {
+            method : 'POST',
+            headers: {
+                'Content-Type' : 'application/json',
+                'Authorization': `Bearer ${user.token}`
+            },
+            body: JSON.stringify({ username, password, role })
+        });
+        const d = await r.json();
+        if (msg) {
+            msg.style.color = d.success ? '#16a34a' : '#ef4444';
+            msg.textContent = d.success
+                ? `✅ "${username}" créé avec succès.`
+                : (d.message || 'Erreur.');
+        }
+        if (d.success) {
+            document.getElementById('new-username').value = '';
+            document.getElementById('new-password').value = '';
+            document.getElementById('new-role').value     = 'user';
+            setTimeout(() => chargerAdminUsers(), 1200);
+        }
+    } catch {
+        if (msg) { msg.style.color = '#ef4444'; msg.textContent = 'Erreur réseau.'; }
+    }
+}
+
+// ===================== SWITCH ONGLETS ========================
+
+function switchAdminTab(tab) {
+    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelector(`.admin-tab[data-tab="${tab}"]`)?.classList.add('active');
+    document.getElementById(`admin-tab-${tab}`)?.classList.add('active');
+    if (tab === 'stats') chargerAdminStats();
+    if (tab === 'users') chargerAdminUsers();
+}
+
+// ===================== VALIDATION MDP (client) ===============
+
+function validerMotDePasse(pwd) {
+    if (!pwd || pwd.length < 8)         return 'Minimum 8 caractères.';
+    if (!/[A-Z]/.test(pwd))             return 'Au moins une majuscule.';
+    if (!/[a-z]/.test(pwd))             return 'Au moins une minuscule.';
+    if (!/[0-9]/.test(pwd))             return 'Au moins un chiffre.';
+    if (!/[^A-Za-z0-9]/.test(pwd))     return 'Au moins un caractère spécial.';
+    return null;
+}
