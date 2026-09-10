@@ -1082,6 +1082,10 @@ async function _marquerLu(interlocuteurId) {
 
 async function _ouvrirSelectUser() {
     try {
+        // [NOUVEAU] On pousse un état pour la vue "recherche utilisateur"
+        history.pushState({ tchat: 'select' }, '', '#tchat-select');
+        _historyDepth++;
+
         const r = await fetch('/api/tchat/users', { headers: _authHeaders() });
         const d = await r.json();
         if (!d.success) return;
@@ -1151,7 +1155,7 @@ async function _ouvrirSelectUser() {
             </div>`;
 
         document.getElementById('tchat-retour-select').addEventListener('click', () => {
-            _afficherVueListe(false);
+            history.back(); // Utilisation de l'historique au lieu de forcer l'affichage
         });
 
         document.getElementById('tchat-select-user-search').addEventListener('input', (e) => {
@@ -1207,11 +1211,11 @@ async function _rafraichirBadgeBulle() {
 window.addEventListener('popstate', (e) => {
     if (_ouvert) {
         if (e.state && e.state.tchat === 'liste') {
-            // On a fait "retour" depuis une conversation vers la liste
+            // On a fait "retour" depuis une conversation ou une recherche vers la liste
             _afficherVueListe(false);
             _historyDepth--;
         } else if (!e.state || !e.state.tchat) {
-            // On a fait "retour" depuis la liste vers la fermeture du tchat (ou depuis une modale photo si la modale ne gère pas son propre stopPropagation correctement, mais normalement modale gère ça)
+            // On a fait "retour" depuis la liste vers la fermeture du tchat
             _fermerTchat(true);
         }
     }
