@@ -19,7 +19,7 @@ window.addEventListener('popstate', (e) => {
 async function openModal(type) {
     document.getElementById('overlay').classList.add('on');
     document.body.classList.add('modal-open');
-    
+
     // Ajout d'une entrée dans l'historique pour intercepter le retour Android
     history.pushState({ modalOpen: true }, '', '');
 
@@ -215,6 +215,7 @@ async function openModal(type) {
                         .profil-tab-label { display: none; }
                     }
                 </style>
+                <div id="profil-modal">
                 <div style="display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid #f3f4f6;">
                     <button class="profil-tab active" data-tab="infos"
                         style="flex:1;padding:10px 4px;border:none;background:none;cursor:pointer;
@@ -305,7 +306,7 @@ async function openModal(type) {
                                 style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
                             <input type="hidden" id="p-naissance-lat" value="${p.naissance_lat||''}">
                             <input type="hidden" id="p-naissance-lon" value="${p.naissance_lon||''}">
-                            <div id="p-lieu-naissance-msg" style="font-size:12px;margin-top:4px;min-height:16px;
+                            <div id="p-lieu-naissance-msg" style="font-size:12px;                                margin-top:4px;min-height:16px;
                                 ${p.naissance_lat ? 'color:#10b981' : 'color:#9ca3af'}">
                                 ${p.naissance_lat ? '✅ Coordonnées enregistrées' : ''}
                             </div>
@@ -542,9 +543,10 @@ async function openModal(type) {
                     </div>
                     <div id="social-tab-content" style="background:rgba(255,255,255,0.92); border:1px solid rgba(255,255,255,0.95); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.08);"></div>
                 </div>
+                </div>
             `;
 
-            // ── Injection V3 : Bloc "Suivi Médical" dans l'onglet Santé ──
+                        // ── Injection V3 : Bloc "Suivi Médical" dans l'onglet Santé ──
             // Ajouté ici car openModal() reconstruit tout le HTML de la modale
             // (avec le "p" déjà récupéré ci-dessus par le fetch de cette fonction).
             _injecterChampsAllergies(p);
