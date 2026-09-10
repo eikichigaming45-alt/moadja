@@ -45,7 +45,7 @@ const SIGNES_ASTRO = [
     { cle: 'lion',       label: 'Lion',       emoji: '♌', mois: 8,  jour: 23 },
     { cle: 'vierge',     label: 'Vierge',     emoji: '♍', mois: 9,  jour: 23 },
     { cle: 'balance',    label: 'Balance',    emoji: '♎', mois: 10, jour: 23 },
-        { cle: 'scorpion',   label: 'Scorpion',   emoji: '♏', mois: 11, jour: 22 },
+    { cle: 'scorpion',   label: 'Scorpion',   emoji: '♏', mois: 11, jour: 22 },
     { cle: 'sagittaire', label: 'Sagittaire', emoji: '♐', mois: 12, jour: 22 },
     { cle: 'capricorne', label: 'Capricorne', emoji: '♑', mois: 12, jour: 31 },
 ];
@@ -155,9 +155,11 @@ router.post('/', authenticateToken, async (req, res) => {
             telephone       != null && telephone       !== '' ? telephone       : null,
             profession      != null && profession      !== '' ? profession      : null,
             note            != null && note            !== '' ? note            : null,
-            signe_zodiaque  != null && signe_zodiaque  !== '' ? signe_zodiaque  : null,
+            // FIX signe_zodiaque : distinguer "champ absent" (undefined -> ne pas toucher)
+            // de "champ envoyé vide" ('' -> reset explicite vers calcul auto).
+            signe_zodiaque  !== undefined ? signe_zodiaque : null,
             sexe            != null && sexe            !== '' ? sexe            : null,
-                        taille          != null                           ? String(taille)  : null,
+            taille          != null                           ? String(taille)  : null,
             poids           != null                           ? String(poids)   : null,
             groupe_sanguin  != null && groupe_sanguin  !== '' ? groupe_sanguin  : null,
             niveau_activite != null && niveau_activite !== '' ? niveau_activite : null,
