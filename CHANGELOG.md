@@ -1,3 +1,17 @@
+## MoaDja
+
+## v1.71.33 - 10-09-2026
+
+### ✨ Nouveau
+- Ajout d'une nouvelle section "Suivi médical" dans l'onglet Santé de Mon Profil : traitements en cours, diabète et cholestérol.
+
+### 🔧 Corrections
+- Le nouveau bloc "Suivi médical" ne s'affichait pas toujours dans la fenêtre de profil - corrigé.
+- Les informations saisies dans "Traitements en cours", "Diabète" et "Cholestérol" ne s'enregistraient pas et revenaient vides à la réouverture - corrigé, vos données sont désormais bien conservées.
+- Un incident technique temporaire empêchait l'ouverture complète de la fenêtre "Mon Profil" - résolu rapidement.
+
+---
+
 ## v1.71.23 - 09-09-2026
 
 ### ✨ Nouveau
