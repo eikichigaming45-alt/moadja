@@ -41,7 +41,7 @@
             .mobile-chat-btn { display: none !important; }
         }
         @media (max-width: 768px) {
-            .mobile-chat-btn { display: inline-flex !important; position: relative; }
+            .mobile-chat-btn { display: inline-flex !important; }
         }
     </style>
 </head>
@@ -90,6 +90,8 @@
         <div class="topbar-right" style="position:relative; display:flex; align-items:center; gap:8px;">
 
             <!-- Cloche notifications (icône vectorielle épurée) — ferme la recherche au clic -->
+            <!-- FIX badge tronqué : badge sorti du bouton, positionné sur le wrapper (non soumis
+                 à un éventuel overflow:hidden / border-radius de .icon-btn) -->
             <div style="position:relative;display:inline-flex">
                 <button class="icon-btn" id="btn-cloche" onclick="document.getElementById('search-toggle').checked=false;togglePanelNotifs(event)" title="Notifications">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -114,14 +116,20 @@
                     border:2px solid #7C3AED;
                     pointer-events:none;
                     line-height:1;
+                    z-index:1;
                 "></span>
             </div>
 
             <!-- Bouton Tchat Mobile (Visible uniquement sur mobile via CSS) — ferme la recherche au clic -->
-            <button class="icon-btn mobile-chat-btn" id="btn-tchat-mobile-header" onclick="document.getElementById('search-toggle').checked=false;window.Tchat && Tchat.toggle()" title="Messages">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                </svg>
+            <!-- FIX badge tronqué : badge sorti du bouton (span devenu sibling), positionné
+                 sur le wrapper englobant. Le bouton .icon-btn (souvent overflow:hidden / rond)
+                 ne clippe plus le badge qui dépassait via ses offsets négatifs. -->
+            <div style="position:relative;display:inline-flex">
+                <button class="icon-btn mobile-chat-btn" id="btn-tchat-mobile-header" onclick="document.getElementById('search-toggle').checked=false;window.Tchat && Tchat.toggle()" title="Messages">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </button>
                 <span id="tchat-topbar-badge" style="
                     display:none;
                     position:absolute;
@@ -139,8 +147,9 @@
                     border:2px solid #7C3AED;
                     pointer-events:none;
                     line-height:1;
+                    z-index:1;
                 "></span>
-            </button>
+            </div>
 
             <!-- Icône Recherche Mobile (label lié à la checkbox, même style que les autres icônes) — placée à droite du Tchat -->
             <label for="search-toggle" class="icon-btn mobile-search-btn" id="btn-recherche-mobile" title="Rechercher">
