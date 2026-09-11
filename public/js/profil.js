@@ -724,7 +724,6 @@ async function afficherSectionWidgets() {
     if (!zone || !user?.token) return;
 
     const WIDGETS_DISPONIBLES = [
-        { id:'meteo',            label:'☁️ Météo' },
         { id:'priere',           label:'🙏 Prière du jour' },
         { id:'islam',            label:'🕌 Prières & Hadiths' },
         { id:'taches',           label:'✅ Tâches du jour' },
