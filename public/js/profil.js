@@ -478,7 +478,7 @@ async function validerCrop() {
                 btnSuppr               = document.createElement('button');
                 btnSuppr.id            = 'btn-supprimer-photo';
                 btnSuppr.className     = 'btn-delete';
-                btnSuppr.onclick       = supprimerPhoto;
+                               btnSuppr.onclick       = supprimerPhoto;
                 btnSuppr.style.cssText = 'margin-top:8px;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer';
                 btnSuppr.innerHTML     = '🗑️ Supprimer la photo';
                 preview.insertAdjacentElement('afterend', btnSuppr);
@@ -724,15 +724,16 @@ async function afficherSectionWidgets() {
     if (!zone || !user?.token) return;
 
     const WIDGETS_DISPONIBLES = [
-        { id:'meteo',          label:'☁️ Météo' },
-        { id:'priere',         label:'🙏 Prière du jour' },
-        { id:'islam',          label:'🕌 Prières & Hadiths' },
-        { id:'taches',         label:'✅ Tâches du jour' },
-        { id:'anniversaires',  label:'🎂 Anniversaires' },
-        { id:'cycle',          label:'🌙 Suivi du cycle' },
-        { id:'astrologie',     label:'✨ Astrologie' },
-        { id:'theme-astral',   label:'🔮 Thème Astral' },
-        { id:'agenda-unifie',  label:'📅 Mon Agenda' },
+        { id:'meteo',            label:'☁️ Météo' },
+        { id:'priere',           label:'🙏 Prière du jour' },
+        { id:'islam',            label:'🕌 Prières & Hadiths' },
+        { id:'taches',           label:'✅ Tâches du jour' },
+        { id:'anniversaires',    label:'🎂 Anniversaires' },
+        { id:'cycle',            label:'🌙 Suivi du cycle' },
+        { id:'astrologie',       label:'✨ Astrologie' },
+        { id:'theme-astral',     label:'🔮 Thème Astral' },
+        { id:'pierre-naissance', label:'💎 Pierre de naissance' },
+        { id:'agenda-unifie',    label:'📅 Mon Agenda' },
     ];
 
     try {
@@ -911,7 +912,7 @@ async function _injecterProfilPublicToggles() {
                 <span style="font-size:13px;color:#374151;flex:1">${c.label}</span>
                 <label style="position:relative;display:inline-flex;align-items:center;
                               width:38px;height:22px;flex-shrink:0;cursor:pointer">
-                                        <input type="checkbox" class="profil-public-toggle-check" data-champ="${c.id}"
+                    <input type="checkbox" class="profil-public-toggle-check" data-champ="${c.id}"
                         ${actif ? 'checked' : ''}
                         style="opacity:0;width:0;height:0;position:absolute">
                     <span style="position:absolute;inset:0;border-radius:22px;cursor:pointer;
