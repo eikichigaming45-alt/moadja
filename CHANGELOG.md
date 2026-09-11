@@ -1,5 +1,13 @@
 ## MoaDja
 
+## v1.82 - 11-09-2026 🏷️ Stable
+
+### 🔧 Corrections
+- Le signe du zodiaque pouvait s'afficher différemment entre le widget "Profil" et le widget "Astrologie" pour les personnes nées un jour de bascule entre deux signes (ex : 23 octobre) - les deux widgets utilisent désormais le même calcul et affichent toujours le même signe.
+- Sur mobile, le badge de notification du Tchat (petit nombre rouge sur l'icône messages) s'affichait parfois coupé ou tronqué - il s'affiche désormais entièrement, quel que soit le nombre de messages en attente.
+
+---
+
 ## v1.81 - 11-09-2026
 
 ### ✨ Nouveau
