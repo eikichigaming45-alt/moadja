@@ -52,25 +52,26 @@ if (!process.env.VAPID_MAILTO || !process.env.VAPID_PUBLIC_KEY || !process.env.V
 }
 
 // ── Routes ────────────────────────────────────────────────────
-app.use('/api',               require('./routes/auth').router);
-app.use('/api',               require('./routes/changelog'));
-app.use('/api/profil',        require('./routes/profil'));
-app.use('/api/sante',         require('./routes/sante'));
-app.use('/api/widget-order',  require('./routes/widgets'));
-app.use('/api/taches',        require('./routes/taches'));
-app.use('/api/anniversaires', require('./routes/anniversaires'));
-app.use('/api/push',          require('./routes/push').router);
-app.use('/api/priere',        require('./routes/priere'));
-app.use('/api/islam',         require('./routes/islam'));
-app.use('/api/admin',         require('./routes/admin'));
-app.use('/api/cycle',         require('./routes/cycle'));
-app.use('/api/agenda',        require('./routes/agenda'));
-app.use('/api/astrologie',    require('./routes/astrologie'));
-app.use('/api/theme-astral',  require('./routes/theme-astral'));
-app.use('/api/feed',          require('./routes/feed'));
-app.use('/api/social',        require('./routes/social'));
-app.use('/api/eclats',        require('./routes/eclats'));
-app.use('/api/tchat',         tchatRouter);
+app.use('/api',                  require('./routes/auth').router);
+app.use('/api',                  require('./routes/changelog'));
+app.use('/api/profil',           require('./routes/profil'));
+app.use('/api/sante',            require('./routes/sante'));
+app.use('/api/widget-order',     require('./routes/widgets'));
+app.use('/api/taches',           require('./routes/taches'));
+app.use('/api/anniversaires',    require('./routes/anniversaires'));
+app.use('/api/push',             require('./routes/push').router);
+app.use('/api/priere',           require('./routes/priere'));
+app.use('/api/islam',            require('./routes/islam'));
+app.use('/api/admin',            require('./routes/admin'));
+app.use('/api/cycle',            require('./routes/cycle'));
+app.use('/api/agenda',           require('./routes/agenda'));
+app.use('/api/astrologie',       require('./routes/astrologie'));
+app.use('/api/theme-astral',     require('./routes/theme-astral'));
+app.use('/api/pierre-naissance', require('./routes/pierre-naissance'));
+app.use('/api/feed',             require('./routes/feed'));
+app.use('/api/social',           require('./routes/social'));
+app.use('/api/eclats',           require('./routes/eclats'));
+app.use('/api/tchat',            tchatRouter);
 
 // ── Socket.io — authentification middleware ───────────────────
 io.use((socket, next) => {
