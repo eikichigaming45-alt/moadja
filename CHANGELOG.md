@@ -1,5 +1,15 @@
 ## MoaDja
 
+## v1.81 - 11-09-2026
+
+### ✨ Nouveau
+- Nouveau widget "Pierre de naissance" dans l'onglet Astral : découvrez la pierre associée à votre signe astrologique, accompagnée d'une courte présentation de sa symbolique et de son chakra.
+- Chaque pierre est illustrée par une jolie photo, présentée dans une carte assortie au reste de l'application.
+- Si votre date de naissance n'est pas encore renseignée, un message bienveillant vous invite à la compléter dans votre profil pour profiter de cette nouveauté.
+- Comme les autres modules, ce widget peut être affiché ou masqué à volonté depuis les réglages de widgets de votre profil.
+
+---
+
 ## v1.80 - 10-09-2026
 
 ### ✨ Nouveau
