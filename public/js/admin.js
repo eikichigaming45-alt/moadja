@@ -171,9 +171,7 @@ async function chargerAdminStats() {
                         <div class="as-contrib-medal">${medailles[i]}</div>
                         <div class="as-login-avatar ${u.role === 'admin' ? 'as-av-admin' : 'as-av-user'}">${initiale}</div>
                         <div class="as-contrib-info">
-                            <div class="as-contrib-name">${affichage}
-                                <span class="as-badge ${u.role === 'admin' ? 'as-badge-admin' : 'as-badge-user'}">${u.role}</span>
-                            </div>
+                            <div class="as-contrib-name">${affichage}</div>
                             <div class="as-contrib-detail">${details || 'Aucune activité'}</div>
                         </div>
                         <div class="as-contrib-score">${u.score} pts</div>
@@ -208,13 +206,11 @@ async function chargerAdminStats() {
                     const affichage = (u.prenom && u.nom)
                         ? u.prenom + ' ' + u.nom.toUpperCase()
                         : u.username;
-                    return `
+                                        return `
                     <div class="as-login-row">
                         <div class="as-login-avatar ${u.role === 'admin' ? 'as-av-admin' : 'as-av-user'}">${initiale}</div>
                         <div class="as-login-info">
-                            <div class="as-login-name">${affichage}
-                                <span class="as-badge ${u.role === 'admin' ? 'as-badge-admin' : 'as-badge-user'}">${u.role}</span>
-                            </div>
+                            <div class="as-login-name">${affichage}</div>
                             <div class="as-login-date">${u.lastActivity ? _formatDateComplete(u.lastActivity) : 'Jamais actif'}</div>
                         </div>
                         <div class="as-login-relative">${_formatDateRelative(u.lastActivity)}</div>
@@ -582,7 +578,7 @@ async function adminConfirmSupprimer(id) {
                 'Authorization': `Bearer ${user.token}`
             }
         });
-        const d = await r.json();
+                const d = await r.json();
         if (d.success) chargerAdminUsers();
         else {
             const el  = document.getElementById('admin-tab-users');
