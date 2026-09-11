@@ -14,6 +14,16 @@ window.addEventListener('popstate', (e) => {
     }
 });
 
+// ── ÉCOUTEUR TOUCHE ÉCHAP (Correctif v1.83.3) ──
+// Nouveau moyen de fermeture volontaire d'une modale, en remplacement
+// du clic extérieur (désormais désactivé, voir closeOutside() plus bas)
+// pour éviter toute perte de saisie accidentelle.
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.body.classList.contains('modal-open')) {
+        closeModal();
+    }
+});
+
 // ===================== OUVERTURE MODALE ======================
 
 async function openModal(type) {
@@ -304,7 +314,7 @@ async function openModal(type) {
                                 value="${p.lieu_naissance||''}"
                                 onblur="geocoderLieuNaissance()"
                                 style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
-                            <input type="hidden" id="p-naissance-lat" value="${p.naissance_lat||''}">
+                                                        <input type="hidden" id="p-naissance-lat" value="${p.naissance_lat||''}">
                             <input type="hidden" id="p-naissance-lon" value="${p.naissance_lon||''}">
                             <div id="p-lieu-naissance-msg" style="font-size:12px;                                margin-top:4px;min-height:16px;
                                 ${p.naissance_lat ? 'color:#10b981' : 'color:#9ca3af'}">
@@ -533,7 +543,7 @@ async function openModal(type) {
                                    box-shadow:0 8px 24px rgba(167,139,250,0.25);backdrop-filter:blur(8px);transition:all 0.3s ease;">
                             Ce que je partage
                         </button>
-                        <button id="social-tab-nouveau"
+                                                <button id="social-tab-nouveau"
                             data-action="social-onglet"
                             data-onglet="nouveau"
                             style="flex:1;padding:12px;border:none;background:transparent;
@@ -676,6 +686,11 @@ function closeModal(skipHistory = false) {
     }
 }
 
+// Correctif v1.83.3 : le clic sur l'overlay (en dehors de la modale) ne ferme
+// plus la fenêtre. Cela évite la perte de saisie en cas de clic accidentel
+// pendant une saisie de formulaire (Profil, Widgets, création utilisateur...).
+// Fermeture désormais possible uniquement via le bouton ✕, la touche Échap,
+// ou le bouton retour Android (gérés ailleurs dans ce fichier).
 function closeOutside(e) {
-    if (e.target === document.getElementById('overlay')) closeModal();
+    // Volontairement neutralisé — ne fait plus rien.
 }
