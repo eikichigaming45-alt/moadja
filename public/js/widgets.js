@@ -15,7 +15,7 @@ function resetGrid() {
 const WIDGETS_PAR_ONGLET = {
     quotidien : ['agenda', 'taches', 'priere', 'islam', 'anniversaires', 'social'],
     bienetre  : ['cycle', 'sante'],
-    astral    : ['astrologie', 'theme-astral'],
+    astral    : ['astrologie', 'theme-astral', 'pierre-naissance'],
     profil    : ['profil', 'admin'],
     apropos   : ['faq', 'changelog']
 };
@@ -102,6 +102,7 @@ async function buildGrid() {
     if (typeof chargerWidgetSocial        === 'function')  chargerWidgetSocial();
     if (typeof chargerWidgetSante         === 'function')  chargerWidgetSante();
     if (typeof chargerThemeAstral         === 'function')  chargerThemeAstral();
+    if (typeof chargerPierreNaissance     === 'function')  chargerPierreNaissance();
     if (typeof chargerWidgetAnniversaires === 'function')  chargerWidgetAnniversaires();
     if (typeof chargerWidgetAdmin         === 'function')  chargerWidgetAdmin();
     if (typeof chargerAstrologie          === 'function')  chargerAstrologie();
@@ -166,15 +167,16 @@ function creerWidget(def, gridId) {
     div.draggable    = true;
 
     let contentHtml = def.desc || '';
-    if (def.id === 'agenda')        contentHtml = '<div id="wc-agenda">Chargement...</div>';
-    if (def.id === 'cycle')         contentHtml = '<div id="widget-cycle-content">Chargement...</div>';
-    if (def.id === 'profil')        contentHtml = '<div id="wc-profil"></div>';
-    if (def.id === 'astrologie')    contentHtml = '<div id="wc-astrologie">Chargement...</div>';
-    if (def.id === 'theme-astral')  contentHtml = '<div id="wc-theme-astral">Chargement...</div>';
-    if (def.id === 'admin')         contentHtml = '<div id="wc-admin">Chargement...</div>';
-    if (def.id === 'social')        contentHtml = '<div id="wc-social">Chargement...</div>';
-    if (def.id === 'sante')         contentHtml = '<div id="wc-sante">Chargement...</div>';
-    if (def.id === 'anniversaires') contentHtml = '<div id="wc-anniversaires">Chargement...</div>';
+    if (def.id === 'agenda')            contentHtml = '<div id="wc-agenda">Chargement...</div>';
+    if (def.id === 'cycle')             contentHtml = '<div id="widget-cycle-content">Chargement...</div>';
+    if (def.id === 'profil')            contentHtml = '<div id="wc-profil"></div>';
+    if (def.id === 'astrologie')        contentHtml = '<div id="wc-astrologie">Chargement...</div>';
+    if (def.id === 'theme-astral')      contentHtml = '<div id="wc-theme-astral">Chargement...</div>';
+    if (def.id === 'pierre-naissance')  contentHtml = '<div id="wc-pierre-naissance">Chargement...</div>';
+    if (def.id === 'admin')             contentHtml = '<div id="wc-admin">Chargement...</div>';
+    if (def.id === 'social')            contentHtml = '<div id="wc-social">Chargement...</div>';
+    if (def.id === 'sante')             contentHtml = '<div id="wc-sante">Chargement...</div>';
+    if (def.id === 'anniversaires')     contentHtml = '<div id="wc-anniversaires">Chargement...</div>';
 
     div.innerHTML = `
         <span class="drag-handle" title="Déplacer">⠿</span>
@@ -188,7 +190,7 @@ function creerWidget(def, gridId) {
         <div class="wf">${def.foot || ''}</div>
     `;
 
-    const SANS_MODAL = ['social', 'sante'];
+    const SANS_MODAL = ['social', 'sante', 'pierre-naissance'];
 
     div.addEventListener('click', e => {
         if (e.target.classList.contains('drag-handle')) return;
