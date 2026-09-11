@@ -417,7 +417,7 @@ function previewPhoto(event) {
             const tabInfos = document.getElementById('profil-tab-infos');
             if (tabInfos) tabInfos.insertBefore(cropZone, tabInfos.firstChild);
         }
-        document.getElementById('crop-img').src = e.target.result;
+                document.getElementById('crop-img').src = e.target.result;
         cropperInstance = new Cropper(document.getElementById('crop-img'), {
             aspectRatio: 1, viewMode: 1,
             movable: true, zoomable: true,
@@ -737,6 +737,17 @@ async function afficherSectionWidgets() {
         { id:'agenda-unifie',    label:'📅 Mon Agenda' },
     ];
 
+    // --- Correctif v1.83.1 : tri alphabétique dynamique de l'affichage ---
+    // Le tableau WIDGETS_DISPONIBLES reste dans son ordre d'ajout (aucune
+    // modification du tableau source), mais l'affichage à l'écran est trié
+    // ici sur le libellé (emoji ignoré). Ainsi, tout futur widget ajouté à
+    // ce tableau se positionnera automatiquement à sa place alphabétique,
+    // sans intervention manuelle.
+    const _texteLabel = (label) => label.replace(/^\p{Emoji_Presentation}\s*/u, '').trim();
+    const WIDGETS_TRIES = [...WIDGETS_DISPONIBLES].sort((a, b) =>
+        _texteLabel(a.label).localeCompare(_texteLabel(b.label), 'fr', { sensitivity: 'base' })
+    );
+
     try {
         const r = await fetch('/api/profil/widgets-visibles', {
             headers: { 'Authorization': `Bearer ${user.token}` }
@@ -744,7 +755,7 @@ async function afficherSectionWidgets() {
         const d = await r.json();
         const caches = Array.isArray(d.widgets_caches) ? d.widgets_caches : [];
 
-        zone.innerHTML = WIDGETS_DISPONIBLES.map(w => {
+        zone.innerHTML = WIDGETS_TRIES.map(w => {
             const actif = !caches.includes(w.id);
             return `
             <div style="display:flex;align-items:center;justify-content:space-between;
@@ -852,7 +863,7 @@ async function changerMdp() {
             document.getElementById('mdp-nouveau').value = '';
             document.getElementById('mdp-confirm').value = '';
         } else {
-            msg.textContent = '❌ ' + (d.message || 'Erreur.');
+                        msg.textContent = '❌ ' + (d.message || 'Erreur.');
             msg.style.color = '#ef4444';
         }
     } catch {
@@ -1013,4 +1024,3 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     observer.observe(document.body, { childList: true, subtree: true });
 });
-
