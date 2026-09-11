@@ -1,5 +1,29 @@
 ## MoaDja
 
+## v1.83.3 - 11-09-2026 🏷️ Stable
+
+### 🔧 Corrections
+- Cliquer accidentellement en dehors d'une fenêtre (Mon Profil, création d'utilisateur, etc.) pendant une saisie en cours provoquait la fermeture immédiate de la fenêtre et la perte des informations non enregistrées - ce comportement a été supprimé.
+- Les fenêtres se ferment désormais uniquement via la croix, la touche Échap, ou le bouton retour (mobile), pour éviter toute perte accidentelle de saisie.
+
+---
+
+## v1.83.2 - 11-09-2026
+
+### 🔧 Corrections
+- Dans l'espace Administration, l'onglet Stats affichait des cartes et des listes disproportionnées, en particulier sur mobile - l'affichage a été resserré pour une lecture plus agréable, sur ordinateur comme sur téléphone.
+- Les étiquettes "USER" / "ADMIN" ont été retirées des sections "Top contributeurs" et "Dernière activité" de l'Administration, pour un affichage plus épuré (elles restent visibles dans la gestion des utilisateurs).
+
+---
+
+## v1.83.1 - 11-09-2026
+
+### 🔧 Corrections
+- Dans "Mon Profil" > Widgets, la liste des widgets s'affichait dans un ordre aléatoire au lieu d'être triée par ordre alphabétique - corrigé, et ce tri s'appliquera automatiquement à chaque nouveau widget ajouté à l'avenir.
+- Le widget "Météo" apparaissait à tort dans la liste des widgets pouvant être masqués depuis le profil, alors qu'il s'agit d'un widget toujours affiché sur l'accueil - il a été retiré de cette liste.
+
+---
+
 ## v1.83 - 11-09-2026 🏷️ Stable
 
 ### ✨ Nouveau
