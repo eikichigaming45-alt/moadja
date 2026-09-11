@@ -17,18 +17,19 @@ let _ongletActif    = 'accueil';
 
 // ── Définition des widgets ────────────────────────────────────
 const WIDGETS_DEF = [
-    { id:'agenda',        label:'Agenda',             icon:'📅', cls:'w-agenda',        desc:'Chargement...',  foot:'Cliquez pour gérer',                refresh:true },
-    { id:'meteo',         label:'Météo du jour',      icon:'🌤️', cls:'w-meteo',         desc:'Chargement...',  foot:'Cliquez pour les détails',          refresh:true },
-    { id:'priere',        label:'Prière du jour',     icon:'🙏',  cls:'w-priere',        desc:'Chargement...',  foot:'Cliquez pour la version complète',  refresh:true },
-    { id:'islam',         label:'Prières & Hadiths',  icon:'🌙',  cls:'w-islam',         desc:'Chargement...',  foot:'Cliquez pour la version complète',  refresh:true },
-    { id:'taches',        label:'Tâches du jour',     icon:'✅',  cls:'w-taches',        desc:'Chargement...',  foot:'Cliquez pour gérer' },
-    { id:'cycle',         label:'Suivi du cycle',     icon:'🌸',  cls:'w-cycle',         desc:'Chargement...',  foot:'Cliquez pour gérer',                refresh:true },
-    { id:'anniversaires', label:'Anniversaires',      icon:'🎂',  cls:'w-anniversaires', desc:'Chargement...',  foot:'Cliquez pour gérer' },
-    { id:'astrologie',    label:'Astrologie',         icon:'✨',  cls:'w-astrologie',    desc:'Chargement...',  foot:'Cliquez pour votre horoscope',      refresh:true },
-    { id:'theme-astral',  label:'Thème Astral',       icon:'🔮',  cls:'w-theme-astral',  desc:'Chargement...',  foot:'Cliquez pour votre thème natal',    refresh:true },
-    { id:'social',        label:'Social',             icon:'🤝',  cls:'w-social',        desc:'Chargement...',  foot:'Ce que mes proches partagent avec moi' },
-    { id:'profil',        label:'Mon Profil',         icon:'👤',  cls:'w-profil',        desc:'',               foot:'Cliquez pour gérer' },
-    { id:'sante',         label:'Santé',              icon:'🥗',  cls:'w-sante',         desc:'Chargement...',  foot:'Calculs & plan nutritionnel' },
+    { id:'agenda',            label:'Agenda',              icon:'📅', cls:'w-agenda',            desc:'Chargement...',  foot:'Cliquez pour gérer',                refresh:true },
+    { id:'meteo',             label:'Météo du jour',       icon:'🌤️', cls:'w-meteo',             desc:'Chargement...',  foot:'Cliquez pour les détails',          refresh:true },
+    { id:'priere',            label:'Prière du jour',      icon:'🙏',  cls:'w-priere',            desc:'Chargement...',  foot:'Cliquez pour la version complète',  refresh:true },
+    { id:'islam',             label:'Prières & Hadiths',   icon:'🌙',  cls:'w-islam',             desc:'Chargement...',  foot:'Cliquez pour la version complète',  refresh:true },
+    { id:'taches',            label:'Tâches du jour',      icon:'✅',  cls:'w-taches',            desc:'Chargement...',  foot:'Cliquez pour gérer' },
+    { id:'cycle',             label:'Suivi du cycle',      icon:'🌸',  cls:'w-cycle',             desc:'Chargement...',  foot:'Cliquez pour gérer',                refresh:true },
+    { id:'anniversaires',     label:'Anniversaires',       icon:'🎂',  cls:'w-anniversaires',     desc:'Chargement...',  foot:'Cliquez pour gérer' },
+    { id:'astrologie',        label:'Astrologie',          icon:'✨',  cls:'w-astrologie',        desc:'Chargement...',  foot:'Cliquez pour votre horoscope',      refresh:true },
+    { id:'theme-astral',      label:'Thème Astral',        icon:'🔮',  cls:'w-theme-astral',      desc:'Chargement...',  foot:'Cliquez pour votre thème natal',    refresh:true },
+    { id:'pierre-naissance',  label:'Pierre de naissance', icon:'💎',  cls:'w-pierre-naissance',  desc:'Chargement...',  foot:'' },
+    { id:'social',            label:'Social',              icon:'🤝',  cls:'w-social',            desc:'Chargement...',  foot:'Ce que mes proches partagent avec moi' },
+    { id:'profil',            label:'Mon Profil',          icon:'👤',  cls:'w-profil',            desc:'',               foot:'Cliquez pour gérer' },
+    { id:'sante',             label:'Santé',               icon:'🥗',  cls:'w-sante',             desc:'Chargement...',  foot:'Calculs & plan nutritionnel' },
 ];
 
 const TOUS_WIDGETS = [
@@ -193,6 +194,7 @@ async function showApp() {
     if (typeof chargerWidgetSocial     === 'function') chargerWidgetSocial();
     if (typeof chargerWidgetSante      === 'function') chargerWidgetSante();
     if (typeof chargerThemeAstral      === 'function') chargerThemeAstral();
+    if (typeof chargerPierreNaissance  === 'function') chargerPierreNaissance();
     setTimeout(() => {
         if (typeof chargerWidgetTaches === 'function') chargerWidgetTaches();
     }, 300);
@@ -303,6 +305,7 @@ function actualiser() {
     if (typeof chargerWidgetSocial     === 'function') chargerWidgetSocial();
     if (typeof chargerWidgetSante      === 'function') chargerWidgetSante();
     if (typeof chargerThemeAstral      === 'function') chargerThemeAstral();
+    if (typeof chargerPierreNaissance  === 'function') chargerPierreNaissance();
     chargerWidgetAnniversaires();
     if (typeof Agenda !== 'undefined') Agenda.charger();
     if (typeof Cycle  !== 'undefined') Cycle.charger();
@@ -420,15 +423,16 @@ async function afficherVersion() {
 // ── Refresh widget ────────────────────────────────────────────
 function refreshWidget(id) {
     switch (id) {
-        case 'meteo'        : chargerMeteoAuto();                                                     break;
-        case 'priere'       : chargerPriere();                                                        break;
-        case 'islam'        : if (typeof window.chargerIslam === 'function') window.chargerIslam();   break;
-        case 'astrologie'   : if (typeof chargerAstrologie   === 'function') chargerAstrologie();     break;
-        case 'theme-astral' : if (typeof chargerThemeAstral  === 'function') chargerThemeAstral();    break;
-        case 'cycle'        : if (typeof Cycle  !== 'undefined') Cycle.charger();                     break;
-        case 'agenda'       : if (typeof Agenda !== 'undefined') Agenda.charger();                    break;
-        case 'social'       : if (typeof chargerWidgetSocial === 'function') chargerWidgetSocial();   break;
-        case 'sante'        : if (typeof chargerWidgetSante  === 'function') chargerWidgetSante();    break;
+        case 'meteo'             : chargerMeteoAuto();                                                     break;
+        case 'priere'            : chargerPriere();                                                        break;
+        case 'islam'             : if (typeof window.chargerIslam    === 'function') window.chargerIslam();    break;
+        case 'astrologie'        : if (typeof chargerAstrologie      === 'function') chargerAstrologie();      break;
+        case 'theme-astral'      : if (typeof chargerThemeAstral     === 'function') chargerThemeAstral();     break;
+        case 'pierre-naissance'  : if (typeof chargerPierreNaissance === 'function') chargerPierreNaissance(); break;
+        case 'cycle'             : if (typeof Cycle  !== 'undefined') Cycle.charger();                     break;
+        case 'agenda'            : if (typeof Agenda !== 'undefined') Agenda.charger();                    break;
+        case 'social'            : if (typeof chargerWidgetSocial    === 'function') chargerWidgetSocial();    break;
+        case 'sante'             : if (typeof chargerWidgetSante     === 'function') chargerWidgetSante();     break;
     }
 }
 
