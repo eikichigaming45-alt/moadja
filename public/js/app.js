@@ -27,6 +27,7 @@ const WIDGETS_DEF = [
     { id:'astrologie',        label:'Astrologie',          icon:'✨',  cls:'w-astrologie',        desc:'Chargement...',  foot:'Cliquez pour votre horoscope',      refresh:true },
     { id:'theme-astral',      label:'Thème Astral',        icon:'🔮',  cls:'w-theme-astral',      desc:'Chargement...',  foot:'Cliquez pour votre thème natal',    refresh:true },
     { id:'pierre-naissance',  label:'Pierre de naissance', icon:'💎',  cls:'w-pierre-naissance',  desc:'Chargement...',  foot:'' },
+    { id:'animal-totem',      label:'Animal Totem',        icon:'🦅',  cls:'w-animal-totem',      desc:'Chargement...',  foot:'' },
     { id:'social',            label:'Social',              icon:'🤝',  cls:'w-social',            desc:'Chargement...',  foot:'Ce que mes proches partagent avec moi' },
     { id:'profil',            label:'Mon Profil',          icon:'👤',  cls:'w-profil',            desc:'',               foot:'Cliquez pour gérer' },
     { id:'sante',             label:'Santé',               icon:'🥗',  cls:'w-sante',             desc:'Chargement...',  foot:'Calculs & plan nutritionnel' },
@@ -195,6 +196,7 @@ async function showApp() {
     if (typeof chargerWidgetSante      === 'function') chargerWidgetSante();
     if (typeof chargerThemeAstral      === 'function') chargerThemeAstral();
     if (typeof chargerPierreNaissance  === 'function') chargerPierreNaissance();
+    if (typeof chargerAnimalTotem      === 'function') chargerAnimalTotem();
     setTimeout(() => {
         if (typeof chargerWidgetTaches === 'function') chargerWidgetTaches();
     }, 300);
@@ -306,6 +308,7 @@ function actualiser() {
     if (typeof chargerWidgetSante      === 'function') chargerWidgetSante();
     if (typeof chargerThemeAstral      === 'function') chargerThemeAstral();
     if (typeof chargerPierreNaissance  === 'function') chargerPierreNaissance();
+    if (typeof chargerAnimalTotem      === 'function') chargerAnimalTotem();
     chargerWidgetAnniversaires();
     if (typeof Agenda !== 'undefined') Agenda.charger();
     if (typeof Cycle  !== 'undefined') Cycle.charger();
@@ -429,10 +432,11 @@ function refreshWidget(id) {
         case 'astrologie'        : if (typeof chargerAstrologie      === 'function') chargerAstrologie();      break;
         case 'theme-astral'      : if (typeof chargerThemeAstral     === 'function') chargerThemeAstral();     break;
         case 'pierre-naissance'  : if (typeof chargerPierreNaissance === 'function') chargerPierreNaissance(); break;
+        case 'animal-totem'      : if (typeof chargerAnimalTotem     === 'function') chargerAnimalTotem();     break;
         case 'cycle'             : if (typeof Cycle  !== 'undefined') Cycle.charger();                     break;
         case 'agenda'            : if (typeof Agenda !== 'undefined') Agenda.charger();                    break;
         case 'social'            : if (typeof chargerWidgetSocial    === 'function') chargerWidgetSocial();    break;
-        case 'sante'             : if (typeof chargerWidgetSante     === 'function') chargerWidgetSante();     break;
+                case 'sante'             : if (typeof chargerWidgetSante     === 'function') chargerWidgetSante();     break;
     }
 }
 

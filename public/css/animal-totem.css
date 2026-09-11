@@ -1,0 +1,111 @@
+/* ============================================================
+   public/css/animal-totem.css
+   Widget Animal Totem — onglet Astral
+   CSS dédié, aucune dépendance au CSS global.
+   ============================================================ */
+
+.at-loading {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 14px;
+    padding: 20px 0;
+}
+
+.at-erreur {
+    background: #fff7ed;
+    border-left: 4px solid #f59e0b;
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 13px;
+    color: #92400e;
+    line-height: 1.5;
+}
+
+.at-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.at-image-wrapper {
+    width: 100%;
+    border-radius: 16px;
+    overflow: hidden;
+    aspect-ratio: 16 / 10;
+    background: #f3f4f6;
+}
+
+.at-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.at-contenu {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.at-nom {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0;
+}
+
+.at-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.at-badge {
+    display: inline-block;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.at-badge-element {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.at-badge-trait {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.at-description {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #374151;
+    margin: 0;
+}
+
+.at-credit {
+    font-size: 10px;
+    color: #d1d5db;
+    margin: 0;
+    font-style: italic;
+}
+
+.at-disclaimer {
+    font-size: 11px;
+    color: #9ca3af;
+    margin: 4px 0 0 0;
+    font-style: italic;
+}
+
+@media (max-width: 600px) {
+    .at-nom {
+        font-size: 18px;
+    }
+    .at-description {
+        font-size: 13px;
+    }
+}

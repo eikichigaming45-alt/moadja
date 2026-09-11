@@ -473,7 +473,7 @@ async function validerCrop() {
                 }
             }
 
-            let btnSuppr = document.getElementById('btn-supprimer-photo');
+                        let btnSuppr = document.getElementById('btn-supprimer-photo');
             if (!btnSuppr && preview) {
                 btnSuppr               = document.createElement('button');
                 btnSuppr.id            = 'btn-supprimer-photo';
@@ -733,6 +733,7 @@ async function afficherSectionWidgets() {
         { id:'astrologie',       label:'✨ Astrologie' },
         { id:'theme-astral',     label:'🔮 Thème Astral' },
         { id:'pierre-naissance', label:'💎 Pierre de naissance' },
+        { id:'animal-totem',     label:'🦅 Animal totem' },
         { id:'agenda-unifie',    label:'📅 Mon Agenda' },
     ];
 
@@ -921,8 +922,7 @@ async function _injecterProfilPublicToggles() {
                                      width:16px;height:16px;border-radius:50%;background:#fff;
                                      transition:left .2s;display:block"></span>
                     </span>
-                </label>
-            </div>`;
+                </label>            </div>`;
         }).join('');
     } catch {
         liste.innerHTML = '<p style="color:#ef4444;font-size:13px">Erreur de chargement des préférences.</p>';
@@ -1013,3 +1013,4 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     observer.observe(document.body, { childList: true, subtree: true });
 });
+

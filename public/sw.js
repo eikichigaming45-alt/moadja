@@ -1,4 +1,4 @@
-const CACHE_NAME = 'moadja-cache-v1.81';
+const CACHE_NAME = 'moadja-cache-v1.83';
 
 const ASSETS_TO_CACHE = [
     '/css/style.css',
@@ -13,6 +13,7 @@ const ASSETS_TO_CACHE = [
     '/css/agenda.css',
     '/css/theme-astral.css',
     '/css/pierre-naissance.css',
+    '/css/animal-totem.css',
     '/css/tchat.css',
     '/js/app.js',
     '/js/widgets.js',
@@ -34,6 +35,7 @@ const ASSETS_TO_CACHE = [
     '/js/changelog.js',
     '/js/theme-astral.js',
     '/js/pierre-naissance.js',
+    '/js/animal-totem.js',
     '/js/eclats.js',
     '/js/tchat.js',
     '/manifest.json',
@@ -87,6 +89,7 @@ self.addEventListener('fetch', event => {
         '/css/agenda.css',
         '/css/theme-astral.css',
         '/css/pierre-naissance.css',
+        '/css/animal-totem.css',
         '/css/tchat.css'
     ];
 
