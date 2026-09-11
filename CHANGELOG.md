@@ -1,5 +1,14 @@
 ## MoaDja
 
+## v1.83 - 11-09-2026 🏷️ Stable
+
+### ✨ Nouveau
+- Nouveau widget "Animal Totem" dans l'onglet Astral : découvrez votre animal totem selon la tradition amérindienne, calculé à partir de votre date de naissance.
+- Chaque animal est présenté avec une photo, son élément associé et un trait de caractère, accompagnés d'une courte description de sa symbolique.
+- Comme les autres modules, ce widget peut être affiché ou masqué à volonté depuis les réglages de widgets de votre profil.
+
+---
+
 ## v1.82 - 11-09-2026 🏷️ Stable
 
 ### 🔧 Corrections
