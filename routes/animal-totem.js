@@ -142,7 +142,7 @@ router.get('/', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     try {
         const { rows } = await pool.query(
-            'SELECT date_naissance FROM profiles WHERE user_id = \\$1',
+            'SELECT date_naissance FROM profiles WHERE user_id = \$1',
             [userId]
         );
         if (!rows.length) {
