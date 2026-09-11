@@ -33,10 +33,15 @@ const upload  = multer({
 // ============================================================
 const CHAMPS_PUBLICS_VALIDES = ['age', 'profession', 'site_web', 'signe_astro', 'note'];
 
+// Sentinel utilisé pour distinguer "champ signe_zodiaque absent du body"
+// (ex: sauvegarde depuis l'onglet Santé) de "champ envoyé à null"
+// (ex: sauvegarde depuis l'onglet Profil avec "Laisser calculer" -> reset).
 const SENTINEL_NOCHANGE_SIGNE = '__NOCHANGE_SIGNE__';
 
 // Table des bornes de signes astrologiques (calcul depuis date_naissance uniquement)
 // FIX : bornes alignées sur la logique de routes/astrologie.js (calculerSigne)
+// pour éviter toute divergence entre le widget Astrologie et le widget Profil
+// sur les dates charnières (ex: 23 octobre = Scorpion, pas Balance).
 const SIGNES_ASTRO = [
     { cle: 'capricorne', label: 'Capricorne', emoji: '♑', mois: 1,  jour: 19 },
     { cle: 'verseau',    label: 'Verseau',    emoji: '♒', mois: 2,  jour: 18 },
@@ -91,7 +96,22 @@ router.get('/', authenticateToken, async (req, res) => {
             [req.user.id]
         );
         if (result.rows.length === 0) return res.json({ success: true, profil: null });
-        res.json({ success: true, profil: result.rows[0] });
+
+        const profil = result.rows[0];
+
+        // FIX : le signe affiché au widget Profil est désormais calculé
+        // dynamiquement depuis date_naissance (même logique que le widget
+        // Astrologie et que public/:userId), au lieu de servir la colonne
+        // signe_zodiaque potentiellement obsolète ou incohérente sur les
+        // dates charnières (ex: 23 octobre).
+        // Si aucune date_naissance n'est renseignée mais qu'un signe a été
+        // choisi manuellement (signe_zodiaque), on garde ce choix explicite.
+        if (profil.date_naissance) {
+            const signeCalcule = calculerSigneAstro(profil.date_naissance);
+            profil.signe_zodiaque = signeCalcule ? signeCalcule.cle : profil.signe_zodiaque;
+        }
+
+        res.json({ success: true, profil });
     } catch (err) {
         console.error('[PROFIL] GET /', err.message);
         res.status(500).json({ success: false, message: 'Erreur serveur.' });
@@ -158,6 +178,9 @@ router.post('/', authenticateToken, async (req, res) => {
             telephone       != null && telephone       !== '' ? telephone       : null,
             profession      != null && profession      !== '' ? profession      : null,
             note            != null && note            !== '' ? note            : null,
+            // FIX signe_zodiaque : le sentinel SENTINEL_NOCHANGE_SIGNE signifie
+            // "champ absent du body -> ne pas toucher à la colonne".
+            // Toute autre valeur (y compris null explicite pour reset) est appliquée telle quelle.
             signe_zodiaque !== undefined ? (signe_zodiaque || null) : SENTINEL_NOCHANGE_SIGNE,
             sexe            != null && sexe            !== '' ? sexe            : null,
             taille          != null                           ? String(taille)  : null,
@@ -337,7 +360,10 @@ router.get('/abonnes/:userId', authenticateToken, async (req, res) => {
     }
 });
 
+// ============================================================
 // GET /api/profil/public-champs
+// Renvoie les toggles de visibilité de l'utilisateur connecté
+// ============================================================
 router.get('/public-champs', authenticateToken, async (req, res) => {
     try {
         const result = await pool.query(
@@ -352,7 +378,13 @@ router.get('/public-champs', authenticateToken, async (req, res) => {
     }
 });
 
+// ============================================================
 // PATCH /api/profil/public-champs
+// Met à jour les toggles de visibilité du profil public.
+// Body attendu : { champs: ['age', 'profession', ...] }
+// Filtrage strict sur CHAMPS_PUBLICS_VALIDES pour éviter
+// toute valeur arbitraire en base.
+// ============================================================
 router.patch('/public-champs', authenticateToken, async (req, res) => {
     const { champs } = req.body;
     if (!Array.isArray(champs)) {
