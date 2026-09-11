@@ -13,10 +13,12 @@ async function chargerPierreNaissance() {
         <div class="pn-loading">Chargement...</div>
     `;
 
+    const user = getUser();
+    if (!user?.token) return;
+
     try {
-        const token = localStorage.getItem('token');
         const reponse = await fetch('/api/pierre-naissance', {
-            headers: { 'Authorization': `Bearer ${token}` }
+            headers: { 'Authorization': `Bearer ${user.token}` }
         });
         const resultat = await reponse.json();
 
