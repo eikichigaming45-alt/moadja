@@ -17,6 +17,14 @@ const SPORT_ICONE_DUMBBELL = `
     </svg>
 `;
 
+// Icône flèche (bouton d'accès rapide vers l'onglet Sport)
+const SPORT_ICONE_FLECHE = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14"></path>
+        <path d="M12 5l7 7-7 7"></path>
+    </svg>
+`;
+
 let _sportSectionActive = 'dashboard';
 
 // ── Construction initiale du Dashboard Sport ──────────────────
@@ -66,7 +74,7 @@ function _sportRenderDashboard() {
             </div>
         </div>
 
-        <div class="sport-card" style="margin-top:16px">
+        <div class="sport-card">
             <div class="sport-section-title">Dernières séances</div>
             <p style="color:#9ca3af;font-size:13px;text-align:center;padding:12px 0">
                 Aucune séance enregistrée pour l'instant.
@@ -113,6 +121,9 @@ const SPORT_PHRASES_ENCOURAGEMENT = [
 ];
 
 // ── Widget Sport Stats (colonne droite, global à tous les onglets) ─
+// Toutes les classes utilisées ici sont définies dans public/css/sport.css
+// (.sport-stats-header, .sport-stats-title, .sport-stats-arrow, .sport-stats-text)
+// — aucun style inline, conformément à la règle établie.
 function chargerSportStatsWidget() {
     const zone = document.getElementById('sport-stats-widget');
     if (!zone) return;
@@ -124,9 +135,12 @@ function chargerSportStatsWidget() {
     ];
 
     zone.innerHTML = `
-        <h3 style="margin-top:0;font-weight:600;color:#1f2937;display:flex;align-items:center;gap:8px;">
-            ${SPORT_ICONE_DUMBBELL} Sport
-        </h3>
-        <p style="font-size:13px;color:#6b7280;margin-bottom:0;">${phrase}</p>
+        <div class="sport-stats-header">
+            <h3 class="sport-stats-title">${SPORT_ICONE_DUMBBELL} Sport</h3>
+            <button class="sport-stats-arrow" onclick="switchTab('sport')" title="Aller au module Sport">
+                ${SPORT_ICONE_FLECHE}
+            </button>
+        </div>
+        <p class="sport-stats-text">${phrase}</p>
     `;
 }

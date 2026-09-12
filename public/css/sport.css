@@ -1,6 +1,6 @@
 /* ============================================================
    public/css/sport.css
-   Styles du module Sport (WGER) — Dashboard.
+   Styles du module Sport (WGER) — Dashboard + Widget colonne droite.
    Réutilise strictement les variables et classes déjà définies
    dans style.css (glass-panel, --primary color violet, etc.).
    Aucune nouvelle couleur inventée.
@@ -58,6 +58,9 @@
     border-radius: var(--radius-lg);
     box-shadow: var(--glass-shadow);
     padding: 24px;
+}
+.sport-card + .sport-card {
+    margin-top: 16px;
 }
 
 /* ── État vide / encourageant (aucune séance cette semaine) ── */
@@ -188,4 +191,48 @@
     font-size: 12px;
     color: #6b7280;
     margin-top: 2px;
+}
+
+/* ============================================================
+   WIDGET SPORT STATS — Colonne droite (glass-panel #sport-stats-widget)
+   ============================================================ */
+.sport-stats-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+.sport-stats-title {
+    margin: 0;
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.sport-stats-title svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+.sport-stats-arrow {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: rgb(167, 139, 250);
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    border-radius: 6px;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+.sport-stats-arrow:hover {
+    background: rgba(167, 139, 250, 0.1);
+}
+.sport-stats-text {
+    margin: 0;
+    font-size: 13px;
+    color: #6b7280;
 }

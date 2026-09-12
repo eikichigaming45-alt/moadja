@@ -103,6 +103,14 @@ input:focus { border-color: #7C3AED; background: #fff; }
 .sidebar-col { display: none; }
 .center-col { flex: 1; width: 100%; }
 
+/* AJOUT v1.84.7 : espacement entre widgets empilés dans la colonne droite
+   (la colonne gauche avait déjà .desktop-nav-container { margin-top: 16px }
+   mais aucune règle équivalente n'existait pour .right-sidebar, d'où les
+   widgets Sport Stats / Human Link collés l'un à l'autre). */
+.right-sidebar > .glass-panel + .glass-panel {
+  margin-top: 16px;
+}
+
 .topbar {
   background: var(--glass-bg);
   backdrop-filter: blur(16px);
@@ -695,6 +703,14 @@ input:focus { border-color: #7C3AED; background: #fff; }
 .widget-choix-item:last-child { border-bottom: none; }
 .widget-choix-label { flex: 1; display: flex; align-items: center; gap: 8px; font-size: 14px; color: #1f2937; font-weight: 600; cursor: pointer; }
 .widget-choix-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: rgb(167, 139, 250); flex-shrink: 0; margin: 0; cursor: pointer; }
+
+/* AJOUT v1.84.7 : espacement entre widgets empilés dans la colonne droite
+   (la colonne gauche avait déjà .desktop-nav-container { margin-top: 16px }
+   mais aucune règle équivalente n'existait pour .right-sidebar, d'où les
+   widgets Sport Stats / Human Link collés l'un à l'autre). */
+.right-sidebar > .glass-panel + .glass-panel {
+  margin-top: 16px;
+}
 
 /* ===================== FOOTER (Desktop uniquement) ===================== */
 .footer {
