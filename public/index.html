@@ -45,6 +45,13 @@
         @media (max-width: 768px) {
             .mobile-chat-btn { display: inline-flex !important; }
         }
+        /* Correctif : avec 5 boutons dans la nav desktop, "Bien-être" repassait à la ligne
+           faute de largeur suffisante. Réduction ciblée de la taille du label, uniquement
+           dans la nav desktop, sans toucher au CSS global (style.css). */
+        .desktop-nav .bn-label {
+            font-size: 11px;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
