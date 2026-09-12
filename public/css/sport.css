@@ -17,7 +17,7 @@
     .sport-wrap { padding: 12px; gap: 12px; }
 }
 
-/* ── Pilules de sous-navigation (Dashboard / Mes Routines / Catalogue) ── */
+/* ── Pilules de sous-navigation (Dashboard / Mes Routines) ── */
 .sport-pills {
     display: flex;
     gap: 8px;
@@ -246,7 +246,8 @@
 }
 
 /* ============================================================
-   CATALOGUE WGER — Recherche d'exercices (section "Catalogue")
+   SÉLECTEUR D'EXERCICE — recherche d'exercices WGER (ex-Catalogue).
+   Réutilisé désormais uniquement depuis "Mes Routines".
    ============================================================ */
 
 /* ── Barre d'outils : recherche (pleine largeur) + filtres (2 colonnes) ── */
@@ -314,6 +315,9 @@
     align-items: center;
     text-align: center;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.sport-catalogue-exercise-selectionnable {
+    cursor: pointer;
 }
 .sport-catalogue-exercise:hover {
     transform: translateY(-2px);
@@ -384,4 +388,225 @@
     color: #9ca3af;
     font-size: 13px;
     padding: 20px 0;
+}
+
+/* ============================================================
+   MES ROUTINES — liste, création, détail, exercices
+   ============================================================ */
+
+/* ── Bloc de création d'une routine (en haut de la liste) ── */
+.sport-routine-creation {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.sport-routine-creation .sport-catalogue-search {
+    flex: 1 1 auto;
+    min-width: 200px;
+}
+.sport-routine-msg-erreur {
+    color: #ef4444;
+    font-size: 12px;
+    margin-top: 8px;
+    min-height: 16px;
+}
+
+/* ── Liste des routines (cartes) ── */
+.sport-routine-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.sport-routine-carte {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: var(--glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--glass-shadow);
+    padding: 16px 20px;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.sport-routine-carte:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(167, 139, 250, 0.18);
+}
+.sport-routine-carte-icone {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(167, 139, 250, 0.12);
+    color: rgb(167, 139, 250);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.sport-routine-carte-icone svg { width: 24px; height: 24px; }
+.sport-routine-carte-info { flex: 1; min-width: 0; }
+.sport-routine-carte-nom {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+.sport-routine-carte-meta {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-top: 2px;
+}
+
+/* ── En-tête du détail d'une routine ── */
+.sport-routine-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+.sport-routine-btn-retour {
+    background: none;
+    border: none;
+    color: rgb(167, 139, 250);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 4px 0;
+}
+.sport-routine-btn-suppr-routine {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 50px;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+.sport-routine-btn-suppr-routine:hover {
+    background: rgba(239, 68, 68, 0.18);
+}
+.sport-routine-detail-nom {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: 16px;
+}
+
+/* ── Bouton "Commencer la routine" désactivé ── */
+.sport-btn-commencer-disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    margin-top: 4px;
+}
+.sport-btn-commencer-disabled:hover {
+    background: rgba(167, 139, 250, 0.85);
+    transform: none;
+    box-shadow: 0 8px 24px rgba(167, 139, 250, 0.25);
+}
+
+/* ── Liste des exercices d'une routine ── */
+.sport-routine-exercices-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.sport-routine-exercice-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 16px;
+    position: relative;
+}
+.sport-routine-exercice-info { flex: 1; min-width: 0; }
+.sport-routine-exercice-nom {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+.sport-routine-exercice-meta {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-top: 2px;
+}
+.sport-routine-exercice-btn-edit,
+.sport-routine-exercice-btn-del {
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 6px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+}
+.sport-routine-exercice-btn-edit:hover,
+.sport-routine-exercice-btn-del:hover {
+    background: rgba(167, 139, 250, 0.1);
+}
+
+/* ── Édition inline séries/reps ── */
+.sport-routine-exercice-edit {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+}
+.sport-routine-exercice-edit-nom {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+.sport-routine-exercice-edit-champs {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.sport-routine-exercice-edit-champs input {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 12px;
+    font-size: 13px;
+    color: var(--text-main);
+    outline: none;
+}
+.sport-routine-exercice-edit-champs span {
+    color: #9ca3af;
+    font-weight: 700;
+}
+.sport-routine-exercice-edit-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* ── Confirmation de suppression inline (esprit taches.js) ── */
+.sport-confirm-suppr {
+    margin-top: 10px;
+    padding: 12px;
+    background: rgba(239, 68, 68, 0.06);
+    border: 1px solid rgba(239, 68, 68, 0.15);
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.sport-confirm-suppr-texte {
+    font-size: 13px;
+    color: var(--text-main);
+    font-weight: 600;
+}
+.sport-confirm-suppr-actions {
+    display: flex;
+    gap: 8px;
 }

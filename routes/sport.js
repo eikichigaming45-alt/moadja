@@ -9,13 +9,17 @@
 //
 // + Intégration WGER (lecture seule, catalogue d'exercices) :
 // relais serveur vers l'API publique wger.de, aucune clé requise.
-// Noms affichés au format "Anglais (Français)" quand une
-// traduction française existe, sinon anglais seul.
-// Catégories/équipements traduits via table statique FR (WGER
-// ne fournit pas de traduction FR pour ces libellés).
-// Recherche/filtrage agrégés par lots pour éviter les pages
-// quasi-vides (WGER ne filtre pas le texte libre côté serveur,
-// et certains exercices n'ont pas d'image).
+// Noms d'exercices affichés au format "Anglais (Français)" quand
+// une traduction française existe, sinon anglais seul.
+// Catégories/équipements traduits via table statique FR (WGER ne
+// fournit aucune traduction FR pour ces libellés). Repli sur
+// l'anglais si un terme n'est pas dans la table (aucune traduction
+// inventée à l'aveugle).
+// Recherche agrégée par lots de 50 exercices WGER, car WGER ne
+// filtre pas le texte libre côté serveur de façon fiable.
+// (Le filtre "image obligatoire" a été retiré : il masquait des
+// exercices valides sans image, comme certains appareils de
+// cardio type "Rowing Machine".)
 // ============================================================
 const express = require('express');
 const router  = express.Router();
@@ -530,10 +534,11 @@ router.delete('/measurements/:id', auth, async (req, res) => {
 // fournit aucune traduction FR pour ces libellés). Repli sur
 // l'anglais si un terme n'est pas dans la table (aucune traduction
 // inventée à l'aveugle).
-// Recherche + filtre "image obligatoire" agrégés par lots de 50
-// exercices WGER, car WGER ne filtre pas le texte libre côté
-// serveur de façon fiable et n'a pas d'image pour tous les
-// exercices.
+// Recherche agrégée par lots de 50 exercices WGER, car WGER ne
+// filtre pas le texte libre côté serveur de façon fiable.
+// Aucun filtre sur la présence d'image : certains exercices
+// valides (ex. appareils de cardio) n'ont pas d'illustration WGER,
+// ils doivent quand même apparaître dans les résultats.
 // ────────────────────────────────────────────────────────────
 
 // ── Table de traduction des catégories musculaires ─────────────
@@ -617,12 +622,12 @@ router.get('/wger/equipment', auth, async (req, res) => {
 //
 // Fonctionnement par agrégation : WGER est interrogé par lots de
 // 50 résultats (page interne), chaque lot est filtré localement
-// (texte de recherche + présence d'une image obligatoire), puis
-// on avance dans les lots suivants jusqu'à obtenir assez de
-// résultats pour remplir la page demandée (limit) ou jusqu'à
-// épuisement de la base WGER. Cela évite les pages quasi-vides
-// que provoquerait un filtrage a posteriori sur une seule page
-// de 20 résultats bruts.
+// sur le texte de recherche (WGER ne filtre pas le texte libre
+// côté serveur de façon fiable), puis on avance dans les lots
+// suivants jusqu'à obtenir assez de résultats pour remplir la
+// page demandée (limit) ou jusqu'à épuisement de la base WGER.
+// Aucun filtre sur la présence d'image : un exercice sans image
+// reste un résultat valide (ex. certains appareils de cardio).
 router.get('/wger/exercises', auth, async (req, res) => {
     const search    = (req.query.search    || '').trim().toLowerCase();
     const category  = req.query.category   || '';
@@ -667,7 +672,6 @@ router.get('/wger/exercises', auth, async (req, res) => {
                 const nom          = _construireNomBilingue(translations);
                 const image        = ex.images?.[0]?.image || null;
 
-                if (!image) continue; // filtre : exercice sans image ignoré
                 if (search && !nom.toLowerCase().includes(search)) continue;
 
                 if (aIgnorer > 0) {
