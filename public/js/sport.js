@@ -76,7 +76,7 @@ function _sportRenderDashboard() {
 
         <div class="sport-card">
             <div class="sport-section-title">Dernières séances</div>
-            <p style="color:#9ca3af;font-size:13px;text-align:center;padding:12px 0">
+            <p class="sport-empty-note">
                 Aucune séance enregistrée pour l'instant.
             </p>
         </div>

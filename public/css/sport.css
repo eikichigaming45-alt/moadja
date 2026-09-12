@@ -193,6 +193,14 @@
     margin-top: 2px;
 }
 
+/* ── Note d'état vide (ex. "Aucune séance enregistrée pour l'instant") ── */
+.sport-empty-note {
+    color: #9ca3af;
+    font-size: 13px;
+    text-align: center;
+    padding: 12px 0;
+}
+
 /* ============================================================
    WIDGET SPORT STATS — Colonne droite (glass-panel #sport-stats-widget)
    ============================================================ */

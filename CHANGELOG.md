@@ -1,5 +1,63 @@
 ## MoaDja
 
+## v1.85 - 12-09-2026
+
+### 🔧 Corrections
+- Sur ordinateur, l'icône des messages (Tchat) apparaît désormais dans la barre du haut, à côté de la cloche de notifications, comme c'était déjà le cas sur mobile - le nombre de messages non lus s'affiche donc clairement au bon endroit, en plus de la bulle flottante habituelle.
+
+---
+
+## v1.84.9 - 12-09-2026
+
+### 🔧 Corrections
+- Dans le module Sport (nouveau), le petit message affiché lorsqu'aucune séance n'a encore été enregistrée a été harmonisé avec le style visuel du reste de l'application.
+
+---
+
+## v1.84.8 - 12-09-2026
+
+### 🔧 Corrections
+- Dans le nouveau module Sport, un bouton flèche a été ajouté sur le widget de la colonne droite pour accéder directement à l'onglet Sport en un clic.
+- Nettoyage de la mise en forme du widget Sport pour une meilleure cohérence visuelle.
+
+---
+
+## v1.84.6 - 12-09-2026
+
+### 🔧 Corrections
+- Le widget "Sport" de la colonne droite (au-dessus de "Human Link"), introduit dans les versions précédentes, ne s'affichait pas correctement - il apparaît désormais normalement sur tous les onglets.
+
+---
+
+## v1.84.5 - 12-09-2026
+
+### ✨ Nouveau
+- Ajout d'un nouveau widget "Sport" dans la colonne de droite, affichant une phrase d'encouragement pour vous inciter à bouger.
+
+---
+
+## v1.84.4 - 12-09-2026
+
+### ✨ Nouveau
+- Premier aperçu visuel du futur module Sport : un tableau de bord avec trois sections (Dashboard, Mes Routines, Catalogue), pour l'instant présenté à titre d'aperçu, sans données réelles.
+
+---
+
+## v1.84.3 - 12-09-2026
+
+### 🔧 Corrections
+- Correction d'un affichage en double de certains éléments du menu de navigation ("Accueil", "Quotidien"), apparu lors de la préparation du nouveau module Sport.
+- Ajout d'une icône dédiée (haltère) pour le nouvel onglet Sport, positionné entre "Bien-être" et "Astral".
+
+---
+
+## v1.84.0 - 12-09-2026
+
+### ✨ Nouveau
+- Un nouvel onglet "Sport" fait son apparition dans le menu de navigation (ordinateur et mobile), entre "Bien-être" et "Astral" - le module sera enrichi progressivement dans les prochaines mises à jour.
+
+---
+
 ## v1.83.3 - 11-09-2026 🏷️ Stable
 
 ### 🔧 Corrections

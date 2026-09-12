@@ -38,12 +38,11 @@
 
     <!-- Styles spécifiques intégrés -->
     <style>
-        /* Gestion de l'affichage exclusif sur mobile pour le bouton tchat du header */
-        @media (min-width: 769px) {
-            .mobile-chat-btn { display: none !important; }
-        }
-        @media (max-width: 768px) {
-            .mobile-chat-btn { display: inline-flex !important; }
+        /* Icône Tchat du header : désormais affichée en permanence,
+           sur desktop comme sur mobile, pour que son badge de
+           notifications soit toujours visible et cohérent. */
+        .mobile-chat-btn {
+            display: inline-flex !important;
         }
         /* Correctif : avec 5 boutons dans la nav desktop, "Bien-être" repassait à la ligne
            faute de largeur suffisante. Réduction ciblée de la taille du label, uniquement
@@ -127,7 +126,7 @@
                 "></span>
             </div>
 
-            <!-- Bouton Tchat Mobile (Visible uniquement sur mobile via CSS) — ferme la recherche au clic -->
+            <!-- Bouton Tchat (Visible sur desktop et mobile) — ferme la recherche au clic -->
             <div style="position:relative;display:inline-flex">
                 <button class="icon-btn mobile-chat-btn" id="btn-tchat-mobile-header" onclick="document.getElementById('search-toggle').checked=false;window.Tchat && Tchat.toggle()" title="Messages">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
