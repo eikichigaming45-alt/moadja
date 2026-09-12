@@ -30,7 +30,7 @@ router.get('/workouts', auth, async (req, res) => {
         const { rows } = await pool.query(`
             SELECT id, user_id, name, created_at
             FROM sport_workouts
-            WHERE user_id = \\$1
+            WHERE user_id = \$1
             ORDER BY created_at DESC
         `, [moi]);
         res.json({ success: true, workouts: rows });
@@ -48,7 +48,7 @@ router.post('/workouts', auth, async (req, res) => {
     try {
         const { rows } = await pool.query(`
             INSERT INTO sport_workouts (user_id, name)
-            VALUES (\\$1, \\$2)
+            VALUES (\$1, \$2)
             RETURNING *
         `, [moi, name]);
         res.json({ success: true, workout: rows[0] });
@@ -66,7 +66,7 @@ router.get('/workouts/:id', auth, async (req, res) => {
         const { rows: workoutRows } = await pool.query(`
             SELECT id, user_id, name, created_at
             FROM sport_workouts
-            WHERE id = \\$1 AND user_id = \\$2
+            WHERE id = \$1 AND user_id = \$2
         `, [id, moi]);
         if (!workoutRows.length) {
             return res.status(404).json({ success: false, message: 'Routine introuvable.' });
@@ -75,7 +75,7 @@ router.get('/workouts/:id', auth, async (req, res) => {
         const { rows: days } = await pool.query(`
             SELECT id, workout_id, description, day_order
             FROM sport_workout_days
-            WHERE workout_id = \\$1
+            WHERE workout_id = \$1
             ORDER BY day_order ASC
         `, [id]);
 
@@ -86,7 +86,7 @@ router.get('/workouts/:id', auth, async (req, res) => {
                 SELECT id, day_id, wger_exercise_id, exercise_name,
                        order_in_day, target_sets, target_reps
                 FROM sport_day_exercises
-                WHERE day_id = ANY(\\$1::int[])
+                WHERE day_id = ANY(\$1::int[])
                 ORDER BY order_in_day ASC
             `, [dayIds]);
             exercises = exRows;
@@ -113,8 +113,8 @@ router.put('/workouts/:id', auth, async (req, res) => {
     try {
         const { rows } = await pool.query(`
             UPDATE sport_workouts
-            SET name = \\$1
-            WHERE id = \\$2 AND user_id = \\$3
+            SET name = \$1
+            WHERE id = \$2 AND user_id = \$3
             RETURNING *
         `, [name, id, moi]);
         if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
@@ -132,7 +132,7 @@ router.delete('/workouts/:id', auth, async (req, res) => {
     try {
         const { rows } = await pool.query(`
             DELETE FROM sport_workouts
-            WHERE id = \\$1 AND user_id = \\$2
+            WHERE id = \$1 AND user_id = \$2
             RETURNING id
         `, [id, moi]);
         if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
@@ -156,13 +156,13 @@ router.post('/workouts/:workoutId/days', auth, async (req, res) => {
     if (!description) return res.status(400).json({ success: false, message: 'Description requise.' });
     try {
         const { rows: owner } = await pool.query(`
-            SELECT id FROM sport_workouts WHERE id = \\$1 AND user_id = \\$2
+            SELECT id FROM sport_workouts WHERE id = \$1 AND user_id = \$2
         `, [workoutId, moi]);
         if (!owner.length) return res.status(403).json({ success: false, message: 'Interdit.' });
 
         const { rows } = await pool.query(`
             INSERT INTO sport_workout_days (workout_id, description, day_order)
-            VALUES (\\$1, \\$2, \\$3)
+            VALUES (\$1, \$2, \$3)
             RETURNING *
         `, [workoutId, description, dayOrder]);
         res.json({ success: true, day: rows[0] });
@@ -181,12 +181,12 @@ router.put('/days/:dayId', auth, async (req, res) => {
     try {
         const { rows } = await pool.query(`
             UPDATE sport_workout_days AS d
-            SET description = COALESCE(\\$1, d.description),
-                day_order   = COALESCE(\\$2, d.day_order)
+            SET description = COALESCE(\$1, d.description),
+                day_order   = COALESCE(\$2, d.day_order)
             FROM sport_workouts AS w
-            WHERE d.id = \\$3
+            WHERE d.id = \$3
                 AND d.workout_id = w.id
-                AND w.user_id = \\$4
+                AND w.user_id = \$4
             RETURNING d.*
         `, [description || null, Number.isInteger(dayOrder) ? dayOrder : null, dayId, moi]);
         if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
@@ -205,9 +205,9 @@ router.delete('/days/:dayId', auth, async (req, res) => {
         const { rows } = await pool.query(`
             DELETE FROM sport_workout_days AS d
             USING sport_workouts AS w
-            WHERE d.id = \\$1
+            WHERE d.id = \$1
                 AND d.workout_id = w.id
-                AND w.user_id = \\$2
+                AND w.user_id = \$2
             RETURNING d.id
         `, [dayId, moi]);
         if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
@@ -240,14 +240,14 @@ router.post('/days/:dayId/exercises', auth, async (req, res) => {
             SELECT d.id
             FROM sport_workout_days d
             JOIN sport_workouts w ON w.id = d.workout_id
-            WHERE d.id = \\$1 AND w.user_id = \\$2
+            WHERE d.id = \$1 AND w.user_id = \$2
         `, [dayId, moi]);
         if (!owner.length) return res.status(403).json({ success: false, message: 'Interdit.' });
 
         const { rows } = await pool.query(`
             INSERT INTO sport_day_exercises
                 (day_id, wger_exercise_id, exercise_name, order_in_day, target_sets, target_reps)
-            VALUES (\\$1, \\$2, \\$3, \\$4, \\$5, \\$6)
+            VALUES (\$1, \$2, \$3, \$4, \$5, \$6)
             RETURNING *
         `, [
             dayId,
@@ -273,15 +273,15 @@ router.put('/exercises/:exerciseId', auth, async (req, res) => {
     try {
         const { rows } = await pool.query(`
             UPDATE sport_day_exercises AS e
-            SET exercise_name = COALESCE(\\$1, e.exercise_name),
-                order_in_day  = COALESCE(\\$2, e.order_in_day),
-                target_sets   = COALESCE(\\$3, e.target_sets),
-                target_reps   = COALESCE(\\$4, e.target_reps)
+            SET exercise_name = COALESCE(\$1, e.exercise_name),
+                order_in_day  = COALESCE(\$2, e.order_in_day),
+                target_sets   = COALESCE(\$3, e.target_sets),
+                target_reps   = COALESCE(\$4, e.target_reps)
             FROM sport_workout_days d
             JOIN sport_workouts w ON w.id = d.workout_id
-            WHERE e.id = \\$5
+            WHERE e.id = \$5
                 AND e.day_id = d.id
-                AND w.user_id = \\$6
+                AND w.user_id = \$6
             RETURNING e.*
         `, [
             exercise_name?.trim() || null,
@@ -307,10 +307,10 @@ router.delete('/exercises/:exerciseId', auth, async (req, res) => {
         const { rows } = await pool.query(`
             DELETE FROM sport_day_exercises AS e
             USING sport_workout_days AS d, sport_workouts AS w
-            WHERE e.id = \\$1
+            WHERE e.id = \$1
                 AND e.day_id = d.id
                 AND d.workout_id = w.id
-                AND w.user_id = \\$2
+                AND w.user_id = \$2
             RETURNING e.id
         `, [exerciseId, moi]);
         if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
@@ -332,7 +332,7 @@ router.get('/sessions', auth, async (req, res) => {
         const { rows } = await pool.query(`
             SELECT id, user_id, workout_id, date_start, date_end
             FROM sport_sessions
-            WHERE user_id = \\$1
+            WHERE user_id = \$1
             ORDER BY date_start DESC
         `, [moi]);
         res.json({ success: true, sessions: rows });
@@ -349,13 +349,13 @@ router.post('/sessions', auth, async (req, res) => {
     try {
         if (workoutId) {
             const { rows: owner } = await pool.query(`
-                SELECT id FROM sport_workouts WHERE id = \\$1 AND user_id = \\$2
+                SELECT id FROM sport_workouts WHERE id = \$1 AND user_id = \$2
             `, [workoutId, moi]);
             if (!owner.length) return res.status(403).json({ success: false, message: 'Interdit.' });
         }
         const { rows } = await pool.query(`
             INSERT INTO sport_sessions (user_id, workout_id, date_start)
-            VALUES (\\$1, \\$2, NOW())
+            VALUES (\$1, \$2, NOW())
             RETURNING *
         `, [moi, workoutId]);
         res.json({ success: true, session: rows[0] });
@@ -373,7 +373,7 @@ router.put('/sessions/:id', auth, async (req, res) => {
         const { rows } = await pool.query(`
             UPDATE sport_sessions
             SET date_end = NOW()
-            WHERE id = \\$1 AND user_id = \\$2
+            WHERE id = \$1 AND user_id = \$2
             RETURNING *
         `, [id, moi]);
         if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
@@ -391,7 +391,7 @@ router.delete('/sessions/:id', auth, async (req, res) => {
     try {
         const { rows } = await pool.query(`
             DELETE FROM sport_sessions
-            WHERE id = \\$1 AND user_id = \\$2
+            WHERE id = \$1 AND user_id = \$2
             RETURNING id
         `, [id, moi]);
         if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
@@ -419,14 +419,14 @@ router.post('/sessions/:sessionId/logs', auth, async (req, res) => {
 
     try {
         const { rows: owner } = await pool.query(`
-            SELECT id FROM sport_sessions WHERE id = \\$1 AND user_id = \\$2
+            SELECT id FROM sport_sessions WHERE id = \$1 AND user_id = \$2
         `, [sessionId, moi]);
         if (!owner.length) return res.status(403).json({ success: false, message: 'Interdit.' });
 
         const { rows } = await pool.query(`
             INSERT INTO sport_session_logs
                 (session_id, wger_exercise_id, exercise_name, set_number, reps, weight_kg)
-            VALUES (\\$1, \\$2, \\$3, \\$4, \\$5, \\$6)
+            VALUES (\$1, \$2, \$3, \$4, \$5, \$6)
             RETURNING *
         `, [sessionId, wger_exercise_id, exercise_name.trim(), set_number, reps, weight_kg]);
         res.json({ success: true, log: rows[0] });
@@ -444,9 +444,9 @@ router.delete('/logs/:logId', auth, async (req, res) => {
         const { rows } = await pool.query(`
             DELETE FROM sport_session_logs AS l
             USING sport_sessions AS s
-            WHERE l.id = \\$1
+            WHERE l.id = \$1
                 AND l.session_id = s.id
-                AND s.user_id = \\$2
+                AND s.user_id = \$2
             RETURNING l.id
         `, [logId, moi]);
         if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
@@ -468,7 +468,7 @@ router.get('/measurements', auth, async (req, res) => {
         const { rows } = await pool.query(`
             SELECT id, user_id, date_logged, weight_kg
             FROM sport_measurements
-            WHERE user_id = \\$1
+            WHERE user_id = \$1
             ORDER BY date_logged DESC
         `, [moi]);
         res.json({ success: true, measurements: rows });
@@ -488,7 +488,7 @@ router.post('/measurements', auth, async (req, res) => {
     try {
         const { rows } = await pool.query(`
             INSERT INTO sport_measurements (user_id, date_logged, weight_kg)
-            VALUES (\\$1, \\$2, \\$3)
+            VALUES (\$1, \$2, \$3)
             RETURNING *
         `, [moi, date_logged, weight_kg]);
         res.json({ success: true, measurement: rows[0] });
@@ -505,7 +505,7 @@ router.delete('/measurements/:id', auth, async (req, res) => {
     try {
         const { rows } = await pool.query(`
             DELETE FROM sport_measurements
-            WHERE id = \\$1 AND user_id = \\$2
+            WHERE id = \$1 AND user_id = \$2
             RETURNING id
         `, [id, moi]);
         if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });

@@ -3,8 +3,8 @@
 // Logique du module Sport (WGER) : Dashboard, routines,
 // séance active, bilan, mensurations, partage.
 // Étape actuelle : Dashboard visuel mocké (aucune donnée réelle,
-// aucun appel API). Les sections "Mes Routines" et "Catalogue"
-// sont des placeholders en attendant le développement backend.
+// aucun appel API). La section "Mes Routines" reste un placeholder.
+// Le Catalogue est désormais branché sur le backend WGER (v1.87).
 // ============================================================
 
 const SPORT_ICONE_DUMBBELL = `
@@ -109,6 +109,218 @@ function _sportSwitchSection(section) {
     });
     const cible = document.getElementById(`sport-section-${section}`);
     if (cible) cible.style.display = 'block';
+
+    if (section === 'catalogue') {
+        _sportChargerCatalogue();
+    }
+}
+
+// ────────────────────────────────────────────────────────────
+// CATALOGUE WGER — recherche d'exercices (relais backend v1.87)
+// Auth : même mécanisme que le reste du site (token Bearer
+// stocké dans localStorage['moadja_user'].token).
+// ────────────────────────────────────────────────────────────
+
+let _sportCatalogueChargee     = false;
+let _sportCatalogueOffset      = 0;
+let _sportCatalogueSearchTimer = null;
+const SPORT_CATALOGUE_LIMIT    = 20;
+
+function _sportToken() {
+    try { return JSON.parse(localStorage.getItem('moadja_user'))?.token || ''; }
+    catch { return ''; }
+}
+
+function _sportAuthHeaders() {
+    return {
+        'Content-Type' : 'application/json',
+        'Authorization': `Bearer ${_sportToken()}`
+    };
+}
+
+// Icône générique utilisée quand un exercice n'a pas d'image
+const SPORT_ICONE_PAS_IMAGE = `
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="3"></rect>
+        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+        <polyline points="21 15 16 10 5 21"></polyline>
+    </svg>
+`;
+
+// ── Point d'entrée : construit la structure de la section Catalogue ──
+function _sportChargerCatalogue() {
+    const zone = document.getElementById('sport-section-catalogue');
+    if (!zone) return;
+
+    // Ne reconstruit la structure qu'une seule fois (chargement paresseux)
+    if (_sportCatalogueChargee) return;
+    _sportCatalogueChargee = true;
+
+    zone.innerHTML = `
+        <div class="sport-card">
+            <div class="sport-catalogue-toolbar">
+                <input type="text"
+                       id="sport-catalogue-search"
+                       class="sport-catalogue-search"
+                       placeholder="Rechercher un exercice…"
+                       autocomplete="off">
+                <select id="sport-catalogue-filtre-categorie" class="sport-catalogue-select">
+                    <option value="">Toutes catégories</option>
+                </select>
+                <select id="sport-catalogue-filtre-equipement" class="sport-catalogue-select">
+                    <option value="">Tout équipement</option>
+                </select>
+            </div>
+            <div id="sport-catalogue-resultats">
+                <p class="sport-catalogue-loading">Chargement du catalogue…</p>
+            </div>
+            <div id="sport-catalogue-pagination" class="sport-catalogue-pagination" style="display:none">
+                <button id="sport-catalogue-prev" class="sport-catalogue-page-btn">Précédent</button>
+                <span id="sport-catalogue-page-info" class="sport-catalogue-page-info"></span>
+                <button id="sport-catalogue-next" class="sport-catalogue-page-btn">Suivant</button>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('sport-catalogue-search').addEventListener('input', () => {
+        clearTimeout(_sportCatalogueSearchTimer);
+        _sportCatalogueSearchTimer = setTimeout(() => {
+            _sportCatalogueOffset = 0;
+            _sportRechercherExercices();
+        }, 400);
+    });
+
+    document.getElementById('sport-catalogue-filtre-categorie').addEventListener('change', () => {
+        _sportCatalogueOffset = 0;
+        _sportRechercherExercices();
+    });
+
+    document.getElementById('sport-catalogue-filtre-equipement').addEventListener('change', () => {
+        _sportCatalogueOffset = 0;
+        _sportRechercherExercices();
+    });
+
+    document.getElementById('sport-catalogue-prev').addEventListener('click', () => {
+        if (_sportCatalogueOffset >= SPORT_CATALOGUE_LIMIT) {
+            _sportCatalogueOffset -= SPORT_CATALOGUE_LIMIT;
+            _sportRechercherExercices();
+        }
+    });
+
+    document.getElementById('sport-catalogue-next').addEventListener('click', () => {
+        _sportCatalogueOffset += SPORT_CATALOGUE_LIMIT;
+        _sportRechercherExercices();
+    });
+
+    _sportChargerFiltresWger();
+    _sportRechercherExercices();
+}
+
+// ── Charge les listes de catégories et d'équipements (une seule fois) ──
+async function _sportChargerFiltresWger() {
+    try {
+        const [rCat, rEqu] = await Promise.all([
+            fetch('/api/sport/wger/categories', { headers: _sportAuthHeaders() }),
+            fetch('/api/sport/wger/equipment',  { headers: _sportAuthHeaders() })
+        ]);
+        const dCat = await rCat.json();
+        const dEqu = await rEqu.json();
+
+        if (dCat.success) {
+            const selCat = document.getElementById('sport-catalogue-filtre-categorie');
+            dCat.categories.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.name;
+                selCat.appendChild(opt);
+            });
+        }
+
+        if (dEqu.success) {
+            const selEqu = document.getElementById('sport-catalogue-filtre-equipement');
+            dEqu.equipment.forEach(e => {
+                const opt = document.createElement('option');
+                opt.value = e.id;
+                opt.textContent = e.name;
+                selEqu.appendChild(opt);
+            });
+        }
+    } catch (err) {
+        console.error('[SPORT] chargerFiltresWger :', err.message);
+    }
+}
+
+// ── Recherche les exercices selon les filtres/texte/pagination actuels ──
+async function _sportRechercherExercices() {
+    const zone = document.getElementById('sport-catalogue-resultats');
+    if (!zone) return;
+
+    const search    = document.getElementById('sport-catalogue-search')?.value.trim() || '';
+    const categorie = document.getElementById('sport-catalogue-filtre-categorie')?.value || '';
+    const equipement= document.getElementById('sport-catalogue-filtre-equipement')?.value || '';
+
+    zone.innerHTML = `<p class="sport-catalogue-loading">Recherche en cours…</p>`;
+
+    try {
+        const params = new URLSearchParams({
+            limit : String(SPORT_CATALOGUE_LIMIT),
+            offset: String(_sportCatalogueOffset)
+        });
+        if (search)     params.set('search', search);
+        if (categorie)  params.set('category', categorie);
+        if (equipement) params.set('equipment', equipement);
+
+        const r = await fetch(`/api/sport/wger/exercises?${params.toString()}`, {
+            headers: _sportAuthHeaders()
+        });
+        const d = await r.json();
+
+        if (!d.success) {
+            zone.innerHTML = `<p class="sport-catalogue-loading">Erreur lors de la récupération des exercices.</p>`;
+            return;
+        }
+
+        _sportRenderResultatsCatalogue(d.exercises, d.count);
+    } catch (err) {
+        console.error('[SPORT] rechercherExercices :', err.message);
+        zone.innerHTML = `<p class="sport-catalogue-loading">Erreur de connexion au serveur.</p>`;
+    }
+}
+
+// ── Affiche la grille de résultats + met à jour la pagination ──
+function _sportRenderResultatsCatalogue(exercices, total) {
+    const zone       = document.getElementById('sport-catalogue-resultats');
+    const pagination = document.getElementById('sport-catalogue-pagination');
+    if (!zone) return;
+
+    if (!exercices.length) {
+        zone.innerHTML = `<p class="sport-catalogue-loading">Aucun exercice trouvé.</p>`;
+        if (pagination) pagination.style.display = 'none';
+        return;
+    }
+
+    zone.innerHTML = `
+        <div class="sport-catalogue-grid">
+            ${exercices.map(ex => `
+                <div class="sport-catalogue-exercise">
+                    ${ex.image
+                        ? `<img src="${ex.image}" alt="${ex.name}" class="sport-catalogue-exercise-img">`
+                        : `<div class="sport-catalogue-exercise-noimg">${SPORT_ICONE_PAS_IMAGE}</div>`
+                    }
+                    <div class="sport-catalogue-exercise-name">${ex.name}</div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+
+    if (pagination) {
+        pagination.style.display = 'flex';
+        const pageActuelle = Math.floor(_sportCatalogueOffset / SPORT_CATALOGUE_LIMIT) + 1;
+        const totalPages   = Math.max(1, Math.ceil(total / SPORT_CATALOGUE_LIMIT));
+        document.getElementById('sport-catalogue-page-info').textContent = `Page ${pageActuelle} / ${totalPages}`;
+        document.getElementById('sport-catalogue-prev').disabled = _sportCatalogueOffset === 0;
+        document.getElementById('sport-catalogue-next').disabled = _sportCatalogueOffset + SPORT_CATALOGUE_LIMIT >= total;
+    }
 }
 
 // ── Phrases d'encouragement (widget colonne droite) ────────────

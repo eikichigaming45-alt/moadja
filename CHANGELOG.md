@@ -1,5 +1,10 @@
 ## MoaDja
 
+## v1.88 — 12 septembre 2026
+- Ajout d'un vrai moteur de recherche dans le Catalogue du module Sport : vous pouvez maintenant chercher un exercice par nom, par catégorie musculaire ou par équipement disponible, avec des résultats affichés par pages.
+
+---
+
 ## v1.87 - 12-09-2026
 
 ### 🔧 Corrections
