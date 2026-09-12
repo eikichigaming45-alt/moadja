@@ -1,5 +1,12 @@
 ## MoaDja
 
+## v1.87 - 12-09-2026
+
+### 🔧 Corrections
+- Suite des travaux techniques en coulisses pour le module Sport : préparation de l'accès à un catalogue d'exercices (musculation, muscles ciblés, équipement) - aucun changement visible pour l'instant.
+
+---
+
 ## v1.86 - 12-09-2026
 
 ### 🔧 Corrections

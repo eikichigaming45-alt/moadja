@@ -6,11 +6,18 @@
 // Toutes les routes sont scopées par utilisateur (aucune fuite
 // entre profils), y compris pour les tables sans user_id direct
 // (vérification via jointure remontant au propriétaire).
+//
+// + Intégration WGER (lecture seule, catalogue d'exercices) :
+// relais serveur vers l'API publique wger.de, aucune clé requise.
+// Noms affichés au format "Anglais (Français)" quand une
+// traduction française existe, sinon anglais seul.
 // ============================================================
 const express = require('express');
 const router  = express.Router();
 const { pool } = require('../db/pool');
 const { authenticateToken: auth } = require('../middleware/auth');
+
+const WGER_BASE_URL = 'https://wger.de/api/v2';
 
 // ────────────────────────────────────────────────────────────
 // ROUTINES — sport_workouts
@@ -505,6 +512,96 @@ router.delete('/measurements/:id', auth, async (req, res) => {
         res.json({ success: true });
     } catch (err) {
         console.error('[SPORT] DELETE /measurements/:id :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// ────────────────────────────────────────────────────────────
+// CATALOGUE WGER — lecture seule (aucune clé API requise)
+// Relais serveur vers l'API publique wger.de.
+// Noms affichés au format "Anglais (Français)" quand une
+// traduction française existe, sinon anglais seul.
+// ────────────────────────────────────────────────────────────
+
+// ── Fonction utilitaire : construit le nom bilingue ────────────
+function _construireNomBilingue(translations) {
+    const en = translations.find(t => t.language === 2)?.name || null;
+    const fr = translations.find(t => t.language === 5)?.name || null;
+    if (en && fr) return `${en} (${fr})`;
+    return en || fr || 'Exercice sans nom';
+}
+
+// ── GET /api/sport/wger/categories ─────────────────────────────
+router.get('/wger/categories', auth, async (req, res) => {
+    try {
+        const r = await fetch(`${WGER_BASE_URL}/exercisecategory/?limit=50&format=json`);
+        if (!r.ok) throw new Error(`WGER a répondu avec le statut ${r.status}`);
+        const data = await r.json();
+        res.json({ success: true, categories: data.results });
+    } catch (err) {
+        console.error('[SPORT] GET /wger/categories :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// ── GET /api/sport/wger/equipment ──────────────────────────────
+router.get('/wger/equipment', auth, async (req, res) => {
+    try {
+        const r = await fetch(`${WGER_BASE_URL}/equipment/?limit=50&format=json`);
+        if (!r.ok) throw new Error(`WGER a répondu avec le statut ${r.status}`);
+        const data = await r.json();
+        res.json({ success: true, equipment: data.results });
+    } catch (err) {
+        console.error('[SPORT] GET /wger/equipment :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// ── GET /api/sport/wger/exercises ──────────────────────────────
+// Paramètres optionnels : ?search=squat&category=10&equipment=3&limit=20&offset=0
+router.get('/wger/exercises', auth, async (req, res) => {
+    const search    = (req.query.search    || '').trim().toLowerCase();
+    const category  = req.query.category   || '';
+    const equipment = req.query.equipment  || '';
+    const limit     = Math.min(parseInt(req.query.limit, 10)  || 20, 50);
+    const offset    = parseInt(req.query.offset, 10) || 0;
+
+    try {
+        const params = new URLSearchParams({
+            limit : String(limit),
+            offset: String(offset),
+            format: 'json'
+        });
+        if (category)  params.set('category',  category);
+        if (equipment) params.set('equipment', equipment);
+
+        const r = await fetch(`${WGER_BASE_URL}/exerciseinfo/?${params.toString()}`);
+        if (!r.ok) throw new Error(`WGER a répondu avec le statut ${r.status}`);
+        const data = await r.json();
+
+        let exercices = data.results.map(ex => {
+            const translations = ex.translations || [];
+            return {
+                wger_exercise_id: ex.id,
+                name            : _construireNomBilingue(translations),
+                category        : ex.category,
+                equipment       : ex.equipment,
+                muscles         : ex.muscles,
+                image           : ex.images?.[0]?.image || null
+            };
+        });
+
+        if (search) {
+            exercices = exercices.filter(ex => ex.name.toLowerCase().includes(search));
+        }
+
+        res.json({
+            success : true,
+            count   : data.count,
+            exercises: exercices
+        });
+    } catch (err) {
+        console.error('[SPORT] GET /wger/exercises :', err.message);
         res.status(500).json({ success: false, message: err.message });
     }
 });
