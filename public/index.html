@@ -387,8 +387,16 @@
             </div>
         </main>
 
-        <!-- COLONNE DROITE (Human Link) -->
+        <!-- COLONNE DROITE (Sport Stats + Human Link) -->
         <aside class="sidebar-col right-sidebar" id="human-link">
+
+            <!-- Widget Sport Stats — global, visible quel que soit l'onglet actif.
+                 Rempli dynamiquement par chargerSportStatsWidget() (sport.js) :
+                 phrase encourageante si aucune séance, sinon stats de la semaine. -->
+            <div class="glass-panel" id="sport-stats-widget">
+                <!-- Contenu injecté en JS -->
+            </div>
+
             <div class="glass-panel">
                 <h3 style="margin-top:0;font-weight:600;color:#1f2937;">Human Link</h3>
                 <p style="font-size:13px;color:#6b7280;">(Espace contacts à venir)</p>
@@ -397,7 +405,7 @@
 
     </div>
 
-    <!-- Bottom nav (Visible uniquement sur Mobile) -->
+        <!-- Bottom nav (Visible uniquement sur Mobile) -->
     <nav class="bottom-nav" id="bottom-nav">
         <button class="bn-item active" data-tab="accueil"   onclick="switchTab('accueil')">
             <span class="bn-icon">🏠</span>

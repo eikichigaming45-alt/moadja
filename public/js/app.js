@@ -209,6 +209,7 @@ async function showApp() {
     if (typeof chargerPierreNaissance  === 'function') chargerPierreNaissance();
     if (typeof chargerAnimalTotem      === 'function') chargerAnimalTotem();
     if (typeof chargerSportDashboard   === 'function') chargerSportDashboard();
+    if (typeof chargerSportStatsWidget === 'function') chargerSportStatsWidget();
     setTimeout(() => {
         if (typeof chargerWidgetTaches === 'function') chargerWidgetTaches();
     }, 300);
@@ -324,6 +325,7 @@ function actualiser() {
     if (typeof chargerThemeAstral      === 'function') chargerThemeAstral();
     if (typeof chargerPierreNaissance  === 'function') chargerPierreNaissance();
     if (typeof chargerAnimalTotem      === 'function') chargerAnimalTotem();
+    if (typeof chargerSportStatsWidget === 'function') chargerSportStatsWidget();
     chargerWidgetAnniversaires();
     if (typeof Agenda !== 'undefined') Agenda.charger();
     if (typeof Cycle  !== 'undefined') Cycle.charger();
@@ -451,7 +453,7 @@ function refreshWidget(id) {
         case 'cycle'             : if (typeof Cycle  !== 'undefined') Cycle.charger();                     break;
         case 'agenda'            : if (typeof Agenda !== 'undefined') Agenda.charger();                    break;
         case 'social'            : if (typeof chargerWidgetSocial    === 'function') chargerWidgetSocial();    break;
-                case 'sante'             : if (typeof chargerWidgetSante     === 'function') chargerWidgetSante();     break;
+        case 'sante'             : if (typeof chargerWidgetSante     === 'function') chargerWidgetSante();     break;
     }
 }
 
