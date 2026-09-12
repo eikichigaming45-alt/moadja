@@ -1,9 +1,191 @@
 /* ============================================================
    public/css/sport.css
-   Styles du module Sport (WGER). Fichier créé vide pour
-   l'instant — sera complété au fur et à mesure du développement
-   du Dashboard, des routines, de la séance active, etc.
-   Réutilise au maximum les classes/variables déjà existantes
-   (glass-panel, --primary-color, --text-main...) conformément
-   à la charte graphique du site.
+   Styles du module Sport (WGER) — Dashboard.
+   Réutilise strictement les variables et classes déjà définies
+   dans style.css (glass-panel, --primary color violet, etc.).
+   Aucune nouvelle couleur inventée.
    ============================================================ */
+
+/* ── Wrapper général de l'onglet Sport ── */
+.sport-wrap {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+@media (max-width: 700px) {
+    .sport-wrap { padding: 12px; gap: 12px; }
+}
+
+/* ── Pilules de sous-navigation (Dashboard / Mes Routines / Catalogue) ── */
+.sport-pills {
+    display: flex;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 50px;
+    padding: 4px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+.sport-pill {
+    flex: 1;
+    padding: 10px 12px;
+    border: none;
+    background: transparent;
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 50px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+.sport-pill.active {
+    background: rgba(167, 139, 250, 0.85);
+    color: #fff;
+    box-shadow: 0 8px 24px rgba(167, 139, 250, 0.25);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+/* ── Carte principale du Dashboard (résumé hebdomadaire) ── */
+.sport-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: var(--glass-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--glass-shadow);
+    padding: 24px;
+}
+
+/* ── État vide / encourageant (aucune séance cette semaine) ── */
+.sport-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 12px 0;
+}
+.sport-empty-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(167, 139, 250, 0.12);
+    color: rgb(167, 139, 250);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+.sport-empty-icon svg { width: 30px; height: 30px; }
+.sport-empty-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 6px;
+}
+.sport-empty-text {
+    font-size: 13px;
+    color: #6b7280;
+    line-height: 1.5;
+    max-width: 320px;
+    margin-bottom: 20px;
+}
+
+/* ── Bouton d'incitation principal (CTA) ── */
+.sport-cta-btn {
+    padding: 14px 28px;
+    background: rgba(167, 139, 250, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: #fff;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(167, 139, 250, 0.25);
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.sport-cta-btn:hover {
+    background: rgba(167, 139, 250, 1);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(167, 139, 250, 0.35);
+}
+
+/* ── Ligne de statistiques (quand il y a de l'activité) ── */
+.sport-stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.sport-stat {
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 16px;
+    padding: 14px 10px;
+    text-align: center;
+}
+.sport-stat-val {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text-main);
+}
+.sport-stat-lbl {
+    font-size: 11px;
+    color: #6b7280;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-top: 2px;
+}
+
+/* ── Titre de section ── */
+.sport-section-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+}
+
+/* ── Liste des dernières séances ── */
+.sport-session-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 16px;
+    margin-bottom: 8px;
+}
+.sport-session-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(167, 139, 250, 0.12);
+    color: rgb(167, 139, 250);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.sport-session-info { flex: 1; min-width: 0; }
+.sport-session-nom {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+.sport-session-meta {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 2px;
+}

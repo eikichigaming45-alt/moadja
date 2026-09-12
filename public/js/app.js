@@ -208,6 +208,7 @@ async function showApp() {
     if (typeof chargerThemeAstral      === 'function') chargerThemeAstral();
     if (typeof chargerPierreNaissance  === 'function') chargerPierreNaissance();
     if (typeof chargerAnimalTotem      === 'function') chargerAnimalTotem();
+    if (typeof chargerSportDashboard   === 'function') chargerSportDashboard();
     setTimeout(() => {
         if (typeof chargerWidgetTaches === 'function') chargerWidgetTaches();
     }, 300);
@@ -406,7 +407,7 @@ async function validerChangementMdpObligatoire(userId) {
                 document.getElementById('overlay').classList.remove('on');
                 showApp();
             }, 1000);
-                } else {
+        } else {
             msg.style.color = '#ef4444';
             msg.textContent = '❌ ' + (d.message || 'Erreur.');
         }
