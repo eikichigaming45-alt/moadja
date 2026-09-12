@@ -72,6 +72,7 @@ app.use('/api/animal-totem',     require('./routes/animal-totem'));
 app.use('/api/feed',             require('./routes/feed'));
 app.use('/api/social',           require('./routes/social'));
 app.use('/api/eclats',           require('./routes/eclats'));
+app.use('/api/sport',            require('./routes/sport'));
 app.use('/api/tchat',            tchatRouter);
 
 // ── Socket.io — authentification middleware ───────────────────

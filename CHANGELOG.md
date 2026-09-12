@@ -1,5 +1,12 @@
 ## MoaDja
 
+## v1.86 - 12-09-2026
+
+### 🔧 Corrections
+- Travaux techniques en coulisses pour préparer les futures fonctionnalités du module Sport (création de routines, suivi des séances, mensurations) - aucun changement visible pour l'instant.
+
+---
+
 ## v1.85 - 12-09-2026
 
 ### 🔧 Corrections
