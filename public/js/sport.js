@@ -102,3 +102,31 @@ function _sportSwitchSection(section) {
     const cible = document.getElementById(`sport-section-${section}`);
     if (cible) cible.style.display = 'block';
 }
+
+// ── Phrases d'encouragement (widget colonne droite) ────────────
+const SPORT_PHRASES_ENCOURAGEMENT = [
+    "Chaque séance compte, même la plus courte. Lancez-vous !",
+    "Votre progression commence par un premier pas.",
+    "Aujourd'hui est un bon jour pour bouger un peu.",
+    "Pas de séance cette semaine ? Il n'est jamais trop tard.",
+    "Votre corps vous remerciera pour chaque effort, même petit."
+];
+
+// ── Widget Sport Stats (colonne droite, global à tous les onglets) ─
+function chargerSportStatsWidget() {
+    const zone = document.getElementById('sport-stats-widget');
+    if (!zone) return;
+
+    // Étape actuelle : aucune donnée réelle (pas d'API branchée).
+    // On affiche systématiquement une phrase d'encouragement aléatoire.
+    const phrase = SPORT_PHRASES_ENCOURAGEMENT[
+        Math.floor(Math.random() * SPORT_PHRASES_ENCOURAGEMENT.length)
+    ];
+
+    zone.innerHTML = `
+        <h3 style="margin-top:0;font-weight:600;color:#1f2937;display:flex;align-items:center;gap:8px;">
+            ${SPORT_ICONE_DUMBBELL} Sport
+        </h3>
+        <p style="font-size:13px;color:#6b7280;margin-bottom:0;">${phrase}</p>
+    `;
+}
