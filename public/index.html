@@ -92,8 +92,6 @@
         <div class="topbar-right" style="position:relative; display:flex; align-items:center; gap:8px;">
 
             <!-- Cloche notifications (icône vectorielle épurée) — ferme la recherche au clic -->
-            <!-- FIX badge tronqué : badge sorti du bouton, positionné sur le wrapper (non soumis
-                 à un éventuel overflow:hidden / border-radius de .icon-btn) -->
             <div style="position:relative;display:inline-flex">
                 <button class="icon-btn" id="btn-cloche" onclick="document.getElementById('search-toggle').checked=false;togglePanelNotifs(event)" title="Notifications">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -123,9 +121,6 @@
             </div>
 
             <!-- Bouton Tchat Mobile (Visible uniquement sur mobile via CSS) — ferme la recherche au clic -->
-            <!-- FIX badge tronqué : badge sorti du bouton (span devenu sibling), positionné
-                 sur le wrapper englobant. Le bouton .icon-btn (souvent overflow:hidden / rond)
-                 ne clippe plus le badge qui dépassait via ses offsets négatifs. -->
             <div style="position:relative;display:inline-flex">
                 <button class="icon-btn mobile-chat-btn" id="btn-tchat-mobile-header" onclick="document.getElementById('search-toggle').checked=false;window.Tchat && Tchat.toggle()" title="Messages">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -312,27 +307,17 @@
                         <span class="bn-label">Quotidien</span>
                     </button>
                     <button class="bn-item" data-tab="bienetre" onclick="switchTab('bienetre')" style="flex: 1; padding: 10px 4px;">
-                        <span class="bn-icon">🏠</span>
-                        <span class="bn-label">Accueil</span>
-                    </button>
-                    <button class="bn-item" data-tab="quotidien" onclick="switchTab('quotidien')" style="flex: 1; padding: 10px 4px;">
-                        <span class="bn-icon">📅</span>
-                        <span class="bn-label">Quotidien</span>
-                    </button>
-                    <button class="bn-item" data-tab="bienetre" onclick="switchTab('bienetre')" style="flex: 1; padding: 10px 4px;">
                         <span class="bn-icon">🌸</span>
                         <span class="bn-label">Bien-être</span>
                     </button>
                     <button class="bn-item" data-tab="sport" onclick="switchTab('sport')" style="flex: 1; padding: 10px 4px;">
                         <span class="bn-icon">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M6.5 6.5 17.5 17.5"></path>
-                                <path d="M5 4 8 7"></path>
-                                <path d="M17 17 20 20"></path>
-                                <path d="M2.5 9.5 4 11"></path>
-                                <path d="M13 6 15 8"></path>
-                                <path d="M9 16 11 18"></path>
-                                <path d="M20.5 14.5 19 13"></path>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M2 9v6"></path>
+                                <path d="M6 6v12"></path>
+                                <path d="M6 12h12"></path>
+                                <path d="M18 6v12"></path>
+                                <path d="M22 9v6"></path>
                             </svg>
                         </span>
                         <span class="bn-label">Sport</span>
@@ -421,14 +406,12 @@
         </button>
         <button class="bn-item" data-tab="sport"     onclick="switchTab('sport')">
             <span class="bn-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M6.5 6.5 17.5 17.5"></path>
-                    <path d="M5 4 8 7"></path>
-                    <path d="M17 17 20 20"></path>
-                    <path d="M2.5 9.5 4 11"></path>
-                    <path d="M13 6 15 8"></path>
-                    <path d="M9 16 11 18"></path>
-                    <path d="M20.5 14.5 19 13"></path>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 9v6"></path>
+                    <path d="M6 6v12"></path>
+                    <path d="M6 12h12"></path>
+                    <path d="M18 6v12"></path>
+                    <path d="M22 9v6"></path>
                 </svg>
             </span>
             <span class="bn-label">Sport</span>
@@ -481,4 +464,3 @@
 <script src="/js/sport.js"            defer></script>
 </body>
 </html>
-
