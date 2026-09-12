@@ -4,7 +4,8 @@
 // séance active, bilan, mensurations, partage.
 // Étape actuelle : Dashboard visuel mocké (aucune donnée réelle,
 // aucun appel API). La section "Mes Routines" reste un placeholder.
-// Le Catalogue est désormais branché sur le backend WGER (v1.87).
+// Le Catalogue est branché sur le backend WGER (v1.88+, pagination
+// par has_more suite à la correction du filtrage agrégé).
 // ============================================================
 
 const SPORT_ICONE_DUMBBELL = `
@@ -116,13 +117,16 @@ function _sportSwitchSection(section) {
 }
 
 // ────────────────────────────────────────────────────────────
-// CATALOGUE WGER — recherche d'exercices (relais backend v1.87)
+// CATALOGUE WGER — recherche d'exercices (relais backend v1.88+)
 // Auth : même mécanisme que le reste du site (token Bearer
 // stocké dans localStorage['moadja_user'].token).
+// Pagination basée sur has_more (le backend agrège/filtre les
+// exercices WGER, un total exact n'est pas disponible).
 // ────────────────────────────────────────────────────────────
 
 let _sportCatalogueChargee     = false;
 let _sportCatalogueOffset      = 0;
+let _sportCataloguePageActuelle = 1;
 let _sportCatalogueSearchTimer = null;
 const SPORT_CATALOGUE_LIMIT    = 20;
 
@@ -185,30 +189,35 @@ function _sportChargerCatalogue() {
     document.getElementById('sport-catalogue-search').addEventListener('input', () => {
         clearTimeout(_sportCatalogueSearchTimer);
         _sportCatalogueSearchTimer = setTimeout(() => {
-            _sportCatalogueOffset = 0;
+            _sportCatalogueOffset       = 0;
+            _sportCataloguePageActuelle = 1;
             _sportRechercherExercices();
         }, 400);
     });
 
     document.getElementById('sport-catalogue-filtre-categorie').addEventListener('change', () => {
-        _sportCatalogueOffset = 0;
+        _sportCatalogueOffset       = 0;
+        _sportCataloguePageActuelle = 1;
         _sportRechercherExercices();
     });
 
     document.getElementById('sport-catalogue-filtre-equipement').addEventListener('change', () => {
-        _sportCatalogueOffset = 0;
+        _sportCatalogueOffset       = 0;
+        _sportCataloguePageActuelle = 1;
         _sportRechercherExercices();
     });
 
     document.getElementById('sport-catalogue-prev').addEventListener('click', () => {
         if (_sportCatalogueOffset >= SPORT_CATALOGUE_LIMIT) {
             _sportCatalogueOffset -= SPORT_CATALOGUE_LIMIT;
+            _sportCataloguePageActuelle -= 1;
             _sportRechercherExercices();
         }
     });
 
     document.getElementById('sport-catalogue-next').addEventListener('click', () => {
         _sportCatalogueOffset += SPORT_CATALOGUE_LIMIT;
+        _sportCataloguePageActuelle += 1;
         _sportRechercherExercices();
     });
 
@@ -280,7 +289,7 @@ async function _sportRechercherExercices() {
             return;
         }
 
-        _sportRenderResultatsCatalogue(d.exercises, d.count);
+        _sportRenderResultatsCatalogue(d.exercises, d.has_more);
     } catch (err) {
         console.error('[SPORT] rechercherExercices :', err.message);
         zone.innerHTML = `<p class="sport-catalogue-loading">Erreur de connexion au serveur.</p>`;
@@ -288,7 +297,9 @@ async function _sportRechercherExercices() {
 }
 
 // ── Affiche la grille de résultats + met à jour la pagination ──
-function _sportRenderResultatsCatalogue(exercices, total) {
+// (basée sur has_more, un total exact de pages n'est pas disponible
+// avec le filtrage agrégé côté backend)
+function _sportRenderResultatsCatalogue(exercices, hasMore) {
     const zone       = document.getElementById('sport-catalogue-resultats');
     const pagination = document.getElementById('sport-catalogue-pagination');
     if (!zone) return;
@@ -315,11 +326,9 @@ function _sportRenderResultatsCatalogue(exercices, total) {
 
     if (pagination) {
         pagination.style.display = 'flex';
-        const pageActuelle = Math.floor(_sportCatalogueOffset / SPORT_CATALOGUE_LIMIT) + 1;
-        const totalPages   = Math.max(1, Math.ceil(total / SPORT_CATALOGUE_LIMIT));
-        document.getElementById('sport-catalogue-page-info').textContent = `Page ${pageActuelle} / ${totalPages}`;
+        document.getElementById('sport-catalogue-page-info').textContent = `Page ${_sportCataloguePageActuelle}`;
         document.getElementById('sport-catalogue-prev').disabled = _sportCatalogueOffset === 0;
-        document.getElementById('sport-catalogue-next').disabled = _sportCatalogueOffset + SPORT_CATALOGUE_LIMIT >= total;
+        document.getElementById('sport-catalogue-next').disabled = !hasMore;
     }
 }
 

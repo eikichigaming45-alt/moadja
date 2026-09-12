@@ -11,6 +11,11 @@
 // relais serveur vers l'API publique wger.de, aucune clé requise.
 // Noms affichés au format "Anglais (Français)" quand une
 // traduction française existe, sinon anglais seul.
+// Catégories/équipements traduits via table statique FR (WGER
+// ne fournit pas de traduction FR pour ces libellés).
+// Recherche/filtrage agrégés par lots pour éviter les pages
+// quasi-vides (WGER ne filtre pas le texte libre côté serveur,
+// et certains exercices n'ont pas d'image).
 // ============================================================
 const express = require('express');
 const router  = express.Router();
@@ -519,9 +524,51 @@ router.delete('/measurements/:id', auth, async (req, res) => {
 // ────────────────────────────────────────────────────────────
 // CATALOGUE WGER — lecture seule (aucune clé API requise)
 // Relais serveur vers l'API publique wger.de.
-// Noms affichés au format "Anglais (Français)" quand une
-// traduction française existe, sinon anglais seul.
+// Noms d'exercices affichés au format "Anglais (Français)" quand
+// une traduction française existe, sinon anglais seul.
+// Catégories/équipements traduits via table statique FR (WGER ne
+// fournit aucune traduction FR pour ces libellés). Repli sur
+// l'anglais si un terme n'est pas dans la table (aucune traduction
+// inventée à l'aveugle).
+// Recherche + filtre "image obligatoire" agrégés par lots de 50
+// exercices WGER, car WGER ne filtre pas le texte libre côté
+// serveur de façon fiable et n'a pas d'image pour tous les
+// exercices.
 // ────────────────────────────────────────────────────────────
+
+// ── Table de traduction des catégories musculaires ─────────────
+const SPORT_WGER_CATEGORIES_FR = {
+    'Abs'      : 'Abdominaux',
+    'Arms'     : 'Bras',
+    'Back'     : 'Dos',
+    'Calves'   : 'Mollets',
+    'Cardio'   : 'Cardio',
+    'Chest'    : 'Poitrine',
+    'Legs'     : 'Jambes',
+    'Shoulders': 'Épaules'
+};
+
+// ── Table de traduction des équipements ─────────────────────────
+// Repli automatique sur le nom anglais si non présent ici.
+const SPORT_WGER_EQUIPEMENT_FR = {
+    'Barbell'                    : 'Barre olympique',
+    'SZ-Bar'                     : 'Barre EZ',
+    'Dumbbell'                   : 'Haltère',
+    'Kettlebell'                 : 'Kettlebell',
+    'Gym mat'                    : 'Tapis de sol',
+    'Swiss Ball'                 : 'Ballon de gym',
+    'Pull-up bar'                : 'Barre de traction',
+    'Bench'                      : 'Banc',
+    'none (bodyweight exercise)' : 'Aucun (poids du corps)'
+};
+
+function _traduireCategorie(nom) {
+    return SPORT_WGER_CATEGORIES_FR[nom] || nom;
+}
+
+function _traduireEquipement(nom) {
+    return SPORT_WGER_EQUIPEMENT_FR[nom] || nom;
+}
 
 // ── Fonction utilitaire : construit le nom bilingue ────────────
 function _construireNomBilingue(translations) {
@@ -537,7 +584,11 @@ router.get('/wger/categories', auth, async (req, res) => {
         const r = await fetch(`${WGER_BASE_URL}/exercisecategory/?limit=50&format=json`);
         if (!r.ok) throw new Error(`WGER a répondu avec le statut ${r.status}`);
         const data = await r.json();
-        res.json({ success: true, categories: data.results });
+        const categories = data.results.map(c => ({
+            id  : c.id,
+            name: _traduireCategorie(c.name)
+        }));
+        res.json({ success: true, categories });
     } catch (err) {
         console.error('[SPORT] GET /wger/categories :', err.message);
         res.status(500).json({ success: false, message: err.message });
@@ -550,7 +601,11 @@ router.get('/wger/equipment', auth, async (req, res) => {
         const r = await fetch(`${WGER_BASE_URL}/equipment/?limit=50&format=json`);
         if (!r.ok) throw new Error(`WGER a répondu avec le statut ${r.status}`);
         const data = await r.json();
-        res.json({ success: true, equipment: data.results });
+        const equipment = data.results.map(e => ({
+            id  : e.id,
+            name: _traduireEquipement(e.name)
+        }));
+        res.json({ success: true, equipment });
     } catch (err) {
         console.error('[SPORT] GET /wger/equipment :', err.message);
         res.status(500).json({ success: false, message: err.message });
@@ -559,6 +614,15 @@ router.get('/wger/equipment', auth, async (req, res) => {
 
 // ── GET /api/sport/wger/exercises ──────────────────────────────
 // Paramètres optionnels : ?search=squat&category=10&equipment=3&limit=20&offset=0
+//
+// Fonctionnement par agrégation : WGER est interrogé par lots de
+// 50 résultats (page interne), chaque lot est filtré localement
+// (texte de recherche + présence d'une image obligatoire), puis
+// on avance dans les lots suivants jusqu'à obtenir assez de
+// résultats pour remplir la page demandée (limit) ou jusqu'à
+// épuisement de la base WGER. Cela évite les pages quasi-vides
+// que provoquerait un filtrage a posteriori sur une seule page
+// de 20 résultats bruts.
 router.get('/wger/exercises', auth, async (req, res) => {
     const search    = (req.query.search    || '').trim().toLowerCase();
     const category  = req.query.category   || '';
@@ -566,39 +630,73 @@ router.get('/wger/exercises', auth, async (req, res) => {
     const limit     = Math.min(parseInt(req.query.limit, 10)  || 20, 50);
     const offset    = parseInt(req.query.offset, 10) || 0;
 
+    const LOT_INTERNE     = 50;
+    const MAX_LOTS_SONDES = 40; // garde-fou : ~2000 exercices WGER max explorés par requête
+
     try {
-        const params = new URLSearchParams({
-            limit : String(limit),
-            offset: String(offset),
-            format: 'json'
-        });
-        if (category)  params.set('category',  category);
-        if (equipment) params.set('equipment', equipment);
+        // Nombre d'exercices valides (filtrés) à ignorer avant la page demandée,
+        // puis nombre à collecter pour remplir cette page.
+        let aIgnorer   = offset;
+        let aCollecter = limit;
+        const resultats = [];
 
-        const r = await fetch(`${WGER_BASE_URL}/exerciseinfo/?${params.toString()}`);
-        if (!r.ok) throw new Error(`WGER a répondu avec le statut ${r.status}`);
-        const data = await r.json();
+        let lotOffsetWger = 0;
+        let lotsSondes     = 0;
+        let plusDeDonnees  = true;
 
-        let exercices = data.results.map(ex => {
-            const translations = ex.translations || [];
-            return {
-                wger_exercise_id: ex.id,
-                name            : _construireNomBilingue(translations),
-                category        : ex.category,
-                equipment       : ex.equipment,
-                muscles         : ex.muscles,
-                image           : ex.images?.[0]?.image || null
-            };
-        });
+        while (aCollecter > 0 && plusDeDonnees && lotsSondes < MAX_LOTS_SONDES) {
+            const params = new URLSearchParams({
+                limit : String(LOT_INTERNE),
+                offset: String(lotOffsetWger),
+                format: 'json'
+            });
+            if (category)  params.set('category',  category);
+            if (equipment) params.set('equipment', equipment);
 
-        if (search) {
-            exercices = exercices.filter(ex => ex.name.toLowerCase().includes(search));
+            const r = await fetch(`${WGER_BASE_URL}/exerciseinfo/?${params.toString()}`);
+            if (!r.ok) throw new Error(`WGER a répondu avec le statut ${r.status}`);
+            const data = await r.json();
+
+            if (!data.results.length) {
+                plusDeDonnees = false;
+                break;
+            }
+
+            for (const ex of data.results) {
+                const translations = ex.translations || [];
+                const nom          = _construireNomBilingue(translations);
+                const image        = ex.images?.[0]?.image || null;
+
+                if (!image) continue; // filtre : exercice sans image ignoré
+                if (search && !nom.toLowerCase().includes(search)) continue;
+
+                if (aIgnorer > 0) {
+                    aIgnorer--;
+                    continue;
+                }
+
+                resultats.push({
+                    wger_exercise_id: ex.id,
+                    name            : nom,
+                    category        : ex.category,
+                    equipment       : ex.equipment,
+                    muscles         : ex.muscles,
+                    image
+                });
+                aCollecter--;
+
+                if (aCollecter === 0) break;
+            }
+
+            plusDeDonnees = Boolean(data.next);
+            lotOffsetWger += LOT_INTERNE;
+            lotsSondes++;
         }
 
         res.json({
-            success : true,
-            count   : data.count,
-            exercises: exercices
+            success  : true,
+            has_more : aCollecter === 0 && plusDeDonnees,
+            exercises: resultats
         });
     } catch (err) {
         console.error('[SPORT] GET /wger/exercises :', err.message);

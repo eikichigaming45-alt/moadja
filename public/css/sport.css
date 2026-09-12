@@ -249,7 +249,7 @@
    CATALOGUE WGER — Recherche d'exercices (section "Catalogue")
    ============================================================ */
 
-/* ── Barre d'outils : recherche + filtres ── */
+/* ── Barre d'outils : recherche (pleine largeur) + filtres (2 colonnes) ── */
 .sport-catalogue-toolbar {
     display: flex;
     flex-wrap: wrap;
@@ -257,8 +257,7 @@
     margin-bottom: 16px;
 }
 .sport-catalogue-search {
-    flex: 2;
-    min-width: 180px;
+    flex: 1 1 100%;
     padding: 10px 16px;
     background: rgba(255, 255, 255, 0.5);
     border: 1px solid rgba(255, 255, 255, 0.7);
@@ -272,8 +271,8 @@
     border-color: rgba(167, 139, 250, 0.7);
 }
 .sport-catalogue-select {
-    flex: 1;
-    min-width: 140px;
+    flex: 1 1 calc(50% - 5px);
+    min-width: 170px;
     padding: 10px 14px;
     background: rgba(255, 255, 255, 0.5);
     border: 1px solid rgba(255, 255, 255, 0.7);
@@ -282,6 +281,14 @@
     color: var(--text-main);
     outline: none;
     cursor: pointer;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+}
+@media (max-width: 500px) {
+    .sport-catalogue-select {
+        flex: 1 1 100%;
+    }
 }
 
 /* ── Grille de résultats ── */
