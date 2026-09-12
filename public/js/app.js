@@ -81,6 +81,16 @@ function fermerUserMenu() {
     if (menu) menu.style.display = 'none';
 }
 
+// ── Affichage conditionnel du lien Administration (menu avatar) ─
+// Le bouton #user-menu-admin-item est caché par défaut dans le HTML.
+// On ne l'affiche que si l'utilisateur connecté a le rôle 'admin'.
+function _afficherAdminMenuItem() {
+    const item = document.getElementById('user-menu-admin-item');
+    if (!item) return;
+    const user = getUser();
+    item.style.display = (user?.role === 'admin') ? 'flex' : 'none';
+}
+
 document.addEventListener('click', function(e) {
     const menu = document.getElementById('user-menu');
     const btn  = document.getElementById('btn-profil-header');
@@ -171,6 +181,7 @@ async function showApp() {
 
     afficherDate();
     afficherVersion();
+    _afficherAdminMenuItem();
 
     // ── Lecture onglet depuis URL (push natif) ────────────────
     const params       = new URLSearchParams(window.location.search);
@@ -220,6 +231,7 @@ const ONGLET_TITRES = {
     accueil  : 'MoaDja',
     quotidien: 'Mon Quotidien',
     bienetre : 'Bien-être',
+    sport    : 'Sport',
     astral   : 'Astral',
     profil   : 'Profil'
 };
@@ -290,6 +302,8 @@ function logout() {
     if (panel) panel.style.display = 'none';
     const badge = document.getElementById('notif-badge');
     if (badge) badge.style.display = 'none';
+
+    _afficherAdminMenuItem();
 
     switchTab('accueil', true);
 }
@@ -392,7 +406,7 @@ async function validerChangementMdpObligatoire(userId) {
                 document.getElementById('overlay').classList.remove('on');
                 showApp();
             }, 1000);
-        } else {
+                } else {
             msg.style.color = '#ef4444';
             msg.textContent = '❌ ' + (d.message || 'Erreur.');
         }

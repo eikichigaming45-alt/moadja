@@ -34,6 +34,7 @@
     <link rel="stylesheet" href="/css/tchat.css">
     <link rel="stylesheet" href="/css/pierre-naissance.css">
     <link rel="stylesheet" href="/css/animal-totem.css">
+    <link rel="stylesheet" href="/css/sport.css">
 
     <!-- Styles spécifiques intégrés -->
     <style>
@@ -202,6 +203,16 @@
                     👤 Mon profil
                 </button>
 
+                <!-- Lien Administration : caché par défaut, affiché en JS (app.js) si user.role === 'admin' -->
+                <button class="user-menu-item" id="user-menu-admin-item" onclick="fermerUserMenu();openModal('admin')" style="
+                    display:none;align-items:center;gap:10px;
+                    width:100%;padding:12px 16px;border:none;
+                    background:none;text-align:left;font-size:14px;
+                    color:#1f2937;cursor:pointer;
+                " onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='none'">
+                    ⚙️ Administration
+                </button>
+
                 <div style="height:1px;background:#f0f0f0;margin:4px 0"></div>
 
                 <button class="user-menu-item" onclick="logout()" style="
@@ -301,8 +312,30 @@
                         <span class="bn-label">Quotidien</span>
                     </button>
                     <button class="bn-item" data-tab="bienetre" onclick="switchTab('bienetre')" style="flex: 1; padding: 10px 4px;">
+                        <span class="bn-icon">🏠</span>
+                        <span class="bn-label">Accueil</span>
+                    </button>
+                    <button class="bn-item" data-tab="quotidien" onclick="switchTab('quotidien')" style="flex: 1; padding: 10px 4px;">
+                        <span class="bn-icon">📅</span>
+                        <span class="bn-label">Quotidien</span>
+                    </button>
+                    <button class="bn-item" data-tab="bienetre" onclick="switchTab('bienetre')" style="flex: 1; padding: 10px 4px;">
                         <span class="bn-icon">🌸</span>
                         <span class="bn-label">Bien-être</span>
+                    </button>
+                    <button class="bn-item" data-tab="sport" onclick="switchTab('sport')" style="flex: 1; padding: 10px 4px;">
+                        <span class="bn-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M6.5 6.5 17.5 17.5"></path>
+                                <path d="M5 4 8 7"></path>
+                                <path d="M17 17 20 20"></path>
+                                <path d="M2.5 9.5 4 11"></path>
+                                <path d="M13 6 15 8"></path>
+                                <path d="M9 16 11 18"></path>
+                                <path d="M20.5 14.5 19 13"></path>
+                            </svg>
+                        </span>
+                        <span class="bn-label">Sport</span>
                     </button>
                     <button class="bn-item" data-tab="astral" onclick="switchTab('astral')" style="flex: 1; padding: 10px 4px;">
                         <span class="bn-icon">🔮</span>
@@ -342,12 +375,19 @@
                     <div class="grid" id="grid-bienetre"></div>
                 </div>
 
-                <!-- ONGLET 4 — Astral -->
+                <!-- ONGLET 4 — Sport (nouveau module — vide pour l'instant, sera rempli par sport.js) -->
+                <div class="tab-pane" id="tab-sport">
+                    <div class="grid" id="grid-sport"></div>
+                </div>
+
+                <!-- ONGLET 5 — Astral -->
                 <div class="tab-pane" id="tab-astral">
                     <div class="grid" id="grid-astral"></div>
                 </div>
 
-                <!-- ONGLET 5 — Profil (Uniquement Mobile) -->
+                <!-- ONGLET 6 — Profil (orphelin de la navigation depuis l'ajout du module Sport ;
+                     conservé tel quel dans le DOM, non supprimé, conformément à la décision prise
+                     de ne pas toucher au contenu de ce pane) -->
                 <div class="tab-pane" id="tab-profil">
                     <div class="grid" id="grid-profil"></div>
                 </div>
@@ -379,13 +419,23 @@
             <span class="bn-icon">🌸</span>
             <span class="bn-label">Bien-être</span>
         </button>
+        <button class="bn-item" data-tab="sport"     onclick="switchTab('sport')">
+            <span class="bn-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6.5 6.5 17.5 17.5"></path>
+                    <path d="M5 4 8 7"></path>
+                    <path d="M17 17 20 20"></path>
+                    <path d="M2.5 9.5 4 11"></path>
+                    <path d="M13 6 15 8"></path>
+                    <path d="M9 16 11 18"></path>
+                    <path d="M20.5 14.5 19 13"></path>
+                </svg>
+            </span>
+            <span class="bn-label">Sport</span>
+        </button>
         <button class="bn-item" data-tab="astral"    onclick="switchTab('astral')">
             <span class="bn-icon">🔮</span>
             <span class="bn-label">Astral</span>
-        </button>
-        <button class="bn-item" data-tab="profil"    onclick="switchTab('profil')">
-            <span class="bn-icon">👤</span>
-            <span class="bn-label">Profil</span>
         </button>
     </nav>
 
@@ -428,5 +478,7 @@
 <script src="/js/animal-totem.js"     defer></script>
 <script src="/js/eclats.js"           defer></script>
 <script src="/js/tchat.js"            defer></script>
+<script src="/js/sport.js"            defer></script>
 </body>
 </html>
+
