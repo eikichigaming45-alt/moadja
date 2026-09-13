@@ -1,32 +1,11 @@
-// ============================================================
 // public/js/sport.js
-// Logique du module Sport (WGER) : Dashboard, Mes Routines.
-// Auth : token Bearer stocké dans localStorage['moadja_user'].token
-// (même mécanisme que le reste du site, cf. tchat.js).
-//
-// Mes Routines : une routine = un nom libre + une liste d'exercices
-// (séries/reps cibles, ou durée pour les exercices cardio dont le
-// type_suivi WGER vaut 'duree'). Techniquement, le schéma SQL
-// impose un niveau "jour" (sport_workout_days) entre la routine et
-// ses exercices : un jour unique et invisible est créé
-// automatiquement à la création de chaque routine, jamais montré
-// à l'écran.
-//
-// Durée : saisie et affichage en minutes côté écran, stockée en
-// secondes en base (target_duration_seconds). Un exercice déjà
-// ajouté est considéré "à durée" si target_duration_seconds est
-// non-null, sinon "séries × reps" (aucun rappel WGER nécessaire).
-//
-// Le sélecteur d'exercice (recherche + filtres + grille) reprend
-// le moteur déjà validé pour l'ex-onglet Catalogue (retiré du menu
-// car jugé peu utile en tant qu'onglet autonome) : il s'ouvre
-// désormais uniquement depuis le détail d'une routine, via
-// "Ajouter un exercice".
-//
-// Confirmation de suppression : inline, dans la zone concernée,
-// texte "Confirmer la suppression ?", classes globales
-// .btn-delete / .btn-cancel (esprit taches.js), jamais de confirm().
-// ============================================================
+// Module Sport (WGER) : Dashboard, Mes Routines.
+// Auth : token Bearer dans localStorage['moadja_user'].token (cf. tchat.js).
+// Une routine = nom libre + liste d'exercices. Le schéma impose un "jour"
+// (sport_workout_days) créé automatiquement et invisible à la création.
+// Durée : saisie/affichage en minutes, stockage en secondes (target_duration_seconds).
+// target_duration_seconds non-null => exercice "à durée", sinon "séries × reps".
+// Suppression : confirmation inline (.btn-delete/.btn-cancel), jamais de confirm().
 
 const SPORT_ICONE_DUMBBELL = `
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -38,7 +17,6 @@ const SPORT_ICONE_DUMBBELL = `
     </svg>
 `;
 
-// Icône flèche (bouton d'accès rapide vers l'onglet Sport)
 const SPORT_ICONE_FLECHE = `
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M5 12h14"></path>
@@ -46,7 +24,6 @@ const SPORT_ICONE_FLECHE = `
     </svg>
 `;
 
-// Icône générique utilisée quand un exercice n'a pas d'image (sélecteur)
 const SPORT_ICONE_PAS_IMAGE = `
     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="3" width="18" height="18" rx="3"></rect>
@@ -57,7 +34,7 @@ const SPORT_ICONE_PAS_IMAGE = `
 
 let _sportSectionActive = 'dashboard';
 
-// ── Construction initiale du module Sport ──────────────────
+// ── Construction initiale ──
 function chargerSportDashboard() {
     const zone = document.getElementById('grid-sport');
     if (!zone) return;
@@ -84,7 +61,7 @@ function chargerSportDashboard() {
     `;
 }
 
-// ── Rendu de la vue Dashboard (état "aucune activité") ────────
+// ── Dashboard (état "aucune activité") ──
 function _sportRenderDashboard() {
     return `
         <div class="sport-card">
@@ -110,7 +87,7 @@ function _sportRenderDashboard() {
     `;
 }
 
-// ── Changement de section via les pilules ─────────────────────
+// ── Changement de section ──
 function _sportSwitchSection(section) {
     _sportSectionActive = section;
 
@@ -129,9 +106,7 @@ function _sportSwitchSection(section) {
     }
 }
 
-// ────────────────────────────────────────────────────────────
-// AUTH — même mécanisme que le reste du site
-// ────────────────────────────────────────────────────────────
+// ── AUTH ──
 
 function _sportToken() {
     try { return JSON.parse(localStorage.getItem('moadja_user'))?.token || ''; }
@@ -145,11 +120,7 @@ function _sportAuthHeaders() {
     };
 }
 
-// ────────────────────────────────────────────────────────────
-// UTILITAIRES DURÉE — conversion minutes ↔ secondes
-// Saisie/affichage écran en minutes, stockage base en secondes
-// (target_duration_seconds).
-// ────────────────────────────────────────────────────────────
+// ── Conversion durée min ↔ sec ──
 
 function _sportSecondesVersMinutes(secondes) {
     if (!Number.isInteger(secondes)) return 0;
@@ -161,16 +132,11 @@ function _sportMinutesVersSecondes(minutes) {
     return minutes * 60;
 }
 
-// ────────────────────────────────────────────────────────────
-// MES ROUTINES — liste, création, détail, suppression
-// Une routine = nom libre + liste d'exercices directe.
-// Le "jour" (sport_workout_days) est créé automatiquement et
-// silencieusement à la création d'une routine, jamais affiché.
-// ────────────────────────────────────────────────────────────
+// ── MES ROUTINES ──
 
 let _sportRoutineDetailActive = null; // { workoutId, dayId }
 
-// ── Vue liste des routines ─────────────────────────────────────
+// ── Liste des routines ──
 async function _sportChargerListeRoutines() {
     const zone = document.getElementById('sport-routines-zone');
     if (!zone) return;
@@ -243,7 +209,7 @@ function _sportEchapper(str) {
         .replace(/'/g, '&#39;');
 }
 
-// ── Création d'une routine (+ jour caché automatique) ──────────
+// ── Création d'une routine (+ jour caché) ──
 async function _sportCreerRoutine() {
     const input = document.getElementById('sport-routine-nouveau-nom');
     const msg   = document.getElementById('sport-routine-creation-msg');
@@ -270,7 +236,6 @@ async function _sportCreerRoutine() {
 
         const workoutId = dWorkout.workout.id;
 
-        // Création silencieuse du jour unique (pont technique invisible)
         const rDay = await fetch(`/api/sport/workouts/${workoutId}/days`, {
             method : 'POST',
             headers: _sportAuthHeaders(),
@@ -290,7 +255,7 @@ async function _sportCreerRoutine() {
     }
 }
 
-// ── Suppression d'une routine (confirmation inline) ─────────────
+// ── Suppression d'une routine (liste) ──
 function _sportConfirmerSuppressionRoutine(workoutId, carteEl) {
     if (carteEl.querySelector('.sport-confirm-suppr')) return;
 
@@ -325,7 +290,7 @@ function _sportConfirmerSuppressionRoutine(workoutId, carteEl) {
     });
 }
 
-// ── Détail d'une routine (liste des exercices) ──────────────────
+// ── Détail d'une routine ──
 async function _sportOuvrirDetailRoutine(workoutId) {
     const zone = document.getElementById('sport-routines-zone');
     if (!zone) return;
@@ -429,7 +394,7 @@ function _sportRenderDetailRoutine(workout, jour) {
     });
 }
 
-// ── Suppression de la routine depuis le détail (confirmation inline) ──
+// ── Suppression routine (depuis détail) ──
 function _sportConfirmerSuppressionRoutineDetail(workoutId, btnEl) {
     const msgZone = document.getElementById('sport-routine-suppr-msg');
     if (!msgZone || msgZone.querySelector('.sport-confirm-suppr')) return;
@@ -461,7 +426,7 @@ function _sportConfirmerSuppressionRoutineDetail(workoutId, btnEl) {
     });
 }
 
-// ── Suppression d'un exercice de routine (confirmation inline) ──
+// ── Suppression d'un exercice ──
 function _sportConfirmerSuppressionExercice(exerciceId, itemEl) {
     if (itemEl.querySelector('.sport-confirm-suppr')) return;
 
@@ -492,9 +457,7 @@ function _sportConfirmerSuppressionExercice(exerciceId, itemEl) {
     });
 }
 
-// ── Modification séries/reps OU durée d'un exercice ──────────────
-// estDuree = true si l'exercice a déjà une valeur target_duration_seconds
-// en base (déterminé côté appelant, sans rappel WGER).
+// ── Édition séries/reps ou durée ──
 function _sportEditerExercice(exerciceId, nom, setsActuel, repsActuel, dureeActuelleSecondes) {
     const itemEl = document.getElementById(`sport-exercice-${exerciceId}`);
     if (!itemEl) return;
@@ -507,6 +470,7 @@ function _sportEditerExercice(exerciceId, nom, setsActuel, repsActuel, dureeActu
             <div class="sport-routine-exercice-edit-champs">
                 <input type="number" id="sport-edit-duree-${exerciceId}"
                        value="${_sportSecondesVersMinutes(dureeActuelleSecondes)}" min="1" placeholder="Durée (min)">
+                <span>min</span>
             </div>
             <div class="sport-routine-exercice-edit-actions">
                 <button class="btn-save" id="sport-edit-save-${exerciceId}">Sauvegarder</button>
@@ -553,13 +517,7 @@ function _sportEditerExercice(exerciceId, nom, setsActuel, repsActuel, dureeActu
     });
 }
 
-// ────────────────────────────────────────────────────────────
-// SÉLECTEUR D'EXERCICE — remplace l'ancien onglet Catalogue.
-// Ouvert uniquement depuis le détail d'une routine.
-// Reprend le moteur de recherche déjà validé (agrégation par
-// lots, traductions FR, has_more) : aucun changement de logique
-// de recherche ici, uniquement le contexte d'affichage change.
-// ────────────────────────────────────────────────────────────
+// ── Sélecteur d'exercice (remplace l'ancien onglet Catalogue) ──
 
 let _sportSelecteurOffset       = 0;
 let _sportSelecteurPageActuelle = 1;
@@ -624,7 +582,7 @@ function _sportOuvrirSelecteurExercice() {
         _sportRechercherExercicesSelecteur();
     });
 
-        document.getElementById('sport-selecteur-prev').addEventListener('click', () => {
+    document.getElementById('sport-selecteur-prev').addEventListener('click', () => {
         if (_sportSelecteurOffset >= SPORT_SELECTEUR_LIMIT) {
             _sportSelecteurOffset -= SPORT_SELECTEUR_LIMIT;
             _sportSelecteurPageActuelle -= 1;
@@ -642,7 +600,7 @@ function _sportOuvrirSelecteurExercice() {
     _sportRechercherExercicesSelecteur();
 }
 
-// ── Charge les listes de catégories et d'équipements (une seule fois par ouverture) ──
+// ── Charge catégories/équipements (une fois par ouverture) ──
 async function _sportChargerFiltresSelecteur() {
     try {
         const [rCat, rEqu] = await Promise.all([
@@ -676,7 +634,7 @@ async function _sportChargerFiltresSelecteur() {
     }
 }
 
-// ── Recherche les exercices selon les filtres/texte/pagination actuels ──
+// ── Recherche exercices selon filtres/texte/pagination ──
 async function _sportRechercherExercicesSelecteur() {
     const zone = document.getElementById('sport-selecteur-resultats');
     if (!zone) return;
@@ -713,7 +671,7 @@ async function _sportRechercherExercicesSelecteur() {
     }
 }
 
-// ── Affiche la grille de résultats du sélecteur + pagination (has_more) ──
+// ── Grille de résultats + pagination (has_more) ──
 function _sportRenderResultatsSelecteur(exercices, hasMore) {
     const zone       = document.getElementById('sport-selecteur-resultats');
     const pagination = document.getElementById('sport-selecteur-pagination');
@@ -754,10 +712,7 @@ function _sportRenderResultatsSelecteur(exercices, hasMore) {
     }
 }
 
-// ── Mini-formulaire séries/reps OU durée après sélection d'un exercice ──
-// ex.type_suivi vaut 'duree', 'series', ou null (renvoyé par
-// routes/sport.js uniquement pour la catégorie Cardio mappée).
-// null ou absent => comportement par défaut inchangé (séries × reps).
+// ── Mini-formulaire séries/reps ou durée après sélection ──
 function _sportOuvrirFormulaireAjoutExercice(exercice) {
     const zone = document.getElementById('sport-routines-zone');
     if (!zone || !_sportRoutineDetailActive) return;
@@ -773,6 +728,7 @@ function _sportOuvrirFormulaireAjoutExercice(exercice) {
             ${estDuree ? `
             <div class="sport-routine-exercice-edit-champs" style="margin:16px 0">
                 <input type="number" id="sport-ajout-duree" value="20" min="1" placeholder="Durée (min)">
+                <span>min</span>
             </div>` : `
             <div class="sport-routine-exercice-edit-champs" style="margin:16px 0">
                 <input type="number" id="sport-ajout-sets" value="3" min="1" placeholder="Séries">
@@ -792,7 +748,7 @@ function _sportEchapperJs(str) {
     return (str || '').replace(/'/g, "\\'");
 }
 
-// ── Ajout effectif de l'exercice à la routine ───────────────────
+// ── Ajout effectif de l'exercice ──
 async function _sportValiderAjoutExercice(wgerExerciseId, exerciseName, estDuree) {
     const msg = document.getElementById('sport-ajout-msg');
 
@@ -834,7 +790,7 @@ async function _sportValiderAjoutExercice(wgerExerciseId, exerciseName, estDuree
     }
 }
 
-// ── Phrases d'encouragement (widget colonne droite) ────────────
+// ── Phrases d'encouragement (widget colonne droite) ──
 const SPORT_PHRASES_ENCOURAGEMENT = [
     "Chaque séance compte, même la plus courte. Lancez-vous !",
     "Votre progression commence par un premier pas.",
@@ -843,16 +799,11 @@ const SPORT_PHRASES_ENCOURAGEMENT = [
     "Votre corps vous remerciera pour chaque effort, même petit."
 ];
 
-// ── Widget Sport Stats (colonne droite, global à tous les onglets) ─
-// Toutes les classes utilisées ici sont définies dans public/css/sport.css
-// (.sport-stats-header, .sport-stats-title, .sport-stats-arrow, .sport-stats-text)
-// — aucun style inline, conformément à la règle établie.
+// ── Widget Sport Stats (colonne droite, global) ──
 function chargerSportStatsWidget() {
     const zone = document.getElementById('sport-stats-widget');
     if (!zone) return;
 
-    // Étape actuelle : aucune donnée réelle (pas d'API branchée).
-    // On affiche systématiquement une phrase d'encouragement aléatoire.
     const phrase = SPORT_PHRASES_ENCOURAGEMENT[
         Math.floor(Math.random() * SPORT_PHRASES_ENCOURAGEMENT.length)
     ];
