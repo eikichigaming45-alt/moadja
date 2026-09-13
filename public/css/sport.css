@@ -577,13 +577,19 @@
    largeur) qu'une fois la valeur sauvegardée, pas pendant la saisie.
    On force explicitement flex-basis à 0 et width à 0 (annulé par
    flex-grow) pour un partage strictement égal, sans modifier
-   style.css. La hauteur des inputs (avec padding 8px) définit la
-   hauteur de la ligne : le span "×" ci-dessous s'aligne dessus. */
+   style.css. */
 .sport-routine-exercice-edit-champs {
     display: flex;
     align-items: stretch;
     gap: 10px;
 }
+
+/* Correctif v1.91.4 : le "×" semblait décalé horizontalement car
+   les chiffres saisis dans les <input> restent alignés à gauche par
+   défaut (comportement natif des <input type="number">), créant un
+   vide asymétrique entre "3" et le symbole. text-align:center
+   recentre le contenu affiché dans chaque champ, quel que soit le
+   nombre de chiffres saisis. */
 .sport-routine-exercice-edit-champs input {
     flex: 1 1 0;
     width: 0;
@@ -595,18 +601,14 @@
     border-radius: 12px;
     font-size: 13px;
     color: var(--text-main);
+    text-align: center;
     outline: none;
 }
 
-/* Correctif v1.91.3 : les tentatives précédentes (line-height +
-   décalage en pixels) étaient peu fiables, car un <span> texte ne
-   se centre pas comme un <input> selon les métriques de police.
-   Fix robuste : le span devient lui-même un conteneur flexbox qui
-   s'étire sur toute la hauteur de la ligne (align-self:stretch,
-   hérité de align-items:stretch du parent ci-dessus) puis centre
-   son contenu ("×") en son sein via ses propres align-items /
-   justify-content. Le glyphe est ainsi toujours centré sur la
-   hauteur réelle des inputs adjacents, quel que soit le texte. */
+/* Correctif v1.91.3 : fix robuste pour le centrage vertical du "×",
+   indépendant des métriques de police (span étiré sur la hauteur de
+   la ligne via align-self:stretch hérité du parent, puis centré en
+   son sein). */
 .sport-routine-exercice-edit-champs span {
     display: flex;
     align-items: center;
