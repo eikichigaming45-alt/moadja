@@ -5,7 +5,8 @@
 // (sport_workout_days) créé automatiquement et invisible à la création.
 // Durée : saisie/affichage en minutes, stockage en secondes (target_duration_seconds).
 // target_duration_seconds non-null => exercice "à durée", sinon "séries × reps".
-// Suppression : confirmation inline (.btn-delete/.btn-cancel), jamais de confirm().
+// Suppression : réutilise le modal global (overlay, #modal-title, #modal-body,
+// closeModal() de modal.js) — même mécanisme que taches.js. Jamais de confirm().
 
 const SPORT_ICONE_DUMBBELL = `
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -139,6 +140,32 @@ function _sportMinutesVersSecondes(minutes) {
     return minutes * 60;
 }
 
+// ── Confirmation de suppression via le modal global (esprit taches.js) ──
+// Ouvre l'overlay/modal déjà utilisés partout ailleurs sur le site
+// (#overlay, #modal-title, #modal-body) plutôt qu'une confirmation
+// inline. onConfirm est appelé après fermeture du modal si l'utilisateur
+// valide ; rien ne se passe s'il annule, ferme via Échap ou retour Android
+// (mécanismes déjà gérés globalement dans modal.js).
+function _sportOuvrirConfirmationSuppression(onConfirm) {
+    document.getElementById('overlay').classList.add('on');
+    document.body.classList.add('modal-open');
+    history.pushState({ modalOpen: true }, '', '');
+
+    document.getElementById('modal-title').textContent = 'Confirmation';
+    document.getElementById('modal-body').innerHTML = `
+        <p style="color:#333;font-size:15px;margin-bottom:20px">Confirmer la suppression ?</p>
+        <div class="modal-actions">
+            <button class="btn-delete" id="sport-modal-suppr-oui">Confirmer</button>
+            <button class="btn-cancel" id="sport-modal-suppr-non">Annuler</button>
+        </div>`;
+
+    document.getElementById('sport-modal-suppr-oui').onclick = async () => {
+        closeModal();
+        await onConfirm();
+    };
+    document.getElementById('sport-modal-suppr-non').onclick = () => closeModal();
+}
+
 // ── MES ROUTINES ──
 
 let _sportRoutineDetailActive = null; // { workoutId, dayId }
@@ -262,28 +289,9 @@ async function _sportCreerRoutine() {
     }
 }
 
-// ── Suppression d'une routine (liste) ──
-function _sportConfirmerSuppressionRoutine(workoutId, carteEl) {
-    if (carteEl.querySelector('.sport-confirm-suppr')) return;
-
-    const confirm = document.createElement('div');
-    confirm.className = 'sport-confirm-suppr';
-    confirm.innerHTML = `
-        <span class="sport-confirm-suppr-texte">Confirmer la suppression ?</span>
-        <div class="sport-confirm-suppr-actions">
-            <button class="btn-delete">Confirmer</button>
-            <button class="btn-cancel">Annuler</button>
-        </div>`;
-
-    carteEl.appendChild(confirm);
-
-    confirm.querySelector('.btn-cancel').addEventListener('click', (e) => {
-        e.stopPropagation();
-        confirm.remove();
-    });
-
-    confirm.querySelector('.btn-delete').addEventListener('click', async (e) => {
-        e.stopPropagation();
+// ── Suppression d'une routine (liste) — via modal global ──
+function _sportConfirmerSuppressionRoutine(workoutId) {
+    _sportOuvrirConfirmationSuppression(async () => {
         try {
             await fetch(`/api/sport/workouts/${workoutId}`, {
                 method : 'DELETE',
@@ -292,7 +300,6 @@ function _sportConfirmerSuppressionRoutine(workoutId, carteEl) {
             _sportChargerListeRoutines();
         } catch (err) {
             console.error('[SPORT] supprimerRoutine :', err.message);
-            confirm.remove();
         }
     });
 }
@@ -336,7 +343,6 @@ function _sportRenderDetailRoutine(workout, jour) {
                 <button class="sport-routine-btn-suppr-routine" data-workout-id="${workout.id}">🗑️ Supprimer la routine</button>
             </div>
             <div class="sport-routine-detail-nom">${_sportEchapper(workout.name)}</div>
-            <div id="sport-routine-suppr-msg"></div>
 
             <button class="sport-cta-btn sport-btn-commencer-disabled" disabled title="Bientôt disponible">
                 ${SPORT_ICONE_DUMBBELL} Commencer la routine
@@ -375,16 +381,13 @@ function _sportRenderDetailRoutine(workout, jour) {
         </div>
     `;
 
-    document.querySelector('.sport-routine-btn-suppr-routine').addEventListener('click', (e) => {
-        _sportConfirmerSuppressionRoutineDetail(workout.id, e.currentTarget);
+    document.querySelector('.sport-routine-btn-suppr-routine').addEventListener('click', () => {
+        _sportConfirmerSuppressionRoutineDetail(workout.id);
     });
 
     zone.querySelectorAll('.sport-routine-exercice-btn-del').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            _sportConfirmerSuppressionExercice(
-                parseInt(btn.dataset.exerciceId, 10),
-                btn.closest('.sport-routine-exercice-item')
-            );
+        btn.addEventListener('click', () => {
+            _sportConfirmerSuppressionExercice(parseInt(btn.dataset.exerciceId, 10));
         });
     });
 
@@ -401,25 +404,9 @@ function _sportRenderDetailRoutine(workout, jour) {
     });
 }
 
-// ── Suppression routine (depuis détail) ──
-function _sportConfirmerSuppressionRoutineDetail(workoutId, btnEl) {
-    const msgZone = document.getElementById('sport-routine-suppr-msg');
-    if (!msgZone || msgZone.querySelector('.sport-confirm-suppr')) return;
-
-    msgZone.innerHTML = `
-        <div class="sport-confirm-suppr">
-            <span class="sport-confirm-suppr-texte">Confirmer la suppression ?</span>
-            <div class="sport-confirm-suppr-actions">
-                <button class="btn-delete" id="sport-suppr-routine-oui">Confirmer</button>
-                <button class="btn-cancel" id="sport-suppr-routine-non">Annuler</button>
-            </div>
-        </div>`;
-
-    document.getElementById('sport-suppr-routine-non').addEventListener('click', () => {
-        msgZone.innerHTML = '';
-    });
-
-    document.getElementById('sport-suppr-routine-oui').addEventListener('click', async () => {
+// ── Suppression routine (depuis détail) — via modal global ──
+function _sportConfirmerSuppressionRoutineDetail(workoutId) {
+    _sportOuvrirConfirmationSuppression(async () => {
         try {
             await fetch(`/api/sport/workouts/${workoutId}`, {
                 method : 'DELETE',
@@ -428,29 +415,13 @@ function _sportConfirmerSuppressionRoutineDetail(workoutId, btnEl) {
             _sportChargerListeRoutines();
         } catch (err) {
             console.error('[SPORT] supprimerRoutineDetail :', err.message);
-            msgZone.innerHTML = '';
         }
     });
 }
 
-// ── Suppression d'un exercice ──
-function _sportConfirmerSuppressionExercice(exerciceId, itemEl) {
-    if (itemEl.querySelector('.sport-confirm-suppr')) return;
-
-    const confirm = document.createElement('div');
-    confirm.className = 'sport-confirm-suppr';
-    confirm.innerHTML = `
-        <span class="sport-confirm-suppr-texte">Confirmer la suppression ?</span>
-        <div class="sport-confirm-suppr-actions">
-            <button class="btn-delete">Confirmer</button>
-            <button class="btn-cancel">Annuler</button>
-        </div>`;
-
-    itemEl.appendChild(confirm);
-
-    confirm.querySelector('.btn-cancel').addEventListener('click', () => confirm.remove());
-
-    confirm.querySelector('.btn-delete').addEventListener('click', async () => {
+// ── Suppression d'un exercice — via modal global ──
+function _sportConfirmerSuppressionExercice(exerciceId) {
+    _sportOuvrirConfirmationSuppression(async () => {
         try {
             await fetch(`/api/sport/exercises/${exerciceId}`, {
                 method : 'DELETE',
@@ -459,7 +430,6 @@ function _sportConfirmerSuppressionExercice(exerciceId, itemEl) {
             _sportOuvrirDetailRoutine(_sportRoutineDetailActive.workoutId);
         } catch (err) {
             console.error('[SPORT] supprimerExercice :', err.message);
-            confirm.remove();
         }
     });
 }
@@ -589,7 +559,7 @@ function _sportOuvrirSelecteurExercice() {
         _sportRechercherExercicesSelecteur();
     });
 
-        document.getElementById('sport-selecteur-prev').addEventListener('click', () => {
+    document.getElementById('sport-selecteur-prev').addEventListener('click', () => {
         if (_sportSelecteurOffset >= SPORT_SELECTEUR_LIMIT) {
             _sportSelecteurOffset -= SPORT_SELECTEUR_LIMIT;
             _sportSelecteurPageActuelle -= 1;

@@ -538,49 +538,48 @@
     color: var(--text-main);
 }
 
+/* Correctif v1.91.14 : abandon des tentatives de centrage vertical
+   (flexbox, line-height, translateY) entre input et texte, jamais
+   fiables à 100% car ce sont deux natures d'éléments différentes.
+   Nouvelle approche : align-items: baseline, la propriété CSS conçue
+   spécifiquement pour aligner du texte de tailles/natures différentes
+   sur une même ligne de base typographique. L'input passe en style
+   "texte souligné" (fond léger, pas de cadre plein) pour se comporter
+   visuellement comme du texte plutôt que comme un bouton. */
 .sport-routine-exercice-edit-champs {
     display: flex;
-    align-items: center;
+    align-items: baseline;
     gap: 10px;
 }
 .sport-routine-exercice-edit-champs input {
-    flex: 0 1 140px;
-    width: 140px;
+    flex: 0 1 90px;
+    width: 90px;
     min-width: 0;
     box-sizing: border-box;
-    height: 38px;
-    padding: 0 12px;
-    border: 1px solid rgba(255, 255, 255, 0.7);
-    background: rgba(255, 255, 255, 0.6);
-    border-radius: 12px;
-    font-size: 13px;
-    line-height: 36px;
+    padding: 4px 6px;
+    border: none;
+    border-bottom: 2px solid rgba(167, 139, 250, 0.4);
+    background: transparent;
+    border-radius: 0;
+    font-size: 15px;
+    font-weight: 700;
     color: var(--text-main);
     text-align: center;
     outline: none;
+    transition: border-color 0.2s ease;
 }
-
-/* Correctif v1.91.12 : le mot "min" restait décalé verticalement par
-   rapport au chiffre de l'input, car deux mécanismes de centrage
-   différents étaient utilisés (line-height sur l'input, flexbox sur
-   le span). On aligne le span texte sur la même technique que
-   l'input (line-height). L'icône "×" (SVG) garde son propre
-   centrage flex, nécessaire pour un élément non-textuel. */
+.sport-routine-exercice-edit-champs input:focus {
+    border-bottom-color: rgba(167, 139, 250, 1);
+}
 .sport-routine-exercice-edit-champs span {
-    height: 38px;
-    line-height: 38px;
     color: #9ca3af;
     font-weight: 700;
     font-size: 13px;
-    display: inline-block;
 }
 .sport-routine-exercice-edit-champs span.sport-edit-icone-x {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    line-height: normal;
 }
-
 .sport-routine-exercice-edit-actions {
     display: flex;
     gap: 8px;
