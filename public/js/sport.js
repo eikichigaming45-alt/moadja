@@ -5,10 +5,17 @@
 // (même mécanisme que le reste du site, cf. tchat.js).
 //
 // Mes Routines : une routine = un nom libre + une liste d'exercices
-// (séries/reps cibles). Techniquement, le schéma SQL impose un
-// niveau "jour" (sport_workout_days) entre la routine et ses
-// exercices : un jour unique et invisible est créé automatiquement
-// à la création de chaque routine, jamais montré à l'écran.
+// (séries/reps cibles, ou durée pour les exercices cardio dont le
+// type_suivi WGER vaut 'duree'). Techniquement, le schéma SQL
+// impose un niveau "jour" (sport_workout_days) entre la routine et
+// ses exercices : un jour unique et invisible est créé
+// automatiquement à la création de chaque routine, jamais montré
+// à l'écran.
+//
+// Durée : saisie et affichage en minutes côté écran, stockée en
+// secondes en base (target_duration_seconds). Un exercice déjà
+// ajouté est considéré "à durée" si target_duration_seconds est
+// non-null, sinon "séries × reps" (aucun rappel WGER nécessaire).
 //
 // Le sélecteur d'exercice (recherche + filtres + grille) reprend
 // le moteur déjà validé pour l'ex-onglet Catalogue (retiré du menu
@@ -136,6 +143,22 @@ function _sportAuthHeaders() {
         'Content-Type' : 'application/json',
         'Authorization': `Bearer ${_sportToken()}`
     };
+}
+
+// ────────────────────────────────────────────────────────────
+// UTILITAIRES DURÉE — conversion minutes ↔ secondes
+// Saisie/affichage écran en minutes, stockage base en secondes
+// (target_duration_seconds).
+// ────────────────────────────────────────────────────────────
+
+function _sportSecondesVersMinutes(secondes) {
+    if (!Number.isInteger(secondes)) return 0;
+    return Math.round(secondes / 60);
+}
+
+function _sportMinutesVersSecondes(minutes) {
+    if (!Number.isInteger(minutes)) return null;
+    return minutes * 60;
 }
 
 // ────────────────────────────────────────────────────────────
@@ -354,18 +377,24 @@ function _sportRenderDetailRoutine(workout, jour) {
                 <p class="sport-empty-note">Aucun exercice dans cette routine pour l'instant.</p>
             ` : `
                 <div class="sport-routine-exercices-liste">
-                    ${exercices.map(ex => `
-                        <div class="sport-routine-exercice-item" id="sport-exercice-${ex.id}">
+                    ${exercices.map(ex => {
+                        const estDuree = Number.isInteger(ex.target_duration_seconds);
+                        const meta     = estDuree
+                            ? `${_sportSecondesVersMinutes(ex.target_duration_seconds)} min`
+                            : `${ex.target_sets} séries × ${ex.target_reps} reps`;
+                        return `
+                                                <div class="sport-routine-exercice-item" id="sport-exercice-${ex.id}">
                             <div class="sport-routine-exercice-info">
                                 <div class="sport-routine-exercice-nom">${_sportEchapper(ex.exercise_name)}</div>
-                                <div class="sport-routine-exercice-meta">${ex.target_sets} séries × ${ex.target_reps} reps</div>
+                                <div class="sport-routine-exercice-meta">${meta}</div>
                             </div>
                             <button class="sport-routine-exercice-btn-edit" data-exercice-id="${ex.id}"
                                     data-sets="${ex.target_sets}" data-reps="${ex.target_reps}"
+                                    data-duree="${Number.isInteger(ex.target_duration_seconds) ? ex.target_duration_seconds : ''}"
                                     data-nom="${_sportEchapper(ex.exercise_name)}" title="Modifier">✏️</button>
                             <button class="sport-routine-exercice-btn-del" data-exercice-id="${ex.id}" title="Supprimer">🗑️</button>
                         </div>
-                    `).join('')}
+                    `;}).join('')}
                 </div>
             `}
             <button class="sport-cta-btn" style="margin-top:16px" onclick="_sportOuvrirSelecteurExercice()">
@@ -393,7 +422,8 @@ function _sportRenderDetailRoutine(workout, jour) {
                 parseInt(btn.dataset.exerciceId, 10),
                 btn.dataset.nom,
                 parseInt(btn.dataset.sets, 10),
-                parseInt(btn.dataset.reps, 10)
+                parseInt(btn.dataset.reps, 10),
+                btn.dataset.duree !== '' ? parseInt(btn.dataset.duree, 10) : null
             );
         });
     });
@@ -462,12 +492,27 @@ function _sportConfirmerSuppressionExercice(exerciceId, itemEl) {
     });
 }
 
-// ── Modification séries/reps d'un exercice ──────────────────────
-function _sportEditerExercice(exerciceId, nom, setsActuel, repsActuel) {
+// ── Modification séries/reps OU durée d'un exercice ──────────────
+// estDuree = true si l'exercice a déjà une valeur target_duration_seconds
+// en base (déterminé côté appelant, sans rappel WGER).
+function _sportEditerExercice(exerciceId, nom, setsActuel, repsActuel, dureeActuelleSecondes) {
     const itemEl = document.getElementById(`sport-exercice-${exerciceId}`);
     if (!itemEl) return;
 
-    itemEl.innerHTML = `
+    const estDuree = Number.isInteger(dureeActuelleSecondes);
+
+    itemEl.innerHTML = estDuree ? `
+        <div class="sport-routine-exercice-edit">
+            <span class="sport-routine-exercice-edit-nom">${_sportEchapper(nom)}</span>
+            <div class="sport-routine-exercice-edit-champs">
+                <input type="number" id="sport-edit-duree-${exerciceId}"
+                       value="${_sportSecondesVersMinutes(dureeActuelleSecondes)}" min="1" placeholder="Durée (min)">
+            </div>
+            <div class="sport-routine-exercice-edit-actions">
+                <button class="btn-save" id="sport-edit-save-${exerciceId}">Sauvegarder</button>
+                <button class="btn-cancel" id="sport-edit-cancel-${exerciceId}">Annuler</button>
+            </div>
+        </div>` : `
         <div class="sport-routine-exercice-edit">
             <span class="sport-routine-exercice-edit-nom">${_sportEchapper(nom)}</span>
             <div class="sport-routine-exercice-edit-champs">
@@ -486,13 +531,20 @@ function _sportEditerExercice(exerciceId, nom, setsActuel, repsActuel) {
     });
 
     document.getElementById(`sport-edit-save-${exerciceId}`).addEventListener('click', async () => {
-        const sets = parseInt(document.getElementById(`sport-edit-sets-${exerciceId}`).value, 10) || 1;
-        const reps = parseInt(document.getElementById(`sport-edit-reps-${exerciceId}`).value, 10) || 1;
+        let body;
+        if (estDuree) {
+            const minutes = parseInt(document.getElementById(`sport-edit-duree-${exerciceId}`).value, 10) || 1;
+            body = { target_duration_seconds: _sportMinutesVersSecondes(minutes) };
+        } else {
+            const sets = parseInt(document.getElementById(`sport-edit-sets-${exerciceId}`).value, 10) || 1;
+            const reps = parseInt(document.getElementById(`sport-edit-reps-${exerciceId}`).value, 10) || 1;
+            body = { target_sets: sets, target_reps: reps };
+        }
         try {
             await fetch(`/api/sport/exercises/${exerciceId}`, {
                 method : 'PUT',
                 headers: _sportAuthHeaders(),
-                body   : JSON.stringify({ target_sets: sets, target_reps: reps })
+                body   : JSON.stringify(body)
             });
             _sportOuvrirDetailRoutine(_sportRoutineDetailActive.workoutId);
         } catch (err) {
@@ -702,10 +754,15 @@ function _sportRenderResultatsSelecteur(exercices, hasMore) {
     }
 }
 
-// ── Mini-formulaire séries/reps après sélection d'un exercice ──────
+// ── Mini-formulaire séries/reps OU durée après sélection d'un exercice ──
+// ex.type_suivi vaut 'duree', 'series', ou null (renvoyé par
+// routes/sport.js uniquement pour la catégorie Cardio mappée).
+// null ou absent => comportement par défaut inchangé (séries × reps).
 function _sportOuvrirFormulaireAjoutExercice(exercice) {
     const zone = document.getElementById('sport-routines-zone');
     if (!zone || !_sportRoutineDetailActive) return;
+
+    const estDuree = exercice.type_suivi === 'duree';
 
     zone.innerHTML = `
         <div class="sport-card">
@@ -713,13 +770,17 @@ function _sportOuvrirFormulaireAjoutExercice(exercice) {
                 <button class="sport-routine-btn-retour" onclick="_sportOuvrirSelecteurExercice()">‹ Retour</button>
             </div>
             <div class="sport-routine-detail-nom">${_sportEchapper(exercice.name)}</div>
+            ${estDuree ? `
+            <div class="sport-routine-exercice-edit-champs" style="margin:16px 0">
+                <input type="number" id="sport-ajout-duree" value="20" min="1" placeholder="Durée (min)">
+            </div>` : `
             <div class="sport-routine-exercice-edit-champs" style="margin:16px 0">
                 <input type="number" id="sport-ajout-sets" value="3" min="1" placeholder="Séries">
                 <span>×</span>
                 <input type="number" id="sport-ajout-reps" value="10" min="1" placeholder="Reps">
-            </div>
+            </div>`}
             <div id="sport-ajout-msg" class="sport-routine-msg-erreur"></div>
-            <button class="sport-cta-btn" onclick="_sportValiderAjoutExercice(${exercice.wger_exercise_id}, '${_sportEchapperJs(exercice.name)}')">
+            <button class="sport-cta-btn" onclick="_sportValiderAjoutExercice(${exercice.wger_exercise_id}, '${_sportEchapperJs(exercice.name)}', ${estDuree})">
                 Ajouter à la routine
             </button>
         </div>
@@ -732,26 +793,32 @@ function _sportEchapperJs(str) {
 }
 
 // ── Ajout effectif de l'exercice à la routine ───────────────────
-async function _sportValiderAjoutExercice(wgerExerciseId, exerciseName) {
-    const msg  = document.getElementById('sport-ajout-msg');
-    const sets = parseInt(document.getElementById('sport-ajout-sets').value, 10) || 3;
-    const reps = parseInt(document.getElementById('sport-ajout-reps').value, 10) || 10;
+async function _sportValiderAjoutExercice(wgerExerciseId, exerciseName, estDuree) {
+    const msg = document.getElementById('sport-ajout-msg');
 
     if (!_sportRoutineDetailActive?.dayId) {
         if (msg) msg.textContent = 'Erreur : routine mal initialisée.';
         return;
     }
 
+    const body = {
+        wger_exercise_id: wgerExerciseId,
+        exercise_name   : exerciseName
+    };
+
+    if (estDuree) {
+        const minutes = parseInt(document.getElementById('sport-ajout-duree').value, 10) || 1;
+        body.target_duration_seconds = _sportMinutesVersSecondes(minutes);
+    } else {
+        body.target_sets = parseInt(document.getElementById('sport-ajout-sets').value, 10) || 3;
+        body.target_reps = parseInt(document.getElementById('sport-ajout-reps').value, 10) || 10;
+    }
+
     try {
         const r = await fetch(`/api/sport/days/${_sportRoutineDetailActive.dayId}/exercises`, {
             method : 'POST',
             headers: _sportAuthHeaders(),
-            body   : JSON.stringify({
-                wger_exercise_id: wgerExerciseId,
-                exercise_name   : exerciseName,
-                target_sets     : sets,
-                target_reps     : reps
-            })
+            body   : JSON.stringify(body)
         });
         const d = await r.json();
 
