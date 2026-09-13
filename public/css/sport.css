@@ -560,7 +560,7 @@
     background: rgba(167, 139, 250, 0.1);
 }
 
-/* ── Édition inline séries/reps ── */
+/* ── Édition inline séries/reps ou durée ── */
 .sport-routine-exercice-edit {
     display: flex;
     flex-direction: column;
@@ -573,49 +573,40 @@
     color: var(--text-main);
 }
 
-/* Correctif v1.91 : les champs séries/reps n'étaient alignés (même
-   largeur) qu'une fois la valeur sauvegardée, pas pendant la saisie.
-   On force explicitement flex-basis à 0 et width à 0 (annulé par
-   flex-grow) pour un partage strictement égal, sans modifier
-   style.css. */
+/* Correctif v1.91.9 : refonte de l'alignement input/libellé (durée
+   "min" et séries "×"). Hauteur fixe partagée (38px) entre input et
+   span pour garantir l'alignement vertical quel que soit le navigateur.
+   Largeur fixe sur l'input (au lieu de flex:1 1 0) pour éviter qu'il
+   s'étire seul quand il n'y a qu'un champ (cas durée). */
 .sport-routine-exercice-edit-champs {
     display: flex;
-    align-items: stretch;
+    align-items: center;
     gap: 10px;
 }
-
-/* Correctif v1.91.4 : le "×" semblait décalé horizontalement car
-   les chiffres saisis dans les <input> restent alignés à gauche par
-   défaut (comportement natif des <input type="number">), créant un
-   vide asymétrique entre "3" et le symbole. text-align:center
-   recentre le contenu affiché dans chaque champ, quel que soit le
-   nombre de chiffres saisis. */
 .sport-routine-exercice-edit-champs input {
-    flex: 1 1 0;
-    width: 0;
+    flex: 0 1 140px;
+    width: 140px;
     min-width: 0;
     box-sizing: border-box;
-    padding: 8px 12px;
+    height: 38px;
+    padding: 0 12px;
     border: 1px solid rgba(255, 255, 255, 0.7);
     background: rgba(255, 255, 255, 0.6);
     border-radius: 12px;
     font-size: 13px;
+    line-height: 36px;
     color: var(--text-main);
     text-align: center;
     outline: none;
 }
-
-/* Correctif v1.91.3 : fix robuste pour le centrage vertical du "×",
-   indépendant des métriques de police (span étiré sur la hauteur de
-   la ligne via align-self:stretch hérité du parent, puis centré en
-   son sein). */
 .sport-routine-exercice-edit-champs span {
     display: flex;
     align-items: center;
     justify-content: center;
-    align-self: stretch;
+    height: 38px;
     color: #9ca3af;
     font-weight: 700;
+    font-size: 13px;
 }
 .sport-routine-exercice-edit-actions {
     display: flex;
