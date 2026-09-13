@@ -271,10 +271,17 @@
 .sport-catalogue-search:focus {
     border-color: rgba(167, 139, 250, 0.7);
 }
+
+/* Correctif v1.91 : le libellé "Toutes catégories" était tronqué
+   ("Toutes catégori[es]"). Cause : text-overflow:ellipsis combiné
+   à un padding-right insuffisant pour la flèche personnalisée
+   (définie dans style.css, 40px réservés). On agrandit ce padding
+   ici et on retire l'ellipsis pour laisser le libellé s'afficher
+   en entier — sans toucher à la flèche ni au style global. */
 .sport-catalogue-select {
     flex: 1 1 calc(50% - 5px);
-    min-width: 170px;
-    padding: 10px 14px;
+    min-width: 180px;
+    padding: 10px 46px 10px 14px;
     background: rgba(255, 255, 255, 0.5);
     border: 1px solid rgba(255, 255, 255, 0.7);
     border-radius: 50px;
@@ -282,9 +289,8 @@
     color: var(--text-main);
     outline: none;
     cursor: pointer;
-    text-overflow: ellipsis;
     white-space: nowrap;
-    overflow: hidden;
+    overflow: visible;
 }
 @media (max-width: 500px) {
     .sport-catalogue-select {
@@ -566,13 +572,24 @@
     font-weight: 700;
     color: var(--text-main);
 }
+
+/* Correctif v1.91 : les champs séries/reps n'étaient alignés (même
+   largeur) qu'une fois la valeur sauvegardée, pas pendant la saisie.
+   Cause : la règle globale "input { width:100%; }" de style.css
+   entrait en conflit avec "flex:1" (flex-basis:0%) ci-dessous selon
+   le moteur de rendu. On force ici explicitement flex-basis à 0 et
+   width à 0 (annulé par flex-grow) pour un partage strictement égal,
+   sans modifier style.css. */
 .sport-routine-exercice-edit-champs {
     display: flex;
     align-items: center;
     gap: 10px;
 }
 .sport-routine-exercice-edit-champs input {
-    flex: 1;
+    flex: 1 1 0;
+    width: 0;
+    min-width: 0;
+    box-sizing: border-box;
     padding: 8px 12px;
     border: 1px solid rgba(255, 255, 255, 0.7);
     background: rgba(255, 255, 255, 0.6);
@@ -588,6 +605,18 @@
 .sport-routine-exercice-edit-actions {
     display: flex;
     gap: 8px;
+}
+
+/* Correctif v1.91 : même cause/même fix que ci-dessus, appliqué au
+   mini-formulaire d'ajout d'exercice (écran "Stationary bike cardio"
+   avec les champs 3 / 10 avant sauvegarde). Cette zone n'avait pas
+   de classe dédiée dans le premier jet ; elle est ciblée ici via la
+   classe déjà utilisée en JS pour la construire. */
+.sport-routine-exercice-edit-champs input[type="number"] {
+    flex: 1 1 0;
+    width: 0;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 /* ── Confirmation de suppression inline (esprit taches.js) ── */
