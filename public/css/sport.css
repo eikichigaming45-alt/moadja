@@ -598,25 +598,24 @@
     color: var(--text-main);
     outline: none;
 }
+
+/* Correctif v1.91.1 : le symbole "×" séparant les deux champs
+   paraissait décalé plus bas que le centre vertical des inputs.
+   Cause : le glyphe "×" est dessiné par la police sur sa hauteur
+   de minuscule (x-height), pas sur la hauteur totale de ligne,
+   ce qui crée un décalage optique même si le span est bien centré
+   par le flexbox parent. line-height:1 supprime l'espace
+   interligne résiduel, translateY(-1px) compense finement le
+   tracé du glyphe. N'affecte que ce symbole, rien d'autre. */
 .sport-routine-exercice-edit-champs span {
     color: #9ca3af;
     font-weight: 700;
+    line-height: 1;
+    transform: translateY(-1px);
 }
 .sport-routine-exercice-edit-actions {
     display: flex;
     gap: 8px;
-}
-
-/* Correctif v1.91 : même cause/même fix que ci-dessus, appliqué au
-   mini-formulaire d'ajout d'exercice (écran "Stationary bike cardio"
-   avec les champs 3 / 10 avant sauvegarde). Cette zone n'avait pas
-   de classe dédiée dans le premier jet ; elle est ciblée ici via la
-   classe déjà utilisée en JS pour la construire. */
-.sport-routine-exercice-edit-champs input[type="number"] {
-    flex: 1 1 0;
-    width: 0;
-    min-width: 0;
-    box-sizing: border-box;
 }
 
 /* ── Confirmation de suppression inline (esprit taches.js) ── */
