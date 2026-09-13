@@ -606,7 +606,8 @@
    ce qui crée un décalage optique même si le span est bien centré
    par le flexbox parent. line-height:1 supprime l'espace
    interligne résiduel, translateY(-1px) compense finement le
-   tracé du glyphe. N'affecte que ce symbole, rien d'autre. */
+   tracé du glyphe. N'affecte que ce symbole, rien d'autre.
+   Validé visuellement en production le 13/09/2026. */
 .sport-routine-exercice-edit-champs span {
     color: #9ca3af;
     font-weight: 700;
