@@ -1,8 +1,15 @@
 ## MoaDja
 
+## v1.91.7 — 13 septembre 2026
+- Ajout d'un suivi par durée pour les exercices cardio (vélo, rameur, course...), en complément du suivi par séries/répétitions.
+- Traduction en français de tous les exercices cardio du catalogue.
+- Correction d'un bug de recherche : les mots avec ou sans accents donnent maintenant les mêmes résultats (ex. "vélo" et "velo").
+- Correction d'un bug qui provoquait une erreur de chargement sur la page Sport.
+
+---
+
 ## v1.89 — 12 septembre 2026
 - Correction de la recherche dans le Catalogue Sport : les résultats affichent maintenant plusieurs exercices par page au lieu d'un seul (ex. recherche "leg").
-- Le Catalogue n'affiche plus que les exercices disposant réellement d'un schéma illustré.
 - Les catégories musculaires et les équipements sont maintenant affichés en français.
 - Correction d'un problème d'affichage où le texte du filtre "Toutes catégories" était tronqué.
 
