@@ -215,7 +215,7 @@ router.post('/days/:dayId/exercises', auth, async (req, res) => {
     }
 
     try {
-                const { rows: owner } = await pool.query(`
+        const { rows: owner } = await pool.query(`
             SELECT d.id
             FROM sport_workout_days d
             JOIN sport_workouts w ON w.id = d.workout_id
@@ -494,7 +494,7 @@ router.put('/logs/:logId', auth, async (req, res) => {
     } = req.body;
 
     try {
-        const { rows } = await pool.query(`
+                const { rows } = await pool.query(`
             UPDATE sport_session_logs AS l
             SET reps             = COALESCE(\$1, l.reps),
                 weight_kg        = COALESCE(\$2, l.weight_kg),
@@ -544,6 +544,27 @@ router.delete('/logs/:logId', auth, async (req, res) => {
         res.json({ success: true });
     } catch (err) {
         console.error('[SPORT] DELETE /logs/:logId :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// Dernier log réellement effectué pour un exercice donné (toutes séances
+// confondues), utilisé pour le pré-remplissage façon "Précédent" (esprit Hevy).
+router.get('/exercises/:wgerExerciseId/dernier-log', auth, async (req, res) => {
+    const moi = req.user.id;
+    const wgerExerciseId = parseInt(req.params.wgerExerciseId, 10);
+    try {
+        const { rows } = await pool.query(`
+            SELECT l.*
+            FROM sport_session_logs l
+            JOIN sport_sessions s ON s.id = l.session_id
+            WHERE s.user_id = \$1 AND l.wger_exercise_id = \$2 AND l.completed = TRUE
+            ORDER BY l.logged_at DESC
+            LIMIT 1
+        `, [moi, wgerExerciseId]);
+        res.json({ success: true, log: rows[0] || null });
+    } catch (err) {
+        console.error('[SPORT] GET /exercises/:wgerExerciseId/dernier-log :', err.message);
         res.status(500).json({ success: false, message: err.message });
     }
 });

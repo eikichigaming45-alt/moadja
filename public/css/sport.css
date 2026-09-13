@@ -1,6 +1,7 @@
 /* ============================================================
    public/css/sport.css
-   Styles du module Sport (WGER) — Dashboard + Widget colonne droite.
+   Styles du module Sport (WGER) — Dashboard + Widget colonne droite
+   + Écran de séance en cours.
    Réutilise strictement les variables et classes déjà définies
    dans style.css (glass-panel, --primary color violet, etc.).
    Aucune nouvelle couleur inventée.
@@ -114,6 +115,17 @@
     background: rgba(167, 139, 250, 1);
     transform: translateY(-2px);
     box-shadow: 0 12px 28px rgba(167, 139, 250, 0.35);
+}
+.sport-cta-btn:disabled,
+.sport-cta-btn.disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+.sport-cta-btn:disabled:hover,
+.sport-cta-btn.disabled:hover {
+    background: rgba(167, 139, 250, 0.85);
+    transform: none;
+    box-shadow: 0 8px 24px rgba(167, 139, 250, 0.25);
 }
 
 .sport-stats-row {
@@ -473,17 +485,6 @@
     margin-bottom: 16px;
 }
 
-.sport-btn-commencer-disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
-    margin-top: 4px;
-}
-.sport-btn-commencer-disabled:hover {
-    background: rgba(167, 139, 250, 0.85);
-    transform: none;
-    box-shadow: 0 8px 24px rgba(167, 139, 250, 0.25);
-}
-
 .sport-routine-exercices-liste {
     display: flex;
     flex-direction: column;
@@ -538,14 +539,9 @@
     color: var(--text-main);
 }
 
-/* Correctif v1.91.14 : abandon des tentatives de centrage vertical
-   (flexbox, line-height, translateY) entre input et texte, jamais
-   fiables à 100% car ce sont deux natures d'éléments différentes.
-   Nouvelle approche : align-items: baseline, la propriété CSS conçue
-   spécifiquement pour aligner du texte de tailles/natures différentes
-   sur une même ligne de base typographique. L'input passe en style
-   "texte souligné" (fond léger, pas de cadre plein) pour se comporter
-   visuellement comme du texte plutôt que comme un bouton. */
+/* Correctif v1.91.14 : align-items: baseline pour aligner input et
+   texte de tailles/natures différentes sur une même ligne de base
+   typographique. L'input passe en style "texte souligné". */
 .sport-routine-exercice-edit-champs {
     display: flex;
     align-items: baseline;
@@ -603,4 +599,263 @@
 .sport-confirm-suppr-actions {
     display: flex;
     gap: 8px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ── SÉANCE EN COURS ──
+   ══════════════════════════════════════════════════════════════ */
+
+.sport-seance-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+.sport-seance-nom {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-main);
+}
+.sport-seance-btn-abandon {
+    background: none;
+    border: none;
+    color: #ef4444;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 0;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+.sport-seance-btn-abandon:hover {
+    opacity: 1;
+}
+
+.sport-seance-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+}
+.sport-seance-stat {
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 16px;
+    padding: 12px 10px;
+    text-align: center;
+}
+.sport-seance-stat-label {
+    display: block;
+    font-size: 11px;
+    color: #6b7280;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.sport-seance-stat-valeur {
+    display: block;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-top: 2px;
+}
+
+.sport-seance-exercice-nom {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 10px;
+}
+
+.sport-seance-repos-ligne {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+}
+.sport-seance-repos-label {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 600;
+}
+.sport-seance-repos-input {
+    width: 60px;
+    padding: 4px 6px;
+    border: none;
+    border-bottom: 2px solid rgba(167, 139, 250, 0.4);
+    background: transparent;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-main);
+    text-align: center;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+.sport-seance-repos-input:focus {
+    border-bottom-color: rgba(167, 139, 250, 1);
+}
+.sport-seance-repos-unite {
+    font-size: 12px;
+    color: #9ca3af;
+    font-weight: 600;
+}
+.sport-seance-repos-chrono {
+    font-size: 12px;
+    color: rgb(167, 139, 250);
+    font-weight: 700;
+    margin-left: auto;
+}
+
+.sport-seance-table {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+.sport-seance-table-header {
+    display: grid;
+    grid-template-columns: 40px 1fr 70px 70px 40px;
+    gap: 8px;
+    align-items: center;
+    padding: 0 4px;
+}
+.sport-seance-table-header span {
+    font-size: 10px;
+    color: #9ca3af;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    text-align: center;
+}
+.sport-seance-table-header span:first-child,
+.sport-seance-table-header span:nth-child(2) {
+    text-align: left;
+}
+
+.sport-seance-table-row {
+    display: grid;
+    grid-template-columns: 40px 1fr 70px 70px 40px;
+    gap: 8px;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 14px;
+    padding: 8px;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+.sport-seance-row-validee {
+    background: rgba(52, 211, 153, 0.12);
+    border-color: rgba(52, 211, 153, 0.3);
+}
+
+.sport-seance-serie-numero {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(167, 139, 250, 0.12);
+    color: rgb(167, 139, 250);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 800;
+}
+.sport-seance-row-validee .sport-seance-serie-numero {
+    background: rgba(52, 211, 153, 0.18);
+    color: #10b981;
+}
+
+.sport-seance-serie-precedent {
+    font-size: 11.5px;
+    color: #9ca3af;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sport-seance-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 6px 4px;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-main);
+    text-align: center;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+.sport-seance-input:focus {
+    border-color: rgba(167, 139, 250, 0.7);
+}
+.sport-seance-input::placeholder {
+    color: #c4c9d4;
+    font-weight: 600;
+}
+
+.sport-seance-check-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(167, 139, 250, 0.4);
+    background: rgba(255, 255, 255, 0.6);
+    color: rgba(167, 139, 250, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin: 0 auto;
+}
+.sport-seance-check-btn svg { width: 16px; height: 16px; }
+.sport-seance-check-btn:hover {
+    border-color: rgba(167, 139, 250, 0.7);
+    color: rgb(167, 139, 250);
+}
+.sport-seance-check-btn.active {
+    background: #10b981;
+    border-color: #10b981;
+    color: #fff;
+}
+.sport-seance-check-btn.active:hover {
+    background: #0d9c6d;
+    border-color: #0d9c6d;
+    color: #fff;
+}
+
+.sport-seance-btn-ajout-serie {
+    width: 100%;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px dashed rgba(167, 139, 250, 0.4);
+    color: rgb(167, 139, 250);
+    border-radius: 12px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.sport-seance-btn-ajout-serie:hover {
+    background: rgba(167, 139, 250, 0.08);
+    border-color: rgba(167, 139, 250, 0.7);
+}
+
+@media (max-width: 500px) {
+    .sport-seance-table-header,
+    .sport-seance-table-row {
+        grid-template-columns: 32px 1fr 60px 60px 34px;
+        gap: 6px;
+    }
+    .sport-seance-serie-precedent {
+        font-size: 10.5px;
+    }
+    .sport-seance-input {
+        font-size: 12px;
+        padding: 5px 3px;
+    }
 }
