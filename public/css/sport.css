@@ -559,15 +559,28 @@
     text-align: center;
     outline: none;
 }
+
+/* Correctif v1.91.12 : le mot "min" restait décalé verticalement par
+   rapport au chiffre de l'input, car deux mécanismes de centrage
+   différents étaient utilisés (line-height sur l'input, flexbox sur
+   le span). On aligne le span texte sur la même technique que
+   l'input (line-height). L'icône "×" (SVG) garde son propre
+   centrage flex, nécessaire pour un élément non-textuel. */
 .sport-routine-exercice-edit-champs span {
-    display: flex;
-    align-items: center;
-    justify-content: center;
     height: 38px;
+    line-height: 38px;
     color: #9ca3af;
     font-weight: 700;
     font-size: 13px;
+    display: inline-block;
 }
+.sport-routine-exercice-edit-champs span.sport-edit-icone-x {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: normal;
+}
+
 .sport-routine-exercice-edit-actions {
     display: flex;
     gap: 8px;
