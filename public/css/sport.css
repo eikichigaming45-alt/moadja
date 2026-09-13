@@ -575,14 +575,13 @@
 
 /* Correctif v1.91 : les champs séries/reps n'étaient alignés (même
    largeur) qu'une fois la valeur sauvegardée, pas pendant la saisie.
-   Cause : la règle globale "input { width:100%; }" de style.css
-   entrait en conflit avec "flex:1" (flex-basis:0%) ci-dessous selon
-   le moteur de rendu. On force ici explicitement flex-basis à 0 et
-   width à 0 (annulé par flex-grow) pour un partage strictement égal,
-   sans modifier style.css. */
+   On force explicitement flex-basis à 0 et width à 0 (annulé par
+   flex-grow) pour un partage strictement égal, sans modifier
+   style.css. La hauteur des inputs (avec padding 8px) définit la
+   hauteur de la ligne : le span "×" ci-dessous s'aligne dessus. */
 .sport-routine-exercice-edit-champs {
     display: flex;
-    align-items: center;
+    align-items: stretch;
     gap: 10px;
 }
 .sport-routine-exercice-edit-champs input {
@@ -599,20 +598,22 @@
     outline: none;
 }
 
-/* Correctif v1.91.1 : le symbole "×" séparant les deux champs
-   paraissait décalé plus bas que le centre vertical des inputs.
-   Cause : le glyphe "×" est dessiné par la police sur sa hauteur
-   de minuscule (x-height), pas sur la hauteur totale de ligne,
-   ce qui crée un décalage optique même si le span est bien centré
-   par le flexbox parent. line-height:1 supprime l'espace
-   interligne résiduel, translateY(-1px) compense finement le
-   tracé du glyphe. N'affecte que ce symbole, rien d'autre.
-   Validé visuellement en production le 13/09/2026. */
+/* Correctif v1.91.3 : les tentatives précédentes (line-height +
+   décalage en pixels) étaient peu fiables, car un <span> texte ne
+   se centre pas comme un <input> selon les métriques de police.
+   Fix robuste : le span devient lui-même un conteneur flexbox qui
+   s'étire sur toute la hauteur de la ligne (align-self:stretch,
+   hérité de align-items:stretch du parent ci-dessus) puis centre
+   son contenu ("×") en son sein via ses propres align-items /
+   justify-content. Le glyphe est ainsi toujours centré sur la
+   hauteur réelle des inputs adjacents, quel que soit le texte. */
 .sport-routine-exercice-edit-champs span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: stretch;
     color: #9ca3af;
     font-weight: 700;
-    line-height: 1;
-    transform: translateY(-1px);
 }
 .sport-routine-exercice-edit-actions {
     display: flex;
