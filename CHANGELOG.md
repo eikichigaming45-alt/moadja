@@ -1,5 +1,26 @@
 ## MoaDja
 
+## v1.91.15 — 13 septembre 2026
+- Remplacement de la confirmation de suppression intégrée (encart rouge en ligne) par la fenêtre modale globale de l'application, pour une expérience identique aux autres modules (Tâches, Administration).
+
+---
+
+## v1.91.12 — 13 septembre 2026
+- Correction définitive de l'alignement vertical des champs "séries × répétitions" et "durée (min)" en mode édition, quel que soit le navigateur.
+- Remplacement du symbole de multiplication par une icône vectorielle pour éviter les décalages liés aux polices.
+
+---
+
+## v1.91.9 — 13 septembre 2026
+- Ajout d'une confirmation avant la suppression d'un exercice ou d'une routine.
+
+---
+
+## v1.91.8 — 13 septembre 2026
+- Correction d'un bug d'affichage : l'unité "min" des exercices à durée n'était pas toujours visible.
+
+---
+
 ## v1.91.7 — 13 septembre 2026
 - Ajout d'un suivi par durée pour les exercices cardio (vélo, rameur, course...), en complément du suivi par séries/répétitions.
 - Traduction en français de tous les exercices cardio du catalogue.
