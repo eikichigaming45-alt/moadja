@@ -215,7 +215,7 @@ router.post('/days/:dayId/exercises', auth, async (req, res) => {
     }
 
     try {
-        const { rows: owner } = await pool.query(`
+                const { rows: owner } = await pool.query(`
             SELECT d.id
             FROM sport_workout_days d
             JOIN sport_workouts w ON w.id = d.workout_id
@@ -307,7 +307,7 @@ router.get('/sessions', auth, async (req, res) => {
     const moi = req.user.id;
     try {
         const { rows } = await pool.query(`
-            SELECT id, user_id, workout_id, date_start, date_end
+            SELECT id, user_id, workout_id, date_start, date_end, status
             FROM sport_sessions
             WHERE user_id = \$1
             ORDER BY date_start DESC
@@ -315,6 +315,60 @@ router.get('/sessions', auth, async (req, res) => {
         res.json({ success: true, sessions: rows });
     } catch (err) {
         console.error('[SPORT] GET /sessions :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// Renvoie la séance en cours (status = in_progress) de l'utilisateur,
+// avec ses logs déjà enregistrés, pour proposer reprendre/abandonner
+// au retour dans l'app.
+router.get('/sessions/active', auth, async (req, res) => {
+    const moi = req.user.id;
+    try {
+        const { rows: sessions } = await pool.query(`
+            SELECT id, user_id, workout_id, date_start, date_end, status
+            FROM sport_sessions
+            WHERE user_id = \$1 AND status = 'in_progress'
+            ORDER BY date_start DESC
+            LIMIT 1
+        `, [moi]);
+        if (!sessions.length) return res.json({ success: true, session: null });
+
+        const { rows: logs } = await pool.query(`
+            SELECT *
+            FROM sport_session_logs
+            WHERE session_id = \$1
+            ORDER BY id ASC
+        `, [sessions[0].id]);
+
+        res.json({ success: true, session: { ...sessions[0], logs } });
+    } catch (err) {
+        console.error('[SPORT] GET /sessions/active :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.get('/sessions/:id', auth, async (req, res) => {
+    const moi = req.user.id;
+    const id  = parseInt(req.params.id, 10);
+    try {
+        const { rows: sessions } = await pool.query(`
+            SELECT id, user_id, workout_id, date_start, date_end, status
+            FROM sport_sessions
+            WHERE id = \$1 AND user_id = \$2
+        `, [id, moi]);
+        if (!sessions.length) return res.status(404).json({ success: false, message: 'Séance introuvable.' });
+
+        const { rows: logs } = await pool.query(`
+            SELECT *
+            FROM sport_session_logs
+            WHERE session_id = \$1
+            ORDER BY id ASC
+        `, [id]);
+
+        res.json({ success: true, session: { ...sessions[0], logs } });
+    } catch (err) {
+        console.error('[SPORT] GET /sessions/:id :', err.message);
         res.status(500).json({ success: false, message: err.message });
     }
 });
@@ -341,16 +395,21 @@ router.post('/sessions', auth, async (req, res) => {
     }
 });
 
+// Clôture une séance : status doit être 'completed' ou 'abandoned'.
 router.put('/sessions/:id', auth, async (req, res) => {
-    const moi = req.user.id;
-    const id  = parseInt(req.params.id, 10);
+    const moi    = req.user.id;
+    const id     = parseInt(req.params.id, 10);
+    const status = req.body.status;
+    if (!['completed', 'abandoned'].includes(status)) {
+        return res.status(400).json({ success: false, message: 'Statut invalide.' });
+    }
     try {
         const { rows } = await pool.query(`
             UPDATE sport_sessions
-            SET date_end = NOW()
-            WHERE id = \$1 AND user_id = \$2
+            SET date_end = NOW(), status = \$1
+            WHERE id = \$2 AND user_id = \$3
             RETURNING *
-        `, [id, moi]);
+        `, [status, id, moi]);
         if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
         res.json({ success: true, session: rows[0] });
     } catch (err) {
@@ -377,14 +436,21 @@ router.delete('/sessions/:id', auth, async (req, res) => {
 });
 
 // ── LOGS DE SÉANCE : sport_session_logs ──
+// Un log n'est créé qu'au moment où une série est validée/cochée.
+// logged_at est posé côté serveur (NOW()), jamais envoyé par le
+// client, pour rester fiable après une mise en veille de l'écran.
+// reps/weight_kg sont optionnels (séries cardio sans ces valeurs).
 
 router.post('/sessions/:sessionId/logs', auth, async (req, res) => {
     const moi       = req.user.id;
     const sessionId = parseInt(req.params.sessionId, 10);
-    const { wger_exercise_id, exercise_name, set_number, reps, weight_kg } = req.body;
+    const {
+        wger_exercise_id, exercise_name, set_number,
+        reps, weight_kg, completed,
+        rest_seconds, distance_km, speed_kmh, incline_percent, duration_seconds
+    } = req.body;
 
-    if (!wger_exercise_id || !exercise_name?.trim() ||
-        !Number.isInteger(set_number) || !Number.isInteger(reps) || weight_kg == null) {
+    if (!wger_exercise_id || !exercise_name?.trim() || !Number.isInteger(set_number)) {
         return res.status(400).json({ success: false, message: 'Données manquantes.' });
     }
 
@@ -396,13 +462,68 @@ router.post('/sessions/:sessionId/logs', auth, async (req, res) => {
 
         const { rows } = await pool.query(`
             INSERT INTO sport_session_logs
-                (session_id, wger_exercise_id, exercise_name, set_number, reps, weight_kg)
-            VALUES (\$1, \$2, \$3, \$4, \$5, \$6)
+                (session_id, wger_exercise_id, exercise_name, set_number, reps, weight_kg,
+                 completed, logged_at, rest_seconds, distance_km, speed_kmh, incline_percent, duration_seconds)
+            VALUES (\$1, \$2, \$3, \$4, \$5, \$6, \$7, NOW(), \$8, \$9, \$10, \$11, \$12)
             RETURNING *
-        `, [sessionId, wger_exercise_id, exercise_name.trim(), set_number, reps, weight_kg]);
+        `, [
+            sessionId, wger_exercise_id, exercise_name.trim(), set_number,
+            Number.isInteger(reps) ? reps : null,
+            weight_kg != null ? weight_kg : null,
+            completed === true,
+            Number.isInteger(rest_seconds) ? rest_seconds : null,
+            distance_km != null ? distance_km : null,
+            speed_kmh != null ? speed_kmh : null,
+            incline_percent != null ? incline_percent : null,
+            Number.isInteger(duration_seconds) ? duration_seconds : null
+        ]);
         res.json({ success: true, log: rows[0] });
     } catch (err) {
         console.error('[SPORT] POST /sessions/:sessionId/logs :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// Correction d'un log déjà enregistré (ex. valeur saisie par erreur).
+router.put('/logs/:logId', auth, async (req, res) => {
+    const moi   = req.user.id;
+    const logId = parseInt(req.params.logId, 10);
+    const {
+        reps, weight_kg, completed,
+        rest_seconds, distance_km, speed_kmh, incline_percent, duration_seconds
+    } = req.body;
+
+    try {
+        const { rows } = await pool.query(`
+            UPDATE sport_session_logs AS l
+            SET reps             = COALESCE(\$1, l.reps),
+                weight_kg        = COALESCE(\$2, l.weight_kg),
+                completed        = COALESCE(\$3, l.completed),
+                rest_seconds     = COALESCE(\$4, l.rest_seconds),
+                distance_km      = COALESCE(\$5, l.distance_km),
+                speed_kmh        = COALESCE(\$6, l.speed_kmh),
+                incline_percent  = COALESCE(\$7, l.incline_percent),
+                duration_seconds = COALESCE(\$8, l.duration_seconds)
+            FROM sport_sessions s
+            WHERE l.id = \$9
+                AND l.session_id = s.id
+                AND s.user_id = \$10
+            RETURNING l.*
+        `, [
+            Number.isInteger(reps) ? reps : null,
+            weight_kg != null ? weight_kg : null,
+            typeof completed === 'boolean' ? completed : null,
+            Number.isInteger(rest_seconds) ? rest_seconds : null,
+            distance_km != null ? distance_km : null,
+            speed_kmh != null ? speed_kmh : null,
+            incline_percent != null ? incline_percent : null,
+            Number.isInteger(duration_seconds) ? duration_seconds : null,
+            logId, moi
+        ]);
+        if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
+        res.json({ success: true, log: rows[0] });
+    } catch (err) {
+        console.error('[SPORT] PUT /logs/:logId :', err.message);
         res.status(500).json({ success: false, message: err.message });
     }
 });
