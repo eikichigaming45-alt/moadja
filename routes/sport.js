@@ -1,30 +1,15 @@
 // ============================================================
 // routes/sport.js
-// Module Sport — CRUD complet sur les 6 tables :
-// sport_workouts, sport_workout_days, sport_day_exercises,
-// sport_sessions, sport_session_logs, sport_measurements.
-// Toutes les routes sont scopées par utilisateur (aucune fuite
-// entre profils), y compris pour les tables sans user_id direct
-// (vérification via jointure remontant au propriétaire).
+// Module Sport — CRUD sur 6 tables : sport_workouts,
+// sport_workout_days, sport_day_exercises, sport_sessions,
+// sport_session_logs, sport_measurements.
+// Toutes les routes sont scopées par utilisateur.
 //
-// + Intégration WGER (lecture seule, catalogue d'exercices) :
-// relais serveur vers l'API publique wger.de, aucune clé requise.
-// Noms d'exercices affichés au format "Anglais (Français)" quand
-// une traduction française existe, sinon anglais seul.
-// Catégories/équipements traduits via table statique FR (WGER ne
-// fournit aucune traduction FR pour ces libellés). Repli sur
-// l'anglais si un terme n'est pas dans la table (aucune traduction
-// inventée à l'aveugle).
-// Recherche agrégée par lots de 50 exercices WGER, car WGER ne
-// filtre pas le texte libre côté serveur de façon fiable.
-// (Le filtre "image obligatoire" a été retiré : il masquait des
-// exercices valides sans image, comme certains appareils de
-// cardio type "Rowing Machine".)
-//
-// Catégorie Cardio (id 15) : noms français + type de suivi
-// (durée ou séries×reps) appliqués via routes/sport-cardio-fr.js.
-// Certains exercices y sont volontairement masqués (doublons
-// WGER désignant la même activité, ex. deux fiches "vélo").
+// + Intégration WGER (lecture seule, catalogue d'exercices).
+// Noms affichés "Anglais (Français)" si traduction dispo.
+// Catégorie Cardio (id 15) : noms FR + type de suivi (durée ou
+// séries×reps) via routes/sport-cardio-fr.js. Certains exercices
+// masqués (doublons WGER désignant la même activité).
 // ============================================================
 const express = require('express');
 const router  = express.Router();
@@ -38,14 +23,13 @@ const WGER_BASE_URL = 'https://wger.de/api/v2';
 // ROUTINES — sport_workouts
 // ────────────────────────────────────────────────────────────
 
-// ── GET /api/sport/workouts ───────────────────────────────────
 router.get('/workouts', auth, async (req, res) => {
     const moi = req.user.id;
     try {
         const { rows } = await pool.query(`
             SELECT id, user_id, name, created_at
             FROM sport_workouts
-            WHERE user_id = \\$1
+            WHERE user_id = \$1
             ORDER BY created_at DESC
         `, [moi]);
         res.json({ success: true, workouts: rows });
@@ -55,7 +39,6 @@ router.get('/workouts', auth, async (req, res) => {
     }
 });
 
-// ── POST /api/sport/workouts ──────────────────────────────────
 router.post('/workouts', auth, async (req, res) => {
     const moi  = req.user.id;
     const name = req.body.name?.trim();
@@ -63,7 +46,7 @@ router.post('/workouts', auth, async (req, res) => {
     try {
         const { rows } = await pool.query(`
             INSERT INTO sport_workouts (user_id, name)
-            VALUES (\\$1, \\$2)
+            VALUES (\$1, \$2)
             RETURNING *
         `, [moi, name]);
         res.json({ success: true, workout: rows[0] });
@@ -73,7 +56,7 @@ router.post('/workouts', auth, async (req, res) => {
     }
 });
 
-// ── GET /api/sport/workouts/:id (détail + jours + exercices) ─
+// GET /workouts/:id — détail + jours + exercices
 router.get('/workouts/:id', auth, async (req, res) => {
     const moi = req.user.id;
     const id  = parseInt(req.params.id, 10);
@@ -81,7 +64,7 @@ router.get('/workouts/:id', auth, async (req, res) => {
         const { rows: workoutRows } = await pool.query(`
             SELECT id, user_id, name, created_at
             FROM sport_workouts
-            WHERE id = \\$1 AND user_id = \\$2
+            WHERE id = \$1 AND user_id = \$2
         `, [id, moi]);
         if (!workoutRows.length) {
             return res.status(404).json({ success: false, message: 'Routine introuvable.' });
@@ -90,7 +73,7 @@ router.get('/workouts/:id', auth, async (req, res) => {
         const { rows: days } = await pool.query(`
             SELECT id, workout_id, description, day_order
             FROM sport_workout_days
-            WHERE workout_id = \\$1
+            WHERE workout_id = \$1
             ORDER BY day_order ASC
         `, [id]);
 
@@ -101,7 +84,7 @@ router.get('/workouts/:id', auth, async (req, res) => {
                 SELECT id, day_id, wger_exercise_id, exercise_name,
                        order_in_day, target_sets, target_reps, target_duration_seconds
                 FROM sport_day_exercises
-                WHERE day_id = ANY(\\$1::int[])
+                WHERE day_id = ANY(\$1::int[])
                 ORDER BY order_in_day ASC
             `, [dayIds]);
             exercises = exRows;
@@ -119,7 +102,6 @@ router.get('/workouts/:id', auth, async (req, res) => {
     }
 });
 
-// ── PUT /api/sport/workouts/:id ────────────────────────────────
 router.put('/workouts/:id', auth, async (req, res) => {
     const moi  = req.user.id;
     const id   = parseInt(req.params.id, 10);
@@ -128,8 +110,8 @@ router.put('/workouts/:id', auth, async (req, res) => {
     try {
         const { rows } = await pool.query(`
             UPDATE sport_workouts
-            SET name = \\$1
-            WHERE id = \\$2 AND user_id = \\$3
+            SET name = \$1
+            WHERE id = \$2 AND user_id = \$3
             RETURNING *
         `, [name, id, moi]);
         if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
@@ -140,14 +122,13 @@ router.put('/workouts/:id', auth, async (req, res) => {
     }
 });
 
-// ── DELETE /api/sport/workouts/:id ────────────────────────────
 router.delete('/workouts/:id', auth, async (req, res) => {
     const moi = req.user.id;
     const id  = parseInt(req.params.id, 10);
     try {
         const { rows } = await pool.query(`
             DELETE FROM sport_workouts
-            WHERE id = \\$1 AND user_id = \\$2
+            WHERE id = \$1 AND user_id = \$2
             RETURNING id
         `, [id, moi]);
         if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
@@ -162,7 +143,6 @@ router.delete('/workouts/:id', auth, async (req, res) => {
 // JOURS DE ROUTINE — sport_workout_days
 // ────────────────────────────────────────────────────────────
 
-// ── POST /api/sport/workouts/:workoutId/days ──────────────────
 router.post('/workouts/:workoutId/days', auth, async (req, res) => {
     const moi         = req.user.id;
     const workoutId   = parseInt(req.params.workoutId, 10);
@@ -171,13 +151,13 @@ router.post('/workouts/:workoutId/days', auth, async (req, res) => {
     if (!description) return res.status(400).json({ success: false, message: 'Description requise.' });
     try {
         const { rows: owner } = await pool.query(`
-            SELECT id FROM sport_workouts WHERE id = \\$1 AND user_id = \\$2
+            SELECT id FROM sport_workouts WHERE id = \$1 AND user_id = \$2
         `, [workoutId, moi]);
         if (!owner.length) return res.status(403).json({ success: false, message: 'Interdit.' });
 
         const { rows } = await pool.query(`
             INSERT INTO sport_workout_days (workout_id, description, day_order)
-            VALUES (\\$1, \\$2, \\$3)
+            VALUES (\$1, \$2, \$3)
             RETURNING *
         `, [workoutId, description, dayOrder]);
         res.json({ success: true, day: rows[0] });
@@ -187,7 +167,6 @@ router.post('/workouts/:workoutId/days', auth, async (req, res) => {
     }
 });
 
-// ── PUT /api/sport/days/:dayId ─────────────────────────────────
 router.put('/days/:dayId', auth, async (req, res) => {
     const moi         = req.user.id;
     const dayId       = parseInt(req.params.dayId, 10);
@@ -196,12 +175,12 @@ router.put('/days/:dayId', auth, async (req, res) => {
     try {
         const { rows } = await pool.query(`
             UPDATE sport_workout_days AS d
-            SET description = COALESCE(\\$1, d.description),
-                day_order   = COALESCE(\\$2, d.day_order)
+            SET description = COALESCE(\$1, d.description),
+                day_order   = COALESCE(\$2, d.day_order)
             FROM sport_workouts AS w
-            WHERE d.id = \\$3
+            WHERE d.id = \$3
                 AND d.workout_id = w.id
-                AND w.user_id = \\$4
+                AND w.user_id = \$4
             RETURNING d.*
         `, [description || null, Number.isInteger(dayOrder) ? dayOrder : null, dayId, moi]);
         if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
@@ -212,7 +191,6 @@ router.put('/days/:dayId', auth, async (req, res) => {
     }
 });
 
-// ── DELETE /api/sport/days/:dayId ──────────────────────────────
 router.delete('/days/:dayId', auth, async (req, res) => {
     const moi   = req.user.id;
     const dayId = parseInt(req.params.dayId, 10);
@@ -220,9 +198,9 @@ router.delete('/days/:dayId', auth, async (req, res) => {
         const { rows } = await pool.query(`
             DELETE FROM sport_workout_days AS d
             USING sport_workouts AS w
-            WHERE d.id = \\$1
+            WHERE d.id = \$1
                 AND d.workout_id = w.id
-                AND w.user_id = \\$2
+                AND w.user_id = \$2
             RETURNING d.id
         `, [dayId, moi]);
         if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
@@ -237,7 +215,6 @@ router.delete('/days/:dayId', auth, async (req, res) => {
 // EXERCICES D'UN JOUR — sport_day_exercises
 // ────────────────────────────────────────────────────────────
 
-// ── POST /api/sport/days/:dayId/exercises ──────────────────────
 router.post('/days/:dayId/exercises', auth, async (req, res) => {
     const moi   = req.user.id;
     const dayId = parseInt(req.params.dayId, 10);
@@ -255,14 +232,14 @@ router.post('/days/:dayId/exercises', auth, async (req, res) => {
             SELECT d.id
             FROM sport_workout_days d
             JOIN sport_workouts w ON w.id = d.workout_id
-            WHERE d.id = \\$1 AND w.user_id = \\$2
+            WHERE d.id = \$1 AND w.user_id = \$2
         `, [dayId, moi]);
         if (!owner.length) return res.status(403).json({ success: false, message: 'Interdit.' });
 
         const { rows } = await pool.query(`
             INSERT INTO sport_day_exercises
                 (day_id, wger_exercise_id, exercise_name, order_in_day, target_sets, target_reps, target_duration_seconds)
-            VALUES (\\$1, \\$2, \\$3, \\$4, \\$5, \\$6, \\$7)
+            VALUES (\$1, \$2, \$3, \$4, \$5, \$6, \$7)
             RETURNING *
         `, [
             dayId,
@@ -280,7 +257,6 @@ router.post('/days/:dayId/exercises', auth, async (req, res) => {
     }
 });
 
-// ── PUT /api/sport/exercises/:exerciseId ───────────────────────
 router.put('/exercises/:exerciseId', auth, async (req, res) => {
     const moi        = req.user.id;
     const exerciseId = parseInt(req.params.exerciseId, 10);
@@ -289,16 +265,16 @@ router.put('/exercises/:exerciseId', auth, async (req, res) => {
     try {
         const { rows } = await pool.query(`
             UPDATE sport_day_exercises AS e
-            SET exercise_name = COALESCE(\\$1, e.exercise_name),
-                order_in_day  = COALESCE(\\$2, e.order_in_day),
-                target_sets   = COALESCE(\\$3, e.target_sets),
-                target_reps   = COALESCE(\\$4, e.target_reps),
-                target_duration_seconds = COALESCE(\\$5, e.target_duration_seconds)
+            SET exercise_name = COALESCE(\$1, e.exercise_name),
+                order_in_day  = COALESCE(\$2, e.order_in_day),
+                target_sets   = COALESCE(\$3, e.target_sets),
+                target_reps   = COALESCE(\$4, e.target_reps),
+                target_duration_seconds = COALESCE(\$5, e.target_duration_seconds)
             FROM sport_workout_days d
             JOIN sport_workouts w ON w.id = d.workout_id
-            WHERE e.id = \\$6
+            WHERE e.id = \$6
                 AND e.day_id = d.id
-                AND w.user_id = \\$7
+                AND w.user_id = \$7
             RETURNING e.*
         `, [
             exercise_name?.trim() || null,
@@ -317,7 +293,6 @@ router.put('/exercises/:exerciseId', auth, async (req, res) => {
     }
 });
 
-// ── DELETE /api/sport/exercises/:exerciseId ────────────────────
 router.delete('/exercises/:exerciseId', auth, async (req, res) => {
     const moi        = req.user.id;
     const exerciseId = parseInt(req.params.exerciseId, 10);
@@ -325,10 +300,10 @@ router.delete('/exercises/:exerciseId', auth, async (req, res) => {
         const { rows } = await pool.query(`
             DELETE FROM sport_day_exercises AS e
             USING sport_workout_days AS d, sport_workouts AS w
-            WHERE e.id = \\$1
+            WHERE e.id = \$1
                 AND e.day_id = d.id
                 AND d.workout_id = w.id
-                AND w.user_id = \\$2
+                AND w.user_id = \$2
             RETURNING e.id
         `, [exerciseId, moi]);
         if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
@@ -343,14 +318,13 @@ router.delete('/exercises/:exerciseId', auth, async (req, res) => {
 // SÉANCES — sport_sessions
 // ────────────────────────────────────────────────────────────
 
-// ── GET /api/sport/sessions ────────────────────────────────────
 router.get('/sessions', auth, async (req, res) => {
     const moi = req.user.id;
     try {
         const { rows } = await pool.query(`
             SELECT id, user_id, workout_id, date_start, date_end
             FROM sport_sessions
-            WHERE user_id = \\$1
+            WHERE user_id = \$1
             ORDER BY date_start DESC
         `, [moi]);
         res.json({ success: true, sessions: rows });
@@ -360,20 +334,19 @@ router.get('/sessions', auth, async (req, res) => {
     }
 });
 
-// ── POST /api/sport/sessions (démarrer une séance) ─────────────
 router.post('/sessions', auth, async (req, res) => {
     const moi       = req.user.id;
     const workoutId = req.body.workout_id || null;
     try {
         if (workoutId) {
             const { rows: owner } = await pool.query(`
-                SELECT id FROM sport_workouts WHERE id = \\$1 AND user_id = \\$2
+                SELECT id FROM sport_workouts WHERE id = \$1 AND user_id = \$2
             `, [workoutId, moi]);
             if (!owner.length) return res.status(403).json({ success: false, message: 'Interdit.' });
         }
         const { rows } = await pool.query(`
             INSERT INTO sport_sessions (user_id, workout_id, date_start)
-            VALUES (\\$1, \\$2, NOW())
+            VALUES (\$1, \$2, NOW())
             RETURNING *
         `, [moi, workoutId]);
         res.json({ success: true, session: rows[0] });
@@ -383,7 +356,6 @@ router.post('/sessions', auth, async (req, res) => {
     }
 });
 
-// ── PUT /api/sport/sessions/:id (terminer une séance) ──────────
 router.put('/sessions/:id', auth, async (req, res) => {
     const moi = req.user.id;
     const id  = parseInt(req.params.id, 10);
@@ -391,7 +363,7 @@ router.put('/sessions/:id', auth, async (req, res) => {
         const { rows } = await pool.query(`
             UPDATE sport_sessions
             SET date_end = NOW()
-            WHERE id = \\$1 AND user_id = \\$2
+            WHERE id = \$1 AND user_id = \$2
             RETURNING *
         `, [id, moi]);
         if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
@@ -402,14 +374,13 @@ router.put('/sessions/:id', auth, async (req, res) => {
     }
 });
 
-// ── DELETE /api/sport/sessions/:id ─────────────────────────────
 router.delete('/sessions/:id', auth, async (req, res) => {
     const moi = req.user.id;
     const id  = parseInt(req.params.id, 10);
     try {
         const { rows } = await pool.query(`
             DELETE FROM sport_sessions
-            WHERE id = \\$1 AND user_id = \\$2
+            WHERE id = \$1 AND user_id = \$2
             RETURNING id
         `, [id, moi]);
         if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
@@ -424,7 +395,6 @@ router.delete('/sessions/:id', auth, async (req, res) => {
 // LOGS DE SÉANCE — sport_session_logs
 // ────────────────────────────────────────────────────────────
 
-// ── POST /api/sport/sessions/:sessionId/logs ───────────────────
 router.post('/sessions/:sessionId/logs', auth, async (req, res) => {
     const moi       = req.user.id;
     const sessionId = parseInt(req.params.sessionId, 10);
@@ -437,14 +407,14 @@ router.post('/sessions/:sessionId/logs', auth, async (req, res) => {
 
     try {
         const { rows: owner } = await pool.query(`
-            SELECT id FROM sport_sessions WHERE id = \\$1 AND user_id = \\$2
+            SELECT id FROM sport_sessions WHERE id = \$1 AND user_id = \$2
         `, [sessionId, moi]);
         if (!owner.length) return res.status(403).json({ success: false, message: 'Interdit.' });
 
         const { rows } = await pool.query(`
             INSERT INTO sport_session_logs
                 (session_id, wger_exercise_id, exercise_name, set_number, reps, weight_kg)
-            VALUES (\\$1, \\$2, \\$3, \\$4, \\$5, \\$6)
+            VALUES (\$1, \$2, \$3, \$4, \$5, \$6)
             RETURNING *
         `, [sessionId, wger_exercise_id, exercise_name.trim(), set_number, reps, weight_kg]);
         res.json({ success: true, log: rows[0] });
@@ -454,7 +424,6 @@ router.post('/sessions/:sessionId/logs', auth, async (req, res) => {
     }
 });
 
-// ── DELETE /api/sport/logs/:logId ──────────────────────────────
 router.delete('/logs/:logId', auth, async (req, res) => {
     const moi   = req.user.id;
     const logId = parseInt(req.params.logId, 10);
@@ -462,9 +431,9 @@ router.delete('/logs/:logId', auth, async (req, res) => {
         const { rows } = await pool.query(`
             DELETE FROM sport_session_logs AS l
             USING sport_sessions AS s
-            WHERE l.id = \\$1
+            WHERE l.id = \$1
                 AND l.session_id = s.id
-                AND s.user_id = \\$2
+                AND s.user_id = \$2
             RETURNING l.id
         `, [logId, moi]);
         if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
@@ -479,14 +448,13 @@ router.delete('/logs/:logId', auth, async (req, res) => {
 // MENSURATIONS — sport_measurements
 // ────────────────────────────────────────────────────────────
 
-// ── GET /api/sport/measurements ────────────────────────────────
 router.get('/measurements', auth, async (req, res) => {
     const moi = req.user.id;
     try {
         const { rows } = await pool.query(`
             SELECT id, user_id, date_logged, weight_kg
             FROM sport_measurements
-            WHERE user_id = \\$1
+            WHERE user_id = \$1
             ORDER BY date_logged DESC
         `, [moi]);
         res.json({ success: true, measurements: rows });
@@ -496,7 +464,6 @@ router.get('/measurements', auth, async (req, res) => {
     }
 });
 
-// ── POST /api/sport/measurements ───────────────────────────────
 router.post('/measurements', auth, async (req, res) => {
     const moi = req.user.id;
     const { date_logged, weight_kg } = req.body;
@@ -506,7 +473,7 @@ router.post('/measurements', auth, async (req, res) => {
     try {
         const { rows } = await pool.query(`
             INSERT INTO sport_measurements (user_id, date_logged, weight_kg)
-            VALUES (\\$1, \\$2, \\$3)
+            VALUES (\$1, \$2, \$3)
             RETURNING *
         `, [moi, date_logged, weight_kg]);
         res.json({ success: true, measurement: rows[0] });
@@ -516,14 +483,13 @@ router.post('/measurements', auth, async (req, res) => {
     }
 });
 
-// ── DELETE /api/sport/measurements/:id ─────────────────────────
 router.delete('/measurements/:id', auth, async (req, res) => {
     const moi = req.user.id;
     const id  = parseInt(req.params.id, 10);
     try {
         const { rows } = await pool.query(`
             DELETE FROM sport_measurements
-            WHERE id = \\$1 AND user_id = \\$2
+            WHERE id = \$1 AND user_id = \$2
             RETURNING id
         `, [id, moi]);
         if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
@@ -535,31 +501,20 @@ router.delete('/measurements/:id', auth, async (req, res) => {
 });
 
 // ────────────────────────────────────────────────────────────
-// CATALOGUE WGER — lecture seule (aucune clé API requise)
-// Relais serveur vers l'API publique wger.de.
-// Noms d'exercices affichés au format "Anglais (Français)" quand
-// une traduction française existe, sinon anglais seul.
-// Catégories/équipements traduits via table statique FR (WGER ne
-// fournit aucune traduction FR pour ces libellés). Repli sur
-// l'anglais si un terme n'est pas dans la table (aucune traduction
-// inventée à l'aveugle).
-// Recherche agrégée par lots de 50 exercices WGER, car WGER ne
-// filtre pas le texte libre côté serveur de façon fiable.
-// Aucun filtre sur la présence d'image : certains exercices
-// valides (ex. appareils de cardio) n'ont pas d'illustration WGER,
-// ils doivent quand même apparaître dans les résultats.
+// CATALOGUE WGER — lecture seule, aucune clé API requise.
+// Noms "Anglais (Français)" si traduction dispo. Catégories et
+// équipements traduits via tables statiques FR (repli anglais si
+// terme absent). Recherche agrégée par lots de 50 (WGER ne filtre
+// pas le texte libre côté serveur). Aucun filtre sur la présence
+// d'image (certains appareils cardio n'en ont pas).
 //
-// Catégorie Cardio (id 15) : le nom construit est ensuite passé
-// dans SPORT_CARDIO_FR (routes/sport-cardio-fr.js) pour être
-// remplacé par un nom français retenu + un type de suivi
-// ('duree' ou 'series'). Les entrées mappées à null sont exclues
-// des résultats (doublons WGER désignant la même activité). La
-// recherche texte s'applique après cette étape, donc sur le nom
-// final affiché (français si Cardio et mappé, sinon nom bilingue
-// d'origine).
+// Catégorie Cardio (id 15) : le nom construit passe dans
+// SPORT_CARDIO_FR pour être remplacé par un nom FR + type_suivi
+// ('duree' ou 'series'). Entrées mappées à null = exclues
+// (doublons WGER). La recherche texte s'applique après, sur le
+// nom final affiché.
 // ────────────────────────────────────────────────────────────
 
-// ── Table de traduction des catégories musculaires ─────────────
 const SPORT_WGER_CATEGORIES_FR = {
     'Abs'      : 'Abdominaux',
     'Arms'     : 'Bras',
@@ -571,7 +526,6 @@ const SPORT_WGER_CATEGORIES_FR = {
     'Shoulders': 'Épaules'
 };
 
-// ── Table de traduction des équipements ─────────────────────────
 // Repli automatique sur le nom anglais si non présent ici.
 const SPORT_WGER_EQUIPEMENT_FR = {
     'Barbell'                    : 'Barre olympique',
@@ -593,7 +547,8 @@ function _traduireEquipement(nom) {
     return SPORT_WGER_EQUIPEMENT_FR[nom] || nom;
 }
 
-// ── Fonction utilitaire : construit le nom bilingue ────────────
+// Construit le nom bilingue "Anglais (Français)" à partir des
+// traductions WGER (langue 2 = anglais, langue 5 = français).
 function _construireNomBilingue(translations) {
     const en = translations.find(t => t.language === 2)?.name || null;
     const fr = translations.find(t => t.language === 5)?.name || null;
@@ -601,15 +556,13 @@ function _construireNomBilingue(translations) {
     return en || fr || 'Exercice sans nom';
 }
 
-// ── Fonction utilitaire : isole le nom de base avant la première
-// parenthèse (sert à matcher SPORT_CARDIO_FR, indépendamment d'un
-// éventuel texte russe ou d'une traduction déjà présente entre
-// parenthèses dans le nom bilingue WGER).
+// Isole le nom de base avant la première parenthèse, pour matcher
+// SPORT_CARDIO_FR indépendamment d'un texte russe ou d'une
+// traduction déjà présente entre parenthèses.
 function _nettoyerNomBase(nom) {
     return nom.split('(')[0].trim();
 }
 
-// ── GET /api/sport/wger/categories ─────────────────────────────
 router.get('/wger/categories', auth, async (req, res) => {
     try {
         const r = await fetch(`${WGER_BASE_URL}/exercisecategory/?limit=50&format=json`);
@@ -626,7 +579,6 @@ router.get('/wger/categories', auth, async (req, res) => {
     }
 });
 
-// ── GET /api/sport/wger/equipment ──────────────────────────────
 router.get('/wger/equipment', auth, async (req, res) => {
     try {
         const r = await fetch(`${WGER_BASE_URL}/equipment/?limit=50&format=json`);
@@ -643,24 +595,11 @@ router.get('/wger/equipment', auth, async (req, res) => {
     }
 });
 
-// ── GET /api/sport/wger/exercises ──────────────────────────────
-// Paramètres optionnels : ?search=squat&category=10&equipment=3&limit=20&offset=0
+// GET /wger/exercises?search=squat&category=10&equipment=3&limit=20&offset=0
 //
-// Fonctionnement par agrégation : WGER est interrogé par lots de
-// 50 résultats (page interne), chaque lot est filtré localement
-// sur le texte de recherche (WGER ne filtre pas le texte libre
-// côté serveur de façon fiable), puis on avance dans les lots
-// suivants jusqu'à obtenir assez de résultats pour remplir la
-// page demandée (limit) ou jusqu'à épuisement de la base WGER.
-// Aucun filtre sur la présence d'image : un exercice sans image
-// reste un résultat valide (ex. certains appareils de cardio).
-//
-// Si category === 15 (Cardio) : chaque exercice passe par
-// SPORT_CARDIO_FR (nom de base nettoyé). Une entrée mappée à null
-// est exclue avant le filtre de recherche. Une entrée trouvée voit
-// son nom remplacé par le nom français retenu et reçoit un champ
-// type_suivi ('duree' ou 'series'). Une entrée cardio absente de
-// la table garde son nom bilingue d'origine et type_suivi: null.
+// Agrégation par lots de 50 (page interne WGER), filtrage local
+// sur le texte de recherche, avance dans les lots suivants jusqu'à
+// remplir la page demandée (limit) ou épuisement de la base.
 router.get('/wger/exercises', auth, async (req, res) => {
     const search    = (req.query.search    || '').trim().toLowerCase();
     const category  = req.query.category   || '';
@@ -669,11 +608,9 @@ router.get('/wger/exercises', auth, async (req, res) => {
     const offset    = parseInt(req.query.offset, 10) || 0;
 
     const LOT_INTERNE     = 50;
-    const MAX_LOTS_SONDES = 40; // garde-fou : ~2000 exercices WGER max explorés par requête
+    const MAX_LOTS_SONDES = 40; // garde-fou : ~2000 exercices WGER max explorés
 
     try {
-        // Nombre d'exercices valides (filtrés) à ignorer avant la page demandée,
-        // puis nombre à collecter pour remplir cette page.
         let aIgnorer   = offset;
         let aCollecter = limit;
         const resultats = [];
