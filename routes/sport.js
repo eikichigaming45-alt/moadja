@@ -1,16 +1,9 @@
-// ============================================================
 // routes/sport.js
-// Module Sport — CRUD sur 6 tables : sport_workouts,
-// sport_workout_days, sport_day_exercises, sport_sessions,
-// sport_session_logs, sport_measurements.
-// Toutes les routes sont scopées par utilisateur.
-//
-// + Intégration WGER (lecture seule, catalogue d'exercices).
-// Noms affichés "Anglais (Français)" si traduction dispo.
-// Catégorie Cardio (id 15) : noms FR + type de suivi (durée ou
-// séries×reps) via routes/sport-cardio-fr.js. Certains exercices
-// masqués (doublons WGER désignant la même activité).
-// ============================================================
+// Module Sport : CRUD sur sport_workouts, sport_workout_days,
+// sport_day_exercises, sport_sessions, sport_session_logs,
+// sport_measurements. Toutes les routes sont scopées par user.
+// + Catalogue WGER en lecture seule, avec traduction FR pour le
+// cardio (catégorie id 15) via SPORT_CARDIO_FR.
 const express = require('express');
 const router  = express.Router();
 const { pool } = require('../db/pool');
@@ -19,9 +12,7 @@ const { SPORT_CARDIO_FR } = require('./sport-cardio-fr');
 
 const WGER_BASE_URL = 'https://wger.de/api/v2';
 
-// ────────────────────────────────────────────────────────────
-// ROUTINES — sport_workouts
-// ────────────────────────────────────────────────────────────
+// ── ROUTINES : sport_workouts ──
 
 router.get('/workouts', auth, async (req, res) => {
     const moi = req.user.id;
@@ -56,7 +47,6 @@ router.post('/workouts', auth, async (req, res) => {
     }
 });
 
-// GET /workouts/:id — détail + jours + exercices
 router.get('/workouts/:id', auth, async (req, res) => {
     const moi = req.user.id;
     const id  = parseInt(req.params.id, 10);
@@ -139,9 +129,7 @@ router.delete('/workouts/:id', auth, async (req, res) => {
     }
 });
 
-// ────────────────────────────────────────────────────────────
-// JOURS DE ROUTINE — sport_workout_days
-// ────────────────────────────────────────────────────────────
+// ── JOURS : sport_workout_days ──
 
 router.post('/workouts/:workoutId/days', auth, async (req, res) => {
     const moi         = req.user.id;
@@ -211,9 +199,7 @@ router.delete('/days/:dayId', auth, async (req, res) => {
     }
 });
 
-// ────────────────────────────────────────────────────────────
-// EXERCICES D'UN JOUR — sport_day_exercises
-// ────────────────────────────────────────────────────────────
+// ── EXERCICES D'UN JOUR : sport_day_exercises ──
 
 router.post('/days/:dayId/exercises', auth, async (req, res) => {
     const moi   = req.user.id;
@@ -314,9 +300,7 @@ router.delete('/exercises/:exerciseId', auth, async (req, res) => {
     }
 });
 
-// ────────────────────────────────────────────────────────────
-// SÉANCES — sport_sessions
-// ────────────────────────────────────────────────────────────
+// ── SÉANCES : sport_sessions ──
 
 router.get('/sessions', auth, async (req, res) => {
     const moi = req.user.id;
@@ -391,9 +375,7 @@ router.delete('/sessions/:id', auth, async (req, res) => {
     }
 });
 
-// ────────────────────────────────────────────────────────────
-// LOGS DE SÉANCE — sport_session_logs
-// ────────────────────────────────────────────────────────────
+// ── LOGS DE SÉANCE : sport_session_logs ──
 
 router.post('/sessions/:sessionId/logs', auth, async (req, res) => {
     const moi       = req.user.id;
@@ -444,9 +426,7 @@ router.delete('/logs/:logId', auth, async (req, res) => {
     }
 });
 
-// ────────────────────────────────────────────────────────────
-// MENSURATIONS — sport_measurements
-// ────────────────────────────────────────────────────────────
+// ── MENSURATIONS : sport_measurements ──
 
 router.get('/measurements', auth, async (req, res) => {
     const moi = req.user.id;
@@ -500,20 +480,15 @@ router.delete('/measurements/:id', auth, async (req, res) => {
     }
 });
 
-// ────────────────────────────────────────────────────────────
-// CATALOGUE WGER — lecture seule, aucune clé API requise.
-// Noms "Anglais (Français)" si traduction dispo. Catégories et
-// équipements traduits via tables statiques FR (repli anglais si
-// terme absent). Recherche agrégée par lots de 50 (WGER ne filtre
-// pas le texte libre côté serveur). Aucun filtre sur la présence
-// d'image (certains appareils cardio n'en ont pas).
-//
-// Catégorie Cardio (id 15) : le nom construit passe dans
-// SPORT_CARDIO_FR pour être remplacé par un nom FR + type_suivi
-// ('duree' ou 'series'). Entrées mappées à null = exclues
-// (doublons WGER). La recherche texte s'applique après, sur le
-// nom final affiché.
-// ────────────────────────────────────────────────────────────
+// ── CATALOGUE WGER (lecture seule) ──
+// Noms "Anglais (Français)". Catégories/équipements traduits via
+// tables statiques FR (repli anglais si absent). Agrégation par
+// lots de 50 car WGER ne filtre pas le texte libre côté serveur.
+// Cardio (catégorie réelle id 15) : nom remplacé via SPORT_CARDIO_FR
+// + type_suivi ('duree'/'series'). mapping = null -> exercice masqué.
+// Le test se fait sur ex.category (catégorie réelle de l'exercice),
+// pas sur le filtre choisi par l'utilisateur, pour que la traduction
+// et la recherche fonctionnent aussi bien sans filtre de catégorie.
 
 const SPORT_WGER_CATEGORIES_FR = {
     'Abs'      : 'Abdominaux',
@@ -526,7 +501,6 @@ const SPORT_WGER_CATEGORIES_FR = {
     'Shoulders': 'Épaules'
 };
 
-// Repli automatique sur le nom anglais si non présent ici.
 const SPORT_WGER_EQUIPEMENT_FR = {
     'Barbell'                    : 'Barre olympique',
     'SZ-Bar'                     : 'Barre EZ',
@@ -547,8 +521,6 @@ function _traduireEquipement(nom) {
     return SPORT_WGER_EQUIPEMENT_FR[nom] || nom;
 }
 
-// Construit le nom bilingue "Anglais (Français)" à partir des
-// traductions WGER (langue 2 = anglais, langue 5 = français).
 function _construireNomBilingue(translations) {
     const en = translations.find(t => t.language === 2)?.name || null;
     const fr = translations.find(t => t.language === 5)?.name || null;
@@ -556,9 +528,6 @@ function _construireNomBilingue(translations) {
     return en || fr || 'Exercice sans nom';
 }
 
-// Isole le nom de base avant la première parenthèse, pour matcher
-// SPORT_CARDIO_FR indépendamment d'un texte russe ou d'une
-// traduction déjà présente entre parenthèses.
 function _nettoyerNomBase(nom) {
     return nom.split('(')[0].trim();
 }
@@ -595,11 +564,14 @@ router.get('/wger/equipment', auth, async (req, res) => {
     }
 });
 
-// GET /wger/exercises?search=squat&category=10&equipment=3&limit=20&offset=0
+// GET /wger/exercises?search=vélo&category=&equipment=&limit=20&offset=0
 //
-// Agrégation par lots de 50 (page interne WGER), filtrage local
-// sur le texte de recherche, avance dans les lots suivants jusqu'à
-// remplir la page demandée (limit) ou épuisement de la base.
+// La traduction FR cardio se base sur la catégorie RÉELLE de chaque
+// exercice (ex.category.id), jamais sur le filtre choisi par
+// l'utilisateur. Ainsi, que "category" soit vide (aucun filtre) ou
+// renseigné, chaque exercice cardio est traduit avant la recherche
+// texte, donc "vélo" matche aussi bien en "Toutes catégorie" qu'en
+// filtrant sur Cardio.
 router.get('/wger/exercises', auth, async (req, res) => {
     const search    = (req.query.search    || '').trim().toLowerCase();
     const category  = req.query.category   || '';
@@ -608,7 +580,7 @@ router.get('/wger/exercises', auth, async (req, res) => {
     const offset    = parseInt(req.query.offset, 10) || 0;
 
     const LOT_INTERNE     = 50;
-    const MAX_LOTS_SONDES = 40; // garde-fou : ~2000 exercices WGER max explorés
+    const MAX_LOTS_SONDES = 40;
 
     try {
         let aIgnorer   = offset;
@@ -642,15 +614,17 @@ router.get('/wger/exercises', auth, async (req, res) => {
                 let nom            = _construireNomBilingue(translations);
                 let typeSuivi      = null;
 
-                if (ex.category === 15) {
-    const cle = _nettoyerNomBase(nom);
-    if (Object.prototype.hasOwnProperty.call(SPORT_CARDIO_FR, cle)) {
-        const mapping = SPORT_CARDIO_FR[cle];
-        if (mapping === null) continue; // exercice masqué (doublon)
-        nom       = mapping.nom;
-        typeSuivi = mapping.type;
-    }
-}
+                // Test sur la catégorie réelle de l'exercice, pas sur
+                // le filtre "category" de la requête.
+                if (ex.category?.id === 15) {
+                    const cle = _nettoyerNomBase(nom);
+                    if (Object.prototype.hasOwnProperty.call(SPORT_CARDIO_FR, cle)) {
+                        const mapping = SPORT_CARDIO_FR[cle];
+                        if (mapping === null) continue; // doublon masqué
+                        nom       = mapping.nom;
+                        typeSuivi = mapping.type;
+                    }
+                }
 
                 const image = ex.images?.[0]?.image || null;
 
@@ -664,7 +638,7 @@ router.get('/wger/exercises', auth, async (req, res) => {
                 resultats.push({
                     wger_exercise_id: ex.id,
                     name            : nom,
-                    category        : ex.category,
+                    category        : ex.category?.id ?? ex.category,
                     equipment       : ex.equipment,
                     muscles         : ex.muscles,
                     image,
