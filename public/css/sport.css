@@ -6,7 +6,6 @@
    Aucune nouvelle couleur inventée.
    ============================================================ */
 
-/* ── Wrapper général de l'onglet Sport ── */
 .sport-wrap {
     padding: 20px;
     display: flex;
@@ -17,7 +16,6 @@
     .sport-wrap { padding: 12px; gap: 12px; }
 }
 
-/* ── Pilules de sous-navigation (Dashboard / Mes Routines) ── */
 .sport-pills {
     display: flex;
     gap: 8px;
@@ -49,7 +47,6 @@
     -webkit-backdrop-filter: blur(8px);
 }
 
-/* ── Carte principale du Dashboard (résumé hebdomadaire) ── */
 .sport-card {
     background: var(--glass-bg);
     backdrop-filter: blur(16px);
@@ -63,7 +60,6 @@
     margin-top: 16px;
 }
 
-/* ── État vide / encourageant (aucune séance cette semaine) ── */
 .sport-empty-state {
     display: flex;
     flex-direction: column;
@@ -97,7 +93,6 @@
     margin-bottom: 20px;
 }
 
-/* ── Bouton d'incitation principal (CTA) ── */
 .sport-cta-btn {
     padding: 14px 28px;
     background: rgba(167, 139, 250, 0.85);
@@ -121,7 +116,6 @@
     box-shadow: 0 12px 28px rgba(167, 139, 250, 0.35);
 }
 
-/* ── Ligne de statistiques (quand il y a de l'activité) ── */
 .sport-stats-row {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -149,7 +143,6 @@
     margin-top: 2px;
 }
 
-/* ── Titre de section ── */
 .sport-section-title {
     font-size: 12px;
     font-weight: 700;
@@ -159,7 +152,6 @@
     margin-bottom: 10px;
 }
 
-/* ── Liste des dernières séances ── */
 .sport-session-item {
     display: flex;
     align-items: center;
@@ -193,7 +185,6 @@
     margin-top: 2px;
 }
 
-/* ── Note d'état vide (ex. "Aucune séance enregistrée pour l'instant") ── */
 .sport-empty-note {
     color: #9ca3af;
     font-size: 13px;
@@ -201,9 +192,7 @@
     padding: 12px 0;
 }
 
-/* ============================================================
-   WIDGET SPORT STATS — Colonne droite (glass-panel #sport-stats-widget)
-   ============================================================ */
+/* ── Widget Sport Stats (colonne droite) ── */
 .sport-stats-header {
     display: flex;
     align-items: center;
@@ -245,12 +234,7 @@
     color: #6b7280;
 }
 
-/* ============================================================
-   SÉLECTEUR D'EXERCICE — recherche d'exercices WGER (ex-Catalogue).
-   Réutilisé désormais uniquement depuis "Mes Routines".
-   ============================================================ */
-
-/* ── Barre d'outils : recherche (pleine largeur) + filtres (2 colonnes) ── */
+/* ── Sélecteur d'exercice (ex-Catalogue) ── */
 .sport-catalogue-toolbar {
     display: flex;
     flex-wrap: wrap;
@@ -272,12 +256,6 @@
     border-color: rgba(167, 139, 250, 0.7);
 }
 
-/* Correctif v1.91 : le libellé "Toutes catégories" était tronqué
-   ("Toutes catégori[es]"). Cause : text-overflow:ellipsis combiné
-   à un padding-right insuffisant pour la flèche personnalisée
-   (définie dans style.css, 40px réservés). On agrandit ce padding
-   ici et on retire l'ellipsis pour laisser le libellé s'afficher
-   en entier — sans toucher à la flèche ni au style global. */
 .sport-catalogue-select {
     flex: 1 1 calc(50% - 5px);
     min-width: 180px;
@@ -298,7 +276,6 @@
     }
 }
 
-/* ── Grille de résultats ── */
 .sport-catalogue-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -310,7 +287,6 @@
     }
 }
 
-/* ── Carte exercice individuelle ── */
 .sport-catalogue-exercise {
     background: rgba(255, 255, 255, 0.5);
     border: 1px solid rgba(255, 255, 255, 0.7);
@@ -356,7 +332,6 @@
     line-height: 1.3;
 }
 
-/* ── Pagination ── */
 .sport-catalogue-pagination {
     display: flex;
     justify-content: center;
@@ -388,7 +363,6 @@
     font-weight: 600;
 }
 
-/* ── État de chargement ── */
 .sport-catalogue-loading {
     text-align: center;
     color: #9ca3af;
@@ -396,11 +370,7 @@
     padding: 20px 0;
 }
 
-/* ============================================================
-   MES ROUTINES — liste, création, détail, exercices
-   ============================================================ */
-
-/* ── Bloc de création d'une routine (en haut de la liste) ── */
+/* ── Mes Routines : création, liste, détail, exercices ── */
 .sport-routine-creation {
     display: flex;
     flex-wrap: wrap;
@@ -417,7 +387,6 @@
     min-height: 16px;
 }
 
-/* ── Liste des routines (cartes) ── */
 .sport-routine-liste {
     display: flex;
     flex-direction: column;
@@ -466,7 +435,6 @@
     margin-top: 2px;
 }
 
-/* ── En-tête du détail d'une routine ── */
 .sport-routine-detail-header {
     display: flex;
     justify-content: space-between;
@@ -505,7 +473,6 @@
     margin-bottom: 16px;
 }
 
-/* ── Bouton "Commencer la routine" désactivé ── */
 .sport-btn-commencer-disabled {
     opacity: 0.45;
     cursor: not-allowed;
@@ -517,7 +484,6 @@
     box-shadow: 0 8px 24px rgba(167, 139, 250, 0.25);
 }
 
-/* ── Liste des exercices d'une routine ── */
 .sport-routine-exercices-liste {
     display: flex;
     flex-direction: column;
@@ -560,7 +526,6 @@
     background: rgba(167, 139, 250, 0.1);
 }
 
-/* ── Édition inline séries/reps ou durée ── */
 .sport-routine-exercice-edit {
     display: flex;
     flex-direction: column;
@@ -573,11 +538,6 @@
     color: var(--text-main);
 }
 
-/* Correctif v1.91.9 : refonte de l'alignement input/libellé (durée
-   "min" et séries "×"). Hauteur fixe partagée (38px) entre input et
-   span pour garantir l'alignement vertical quel que soit le navigateur.
-   Largeur fixe sur l'input (au lieu de flex:1 1 0) pour éviter qu'il
-   s'étire seul quand il n'y a qu'un champ (cas durée). */
 .sport-routine-exercice-edit-champs {
     display: flex;
     align-items: center;
@@ -607,13 +567,13 @@
     color: #9ca3af;
     font-weight: 700;
     font-size: 13px;
+    transform: translateY(2px);
 }
 .sport-routine-exercice-edit-actions {
     display: flex;
     gap: 8px;
 }
 
-/* ── Confirmation de suppression inline (esprit taches.js) ── */
 .sport-confirm-suppr {
     margin-top: 10px;
     padding: 12px;
