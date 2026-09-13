@@ -32,6 +32,13 @@ const SPORT_ICONE_PAS_IMAGE = `
     </svg>
 `;
 
+const SPORT_ICONE_X = `
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+        <line x1="4" y1="4" x2="20" y2="20"></line>
+        <line x1="20" y1="4" x2="4" y2="20"></line>
+    </svg>
+`;
+
 let _sportSectionActive = 'dashboard';
 
 // ── Construction initiale ──
@@ -481,7 +488,7 @@ function _sportEditerExercice(exerciceId, nom, setsActuel, repsActuel, dureeActu
             <span class="sport-routine-exercice-edit-nom">${_sportEchapper(nom)}</span>
             <div class="sport-routine-exercice-edit-champs">
                 <input type="number" id="sport-edit-sets-${exerciceId}" value="${setsActuel}" min="1" placeholder="Séries">
-                <span>×</span>
+                <span class="sport-edit-icone-x">${SPORT_ICONE_X}</span>
                 <input type="number" id="sport-edit-reps-${exerciceId}" value="${repsActuel}" min="1" placeholder="Reps">
             </div>
             <div class="sport-routine-exercice-edit-actions">
@@ -582,7 +589,7 @@ function _sportOuvrirSelecteurExercice() {
         _sportRechercherExercicesSelecteur();
     });
 
-    document.getElementById('sport-selecteur-prev').addEventListener('click', () => {
+        document.getElementById('sport-selecteur-prev').addEventListener('click', () => {
         if (_sportSelecteurOffset >= SPORT_SELECTEUR_LIMIT) {
             _sportSelecteurOffset -= SPORT_SELECTEUR_LIMIT;
             _sportSelecteurPageActuelle -= 1;
@@ -732,7 +739,7 @@ function _sportOuvrirFormulaireAjoutExercice(exercice) {
             </div>` : `
             <div class="sport-routine-exercice-edit-champs" style="margin:16px 0">
                 <input type="number" id="sport-ajout-sets" value="3" min="1" placeholder="Séries">
-                <span>×</span>
+                <span class="sport-edit-icone-x">${SPORT_ICONE_X}</span>
                 <input type="number" id="sport-ajout-reps" value="10" min="1" placeholder="Reps">
             </div>`}
             <div id="sport-ajout-msg" class="sport-routine-msg-erreur"></div>
