@@ -3,7 +3,8 @@
 // sport_day_exercises, sport_sessions, sport_session_logs,
 // sport_measurements. Toutes les routes sont scopées par user.
 // + Catalogue WGER en lecture seule, avec traduction FR pour le
-// cardio (catégorie id 15) via SPORT_CARDIO_FR.
+// cardio (catégorie id 15) via SPORT_CARDIO_FR. Recherche texte
+// insensible aux accents et à la casse.
 const express = require('express');
 const router  = express.Router();
 const { pool } = require('../db/pool');
@@ -489,6 +490,7 @@ router.delete('/measurements/:id', auth, async (req, res) => {
 // Le test se fait sur ex.category (catégorie réelle de l'exercice),
 // pas sur le filtre choisi par l'utilisateur, pour que la traduction
 // et la recherche fonctionnent aussi bien sans filtre de catégorie.
+// La recherche texte est insensible aux accents/casse (_sansAccents).
 
 const SPORT_WGER_CATEGORIES_FR = {
     'Abs'      : 'Abdominaux',
@@ -532,6 +534,12 @@ function _nettoyerNomBase(nom) {
     return nom.split('(')[0].trim();
 }
 
+// Retire les diacritiques pour une comparaison insensible aux accents
+// ("vélo" et "velo" doivent matcher de la même façon).
+function _sansAccents(txt) {
+    return txt.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 router.get('/wger/categories', auth, async (req, res) => {
     try {
         const r = await fetch(`${WGER_BASE_URL}/exercisecategory/?limit=50&format=json`);
@@ -564,16 +572,8 @@ router.get('/wger/equipment', auth, async (req, res) => {
     }
 });
 
-// GET /wger/exercises?search=vélo&category=&equipment=&limit=20&offset=0
-//
-// La traduction FR cardio se base sur la catégorie RÉELLE de chaque
-// exercice (ex.category.id), jamais sur le filtre choisi par
-// l'utilisateur. Ainsi, que "category" soit vide (aucun filtre) ou
-// renseigné, chaque exercice cardio est traduit avant la recherche
-// texte, donc "vélo" matche aussi bien en "Toutes catégorie" qu'en
-// filtrant sur Cardio.
 router.get('/wger/exercises', auth, async (req, res) => {
-    const search    = (req.query.search    || '').trim().toLowerCase();
+    const search    = _sansAccents((req.query.search || '').trim().toLowerCase());
     const category  = req.query.category   || '';
     const equipment = req.query.equipment  || '';
     const limit     = Math.min(parseInt(req.query.limit, 10)  || 20, 50);
@@ -614,8 +614,6 @@ router.get('/wger/exercises', auth, async (req, res) => {
                 let nom            = _construireNomBilingue(translations);
                 let typeSuivi      = null;
 
-                // Test sur la catégorie réelle de l'exercice, pas sur
-                // le filtre "category" de la requête.
                 if (ex.category?.id === 15) {
                     const cle = _nettoyerNomBase(nom);
                     if (Object.prototype.hasOwnProperty.call(SPORT_CARDIO_FR, cle)) {
@@ -628,7 +626,7 @@ router.get('/wger/exercises', auth, async (req, res) => {
 
                 const image = ex.images?.[0]?.image || null;
 
-                if (search && !nom.toLowerCase().includes(search)) continue;
+                if (search && !_sansAccents(nom.toLowerCase()).includes(search)) continue;
 
                 if (aIgnorer > 0) {
                     aIgnorer--;
