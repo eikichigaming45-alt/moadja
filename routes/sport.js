@@ -642,15 +642,15 @@ router.get('/wger/exercises', auth, async (req, res) => {
                 let nom            = _construireNomBilingue(translations);
                 let typeSuivi      = null;
 
-                if (String(category) === '15') {
-                    const cle = _nettoyerNomBase(nom);
-                    if (Object.prototype.hasOwnProperty.call(SPORT_CARDIO_FR, cle)) {
-                        const mapping = SPORT_CARDIO_FR[cle];
-                        if (mapping === null) continue; // exercice masqué (doublon)
-                        nom       = mapping.nom;
-                        typeSuivi = mapping.type;
-                    }
-                }
+                if (ex.category === 15) {
+    const cle = _nettoyerNomBase(nom);
+    if (Object.prototype.hasOwnProperty.call(SPORT_CARDIO_FR, cle)) {
+        const mapping = SPORT_CARDIO_FR[cle];
+        if (mapping === null) continue; // exercice masqué (doublon)
+        nom       = mapping.nom;
+        typeSuivi = mapping.type;
+    }
+}
 
                 const image = ex.images?.[0]?.image || null;
 
