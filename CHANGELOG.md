@@ -1,5 +1,12 @@
 ## MoaDja
 
+## v1.92.7 — 14 septembre 2026
+- Ajout de la suppression d'une séance directement depuis le tableau de bord, avec une demande de confirmation avant toute suppression.
+- Nouveau design des cartes de séance sur le tableau de bord et dans le widget de droite : affichage clair de la durée, du volume total, du nombre de records, et de la liste des exercices effectués.
+- Possibilité de définir un poids et un temps de repos cibles pour chaque exercice d'une routine, modifiables directement pendant l'entraînement.
+
+---
+
 ## v1.92.4 — 14 septembre 2026
 - Découpage de `sport.js` en deux fichiers (`sport.js` + `sport-widget.js`) pour éviter le grossissement excessif du fichier et les erreurs de copier-coller lors des futures évolutions.
 - Aucun changement fonctionnel visible : dashboard, widget droit, séance en cours et sélecteur d'exercices continuent de fonctionner à l'identique.
