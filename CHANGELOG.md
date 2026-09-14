@@ -1,5 +1,11 @@
 ## MoaDja
 
+## v1.92.4 — 14 septembre 2026
+- Découpage de `sport.js` en deux fichiers (`sport.js` + `sport-widget.js`) pour éviter le grossissement excessif du fichier et les erreurs de copier-coller lors des futures évolutions.
+- Aucun changement fonctionnel visible : dashboard, widget droit, séance en cours et sélecteur d'exercices continuent de fonctionner à l'identique.
+
+---
+
 ## v1.91.15 — 13 septembre 2026
 - Remplacement de la confirmation de suppression intégrée (encart rouge en ligne) par la fenêtre modale globale de l'application, pour une expérience identique aux autres modules (Tâches, Administration).
 
