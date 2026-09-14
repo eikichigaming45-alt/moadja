@@ -115,7 +115,7 @@ function _sportRenderDashboard(dernieresSeances) {
                         et voir votre progression au fil du temps.
                     </div>
                 `}
-                <button class="sport-cta-btn" onclick="_sportSwitchSection('routines')">
+                <button class="sport-cta-btn sport-cta-btn-compact" onclick="_sportSwitchSection('routines')">
                     ${SPORT_ICONE_DUMBBELL} Commencer une séance
                 </button>
             </div>
@@ -216,7 +216,7 @@ function _sportOuvrirConfirmationSuppression(onConfirm) {
 
     document.getElementById('modal-title').textContent = 'Confirmation';
     document.getElementById('modal-body').innerHTML = `
-        <p style="color:#333;font-size:15px;margin-bottom:20px">Confirmer la suppression ?</p>
+        <p style="color:#333;font-size:15px;margin-bottom:20px;text-align:center">Confirmer la suppression ?</p>
         <div class="modal-actions">
             <button class="btn-delete" id="sport-modal-suppr-oui">Confirmer</button>
             <button class="btn-cancel" id="sport-modal-suppr-non">Annuler</button>
@@ -402,14 +402,14 @@ function _sportRenderDetailRoutine(workout, jour) {
     const zone      = document.getElementById('sport-routines-zone');
     const exercices = jour?.exercises || [];
 
-    zone.innerHTML = `
+        zone.innerHTML = `
         <div class="sport-card">
             <div class="sport-routine-detail-header">
                 <button class="sport-routine-btn-retour" onclick="_sportChargerListeRoutines()">‹ Retour</button>
                 <button class="sport-routine-btn-suppr-routine" data-workout-id="${workout.id}">${SPORT_ICONE_POUBELLE} Supprimer la routine</button>
             </div>
             <div class="sport-routine-detail-nom">${_sportEchapper(workout.name)}</div>
-            <button class="sport-cta-btn" onclick="_sportDemarrerSeance(${workout.id})">
+            <button class="sport-cta-btn sport-cta-btn-compact" onclick="_sportDemarrerSeance(${workout.id})">
                 ${SPORT_ICONE_DUMBBELL} Commencer la routine
             </button>
         </div>
@@ -821,7 +821,7 @@ async function _sportValiderAjoutExercice(wgerExerciseId, exerciseName, estDuree
             if (msg) msg.textContent = 'Erreur : ' + (d.message || 'ajout impossible.');
             return;
         }
-        _sportOuvrirDetailRoutine(_sportRoutineDetailActive.workoutId);
+                _sportOuvrirDetailRoutine(_sportRoutineDetailActive.workoutId);
     } catch (err) {
         console.error('[SPORT] validerAjoutExercice :', err.message);
         if (msg) msg.textContent = 'Erreur de connexion au serveur.';
@@ -934,6 +934,8 @@ async function _sportDemarrerSeance(workoutId) {
 }
 
 // Écran plein cadre de la séance (remplace toute la zone #grid-sport).
+// Utilise les classes déjà existantes dans sport.css (sport-seance-header-top,
+// sport-seance-stats, sport-card) pour un rendu cohérent avec le reste du module.
 function _sportRenderEcranSeance() {
     const zoneGlobale = document.getElementById('grid-sport');
     if (!zoneGlobale || !_sportSeanceExercices.length) return;
@@ -942,17 +944,14 @@ function _sportRenderEcranSeance() {
     _sportSeanceChronoInterval = setInterval(_sportMettreAJourChronoSeance, 1000);
 
     zoneGlobale.innerHTML = `
-        <div class="sport-seance-wrap">
-            <div class="sport-seance-topbar">
-                <span id="sport-seance-chrono" class="sport-seance-chrono">00:00</span>
-                <button class="sport-seance-btn-terminer" id="sport-seance-btn-terminer">Terminer</button>
+        <div class="sport-wrap">
+            <div class="sport-card">
+                <div class="sport-seance-header-top">
+                    <span id="sport-seance-chrono" class="sport-seance-nom">00:00</span>
+                    <button class="sport-seance-btn-abandon" id="sport-seance-btn-terminer">Terminer</button>
+                </div>
+                <div id="sport-seance-contenu"></div>
             </div>
-            <div class="sport-seance-progress">
-                ${_sportSeanceExercices.map((ex, i) => `
-                    <div class="sport-seance-progress-dot ${i === _sportSeanceIndexCourant ? 'active' : ''} ${i < _sportSeanceIndexCourant ? 'done' : ''}"></div>
-                `).join('')}
-            </div>
-            <div id="sport-seance-contenu"></div>
         </div>
     `;
 
@@ -988,18 +987,18 @@ function _sportRenderExerciceCourant() {
     const logsExerciceExistants = (_sportSeanceActive.logs || []).filter(l => l.wger_exercise_id === ex.wger_exercise_id);
 
     zone.innerHTML = `
-        <div class="sport-seance-exercice-header">
-            <button class="sport-seance-btn-nav" id="sport-seance-btn-prev" ${_sportSeanceIndexCourant === 0 ? 'disabled' : ''}>‹</button>
-            <div class="sport-seance-exercice-nom">${_sportEchapper(ex.exercise_name)}</div>
-            <button class="sport-seance-btn-nav" id="sport-seance-btn-next" ${_sportSeanceIndexCourant === _sportSeanceExercices.length - 1 ? 'disabled' : ''}>›</button>
+        <div class="sport-routine-detail-header">
+            <button class="sport-routine-btn-retour" id="sport-seance-btn-prev" ${_sportSeanceIndexCourant === 0 ? 'disabled' : ''}>‹ Précédent</button>
+            <button class="sport-routine-btn-retour" id="sport-seance-btn-next" ${_sportSeanceIndexCourant === _sportSeanceExercices.length - 1 ? 'disabled' : ''}>Suivant ›</button>
         </div>
+        <div class="sport-seance-exercice-nom">${_sportEchapper(ex.exercise_name)}</div>
 
         ${estDuree ? _sportRenderFormulaireDuree(ex, logsExerciceExistants) : _sportRenderFormulaireSeries(ex, logsExerciceExistants)}
 
         <div id="sport-seance-repos-zone"></div>
     `;
 
-        document.getElementById('sport-seance-btn-prev')?.addEventListener('click', () => {
+    document.getElementById('sport-seance-btn-prev')?.addEventListener('click', () => {
         if (_sportSeanceIndexCourant > 0) { _sportSeanceIndexCourant--; _sportRenderEcranSeance(); }
     });
     document.getElementById('sport-seance-btn-next')?.addEventListener('click', () => {
@@ -1010,6 +1009,8 @@ function _sportRenderExerciceCourant() {
 }
 
 // ── Formulaire "musculation" : une ligne par série (reps + poids + coche) ──
+// Grille à 4 colonnes (N° / Poids / Reps / Valider), conforme aux classes
+// .sport-seance-table / .sport-seance-table-row déjà définies dans sport.css.
 function _sportRenderFormulaireSeries(ex, logsExistants) {
     const lignes = [];
     for (let i = 1; i <= ex.target_sets; i++) {
@@ -1018,18 +1019,18 @@ function _sportRenderFormulaireSeries(ex, logsExistants) {
     }
 
     return `
-        <div class="sport-seance-serie-liste">
-            <div class="sport-seance-serie-entete">
+        <div class="sport-seance-table">
+            <div class="sport-seance-table-header" style="grid-template-columns: 40px 1fr 1fr 40px">
                 <span>Série</span><span>Poids (kg)</span><span>Reps</span><span></span>
             </div>
             ${lignes.map(l => `
-                <div class="sport-seance-serie-ligne ${l.log?.completed ? 'validee' : ''}" data-set="${l.numero}">
-                    <span class="sport-seance-serie-num">${l.numero}</span>
-                    <input type="number" step="0.5" class="sport-seance-serie-input" id="sport-serie-poids-${l.numero}"
+                <div class="sport-seance-table-row ${l.log?.completed ? 'sport-seance-row-validee' : ''}" style="grid-template-columns: 40px 1fr 1fr 40px">
+                    <span class="sport-seance-serie-numero">${l.numero}</span>
+                    <input type="number" step="0.5" class="sport-seance-input" id="sport-serie-poids-${l.numero}"
                            value="${l.log?.weight_kg ?? ex.target_weight_kg ?? ''}" placeholder="kg" ${l.log?.completed ? 'disabled' : ''}>
-                    <input type="number" class="sport-seance-serie-input" id="sport-serie-reps-${l.numero}"
+                    <input type="number" class="sport-seance-input" id="sport-serie-reps-${l.numero}"
                            value="${l.log?.reps ?? ex.target_reps ?? ''}" placeholder="reps" ${l.log?.completed ? 'disabled' : ''}>
-                    <button class="sport-seance-serie-btn-check ${l.log?.completed ? 'checked' : ''}"
+                    <button class="sport-seance-check-btn ${l.log?.completed ? 'active' : ''}"
                             id="sport-serie-check-${l.numero}" ${l.log?.completed ? 'disabled' : ''}>${SPORT_ICONE_CHECK}</button>
                 </div>
             `).join('')}
@@ -1043,28 +1044,30 @@ function _sportRenderFormulaireDuree(ex, logsExistants) {
     const dureeMinutes = _sportSecondesVersMinutes(ex.target_duration_seconds);
 
     return `
-        <div class="sport-seance-duree-form">
-            <div class="sport-seance-duree-champ">
-                <label>Durée réalisée (min)</label>
-                <input type="number" id="sport-duree-realisee" value="${logExistant ? _sportSecondesVersMinutes(logExistant.duration_seconds) : dureeMinutes}"
-                       ${logExistant?.completed ? 'disabled' : ''}>
-            </div>
-            <div class="sport-seance-duree-champ">
-                <label>Distance (km, optionnel)</label>
-                <input type="number" step="0.1" id="sport-duree-distance" value="${logExistant?.distance_km ?? ''}" ${logExistant?.completed ? 'disabled' : ''}>
-            </div>
-            <div class="sport-seance-duree-champ">
-                <label>Vitesse (km/h, optionnel)</label>
-                <input type="number" step="0.1" id="sport-duree-vitesse" value="${logExistant?.speed_kmh ?? ''}" ${logExistant?.completed ? 'disabled' : ''}>
-            </div>
-            <div class="sport-seance-duree-champ">
-                <label>Inclinaison (%, optionnel)</label>
-                <input type="number" step="0.1" id="sport-duree-inclinaison" value="${logExistant?.incline_percent ?? ''}" ${logExistant?.completed ? 'disabled' : ''}>
-            </div>
-            <button class="sport-cta-btn ${logExistant?.completed ? 'sport-btn-disabled' : ''}" id="sport-duree-valider" ${logExistant?.completed ? 'disabled' : ''}>
-                ${logExistant?.completed ? 'Déjà validé' : 'Valider l\'exercice'}
-            </button>
+        <div class="sport-routine-exercice-edit-champs" style="margin:16px 0">
+            <input type="number" id="sport-duree-realisee"
+                   value="${logExistant ? _sportSecondesVersMinutes(logExistant.duration_seconds) : dureeMinutes}"
+                   ${logExistant?.completed ? 'disabled' : ''} placeholder="Durée réalisée">
+            <span>min</span>
         </div>
+        <div class="sport-routine-exercice-edit-champs" style="margin:0 0 16px">
+            <input type="number" step="0.1" id="sport-duree-distance" value="${logExistant?.distance_km ?? ''}"
+                   ${logExistant?.completed ? 'disabled' : ''} placeholder="Distance (optionnel)">
+            <span>km</span>
+        </div>
+        <div class="sport-routine-exercice-edit-champs" style="margin:0 0 16px">
+            <input type="number" step="0.1" id="sport-duree-vitesse" value="${logExistant?.speed_kmh ?? ''}"
+                   ${logExistant?.completed ? 'disabled' : ''} placeholder="Vitesse (optionnel)">
+            <span>km/h</span>
+        </div>
+        <div class="sport-routine-exercice-edit-champs" style="margin:0 0 16px">
+            <input type="number" step="0.1" id="sport-duree-inclinaison" value="${logExistant?.incline_percent ?? ''}"
+                   ${logExistant?.completed ? 'disabled' : ''} placeholder="Inclinaison (optionnel)">
+            <span>%</span>
+        </div>
+        <button class="sport-cta-btn ${logExistant?.completed ? 'disabled' : ''}" id="sport-duree-valider" ${logExistant?.completed ? 'disabled' : ''}>
+            ${logExistant?.completed ? 'Déjà validé' : 'Valider l\'exercice'}
+        </button>
     `;
 }
 
@@ -1142,7 +1145,12 @@ function _sportLancerReposEntreSeries(secondesRepos) {
     clearInterval(_sportSeanceReposInterval);
     let restant = secondesRepos;
 
-    zone.innerHTML = `<div class="sport-seance-repos-badge" id="sport-repos-badge">Repos : ${_sportFormatChrono(restant)}</div>`;
+    zone.innerHTML = `
+        <div class="sport-seance-repos-ligne">
+            <span class="sport-seance-repos-label">Repos</span>
+            <span class="sport-seance-repos-chrono" id="sport-repos-badge">${_sportFormatChrono(restant)}</span>
+        </div>
+    `;
 
     _sportSeanceReposInterval = setInterval(() => {
         restant--;
@@ -1150,10 +1158,10 @@ function _sportLancerReposEntreSeries(secondesRepos) {
         if (!badge) { clearInterval(_sportSeanceReposInterval); return; }
         if (restant <= 0) {
             clearInterval(_sportSeanceReposInterval);
-            badge.remove();
+            zone.innerHTML = '';
             return;
         }
-        badge.textContent = `Repos : ${_sportFormatChrono(restant)}`;
+        badge.textContent = _sportFormatChrono(restant);
     }, 1000);
 }
 

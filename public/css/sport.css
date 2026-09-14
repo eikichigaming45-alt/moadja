@@ -128,6 +128,19 @@
     box-shadow: 0 8px 24px rgba(167, 139, 250, 0.25);
 }
 
+/* AJOUT : variante compacte de .sport-cta-btn, réservée aux boutons
+   "Commencer une séance" / "Commencer la routine" (jugés trop massifs).
+   Les autres CTA (+Ajouter un exercice, +Créer une routine) gardent
+   .sport-cta-btn seul, sans changement. */
+.sport-cta-btn-compact {
+    padding: 10px 20px;
+    font-size: 13px;
+    box-shadow: 0 6px 18px rgba(167, 139, 250, 0.22);
+}
+.sport-cta-btn-compact:hover {
+    box-shadow: 0 10px 22px rgba(167, 139, 250, 0.3);
+}
+
 .sport-stats-row {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
