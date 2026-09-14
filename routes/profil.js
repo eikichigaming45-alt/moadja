@@ -126,9 +126,7 @@ router.post('/', authenticateToken, async (req, res) => {
         email, telephone, profession, note,
         signe_zodiaque, sexe, taille, poids, groupe_sanguin,
         niveau_activite, objectif_sante,
-        allergies, aliments_exclus,
-        site_web,
-        traitements_en_cours, diabete, cholesterol
+        site_web
     } = req.body;
 
     try {
@@ -136,6 +134,55 @@ router.post('/', authenticateToken, async (req, res) => {
             `INSERT INTO profiles (user_id, updated_at) VALUES (\$1, NOW()) ON CONFLICT (user_id) DO NOTHING`,
             [req.user.id]
         );
+
+        // ── FIX Santé (allergies, aliments_exclus, traitements_en_cours,
+        // diabete, cholesterol) ─────────────────────────────────────────
+        // Ces 5 champs doivent pouvoir être vidés intentionnellement depuis
+        // l'onglet Santé, contrairement au mécanisme CASE WHEN ... IS NOT NULL
+        // utilisé plus bas pour les autres champs (qui traite "vide" et
+        // "absent" de la même façon = no-op).
+        // On distingue donc ici "champ absent du body" (onglet Profil, ne pas
+        // toucher à la colonne) de "champ présent mais vide" (onglet Santé,
+        // vider réellement la colonne) via hasOwnProperty : sauvegarderSante()
+        // envoie toujours ces 5 champs (vides ou non), sauvegarderProfil() ne
+        // les envoie jamais. Le SET correspondant n'est donc ajouté à la
+        // requête que si le champ est réellement présent dans le body.
+        const setsSante   = [];
+        const paramsSante = [];
+        let indexSante = 21; // \$1 à \$20 déjà réservés par la requête principale ci-dessous
+
+        if (Object.prototype.hasOwnProperty.call(req.body, 'allergies')) {
+            const { allergies } = req.body;
+            setsSante.push(`allergies = $${indexSante}::text[]`);
+            paramsSante.push(Array.isArray(allergies) && allergies.length ? allergies : null);
+            indexSante++;
+        }
+        if (Object.prototype.hasOwnProperty.call(req.body, 'aliments_exclus')) {
+            const { aliments_exclus } = req.body;
+            setsSante.push(`aliments_exclus = $${indexSante}::text[]`);
+            paramsSante.push(Array.isArray(aliments_exclus) && aliments_exclus.length ? aliments_exclus : null);
+            indexSante++;
+        }
+        if (Object.prototype.hasOwnProperty.call(req.body, 'traitements_en_cours')) {
+            const { traitements_en_cours } = req.body;
+            setsSante.push(`traitements_en_cours = $${indexSante}::text`);
+            paramsSante.push(traitements_en_cours != null && traitements_en_cours !== '' ? traitements_en_cours : null);
+            indexSante++;
+        }
+        if (Object.prototype.hasOwnProperty.call(req.body, 'diabete')) {
+            const { diabete } = req.body;
+            setsSante.push(`diabete = $${indexSante}::text`);
+            paramsSante.push(diabete != null && diabete !== '' ? diabete : null);
+            indexSante++;
+        }
+        if (Object.prototype.hasOwnProperty.call(req.body, 'cholesterol')) {
+            const { cholesterol } = req.body;
+            setsSante.push(`cholesterol = $${indexSante}::text`);
+            paramsSante.push(cholesterol != null && cholesterol !== '' ? cholesterol : null);
+            indexSante++;
+        }
+
+        const clauseSante = setsSante.length ? `, ${setsSante.join(', ')}` : '';
 
         await pool.query(`
             UPDATE profiles SET
@@ -157,16 +204,12 @@ router.post('/', authenticateToken, async (req, res) => {
                 groupe_sanguin  = CASE WHEN \$17::text IS NOT NULL THEN \$17::text    ELSE groupe_sanguin  END,
                 niveau_activite = CASE WHEN \$18::text IS NOT NULL THEN \$18::text    ELSE niveau_activite END,
                 objectif_sante  = CASE WHEN \$19::text IS NOT NULL THEN \$19::text    ELSE objectif_sante  END,
-                allergies       = CASE WHEN \$20::text IS NOT NULL THEN \$20::text[]  ELSE allergies       END,
-                aliments_exclus = CASE WHEN \$21::text IS NOT NULL THEN \$21::text[]  ELSE aliments_exclus END,
-                site_web        = CASE WHEN \$22::text IS NOT NULL THEN \$22::text    ELSE site_web        END,
-                traitements_en_cours = CASE WHEN \$23::text IS NOT NULL THEN \$23::text ELSE traitements_en_cours END,
-                diabete         = CASE WHEN \$24::text IS NOT NULL THEN \$24::text    ELSE diabete         END,
-                cholesterol     = CASE WHEN \$25::text IS NOT NULL THEN \$25::text    ELSE cholesterol     END,
+                site_web        = CASE WHEN \$20::text IS NOT NULL THEN \$20::text    ELSE site_web        END,
                 updated_at      = NOW()
+                ${clauseSante}
             WHERE user_id = \$1
         `, [
-            req.user.id,
+                        req.user.id,
             prenom          != null && prenom          !== '' ? prenom          : null,
             nom             != null && nom             !== '' ? nom             : null,
             date_naissance  != null && date_naissance  !== '' ? date_naissance  : null,
@@ -188,12 +231,8 @@ router.post('/', authenticateToken, async (req, res) => {
             groupe_sanguin  != null && groupe_sanguin  !== '' ? groupe_sanguin  : null,
             niveau_activite != null && niveau_activite !== '' ? niveau_activite : null,
             objectif_sante  != null && objectif_sante  !== '' ? objectif_sante  : null,
-            Array.isArray(allergies)       && allergies.length       ? allergies       : null,
-            Array.isArray(aliments_exclus) && aliments_exclus.length ? aliments_exclus : null,
             site_web        != null && site_web        !== '' ? site_web        : null,
-            traitements_en_cours != null && traitements_en_cours !== '' ? traitements_en_cours : null,
-            diabete         != null && diabete         !== '' ? diabete         : null,
-            cholesterol     != null && cholesterol     !== '' ? cholesterol     : null,
+            ...paramsSante,
         ]);
 
         res.json({ success: true });
