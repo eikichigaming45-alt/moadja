@@ -94,9 +94,6 @@
     margin-bottom: 20px;
 }
 
-/* Taille réduite (v1.92.9) : boutons CTA Sport (Commencer une séance,
-   Commencer la routine, Créer une routine, Ajouter un exercice)
-   jugés trop massifs par rapport au reste de l'interface. */
 .sport-cta-btn {
     padding: 12px 18px;
     background: rgba(167, 139, 250, 0.85);
@@ -129,6 +126,15 @@
     background: rgba(167, 139, 250, 0.85);
     transform: none;
     box-shadow: 0 8px 24px rgba(167, 139, 250, 0.25);
+}
+/* Uniformise la taille de l'icône haltère dans les boutons CTA
+   (Commencer une séance / Commencer la routine) pour qu'ils
+   paraissent de la même taille que les CTA sans icône
+   (+ Ajouter un exercice / + Créer une routine). */
+.sport-cta-btn svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
 }
 
 .sport-stats-row {
@@ -205,6 +211,16 @@
     font-size: 13px;
     text-align: center;
     padding: 12px 0;
+}
+
+/* Bandeau "Une séance est en cours..." (reprise après refresh) :
+   texte au-dessus du bouton Reprendre, séparé par une marge
+   (classe non stylée jusqu'ici, d'où le collage texte/bouton). */
+.sport-bandeau-reprise-texte {
+    font-size: 14px;
+    color: var(--text-main);
+    font-weight: 600;
+    margin-bottom: 16px;
 }
 
 /* ── Widget Sport Stats (colonne droite) ── */
@@ -978,136 +994,85 @@
     text-transform: uppercase;
     letter-spacing: 0.3px;
 }
-.sport-seance-hevy-stat-val {
-    font-size: 19px;
+.sport-seance-hevy-stat-valeur {
+    font-size: 16px;
     font-weight: 800;
     color: var(--text-main);
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-.sport-seance-hevy-stat-val svg {
-    width: 16px;
-    height: 16px;
-    color: #d97706;
-    flex-shrink: 0;
 }
 
-.sport-seance-hevy-liste {
+.sport-seance-hevy-badge-trophee {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(217, 119, 6, 0.1);
+    border: 1px solid rgba(217, 119, 6, 0.25);
+    color: #d97706;
+    border-radius: 50px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    width: fit-content;
+}
+.sport-seance-hevy-badge-trophee svg {
+    width: 14px;
+    height: 14px;
+}
+
+.sport-seance-hevy-exercices {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding-top: 4px;
-    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    gap: 4px;
+    border-top: 1px solid rgba(255, 255, 255, 0.6);
+    padding-top: 12px;
 }
-.sport-seance-hevy-ligne {
+.sport-seance-hevy-exercice-ligne {
     display: flex;
     align-items: baseline;
     gap: 8px;
-}
-.sport-seance-hevy-ligne-nb {
-    font-size: 14px;
-    font-weight: 800;
-    color: rgb(167, 139, 250);
-    flex-shrink: 0;
-    min-width: 22px;
-}
-.sport-seance-hevy-ligne-nom {
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-main);
-    font-weight: 500;
 }
-.sport-seance-hevy-reste {
-    font-size: 12.5px;
-    color: #9ca3af;
+.sport-seance-hevy-exercice-nb {
+    color: rgb(167, 139, 250);
+    font-weight: 800;
+    flex-shrink: 0;
+}
+.sport-seance-hevy-exercice-nom {
     font-weight: 600;
-    padding-left: 30px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 500px) {
+    .sport-seance-hevy-header-info {
+        min-width: 0;
+    }
+    .sport-seance-hevy-titre {
+        font-size: 15px;
+    }
+    .sport-seance-hevy-stats {
+        gap: 6px;
+    }
+    .sport-seance-hevy-stat-valeur {
+        font-size: 14px;
+    }
 }
 
 /* ══════════════════════════════════════════════════════════════
-   ── WIDGET SPORT (colonne droite) — carte compacte façon Hevy ──
-   Même logique visuelle que .sport-seance-carte-hevy, mais réduite
-   pour l'espace restreint de la sidebar (police plus petite, liste
-   limitée à 3 exercices côté JS).
+   ── MODALES SPORT (confirmation générique + choix) ──
+   Réutilise .modal-overlay / .modal-box déjà définis dans
+   style.css. Centrage explicite du texte et des actions pour
+   corriger le décalage observé (boutons Confirmer/Annuler
+   légèrement à gauche du centre par défaut).
    ══════════════════════════════════════════════════════════════ */
 
-.sport-widget-hevy-titre {
-    font-size: 14px;
-    color: var(--text-main);
-    margin-bottom: 10px;
+.sport-modal-actions-centre {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 16px;
 }
-.sport-widget-hevy-date {
-    font-size: 11px;
-    color: #9ca3af;
-    font-weight: 600;
-}
-
-.sport-widget-hevy-stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin-bottom: 12px;
-}
-.sport-widget-hevy-stat {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-.sport-widget-hevy-stat-label {
-    font-size: 10px;
-    color: #9ca3af;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-}
-.sport-widget-hevy-stat-val {
-    font-size: 15px;
-    font-weight: 800;
-    color: var(--text-main);
-    display: flex;
-    align-items: center;
-    gap: 3px;
-}
-.sport-widget-hevy-stat-val svg {
-    width: 13px;
-    height: 13px;
-    color: #d97706;
-    flex-shrink: 0;
-}
-
-.sport-widget-hevy-liste {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding-top: 8px;
-    border-top: 1px solid rgba(0, 0, 0, 0.05);
-}
-.sport-widget-hevy-ligne {
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-}
-.sport-widget-hevy-ligne-nb {
-    font-size: 12px;
-    font-weight: 800;
-    color: rgb(167, 139, 250);
-    flex-shrink: 0;
-    min-width: 18px;
-}
-.sport-widget-hevy-ligne-nom {
-    font-size: 12px;
-    color: var(--text-main);
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-.sport-widget-hevy-reste {
-    font-size: 11px;
-    color: #9ca3af;
-    font-weight: 600;
-    padding-left: 24px;
+.sport-modal-texte-centre {
+    text-align: center;
 }
