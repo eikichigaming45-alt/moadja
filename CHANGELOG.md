@@ -1,5 +1,13 @@
 ## MoaDja
 
+## v1.92.13 — 14 septembre 2026
+- Ajustement du plan alimentaire généré automatiquement : petit-déjeuner plus réaliste (pain complet, biscottes, œufs, yaourt, fruit...) sans légumes cuits, et meilleure rotation des protéines et ingrédients pour éviter les répétitions sur deux jours consécutifs.
+
+## v1.92.12 — 14 septembre 2026
+- Correction du profil, onglet Santé : les champs Allergies, Aliments exclus, Traitements en cours, Diabète et Cholestérol peuvent désormais être réellement modifiés ou vidés (ils revenaient automatiquement à leur ancienne valeur auparavant).
+
+---
+
 ## v1.92.10 — 14 septembre 2026
 - Nettoyage interne du code du module Sport (aucun changement visible pour vous).
 
