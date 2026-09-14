@@ -1,5 +1,10 @@
 ## MoaDja
 
+## v1.92.10 — 14 septembre 2026
+- Nettoyage interne du code du module Sport (aucun changement visible pour vous).
+
+---
+
 ## v1.92.9 — 14 septembre 2026
 - Réduction de la taille des gros boutons d'action (Commencer une séance, Commencer la routine) pour qu'ils aient la même taille que les petits boutons (+ Ajouter un exercice, + Créer une routine).
 - Correction de l'espacement entre le message "Une séance est en cours" et le bouton pour la reprendre, qui étaient trop collés.

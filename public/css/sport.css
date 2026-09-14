@@ -1,6 +1,6 @@
 /* ============================================================
    public/css/sport.css
-   Styles du module Sport (WGER) — Dashboard + Widget colonne droite
+   Styles du module Sport — Dashboard + Widget colonne droite
    + Écran de séance en cours.
    Réutilise strictement les variables et classes déjà définies
    dans style.css (glass-panel, --primary color violet, etc.).
@@ -901,25 +901,25 @@
 }
 
 /* ══════════════════════════════════════════════════════════════
-   ── CARTE SÉANCE "FAÇON HEVY" (dashboard) ──
+   ── CARTE DE RÉCAPITULATIF DE SÉANCE (dashboard) ──
    Titre + emoji, Durée/Volume/Records en 3 colonnes, badge trophée
    inline si records > 0, liste consolidée d'exercices NxNom.
    Palette : violet MoaDja (#7C3AED / rgb(167,139,250)) + jaune
    trophée déjà utilisé ailleurs dans style.css (#d97706).
    ══════════════════════════════════════════════════════════════ */
 
-.sport-seance-carte-hevy {
+.sport-seance-carte-recap {
     display: flex;
     flex-direction: column;
     gap: 16px;
 }
 
-.sport-seance-hevy-header {
+.sport-seance-recap-header {
     display: flex;
     align-items: center;
     gap: 12px;
 }
-.sport-seance-hevy-icone {
+.sport-seance-recap-icone {
     width: 44px;
     height: 44px;
     border-radius: 12px;
@@ -932,16 +932,16 @@
 }
 /* Bloc titre + date : flex:1 pour occuper l'espace restant et
    pousser le bouton de suppression tout à droite du header. */
-.sport-seance-hevy-header-info {
+.sport-seance-recap-header-info {
     flex: 1;
     min-width: 0;
 }
-.sport-seance-hevy-titre {
+.sport-seance-recap-titre {
     font-size: 17px;
     font-weight: 800;
     color: var(--text-main);
 }
-.sport-seance-hevy-date {
+.sport-seance-recap-date {
     font-size: 12px;
     color: #9ca3af;
     font-weight: 600;
@@ -952,7 +952,7 @@
    Cercle discret, aligné à droite via margin-left:auto (ceinture
    et bretelles avec le flex:1 du bloc info ci-dessus), hover rouge
    cohérent avec .sport-seance-delete-btn / .sport-routine-btn-suppr-routine. */
-.sport-seance-hevy-btn-suppr {
+.sport-seance-recap-btn-suppr {
     width: 32px;
     height: 32px;
     border-radius: 50%;
@@ -967,40 +967,40 @@
     margin-left: auto;
     transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
 }
-.sport-seance-hevy-btn-suppr svg {
+.sport-seance-recap-btn-suppr svg {
     width: 15px;
     height: 15px;
 }
-.sport-seance-hevy-btn-suppr:hover {
+.sport-seance-recap-btn-suppr:hover {
     background: rgba(239, 68, 68, 0.16);
     border-color: rgba(239, 68, 68, 0.4);
     transform: translateY(-1px);
 }
 
-.sport-seance-hevy-stats {
+.sport-seance-recap-stats {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
 }
-.sport-seance-hevy-stat {
+.sport-seance-recap-stat {
     display: flex;
     flex-direction: column;
     gap: 4px;
 }
-.sport-seance-hevy-stat-label {
+.sport-seance-recap-stat-label {
     font-size: 11px;
     color: #9ca3af;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.3px;
 }
-.sport-seance-hevy-stat-valeur {
+.sport-seance-recap-stat-valeur {
     font-size: 16px;
     font-weight: 800;
     color: var(--text-main);
 }
 
-.sport-seance-hevy-badge-trophee {
+.sport-seance-recap-badge-trophee {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -1013,31 +1013,31 @@
     font-weight: 700;
     width: fit-content;
 }
-.sport-seance-hevy-badge-trophee svg {
+.sport-seance-recap-badge-trophee svg {
     width: 14px;
     height: 14px;
 }
 
-.sport-seance-hevy-exercices {
+.sport-seance-recap-exercices {
     display: flex;
     flex-direction: column;
     gap: 4px;
     border-top: 1px solid rgba(255, 255, 255, 0.6);
     padding-top: 12px;
 }
-.sport-seance-hevy-exercice-ligne {
+.sport-seance-recap-exercice-ligne {
     display: flex;
     align-items: baseline;
     gap: 8px;
     font-size: 13px;
     color: var(--text-main);
 }
-.sport-seance-hevy-exercice-nb {
+.sport-seance-recap-exercice-nb {
     color: rgb(167, 139, 250);
     font-weight: 800;
     flex-shrink: 0;
 }
-.sport-seance-hevy-exercice-nom {
+.sport-seance-recap-exercice-nom {
     font-weight: 600;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1045,16 +1045,16 @@
 }
 
 @media (max-width: 500px) {
-    .sport-seance-hevy-header-info {
+    .sport-seance-recap-header-info {
         min-width: 0;
     }
-    .sport-seance-hevy-titre {
+    .sport-seance-recap-titre {
         font-size: 15px;
     }
-    .sport-seance-hevy-stats {
+    .sport-seance-recap-stats {
         gap: 6px;
     }
-    .sport-seance-hevy-stat-valeur {
+    .sport-seance-recap-stat-valeur {
         font-size: 14px;
     }
 }

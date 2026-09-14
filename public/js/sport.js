@@ -23,7 +23,7 @@ const SPORT_ICONE_CHECK = `
     </svg>
 `;
 
-// Icône poubelle épurée (remplace l'emoji 🗑️ sur la carte de séance "façon Hevy").
+// Icône poubelle épurée (remplace l'emoji 🗑️ sur la carte de récapitulatif de séance).
 const SPORT_ICONE_POUBELLE = `
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="3 6 5 6 21 6"></polyline>
@@ -78,7 +78,7 @@ async function _sportChargerDashboardStats() {
         zone.innerHTML = _sportRenderDashboard([]);
     }
 
-    zone.querySelectorAll('.sport-seance-hevy-btn-suppr').forEach(btn => {
+    zone.querySelectorAll('.sport-seance-recap-btn-suppr').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             _sportConfirmerSuppressionSeanceDashboard(parseInt(btn.dataset.sessionId, 10));
@@ -123,7 +123,7 @@ function _sportRenderDashboard(dernieresSeances) {
 
         <div class="sport-section-title" style="padding:0 4px">Dernières séances</div>
         ${aDesSeances ? `
-            ${dernieresSeances.map(s => _sportRenderCarteSeanceHevy(s)).join('')}
+            ${dernieresSeances.map(s => _sportRenderCarteSeanceRecap(s)).join('')}
         ` : `
             <div class="sport-card">
                 <p class="sport-empty-note">Aucune séance enregistrée pour l'instant.</p>
@@ -132,8 +132,8 @@ function _sportRenderDashboard(dernieresSeances) {
     `;
 }
 
-// ── Carte "façon Hevy" : titre, Durée/Volume/Records, liste consolidée d'exercices ──
-function _sportRenderCarteSeanceHevy(s) {
+// ── Carte de récapitulatif de séance : titre, Durée/Volume/Records, liste consolidée d'exercices ──
+function _sportRenderCarteSeanceRecap(s) {
     const dateTexte    = _sportFormatDateCourte(s.date_end || s.date_start);
     const exercices    = s.exercices || [];
     const apercu       = exercices.slice(0, SPORT_MAX_EXERCICES_APERCU);
@@ -141,42 +141,42 @@ function _sportRenderCarteSeanceHevy(s) {
     const nbRecords     = Number.isInteger(s.nb_records) ? s.nb_records : 0;
 
     return `
-        <div class="sport-card sport-seance-carte-hevy" id="sport-seance-carte-${s.id}">
-            <div class="sport-seance-hevy-header">
-                <span class="sport-seance-hevy-icone">${SPORT_ICONE_DUMBBELL}</span>
-                <div class="sport-seance-hevy-header-info">
-                    <div class="sport-seance-hevy-titre">${_sportEchapper(s.workout_name)}</div>
-                    <div class="sport-seance-hevy-date">${dateTexte}</div>
+        <div class="sport-card sport-seance-carte-recap" id="sport-seance-carte-${s.id}">
+            <div class="sport-seance-recap-header">
+                <span class="sport-seance-recap-icone">${SPORT_ICONE_DUMBBELL}</span>
+                <div class="sport-seance-recap-header-info">
+                    <div class="sport-seance-recap-titre">${_sportEchapper(s.workout_name)}</div>
+                    <div class="sport-seance-recap-date">${dateTexte}</div>
                 </div>
-                <button class="sport-seance-hevy-btn-suppr" data-session-id="${s.id}" title="Supprimer la séance">${SPORT_ICONE_POUBELLE}</button>
+                <button class="sport-seance-recap-btn-suppr" data-session-id="${s.id}" title="Supprimer la séance">${SPORT_ICONE_POUBELLE}</button>
             </div>
 
-            <div class="sport-seance-hevy-stats">
-                <div class="sport-seance-hevy-stat">
-                    <span class="sport-seance-hevy-stat-label">Durée</span>
-                    <span class="sport-seance-hevy-stat-val">${_sportFormatDureeLongue(s.dureeSecondes)}</span>
+            <div class="sport-seance-recap-stats">
+                <div class="sport-seance-recap-stat">
+                    <span class="sport-seance-recap-stat-label">Durée</span>
+                    <span class="sport-seance-recap-stat-val">${_sportFormatDureeLongue(s.dureeSecondes)}</span>
                 </div>
-                <div class="sport-seance-hevy-stat">
-                    <span class="sport-seance-hevy-stat-label">Volume</span>
-                    <span class="sport-seance-hevy-stat-val">${s.volumeKg} kg</span>
+                <div class="sport-seance-recap-stat">
+                    <span class="sport-seance-recap-stat-label">Volume</span>
+                    <span class="sport-seance-recap-stat-val">${s.volumeKg} kg</span>
                 </div>
-                <div class="sport-seance-hevy-stat">
-                    <span class="sport-seance-hevy-stat-label">Records</span>
-                    <span class="sport-seance-hevy-stat-val">
+                <div class="sport-seance-recap-stat">
+                    <span class="sport-seance-recap-stat-label">Records</span>
+                    <span class="sport-seance-recap-stat-val">
                         ${nbRecords}${nbRecords > 0 ? ` ${SPORT_ICONE_TROPHEE}` : ''}
                     </span>
                 </div>
             </div>
 
             ${apercu.length ? `
-                <div class="sport-seance-hevy-liste">
+                <div class="sport-seance-recap-liste">
                     ${apercu.map(e => `
-                        <div class="sport-seance-hevy-ligne">
-                            <span class="sport-seance-hevy-ligne-nb">${e.nb_series}x</span>
-                            <span class="sport-seance-hevy-ligne-nom">${_sportEchapper(e.exercise_name)}</span>
+                        <div class="sport-seance-recap-ligne">
+                            <span class="sport-seance-recap-ligne-nb">${e.nb_series}x</span>
+                            <span class="sport-seance-recap-ligne-nom">${_sportEchapper(e.exercise_name)}</span>
                         </div>
                     `).join('')}
-                    ${reste > 0 ? `<div class="sport-seance-hevy-reste">…et ${reste} autre${reste > 1 ? 's' : ''} exercice${reste > 1 ? 's' : ''}</div>` : ''}
+                    ${reste > 0 ? `<div class="sport-seance-recap-reste">…et ${reste} autre${reste > 1 ? 's' : ''} exercice${reste > 1 ? 's' : ''}</div>` : ''}
                 </div>
             ` : ''}
         </div>
@@ -761,7 +761,7 @@ function _sportOuvrirFormulaireAjoutExercice(exercice) {
             ${estDuree ? `
             <div class="sport-routine-exercice-edit-champs" style="margin:16px 0">
                 <input type="number" id="sport-ajout-duree" value="20" min="1" placeholder="Durée (min)">
-                <span>min</span>
+                                <span>min</span>
             </div>` : `
             <div class="sport-routine-exercice-edit-champs" style="margin:16px 0">
                 <input type="number" id="sport-ajout-sets" value="3" min="1" placeholder="Séries">

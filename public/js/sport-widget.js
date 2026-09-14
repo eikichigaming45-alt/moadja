@@ -83,7 +83,7 @@ const SPORT_PHRASES_ENCOURAGEMENT = [
 
 // ── Widget Sport Stats (colonne droite, global) ──
 // Aucune séance : phrase d'encouragement aléatoire. Sinon : carte
-// compacte façon Hevy (titre, Durée/Volume/Records + badge trophée,
+// compacte de récapitulatif (titre, Durée/Volume/Records + badge trophée,
 // liste consolidée d'exercices tronquée).
 async function chargerSportStatsWidget() {
     const zone = document.getElementById('sport-stats-widget');
@@ -121,7 +121,7 @@ function _sportRenderWidgetPhraseAleatoire(zone) {
     `;
 }
 
-// Carte compacte façon Hevy, adaptée à l'espace réduit de la colonne droite.
+// Carte compacte de récapitulatif, adaptée à l'espace réduit de la colonne droite.
 function _sportRenderWidgetDerniereSeance(zone, seance) {
     const dateTexte = _sportFormatDateCourte(seance.date_end || seance.date_start);
     const nbRecords = Number.isInteger(seance.nb_records) ? seance.nb_records : 0;
@@ -137,37 +137,37 @@ function _sportRenderWidgetDerniereSeance(zone, seance) {
             </button>
         </div>
 
-        <div class="sport-widget-hevy-titre">
+        <div class="sport-widget-recap-titre">
             <strong>${_sportEchapper(seance.workout_name)}</strong>
-            <span class="sport-widget-hevy-date">${dateTexte}</span>
+            <span class="sport-widget-recap-date">${dateTexte}</span>
         </div>
 
-        <div class="sport-widget-hevy-stats">
-            <div class="sport-widget-hevy-stat">
-                <span class="sport-widget-hevy-stat-label">Durée</span>
-                <span class="sport-widget-hevy-stat-val">${_sportFormatDureeLongue(seance.dureeSecondes)}</span>
+        <div class="sport-widget-recap-stats">
+            <div class="sport-widget-recap-stat">
+                <span class="sport-widget-recap-stat-label">Durée</span>
+                <span class="sport-widget-recap-stat-val">${_sportFormatDureeLongue(seance.dureeSecondes)}</span>
             </div>
-            <div class="sport-widget-hevy-stat">
-                <span class="sport-widget-hevy-stat-label">Volume</span>
-                <span class="sport-widget-hevy-stat-val">${seance.volumeKg} kg</span>
+            <div class="sport-widget-recap-stat">
+                <span class="sport-widget-recap-stat-label">Volume</span>
+                <span class="sport-widget-recap-stat-val">${seance.volumeKg} kg</span>
             </div>
-            <div class="sport-widget-hevy-stat">
-                <span class="sport-widget-hevy-stat-label">Records</span>
-                <span class="sport-widget-hevy-stat-val">
+            <div class="sport-widget-recap-stat">
+                <span class="sport-widget-recap-stat-label">Records</span>
+                <span class="sport-widget-recap-stat-val">
                     ${nbRecords}${nbRecords > 0 ? ` ${SPORT_ICONE_TROPHEE}` : ''}
                 </span>
             </div>
         </div>
 
         ${apercu.length ? `
-            <div class="sport-widget-hevy-liste">
+            <div class="sport-widget-recap-liste">
                 ${apercu.map(e => `
-                    <div class="sport-widget-hevy-ligne">
-                        <span class="sport-widget-hevy-ligne-nb">${e.nb_series}x</span>
-                        <span class="sport-widget-hevy-ligne-nom">${_sportEchapper(e.exercise_name)}</span>
+                    <div class="sport-widget-recap-ligne">
+                        <span class="sport-widget-recap-ligne-nb">${e.nb_series}x</span>
+                        <span class="sport-widget-recap-ligne-nom">${_sportEchapper(e.exercise_name)}</span>
                     </div>
                 `).join('')}
-                ${reste > 0 ? `<div class="sport-widget-hevy-reste">…et ${reste} autre${reste > 1 ? 's' : ''}</div>` : ''}
+                ${reste > 0 ? `<div class="sport-widget-recap-reste">…et ${reste} autre${reste > 1 ? 's' : ''}</div>` : ''}
             </div>
         ` : ''}
     `;
