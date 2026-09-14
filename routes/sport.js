@@ -433,20 +433,34 @@ router.put('/sessions/:id', auth, async (req, res) => {
     }
 });
 
+// Suppression d'une séance + tous ses logs (transaction : ownership vérifié,
+// logs purgés puis session supprimée, rollback si un des deux échoue).
 router.delete('/sessions/:id', auth, async (req, res) => {
     const moi = req.user.id;
     const id  = parseInt(req.params.id, 10);
+    const client = await pool.connect();
     try {
-        const { rows } = await pool.query(`
-            DELETE FROM sport_sessions
-            WHERE id = \$1 AND user_id = \$2
-            RETURNING id
+        await client.query('BEGIN');
+
+        const { rows: owner } = await client.query(`
+            SELECT id FROM sport_sessions WHERE id = \$1 AND user_id = \$2
         `, [id, moi]);
-        if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
+        if (!owner.length) {
+            await client.query('ROLLBACK');
+            return res.status(403).json({ success: false, message: 'Interdit.' });
+        }
+
+        await client.query(`DELETE FROM sport_session_logs WHERE session_id = \$1`, [id]);
+        await client.query(`DELETE FROM sport_sessions WHERE id = \$1`, [id]);
+
+        await client.query('COMMIT');
         res.json({ success: true });
     } catch (err) {
+        await client.query('ROLLBACK');
         console.error('[SPORT] DELETE /sessions/:id :', err.message);
         res.status(500).json({ success: false, message: err.message });
+    } finally {
+        client.release();
     }
 });
 
