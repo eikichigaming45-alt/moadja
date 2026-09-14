@@ -1,5 +1,8 @@
 ## MoaDja
 
+## v1.92.14 — 14 septembre 2026
+- Correction de l'espacement dans le module Sport : le titre "Dernières séances" était collé au bloc au-dessus, un espace a été ajouté pour plus de clarté.
+
 ## v1.92.13 — 14 septembre 2026
 - Ajustement du plan alimentaire généré automatiquement : petit-déjeuner plus réaliste (pain complet, biscottes, œufs, yaourt, fruit...) sans légumes cuits, et meilleure rotation des protéines et ingrédients pour éviter les répétitions sur deux jours consécutifs.
 
@@ -18,6 +21,9 @@
 - Correction de l'espacement entre le message "Une séance est en cours" et le bouton pour la reprendre, qui étaient trop collés.
 - Centrage du texte et des boutons Confirmer/Annuler dans la fenêtre de confirmation de suppression.
 - Nouvel affichage plus clair et plus lisible de l'écran de séance en cours (numéro de série, champs de saisie, bouton de validation).
+
+---
+
 
 ## v1.92.7 — 14 septembre 2026
 - Ajout de la suppression d'une séance directement depuis le tableau de bord, avec une demande de confirmation avant toute suppression.
