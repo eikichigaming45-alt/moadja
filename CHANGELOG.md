@@ -1,5 +1,11 @@
 ## MoaDja
 
+## v1.92.9 — 14 septembre 2026
+- Réduction de la taille des gros boutons d'action (Commencer une séance, Commencer la routine) pour qu'ils aient la même taille que les petits boutons (+ Ajouter un exercice, + Créer une routine).
+- Correction de l'espacement entre le message "Une séance est en cours" et le bouton pour la reprendre, qui étaient trop collés.
+- Centrage du texte et des boutons Confirmer/Annuler dans la fenêtre de confirmation de suppression.
+- Nouvel affichage plus clair et plus lisible de l'écran de séance en cours (numéro de série, champs de saisie, bouton de validation).
+
 ## v1.92.7 — 14 septembre 2026
 - Ajout de la suppression d'une séance directement depuis le tableau de bord, avec une demande de confirmation avant toute suppression.
 - Nouveau design des cartes de séance sur le tableau de bord et dans le widget de droite : affichage clair de la durée, du volume total, du nombre de records, et de la liste des exercices effectués.
