@@ -246,7 +246,7 @@
     color: #6b7280;
 }
 
-/* ── Sélecteur d'exercice (ex-Catalogue) ── */
+/* ── Sélecteur d'exercice ── */
 .sport-catalogue-toolbar {
     display: flex;
     flex-wrap: wrap;
@@ -540,9 +540,6 @@
     color: var(--text-main);
 }
 
-/* Correctif v1.91.14 : align-items: baseline pour aligner input et
-   texte de tailles/natures différentes sur une même ligne de base
-   typographique. L'input passe en style "texte souligné". */
 .sport-routine-exercice-edit-champs {
     display: flex;
     align-items: baseline;
@@ -882,4 +879,197 @@
         width: 22px;
         height: 22px;
     }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ── CARTE SÉANCE "FAÇON HEVY" (dashboard) ──
+   Titre + emoji, Durée/Volume/Records en 3 colonnes, badge trophée
+   inline si records > 0, liste consolidée d'exercices NxNom.
+   Palette : violet MoaDja (#7C3AED / rgb(167,139,250)) + jaune
+   trophée déjà utilisé ailleurs dans style.css (#d97706).
+   ══════════════════════════════════════════════════════════════ */
+
+.sport-seance-carte-hevy {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.sport-seance-hevy-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.sport-seance-hevy-icone {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(167, 139, 250, 0.12);
+    color: rgb(167, 139, 250);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.sport-seance-hevy-titre {
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--text-main);
+}
+.sport-seance-hevy-date {
+    font-size: 12px;
+    color: #9ca3af;
+    font-weight: 600;
+    margin-top: 2px;
+}
+
+.sport-seance-hevy-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+.sport-seance-hevy-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.sport-seance-hevy-stat-label {
+    font-size: 11px;
+    color: #9ca3af;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.sport-seance-hevy-stat-val {
+    font-size: 19px;
+    font-weight: 800;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.sport-seance-hevy-stat-val svg {
+    width: 16px;
+    height: 16px;
+    color: #d97706;
+    flex-shrink: 0;
+}
+
+.sport-seance-hevy-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 4px;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+.sport-seance-hevy-ligne {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+.sport-seance-hevy-ligne-nb {
+    font-size: 14px;
+    font-weight: 800;
+    color: rgb(167, 139, 250);
+    flex-shrink: 0;
+    min-width: 22px;
+}
+.sport-seance-hevy-ligne-nom {
+    font-size: 14px;
+    color: var(--text-main);
+    font-weight: 500;
+}
+.sport-seance-hevy-reste {
+    font-size: 12.5px;
+    color: #9ca3af;
+    font-weight: 600;
+    padding-left: 30px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ── WIDGET SPORT (colonne droite) — carte compacte façon Hevy ──
+   Même logique visuelle que .sport-seance-carte-hevy, mais réduite
+   pour l'espace restreint de la sidebar (police plus petite, liste
+   limitée à 3 exercices côté JS).
+   ══════════════════════════════════════════════════════════════ */
+
+.sport-widget-hevy-titre {
+    font-size: 14px;
+    color: var(--text-main);
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.sport-widget-hevy-date {
+    font-size: 11px;
+    color: #9ca3af;
+    font-weight: 600;
+}
+
+.sport-widget-hevy-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.sport-widget-hevy-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.sport-widget-hevy-stat-label {
+    font-size: 10px;
+    color: #9ca3af;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.sport-widget-hevy-stat-val {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+.sport-widget-hevy-stat-val svg {
+    width: 13px;
+    height: 13px;
+    color: #d97706;
+    flex-shrink: 0;
+}
+
+.sport-widget-hevy-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+.sport-widget-hevy-ligne {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+.sport-widget-hevy-ligne-nb {
+    font-size: 12px;
+    font-weight: 800;
+    color: rgb(167, 139, 250);
+    flex-shrink: 0;
+    min-width: 18px;
+}
+.sport-widget-hevy-ligne-nom {
+    font-size: 12px;
+    color: var(--text-main);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.sport-widget-hevy-reste {
+    font-size: 11px;
+    color: #9ca3af;
+    font-weight: 600;
+    padding-left: 24px;
 }

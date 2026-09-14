@@ -23,6 +23,8 @@ const SPORT_ICONE_CHECK = `
     </svg>
 `;
 
+const SPORT_MAX_EXERCICES_APERCU = 5;
+
 let _sportSectionActive = 'dashboard';
 
 // ── Construction initiale ──
@@ -88,26 +90,63 @@ function _sportRenderDashboard(dernieresSeances) {
             </div>
         </div>
 
-        <div class="sport-card">
-            <div class="sport-section-title">Dernières séances</div>
-            ${aDesSeances ? `
-                ${dernieresSeances.map(s => _sportRenderLigneDerniereSeance(s)).join('')}
-            ` : `
+        <div class="sport-section-title" style="padding:0 4px">Dernières séances</div>
+        ${aDesSeances ? `
+            ${dernieresSeances.map(s => _sportRenderCarteSeanceHevy(s)).join('')}
+        ` : `
+            <div class="sport-card">
                 <p class="sport-empty-note">Aucune séance enregistrée pour l'instant.</p>
-            `}
-        </div>
+            </div>
+        `}
     `;
 }
 
-function _sportRenderLigneDerniereSeance(s) {
-    const dateTexte = _sportFormatDateCourte(s.date_end || s.date_start);
+// ── Carte "façon Hevy" : titre, Durée/Volume/Records, liste consolidée d'exercices ──
+function _sportRenderCarteSeanceHevy(s) {
+    const dateTexte    = _sportFormatDateCourte(s.date_end || s.date_start);
+    const exercices    = s.exercices || [];
+    const apercu       = exercices.slice(0, SPORT_MAX_EXERCICES_APERCU);
+    const reste        = exercices.length - apercu.length;
+    const nbRecords     = Number.isInteger(s.nb_records) ? s.nb_records : 0;
+
     return `
-        <div class="sport-session-item">
-            <div class="sport-session-icon">${SPORT_ICONE_DUMBBELL}</div>
-            <div class="sport-session-info">
-                <div class="sport-session-nom">${_sportEchapper(s.workout_name)} — ${dateTexte}</div>
-                <div class="sport-session-meta">${_sportFormatDureeLongue(s.dureeSecondes)} · ${s.volumeKg} kg · ${s.nbSeries} séries${s.calories ? ` · ~${s.calories} kcal` : ''}</div>
+        <div class="sport-card sport-seance-carte-hevy">
+            <div class="sport-seance-hevy-header">
+                <span class="sport-seance-hevy-icone">${SPORT_ICONE_DUMBBELL}</span>
+                <div>
+                    <div class="sport-seance-hevy-titre">${_sportEchapper(s.workout_name)}</div>
+                    <div class="sport-seance-hevy-date">${dateTexte}</div>
+                </div>
             </div>
+
+            <div class="sport-seance-hevy-stats">
+                <div class="sport-seance-hevy-stat">
+                    <span class="sport-seance-hevy-stat-label">Durée</span>
+                    <span class="sport-seance-hevy-stat-val">${_sportFormatDureeLongue(s.dureeSecondes)}</span>
+                </div>
+                <div class="sport-seance-hevy-stat">
+                    <span class="sport-seance-hevy-stat-label">Volume</span>
+                    <span class="sport-seance-hevy-stat-val">${s.volumeKg} kg</span>
+                </div>
+                <div class="sport-seance-hevy-stat">
+                    <span class="sport-seance-hevy-stat-label">Records</span>
+                    <span class="sport-seance-hevy-stat-val">
+                        ${nbRecords}${nbRecords > 0 ? ` ${SPORT_ICONE_TROPHEE}` : ''}
+                    </span>
+                </div>
+            </div>
+
+            ${apercu.length ? `
+                <div class="sport-seance-hevy-liste">
+                    ${apercu.map(e => `
+                        <div class="sport-seance-hevy-ligne">
+                            <span class="sport-seance-hevy-ligne-nb">${e.nb_series}x</span>
+                            <span class="sport-seance-hevy-ligne-nom">${_sportEchapper(e.exercise_name)}</span>
+                        </div>
+                    `).join('')}
+                    ${reste > 0 ? `<div class="sport-seance-hevy-reste">…et ${reste} autre${reste > 1 ? 's' : ''} exercice${reste > 1 ? 's' : ''}</div>` : ''}
+                </div>
+            ` : ''}
         </div>
     `;
 }
@@ -137,7 +176,7 @@ function _sportMinutesVersSecondes(minutes) {
     return minutes * 60;
 }
 
-// ── Modals génériques (réutilisent overlay/modal global, esprit taches.js) ──
+// ── Modals génériques (réutilisent overlay/modal global) ──
 function _sportOuvrirConfirmationSuppression(onConfirm) {
     document.getElementById('overlay').classList.add('on');
     document.body.classList.add('modal-open');
@@ -155,7 +194,6 @@ function _sportOuvrirConfirmationSuppression(onConfirm) {
     document.getElementById('sport-modal-suppr-non').onclick = () => closeModal();
 }
 
-// Modal à 2 choix nommés (ex. Reprendre / Abandonner)
 function _sportOuvrirModalChoix(titre, texte, libelleOui, libelleNon, onOui, onNon) {
     document.getElementById('overlay').classList.add('on');
     document.body.classList.add('modal-open');
@@ -291,18 +329,6 @@ async function _sportCreerRoutine() {
     }
 }
 
-// ── Suppression d'une routine (liste) ──
-function _sportConfirmerSuppressionRoutine(workoutId) {
-    _sportOuvrirConfirmationSuppression(async () => {
-        try {
-            await fetch(`/api/sport/workouts/${workoutId}`, { method: 'DELETE', headers: _sportAuthHeaders() });
-            _sportChargerListeRoutines();
-        } catch (err) {
-            console.error('[SPORT] supprimerRoutine :', err.message);
-        }
-    });
-}
-
 // ── Détail d'une routine ──
 async function _sportOuvrirDetailRoutine(workoutId) {
     const zone = document.getElementById('sport-routines-zone');
@@ -328,6 +354,18 @@ async function _sportOuvrirDetailRoutine(workoutId) {
     }
 }
 
+// Meta affichée par exercice : séries/reps ou durée, + poids cible et repos si renseignés.
+function _sportFormaterMetaExercice(ex) {
+    const estDuree = Number.isInteger(ex.target_duration_seconds);
+    let base = estDuree
+        ? `${_sportSecondesVersMinutes(ex.target_duration_seconds)} min`
+        : `${ex.target_sets} séries × ${ex.target_reps} reps`;
+
+    if (!estDuree && ex.target_weight_kg != null) base += ` · ${ex.target_weight_kg} kg`;
+    if (Number.isInteger(ex.target_rest_seconds)) base += ` · repos ${ex.target_rest_seconds}s`;
+    return base;
+}
+
 function _sportRenderDetailRoutine(workout, jour) {
     const zone      = document.getElementById('sport-routines-zone');
     const exercices = jour?.exercises || [];
@@ -350,25 +388,21 @@ function _sportRenderDetailRoutine(workout, jour) {
                 <p class="sport-empty-note">Aucun exercice dans cette routine pour l'instant.</p>
             ` : `
                 <div class="sport-routine-exercices-liste">
-                    ${exercices.map(ex => {
-                        const estDuree = Number.isInteger(ex.target_duration_seconds);
-                        const meta = estDuree
-                            ? `${_sportSecondesVersMinutes(ex.target_duration_seconds)} min`
-                            : `${ex.target_sets} séries × ${ex.target_reps} reps`;
-                        return `
-                            <div class="sport-routine-exercice-item" id="sport-exercice-${ex.id}">
-                                <div class="sport-routine-exercice-info">
-                                    <div class="sport-routine-exercice-nom">${_sportEchapper(ex.exercise_name)}</div>
-                                    <div class="sport-routine-exercice-meta">${meta}</div>
-                                </div>
-                                <button class="sport-routine-exercice-btn-edit" data-exercice-id="${ex.id}"
-                                        data-sets="${ex.target_sets}" data-reps="${ex.target_reps}"
-                                        data-duree="${Number.isInteger(ex.target_duration_seconds) ? ex.target_duration_seconds : ''}"
-                                        data-nom="${_sportEchapper(ex.exercise_name)}" title="Modifier">✏️</button>
-                                <button class="sport-routine-exercice-btn-del" data-exercice-id="${ex.id}" title="Supprimer">🗑️</button>
+                    ${exercices.map(ex => `
+                        <div class="sport-routine-exercice-item" id="sport-exercice-${ex.id}">
+                            <div class="sport-routine-exercice-info">
+                                <div class="sport-routine-exercice-nom">${_sportEchapper(ex.exercise_name)}</div>
+                                <div class="sport-routine-exercice-meta">${_sportFormaterMetaExercice(ex)}</div>
                             </div>
-                        `;
-                    }).join('')}
+                            <button class="sport-routine-exercice-btn-edit" data-exercice-id="${ex.id}"
+                                    data-sets="${ex.target_sets}" data-reps="${ex.target_reps}"
+                                    data-duree="${Number.isInteger(ex.target_duration_seconds) ? ex.target_duration_seconds : ''}"
+                                    data-poids="${ex.target_weight_kg != null ? ex.target_weight_kg : ''}"
+                                    data-repos="${Number.isInteger(ex.target_rest_seconds) ? ex.target_rest_seconds : ''}"
+                                    data-nom="${_sportEchapper(ex.exercise_name)}" title="Modifier">✏️</button>
+                            <button class="sport-routine-exercice-btn-del" data-exercice-id="${ex.id}" title="Supprimer">🗑️</button>
+                        </div>
+                    `).join('')}
                 </div>
             `}
             <button class="sport-cta-btn" style="margin-top:16px" onclick="_sportOuvrirSelecteurExercice()">
@@ -377,7 +411,7 @@ function _sportRenderDetailRoutine(workout, jour) {
         </div>
     `;
 
-        document.querySelector('.sport-routine-btn-suppr-routine').addEventListener('click', () => {
+    document.querySelector('.sport-routine-btn-suppr-routine').addEventListener('click', () => {
         _sportConfirmerSuppressionRoutineDetail(workout.id);
     });
     zone.querySelectorAll('.sport-routine-exercice-btn-del').forEach(btn => {
@@ -393,7 +427,9 @@ function _sportRenderDetailRoutine(workout, jour) {
                 btn.dataset.nom,
                 parseInt(btn.dataset.sets, 10),
                 parseInt(btn.dataset.reps, 10),
-                btn.dataset.duree !== '' ? parseInt(btn.dataset.duree, 10) : null
+                btn.dataset.duree !== '' ? parseInt(btn.dataset.duree, 10) : null,
+                btn.dataset.poids !== '' ? parseFloat(btn.dataset.poids) : null,
+                btn.dataset.repos !== '' ? parseInt(btn.dataset.repos, 10) : null
             );
         });
     });
@@ -423,32 +459,35 @@ function _sportConfirmerSuppressionExercice(exerciceId) {
     });
 }
 
-// ── Édition séries/reps ou durée ──
-function _sportEditerExercice(exerciceId, nom, setsActuel, repsActuel, dureeActuelleSecondes) {
+// ── Édition séries/reps (ou durée) + poids cible + repos cible ──
+function _sportEditerExercice(exerciceId, nom, setsActuel, repsActuel, dureeActuelleSecondes, poidsActuel, reposActuelSecondes) {
     const itemEl = document.getElementById(`sport-exercice-${exerciceId}`);
     if (!itemEl) return;
 
     const estDuree = Number.isInteger(dureeActuelleSecondes);
 
-    itemEl.innerHTML = estDuree ? `
+    itemEl.innerHTML = `
         <div class="sport-routine-exercice-edit">
             <span class="sport-routine-exercice-edit-nom">${_sportEchapper(nom)}</span>
             <div class="sport-routine-exercice-edit-champs">
-                <input type="number" id="sport-edit-duree-${exerciceId}"
-                       value="${_sportSecondesVersMinutes(dureeActuelleSecondes)}" min="1" placeholder="Durée (min)">
-                <span>min</span>
+                ${estDuree ? `
+                    <input type="number" id="sport-edit-duree-${exerciceId}"
+                           value="${_sportSecondesVersMinutes(dureeActuelleSecondes)}" min="1" placeholder="Durée (min)">
+                    <span>min</span>
+                ` : `
+                    <input type="number" id="sport-edit-sets-${exerciceId}" value="${setsActuel}" min="1" placeholder="Séries">
+                    <span class="sport-edit-icone-x">${SPORT_ICONE_X}</span>
+                    <input type="number" id="sport-edit-reps-${exerciceId}" value="${repsActuel}" min="1" placeholder="Reps">
+                `}
             </div>
-            <div class="sport-routine-exercice-edit-actions">
-                <button class="btn-save" id="sport-edit-save-${exerciceId}">Sauvegarder</button>
-                <button class="btn-cancel" id="sport-edit-cancel-${exerciceId}">Annuler</button>
-            </div>
-        </div>` : `
-        <div class="sport-routine-exercice-edit">
-            <span class="sport-routine-exercice-edit-nom">${_sportEchapper(nom)}</span>
+            ${!estDuree ? `
             <div class="sport-routine-exercice-edit-champs">
-                <input type="number" id="sport-edit-sets-${exerciceId}" value="${setsActuel}" min="1" placeholder="Séries">
-                <span class="sport-edit-icone-x">${SPORT_ICONE_X}</span>
-                <input type="number" id="sport-edit-reps-${exerciceId}" value="${repsActuel}" min="1" placeholder="Reps">
+                <input type="number" step="0.5" id="sport-edit-poids-${exerciceId}" value="${poidsActuel ?? ''}" min="0" placeholder="Poids cible">
+                <span>kg</span>
+            </div>` : ''}
+            <div class="sport-routine-exercice-edit-champs">
+                <input type="number" id="sport-edit-repos-${exerciceId}" value="${reposActuelSecondes ?? 60}" min="0" placeholder="Repos">
+                <span>sec de repos</span>
             </div>
             <div class="sport-routine-exercice-edit-actions">
                 <button class="btn-save" id="sport-edit-save-${exerciceId}">Sauvegarder</button>
@@ -461,15 +500,21 @@ function _sportEditerExercice(exerciceId, nom, setsActuel, repsActuel, dureeActu
     });
 
     document.getElementById(`sport-edit-save-${exerciceId}`).addEventListener('click', async () => {
-        let body;
+        const body = {};
+
         if (estDuree) {
             const minutes = parseInt(document.getElementById(`sport-edit-duree-${exerciceId}`).value, 10) || 1;
-            body = { target_duration_seconds: _sportMinutesVersSecondes(minutes) };
+            body.target_duration_seconds = _sportMinutesVersSecondes(minutes);
         } else {
-            const sets = parseInt(document.getElementById(`sport-edit-sets-${exerciceId}`).value, 10) || 1;
-            const reps = parseInt(document.getElementById(`sport-edit-reps-${exerciceId}`).value, 10) || 1;
-            body = { target_sets: sets, target_reps: reps };
+            body.target_sets = parseInt(document.getElementById(`sport-edit-sets-${exerciceId}`).value, 10) || 1;
+            body.target_reps = parseInt(document.getElementById(`sport-edit-reps-${exerciceId}`).value, 10) || 1;
+            const poidsInput = document.getElementById(`sport-edit-poids-${exerciceId}`).value;
+            body.target_weight_kg = poidsInput !== '' ? parseFloat(poidsInput) : null;
         }
+
+        const reposInput = document.getElementById(`sport-edit-repos-${exerciceId}`).value;
+        body.target_rest_seconds = reposInput !== '' ? parseInt(reposInput, 10) : 60;
+
         try {
             await fetch(`/api/sport/exercises/${exerciceId}`, {
                 method: 'PUT', headers: _sportAuthHeaders(), body: JSON.stringify(body)
@@ -668,6 +713,7 @@ function _sportRenderResultatsSelecteur(exercices, hasMore) {
     }
 }
 
+// Formulaire d'ajout : séries/reps (ou durée) + poids cible + repos cible.
 function _sportOuvrirFormulaireAjoutExercice(exercice) {
     const zone = document.getElementById('sport-routines-zone');
     if (!zone || !_sportRoutineDetailActive) return;
@@ -689,7 +735,15 @@ function _sportOuvrirFormulaireAjoutExercice(exercice) {
                 <input type="number" id="sport-ajout-sets" value="3" min="1" placeholder="Séries">
                 <span class="sport-edit-icone-x">${SPORT_ICONE_X}</span>
                 <input type="number" id="sport-ajout-reps" value="10" min="1" placeholder="Reps">
+            </div>
+            <div class="sport-routine-exercice-edit-champs" style="margin:0 0 16px">
+                <input type="number" step="0.5" id="sport-ajout-poids" min="0" placeholder="Poids cible (optionnel)">
+                <span>kg</span>
             </div>`}
+            <div class="sport-routine-exercice-edit-champs" style="margin:0 0 16px">
+                <input type="number" id="sport-ajout-repos" value="60" min="0" placeholder="Repos">
+                <span>sec de repos</span>
+            </div>
             <div id="sport-ajout-msg" class="sport-routine-msg-erreur"></div>
             <button class="sport-cta-btn" onclick="_sportValiderAjoutExercice(${exercice.wger_exercise_id}, '${_sportEchapperJs(exercice.name)}', ${estDuree})">
                 Ajouter à la routine
@@ -718,7 +772,12 @@ async function _sportValiderAjoutExercice(wgerExerciseId, exerciseName, estDuree
     } else {
         body.target_sets = parseInt(document.getElementById('sport-ajout-sets').value, 10) || 3;
         body.target_reps = parseInt(document.getElementById('sport-ajout-reps').value, 10) || 10;
+        const poidsInput = document.getElementById('sport-ajout-poids').value;
+        body.target_weight_kg = poidsInput !== '' ? parseFloat(poidsInput) : null;
     }
+
+    const reposInput = document.getElementById('sport-ajout-repos').value;
+    body.target_rest_seconds = reposInput !== '' ? parseInt(reposInput, 10) : 60;
 
     try {
         const r = await fetch(`/api/sport/days/${_sportRoutineDetailActive.dayId}/exercises`, {
@@ -726,7 +785,7 @@ async function _sportValiderAjoutExercice(wgerExerciseId, exerciseName, estDuree
         });
         const d = await r.json();
 
-        if (!d.success) {
+            if (!d.success) {
             if (msg) msg.textContent = 'Erreur : ' + (d.message || 'ajout impossible.');
             return;
         }
@@ -833,6 +892,8 @@ async function _sportReprendreSeance(session) {
     }
 }
 
+// Cible poids : celle saisie en création de routine (target_weight_kg) si aucun
+// historique de log réel n'existe encore pour cet exercice.
 async function _sportPreparerExercicesSeance(exercicesCibles, logsExistants = []) {
     for (const ex of exercicesCibles) {
         const estDuree = Number.isInteger(ex.target_duration_seconds);
@@ -847,8 +908,9 @@ async function _sportPreparerExercicesSeance(exercicesCibles, logsExistants = []
         const logsExoExistants = logsExistants.filter(l => l.wger_exercise_id === ex.wger_exercise_id);
         const nbSeriesCible    = estDuree ? 1 : (ex.target_sets || 1);
         const nbSeries         = Math.max(nbSeriesCible, logsExoExistants.length || 0);
+        const restCible        = Number.isInteger(ex.target_rest_seconds) ? ex.target_rest_seconds : 60;
 
-                const series = [];
+        const series = [];
         for (let i = 1; i <= nbSeries; i++) {
             const logExistant = logsExoExistants.find(l => l.set_number === i);
             let valeurReps = null, valeurPoids = null, valeurDistance = null, valeurVitesse = null, valeurInclinaison = null, valeurDuree = null;
@@ -870,7 +932,8 @@ async function _sportPreparerExercicesSeance(exercicesCibles, logsExistants = []
             } else if (estDuree) {
                 valeurDuree = ex.target_duration_seconds;
             } else {
-                valeurReps = ex.target_reps || 10;
+                valeurReps  = ex.target_reps || 10;
+                valeurPoids = ex.target_weight_kg != null ? ex.target_weight_kg : null;
             }
 
             series.push({
@@ -883,7 +946,7 @@ async function _sportPreparerExercicesSeance(exercicesCibles, logsExistants = []
                 speedKmh       : valeurVitesse,
                 inclinePercent : valeurInclinaison,
                 durationSeconds: valeurDuree,
-                restSeconds    : logExistant?.rest_seconds ?? 60
+                restSeconds    : logExistant?.rest_seconds ?? restCible
             });
         }
 
@@ -951,6 +1014,8 @@ function _sportRenderEcranSeance() {
 }
 
 // ── Rendu d'un exercice (tableau de séries) ──
+// Repos pré-rempli en secondes exactes (valeur cible réelle, plus de conversion
+// minute arrondie qui écrasait par exemple 60s à tort).
 function _sportRenderExerciceSeance(ex, exIndex) {
     const colonnesCardio = ex.estDuree;
 
@@ -960,7 +1025,7 @@ function _sportRenderExerciceSeance(ex, exIndex) {
             <div class="sport-seance-repos-ligne">
                 <span class="sport-seance-repos-label">Repos :</span>
                 <input type="number" class="sport-seance-repos-input" id="sport-repos-${exIndex}"
-                       value="${_sportSecondesVersMinutes(ex.series[0]?.restSeconds ?? 60) || Math.round((ex.series[0]?.restSeconds ?? 60))}" min="0" data-ex-index="${exIndex}">
+                       value="${ex.series[0]?.restSeconds ?? 60}" min="0" data-ex-index="${exIndex}">
                 <span class="sport-seance-repos-unite">sec</span>
                 <span class="sport-seance-repos-chrono" id="sport-repos-chrono-${exIndex}" style="display:none"></span>
             </div>
@@ -982,7 +1047,6 @@ function _sportRenderExerciceSeance(ex, exIndex) {
 }
 
 // ── Rendu d'une ligne de série ──
-// Bouton suppression visible seulement si non validée ET > 1 série restante.
 function _sportRenderSerieSeance(ex, s, exIndex, sIndex) {
     const precedentTexte = ex.estDuree
         ? (s.precedentDistanceKm != null ? `${s.precedentDistanceKm} km en ${_sportFormatDuree(s.precedentDurationSeconds)}` : '—')
@@ -1133,7 +1197,7 @@ function _sportAjouterSerie(exIndex) {
     _sportRenderEcranSeance();
 }
 
-// ── Suppression d'une série non validée (jamais de logId en base) + renumérotation ──
+// ── Suppression d'une série non validée + renumérotation ──
 function _sportSupprimerSerie(exIndex, sIndex) {
     const ex = _sportSeanceActive.exercices[exIndex];
     if (ex.series[sIndex].completed || ex.series.length <= 1) return;

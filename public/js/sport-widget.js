@@ -1,9 +1,7 @@
 // public/js/sport-widget.js
 // Widget Sport global (colonne droite, visible sur tous les onglets) +
 // utilitaires partagés avec sport.js (auth, formatage, échappement HTML,
-// icônes communes). CE FICHIER DOIT ÊTRE CHARGÉ AVANT sport.js dans
-// index.html : sport.js référence les const/fonctions définies ici sans
-// les redéclarer (scripts classiques = même portée globale lexicale).
+// icônes communes). DOIT être chargé AVANT sport.js dans index.html.
 
 const SPORT_ICONE_DUMBBELL = `
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -22,6 +20,18 @@ const SPORT_ICONE_FLECHE = `
     </svg>
 `;
 
+const SPORT_ICONE_TROPHEE = `
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 21h8"></path>
+        <path d="M12 17v4"></path>
+        <path d="M7 4h10v5a5 5 0 0 1-10 0V4z"></path>
+        <path d="M7 5H5a2 2 0 0 0 0 4h1"></path>
+        <path d="M17 5h2a2 2 0 0 1 0 4h-1"></path>
+    </svg>
+`;
+
+const SPORT_WIDGET_MAX_EXERCICES_APERCU = 3;
+
 // ── AUTH ──
 
 function _sportToken() {
@@ -36,7 +46,7 @@ function _sportAuthHeaders() {
     };
 }
 
-// ── Échappement HTML (anti-XSS sur données utilisateur/API) ──
+// ── Échappement HTML (anti-XSS) ──
 function _sportEchapper(str) {
     return (str || '')
         .replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -62,7 +72,7 @@ function _sportFormatDureeLongue(secondes) {
     return `${s}s`;
 }
 
-// ── Phrases d'encouragement (widget colonne droite, si aucune séance) ──
+// ── Phrases d'encouragement (si aucune séance) ──
 const SPORT_PHRASES_ENCOURAGEMENT = [
     "Chaque séance compte, même la plus courte. Lancez-vous !",
     "Votre progression commence par un premier pas.",
@@ -71,20 +81,10 @@ const SPORT_PHRASES_ENCOURAGEMENT = [
     "Votre corps vous remerciera pour chaque effort, même petit."
 ];
 
-const SPORT_ICONE_TROPHEE = `
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M8 21h8"></path>
-        <path d="M12 17v4"></path>
-        <path d="M7 4h10v5a5 5 0 0 1-10 0V4z"></path>
-        <path d="M7 5H5a2 2 0 0 0 0 4h1"></path>
-        <path d="M17 5h2a2 2 0 0 1 0 4h-1"></path>
-    </svg>
-`;
-
 // ── Widget Sport Stats (colonne droite, global) ──
-// Si aucune séance terminée : phrase d'encouragement aléatoire (état initial).
-// Sinon : nom/date/stats de la dernière séance terminée + icône trophée
-// si au moins un exercice a battu son record personnel sur cette séance.
+// Aucune séance : phrase d'encouragement aléatoire. Sinon : carte
+// compacte façon Hevy (titre, Durée/Volume/Records + badge trophée,
+// liste consolidée d'exercices tronquée).
 async function chargerSportStatsWidget() {
     const zone = document.getElementById('sport-stats-widget');
     if (!zone) return;
@@ -121,8 +121,13 @@ function _sportRenderWidgetPhraseAleatoire(zone) {
     `;
 }
 
+// Carte compacte façon Hevy, adaptée à l'espace réduit de la colonne droite.
 function _sportRenderWidgetDerniereSeance(zone, seance) {
     const dateTexte = _sportFormatDateCourte(seance.date_end || seance.date_start);
+    const nbRecords = Number.isInteger(seance.nb_records) ? seance.nb_records : 0;
+    const exercices = seance.exercices || [];
+    const apercu    = exercices.slice(0, SPORT_WIDGET_MAX_EXERCICES_APERCU);
+    const reste     = exercices.length - apercu.length;
 
     zone.innerHTML = `
         <div class="sport-stats-header">
@@ -131,23 +136,39 @@ function _sportRenderWidgetDerniereSeance(zone, seance) {
                 ${SPORT_ICONE_FLECHE}
             </button>
         </div>
-        <p class="sport-stats-text">
-            <strong>${_sportEchapper(seance.workout_name)}</strong> — ${dateTexte}
-            ${seance.record_battu ? ` ${SPORT_ICONE_TROPHEE} Nouveau record !` : ''}
-        </p>
-        <div class="sport-stats-row">
-            <div class="sport-stat">
-                <div class="sport-stat-val">${_sportFormatDureeLongue(seance.dureeSecondes)}</div>
-                <div class="sport-stat-lbl">Durée</div>
+
+        <div class="sport-widget-hevy-titre">
+            <strong>${_sportEchapper(seance.workout_name)}</strong>
+            <span class="sport-widget-hevy-date">${dateTexte}</span>
+        </div>
+
+        <div class="sport-widget-hevy-stats">
+            <div class="sport-widget-hevy-stat">
+                <span class="sport-widget-hevy-stat-label">Durée</span>
+                <span class="sport-widget-hevy-stat-val">${_sportFormatDureeLongue(seance.dureeSecondes)}</span>
             </div>
-            <div class="sport-stat">
-                <div class="sport-stat-val">${seance.volumeKg} kg</div>
-                <div class="sport-stat-lbl">Volume</div>
+            <div class="sport-widget-hevy-stat">
+                <span class="sport-widget-hevy-stat-label">Volume</span>
+                <span class="sport-widget-hevy-stat-val">${seance.volumeKg} kg</span>
             </div>
-            <div class="sport-stat">
-                <div class="sport-stat-val">${seance.nbSeries}</div>
-                <div class="sport-stat-lbl">Séries</div>
+            <div class="sport-widget-hevy-stat">
+                <span class="sport-widget-hevy-stat-label">Records</span>
+                <span class="sport-widget-hevy-stat-val">
+                    ${nbRecords}${nbRecords > 0 ? ` ${SPORT_ICONE_TROPHEE}` : ''}
+                </span>
             </div>
         </div>
+
+        ${apercu.length ? `
+            <div class="sport-widget-hevy-liste">
+                ${apercu.map(e => `
+                    <div class="sport-widget-hevy-ligne">
+                        <span class="sport-widget-hevy-ligne-nb">${e.nb_series}x</span>
+                        <span class="sport-widget-hevy-ligne-nom">${_sportEchapper(e.exercise_name)}</span>
+                    </div>
+                `).join('')}
+                ${reste > 0 ? `<div class="sport-widget-hevy-reste">…et ${reste} autre${reste > 1 ? 's' : ''}</div>` : ''}
+            </div>
+        ` : ''}
     `;
 }

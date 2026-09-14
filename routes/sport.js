@@ -1,10 +1,7 @@
 // routes/sport.js
-// Module Sport : CRUD sur sport_workouts, sport_workout_days,
-// sport_day_exercises, sport_sessions, sport_session_logs,
-// sport_measurements. Toutes les routes sont scopées par user.
-// + Catalogue WGER en lecture seule, avec traduction FR pour le
-// cardio (catégorie id 15) via SPORT_CARDIO_FR. Recherche texte
-// insensible aux accents et à la casse.
+// Module Sport : CRUD routines/jours/exercices/séances/logs + mensurations.
+// Toutes les routes scopées par user. Catalogue WGER en lecture seule
+// (traduction FR cardio via SPORT_CARDIO_FR, recherche insensible accents/casse).
 const express = require('express');
 const router  = express.Router();
 const { pool } = require('../db/pool');
@@ -13,12 +10,8 @@ const { SPORT_CARDIO_FR } = require('./sport-cardio-fr');
 
 const WGER_BASE_URL = 'https://wger.de/api/v2';
 
-// ── ESTIMATION CALORIES (approximative, formule MET) ──
-// calories ≈ MET × poids(kg) × durée(heures). Estimation indicative
-// affichée à titre informatif, ne remplace pas une mesure médicale réelle.
-// MET moyen pondéré selon la proportion de séries musculation vs cardio
-// dans la séance (une séance peut mélanger les deux types d'exercices,
-// ex. "Marche" + "Seated Hip Adduction" dans la même routine).
+// Estimation calories : MET pondéré (5=muscu, 6=cardio) x poids x durée.
+// Indicatif uniquement, ne remplace pas une mesure médicale.
 const SPORT_MET_MUSCULATION = 5;
 const SPORT_MET_CARDIO      = 6;
 
@@ -57,6 +50,7 @@ router.post('/workouts', auth, async (req, res) => {
     }
 });
 
+// Ajout target_weight_kg / target_rest_seconds au SELECT des exercices.
 router.get('/workouts/:id', auth, async (req, res) => {
     const moi = req.user.id;
     const id  = parseInt(req.params.id, 10);
@@ -82,7 +76,8 @@ router.get('/workouts/:id', auth, async (req, res) => {
         if (dayIds.length) {
             const { rows: exRows } = await pool.query(`
                 SELECT id, day_id, wger_exercise_id, exercise_name,
-                       order_in_day, target_sets, target_reps, target_duration_seconds
+                       order_in_day, target_sets, target_reps, target_duration_seconds,
+                       target_weight_kg, target_rest_seconds
                 FROM sport_day_exercises
                 WHERE day_id = ANY(\$1::int[])
                 ORDER BY order_in_day ASC
@@ -211,12 +206,14 @@ router.delete('/days/:dayId', auth, async (req, res) => {
 
 // ── EXERCICES D'UN JOUR : sport_day_exercises ──
 
+// Accepte désormais target_weight_kg / target_rest_seconds (repos par défaut 60).
 router.post('/days/:dayId/exercises', auth, async (req, res) => {
     const moi   = req.user.id;
     const dayId = parseInt(req.params.dayId, 10);
     const {
         wger_exercise_id, exercise_name,
-        order_in_day, target_sets, target_reps, target_duration_seconds
+        order_in_day, target_sets, target_reps, target_duration_seconds,
+        target_weight_kg, target_rest_seconds
     } = req.body;
 
     if (!wger_exercise_id || !exercise_name?.trim()) {
@@ -234,8 +231,9 @@ router.post('/days/:dayId/exercises', auth, async (req, res) => {
 
         const { rows } = await pool.query(`
             INSERT INTO sport_day_exercises
-                (day_id, wger_exercise_id, exercise_name, order_in_day, target_sets, target_reps, target_duration_seconds)
-            VALUES (\$1, \$2, \$3, \$4, \$5, \$6, \$7)
+                (day_id, wger_exercise_id, exercise_name, order_in_day, target_sets, target_reps,
+                 target_duration_seconds, target_weight_kg, target_rest_seconds)
+            VALUES (\$1, \$2, \$3, \$4, \$5, \$6, \$7, \$8, \$9)
             RETURNING *
         `, [
             dayId,
@@ -244,7 +242,9 @@ router.post('/days/:dayId/exercises', auth, async (req, res) => {
             Number.isInteger(order_in_day) ? order_in_day : 0,
             Number.isInteger(target_sets)  ? target_sets  : 3,
             Number.isInteger(target_reps)  ? target_reps  : 10,
-            Number.isInteger(target_duration_seconds) ? target_duration_seconds : null
+            Number.isInteger(target_duration_seconds) ? target_duration_seconds : null,
+            target_weight_kg != null ? target_weight_kg : null,
+            Number.isInteger(target_rest_seconds) ? target_rest_seconds : 60
         ]);
         res.json({ success: true, exercise: rows[0] });
     } catch (err) {
@@ -253,10 +253,14 @@ router.post('/days/:dayId/exercises', auth, async (req, res) => {
     }
 });
 
+// Accepte désormais target_weight_kg / target_rest_seconds en mise à jour.
 router.put('/exercises/:exerciseId', auth, async (req, res) => {
     const moi        = req.user.id;
     const exerciseId = parseInt(req.params.exerciseId, 10);
-    const { exercise_name, order_in_day, target_sets, target_reps, target_duration_seconds } = req.body;
+    const {
+        exercise_name, order_in_day, target_sets, target_reps, target_duration_seconds,
+        target_weight_kg, target_rest_seconds
+    } = req.body;
 
     try {
         const { rows } = await pool.query(`
@@ -265,12 +269,14 @@ router.put('/exercises/:exerciseId', auth, async (req, res) => {
                 order_in_day  = COALESCE(\$2, e.order_in_day),
                 target_sets   = COALESCE(\$3, e.target_sets),
                 target_reps   = COALESCE(\$4, e.target_reps),
-                target_duration_seconds = COALESCE(\$5, e.target_duration_seconds)
+                target_duration_seconds = COALESCE(\$5, e.target_duration_seconds),
+                target_weight_kg        = COALESCE(\$6, e.target_weight_kg),
+                target_rest_seconds     = COALESCE(\$7, e.target_rest_seconds)
             FROM sport_workout_days d
             JOIN sport_workouts w ON w.id = d.workout_id
-            WHERE e.id = \$6
+            WHERE e.id = \$8
                 AND e.day_id = d.id
-                AND w.user_id = \$7
+                AND w.user_id = \$9
             RETURNING e.*
         `, [
             exercise_name?.trim() || null,
@@ -278,6 +284,8 @@ router.put('/exercises/:exerciseId', auth, async (req, res) => {
             Number.isInteger(target_sets)  ? target_sets  : null,
             Number.isInteger(target_reps)  ? target_reps  : null,
             Number.isInteger(target_duration_seconds) ? target_duration_seconds : null,
+            target_weight_kg != null ? target_weight_kg : null,
+            Number.isInteger(target_rest_seconds) ? target_rest_seconds : null,
             exerciseId,
             moi
         ]);
@@ -328,9 +336,7 @@ router.get('/sessions', auth, async (req, res) => {
     }
 });
 
-// Renvoie la séance en cours (status = in_progress) de l'utilisateur,
-// avec ses logs déjà enregistrés, pour proposer reprendre/abandonner
-// au retour dans l'app.
+// Séance en cours (status = in_progress) + ses logs, pour reprendre/abandonner.
 router.get('/sessions/active', auth, async (req, res) => {
     const moi = req.user.id;
     try {
@@ -404,7 +410,7 @@ router.post('/sessions', auth, async (req, res) => {
     }
 });
 
-// Clôture une séance : status doit être 'completed' ou 'abandoned'.
+// Clôture d'une séance : status doit être 'completed' ou 'abandoned'.
 router.put('/sessions/:id', auth, async (req, res) => {
     const moi    = req.user.id;
     const id     = parseInt(req.params.id, 10);
@@ -445,11 +451,7 @@ router.delete('/sessions/:id', auth, async (req, res) => {
 });
 
 // ── DASHBOARD & WIDGET : stats agrégées ──
-// Calcule pour une liste de sessions données (déjà chargées avec leurs
-// logs) : durée réelle (date_end - date_start), volume total (kg × reps,
-// hors cardio), nb de séries validées, calories estimées (MET pondéré
-// musculation/cardio selon la proportion de séries de chaque type).
-// Estimation approximative, affichée à titre indicatif uniquement.
+// Durée, volume, séries, calories (MET pondéré muscu/cardio).
 function _sportCalculerStatsSession(session, logs, poidsUtilisateurKg) {
     const logsValides = logs.filter(l => l.completed);
 
@@ -487,11 +489,25 @@ function _sportCalculerStatsSession(session, logs, poidsUtilisateurKg) {
     };
 }
 
-// Renvoie, pour un exercice donné et un poids utilisateur, si au moins une
-// série de la session la plus récente dépasse le record historique
-// (poids en kg le plus lourd jamais enregistré sur ce wger_exercise_id,
-// toutes séances 'completed' confondues, hors la séance courante).
-// Cardio exclu (pas d'axe poids pertinent).
+// Liste consolidée des exercices distincts d'une séance, triée par nb de
+// séries décroissant, format { exercise_name, nb_series }. Utilisée pour
+// l'affichage type "6x Presse à Cuisses Horizontale" (dashboard + widget).
+function _sportConsoliderExercicesSession(logs) {
+    const logsValides = logs.filter(l => l.completed);
+    const compteur = {};
+
+    logsValides.forEach(l => {
+        if (!compteur[l.exercise_name]) compteur[l.exercise_name] = 0;
+        compteur[l.exercise_name]++;
+    });
+
+    return Object.entries(compteur)
+        .map(([exercise_name, nb_series]) => ({ exercise_name, nb_series }))
+        .sort((a, b) => b.nb_series - a.nb_series);
+}
+
+// Détecte, pour la séance la plus récente, les exercices dont le meilleur
+// poids dépasse le record historique (hors séance courante). Cardio exclu.
 async function _sportDetecterRecords(moi, sessionId, logsSession) {
     const logsMusculationValides = logsSession.filter(l =>
         l.completed && l.weight_kg != null && l.distance_km == null && l.duration_seconds == null
@@ -514,8 +530,8 @@ async function _sportDetecterRecords(moi, sessionId, logsSession) {
                 AND l.weight_kg IS NOT NULL
         `, [moi, sessionId, wgerExerciseId]);
 
-                const recordPrecedent = rows[0]?.record_precedent != null ? parseFloat(rows[0].record_precedent) : null;
-        if (recordPrecedent == null) continue; // pas d'historique = pas de record à battre
+        const recordPrecedent = rows[0]?.record_precedent != null ? parseFloat(rows[0].record_precedent) : null;
+        if (recordPrecedent == null) continue;
 
         const meilleurKgSession = Math.max(...logsMusculationValides
             .filter(l => l.wger_exercise_id === wgerExerciseId)
@@ -531,8 +547,8 @@ async function _sportDetecterRecords(moi, sessionId, logsSession) {
 }
 
 // GET /api/sport/dashboard-stats
-// Renvoie les 5 dernières séances terminées (status = completed) avec
-// leurs stats agrégées, pour le dashboard ET le widget colonne droite.
+// 5 dernières séances terminées, avec stats agrégées + liste consolidée
+// d'exercices (chaque séance) + records détaillés (dernière séance uniquement).
 router.get('/dashboard-stats', auth, async (req, res) => {
     const moi = req.user.id;
     try {
@@ -562,12 +578,14 @@ router.get('/dashboard-stats', auth, async (req, res) => {
         const dernieresSeances = sessions.map(s => {
             const logsSession = tousLogs.filter(l => l.session_id === s.id);
             const stats = _sportCalculerStatsSession(s, logsSession, poidsUtilisateurKg);
+            const exercicesConsolides = _sportConsoliderExercicesSession(logsSession);
             return {
                 id: s.id,
                 workout_name: s.workout_name || 'Séance',
                 date_start: s.date_start,
                 date_end: s.date_end,
-                ...stats
+                ...stats,
+                exercices: exercicesConsolides
             };
         });
 
@@ -578,7 +596,12 @@ router.get('/dashboard-stats', auth, async (req, res) => {
         res.json({
             success: true,
             dernieres_seances: dernieresSeances,
-            derniere_seance: { ...dernieresSeances[0], records, record_battu: records.length > 0 }
+            derniere_seance: {
+                ...dernieresSeances[0],
+                records,
+                nb_records: records.length,
+                record_battu: records.length > 0
+            }
         });
     } catch (err) {
         console.error('[SPORT] GET /dashboard-stats :', err.message);
@@ -587,10 +610,7 @@ router.get('/dashboard-stats', auth, async (req, res) => {
 });
 
 // ── LOGS DE SÉANCE : sport_session_logs ──
-// Un log n'est créé qu'au moment où une série est validée/cochée.
-// logged_at est posé côté serveur (NOW()), jamais envoyé par le
-// client, pour rester fiable après une mise en veille de l'écran.
-// reps/weight_kg sont optionnels (séries cardio sans ces valeurs).
+// logged_at posé côté serveur (NOW()), jamais envoyé par le client.
 
 router.post('/sessions/:sessionId/logs', auth, async (req, res) => {
     const moi       = req.user.id;
@@ -635,7 +655,7 @@ router.post('/sessions/:sessionId/logs', auth, async (req, res) => {
     }
 });
 
-// Correction d'un log déjà enregistré (ex. valeur saisie par erreur).
+// Correction d'un log déjà enregistré.
 router.put('/logs/:logId', auth, async (req, res) => {
     const moi   = req.user.id;
     const logId = parseInt(req.params.logId, 10);
@@ -699,8 +719,7 @@ router.delete('/logs/:logId', auth, async (req, res) => {
     }
 });
 
-// Dernier log réellement effectué pour un exercice donné (toutes séances
-// confondues), utilisé pour le pré-remplissage façon "Précédent" (esprit Hevy).
+// Dernier log réel pour un exercice donné (préremplissage esprit "Précédent").
 router.get('/exercises/:wgerExerciseId/dernier-log', auth, async (req, res) => {
     const moi = req.user.id;
     const wgerExerciseId = parseInt(req.params.wgerExerciseId, 10);
@@ -775,15 +794,8 @@ router.delete('/measurements/:id', auth, async (req, res) => {
 });
 
 // ── CATALOGUE WGER (lecture seule) ──
-// Noms "Anglais (Français)". Catégories/équipements traduits via
-// tables statiques FR (repli anglais si absent). Agrégation par
-// lots de 50 car WGER ne filtre pas le texte libre côté serveur.
-// Cardio (catégorie réelle id 15) : nom remplacé via SPORT_CARDIO_FR
-// + type_suivi ('duree'/'series'). mapping = null -> exercice masqué.
-// Le test se fait sur ex.category (catégorie réelle de l'exercice),
-// pas sur le filtre choisi par l'utilisateur, pour que la traduction
-// et la recherche fonctionnent aussi bien sans filtre de catégorie.
-// La recherche texte est insensible aux accents/casse (_sansAccents).
+// Noms "Anglais (Français)". Cardio (id 15) : nom remplacé via SPORT_CARDIO_FR
+// + type_suivi. mapping = null -> exercice masqué. Recherche insensible accents/casse.
 
 const SPORT_WGER_CATEGORIES_FR = {
     'Abs'      : 'Abdominaux',
@@ -827,8 +839,6 @@ function _nettoyerNomBase(nom) {
     return nom.split('(')[0].trim();
 }
 
-// Retire les diacritiques pour une comparaison insensible aux accents
-// ("vélo" et "velo" doivent matcher de la même façon).
 function _sansAccents(txt) {
     return txt.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
@@ -911,7 +921,7 @@ router.get('/wger/exercises', auth, async (req, res) => {
                     const cle = _nettoyerNomBase(nom);
                     if (Object.prototype.hasOwnProperty.call(SPORT_CARDIO_FR, cle)) {
                         const mapping = SPORT_CARDIO_FR[cle];
-                        if (mapping === null) continue; // doublon masqué
+                        if (mapping === null) continue;
                         nom       = mapping.nom;
                         typeSuivi = mapping.type;
                     }
