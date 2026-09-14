@@ -94,8 +94,11 @@
     margin-bottom: 20px;
 }
 
+/* Taille réduite (v1.92.9) : boutons CTA Sport (Commencer une séance,
+   Commencer la routine, Créer une routine, Ajouter un exercice)
+   jugés trop massifs par rapport au reste de l'interface. */
 .sport-cta-btn {
-    padding: 14px 28px;
+    padding: 12px 18px;
     background: rgba(167, 139, 250, 0.85);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
@@ -103,7 +106,7 @@
     color: #fff;
     border-radius: 50px;
     font-size: 14px;
-    font-weight: 700;
+    font-weight: 600;
     cursor: pointer;
     box-shadow: 0 8px 24px rgba(167, 139, 250, 0.25);
     transition: all 0.2s ease;
@@ -126,19 +129,6 @@
     background: rgba(167, 139, 250, 0.85);
     transform: none;
     box-shadow: 0 8px 24px rgba(167, 139, 250, 0.25);
-}
-
-/* AJOUT : variante compacte de .sport-cta-btn, réservée aux boutons
-   "Commencer une séance" / "Commencer la routine" (jugés trop massifs).
-   Les autres CTA (+Ajouter un exercice, +Créer une routine) gardent
-   .sport-cta-btn seul, sans changement. */
-.sport-cta-btn-compact {
-    padding: 10px 20px;
-    font-size: 13px;
-    box-shadow: 0 6px 18px rgba(167, 139, 250, 0.22);
-}
-.sport-cta-btn-compact:hover {
-    box-shadow: 0 10px 22px rgba(167, 139, 250, 0.3);
 }
 
 .sport-stats-row {

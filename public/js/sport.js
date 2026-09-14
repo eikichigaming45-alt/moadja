@@ -115,7 +115,7 @@ function _sportRenderDashboard(dernieresSeances) {
                         et voir votre progression au fil du temps.
                     </div>
                 `}
-                <button class="sport-cta-btn sport-cta-btn-compact" onclick="_sportSwitchSection('routines')">
+                <button class="sport-cta-btn" onclick="_sportSwitchSection('routines')">
                     ${SPORT_ICONE_DUMBBELL} Commencer une séance
                 </button>
             </div>
@@ -217,7 +217,7 @@ function _sportOuvrirConfirmationSuppression(onConfirm) {
     document.getElementById('modal-title').textContent = 'Confirmation';
     document.getElementById('modal-body').innerHTML = `
         <p style="color:#333;font-size:15px;margin-bottom:20px;text-align:center">Confirmer la suppression ?</p>
-        <div class="modal-actions">
+        <div class="modal-actions" style="justify-content:center">
             <button class="btn-delete" id="sport-modal-suppr-oui">Confirmer</button>
             <button class="btn-cancel" id="sport-modal-suppr-non">Annuler</button>
         </div>`;
@@ -402,19 +402,19 @@ function _sportRenderDetailRoutine(workout, jour) {
     const zone      = document.getElementById('sport-routines-zone');
     const exercices = jour?.exercises || [];
 
-        zone.innerHTML = `
+    zone.innerHTML = `
         <div class="sport-card">
             <div class="sport-routine-detail-header">
                 <button class="sport-routine-btn-retour" onclick="_sportChargerListeRoutines()">‹ Retour</button>
                 <button class="sport-routine-btn-suppr-routine" data-workout-id="${workout.id}">${SPORT_ICONE_POUBELLE} Supprimer la routine</button>
             </div>
             <div class="sport-routine-detail-nom">${_sportEchapper(workout.name)}</div>
-            <button class="sport-cta-btn sport-cta-btn-compact" onclick="_sportDemarrerSeance(${workout.id})">
+            <button class="sport-cta-btn" onclick="_sportDemarrerSeance(${workout.id})">
                 ${SPORT_ICONE_DUMBBELL} Commencer la routine
             </button>
         </div>
 
-        <div class="sport-card">
+                <div class="sport-card">
             <div class="sport-section-title">Exercices</div>
             ${!exercices.length ? `
                 <p class="sport-empty-note">Aucun exercice dans cette routine pour l'instant.</p>
@@ -821,7 +821,7 @@ async function _sportValiderAjoutExercice(wgerExerciseId, exerciseName, estDuree
             if (msg) msg.textContent = 'Erreur : ' + (d.message || 'ajout impossible.');
             return;
         }
-                _sportOuvrirDetailRoutine(_sportRoutineDetailActive.workoutId);
+        _sportOuvrirDetailRoutine(_sportRoutineDetailActive.workoutId);
     } catch (err) {
         console.error('[SPORT] validerAjoutExercice :', err.message);
         if (msg) msg.textContent = 'Erreur de connexion au serveur.';
