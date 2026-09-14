@@ -10,6 +10,8 @@
 // Séance : un log n'est créé qu'à la validation d'une série (case cochée).
 // logged_at posé côté serveur. Repos décompté depuis un timestamp de référence
 // (résistant à la mise en veille de l'écran), pas un setInterval continu seul.
+// Dashboard/Widget : stats réelles via GET /api/sport/dashboard-stats
+// (5 dernières séances 'completed', durée/volume/séries/calories estimées).
 
 const SPORT_ICONE_DUMBBELL = `
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -65,7 +67,7 @@ function chargerSportDashboard() {
             </div>
 
             <div id="sport-section-dashboard" class="sport-section">
-                ${_sportRenderDashboard()}
+                <p class="sport-catalogue-loading">Chargement…</p>
             </div>
 
             <div id="sport-section-routines" class="sport-section" style="display:none">
@@ -77,20 +79,48 @@ function chargerSportDashboard() {
         </div>
     `;
 
+    _sportChargerDashboardStats();
     _sportInitVerifSeanceActive();
 }
 
-// ── Dashboard (état "aucune activité") ──
-function _sportRenderDashboard() {
+// ── Récupère les stats réelles du dashboard (5 dernières séances) ──
+async function _sportChargerDashboardStats() {
+    const zone = document.getElementById('sport-section-dashboard');
+    if (!zone) return;
+
+    try {
+        const r = await fetch('/api/sport/dashboard-stats', { headers: _sportAuthHeaders() });
+        const d = await r.json();
+
+        if (!d.success) {
+            zone.innerHTML = _sportRenderDashboard([]);
+            return;
+        }
+
+        zone.innerHTML = _sportRenderDashboard(d.dernieres_seances || []);
+    } catch (err) {
+        console.error('[SPORT] chargerDashboardStats :', err.message);
+        zone.innerHTML = _sportRenderDashboard([]);
+    }
+}
+
+// ── Dashboard : état vide ou liste réelle des dernières séances ──
+function _sportRenderDashboard(dernieresSeances) {
+    const aDesSeances = dernieresSeances && dernieresSeances.length > 0;
+
     return `
         <div class="sport-card">
             <div class="sport-empty-state">
                 <div class="sport-empty-icon">${SPORT_ICONE_DUMBBELL}</div>
-                <div class="sport-empty-title">Aucune séance cette semaine</div>
-                <div class="sport-empty-text">
-                    Prêt à commencer ? Créez votre première routine pour suivre vos entraînements
-                    et voir votre progression au fil du temps.
-                </div>
+                ${aDesSeances ? `
+                    <div class="sport-empty-title">Prêt pour une nouvelle séance ?</div>
+                ` : `
+                    <div class="sport-empty-title">Aucune séance cette semaine</div>
+                    <div class="sport-empty-text">
+                        Prêt à commencer ? Créez votre première routine pour suivre vos entraînements
+                        et voir votre progression au fil du temps.
+                    </div>
+                `}
                 <button class="sport-cta-btn" onclick="_sportSwitchSection('routines')">
                     ${SPORT_ICONE_DUMBBELL} Commencer une séance
                 </button>
@@ -99,11 +129,37 @@ function _sportRenderDashboard() {
 
         <div class="sport-card">
             <div class="sport-section-title">Dernières séances</div>
-            <p class="sport-empty-note">
-                Aucune séance enregistrée pour l'instant.
-            </p>
+            ${aDesSeances ? `
+                ${dernieresSeances.map(s => _sportRenderLigneDerniereSeance(s)).join('')}
+            ` : `
+                <p class="sport-empty-note">
+                    Aucune séance enregistrée pour l'instant.
+                </p>
+            `}
         </div>
     `;
+}
+
+// ── Ligne d'une séance dans "Dernières séances" (réutilise .sport-session-item) ──
+function _sportRenderLigneDerniereSeance(s) {
+    const dateTexte = _sportFormatDateCourte(s.date_end || s.date_start);
+    return `
+        <div class="sport-session-item">
+            <div class="sport-session-icon">${SPORT_ICONE_DUMBBELL}</div>
+            <div class="sport-session-info">
+                <div class="sport-session-nom">${_sportEchapper(s.workout_name)} — ${dateTexte}</div>
+                <div class="sport-session-meta">${_sportFormatDureeLongue(s.dureeSecondes)} · ${s.volumeKg} kg · ${s.nbSeries} séries${s.calories ? ` · ~${s.calories} kcal` : ''}</div>
+            </div>
+        </div>
+    `;
+}
+
+// ── Formatage date courte type "13 sept." ──
+function _sportFormatDateCourte(dateIso) {
+    const MOIS_ABREGES = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+    const d = new Date(dateIso);
+    if (isNaN(d.getTime())) return '';
+    return `${d.getDate()} ${MOIS_ABREGES[d.getMonth()]}`;
 }
 
 // ── Changement de section ──
@@ -522,7 +578,7 @@ function _sportEditerExercice(exerciceId, nom, setsActuel, repsActuel, dureeActu
                 method : 'PUT',
                 headers: _sportAuthHeaders(),
                 body   : JSON.stringify(body)
-            });
+                        });
             _sportOuvrirDetailRoutine(_sportRoutineDetailActive.workoutId);
         } catch (err) {
             console.error('[SPORT] editerExercice :', err.message);
@@ -794,7 +850,7 @@ async function _sportValiderAjoutExercice(wgerExerciseId, exerciseName, estDuree
         if (!d.success) {
             if (msg) msg.textContent = 'Erreur : ' + (d.message || 'ajout impossible.');
             return;
-        }
+                }
 
         _sportOuvrirDetailRoutine(_sportRoutineDetailActive.workoutId);
     } catch (err) {
@@ -1053,8 +1109,9 @@ function _sportRenderExerciceSeance(ex, exIndex) {
                         ? `<span>KM</span><span>Temps</span>`
                         : `<span>KG</span><span>Reps</span>`}
                     <span></span>
+                    <span></span>
                 </div>
-                ${ex.series.map((s, sIndex) => _sportRenderSerieSeance(ex, s, exIndex, sIndex)).join('')}
+                            ${ex.series.map((s, sIndex) => _sportRenderSerieSeance(ex, s, exIndex, sIndex)).join('')}
             </div>
             <button class="sport-seance-btn-ajout-serie" data-ex-index="${exIndex}">
                 + Ajouter une série
@@ -1064,10 +1121,14 @@ function _sportRenderExerciceSeance(ex, exIndex) {
 }
 
 // ── Rendu d'une ligne de série ──
+// Le bouton de suppression n'apparaît que si la série n'est pas validée
+// ET qu'il reste plus d'une série sur l'exercice (jamais 0 série).
 function _sportRenderSerieSeance(ex, s, exIndex, sIndex) {
     const precedentTexte = ex.estDuree
         ? (s.precedentDistanceKm != null ? `${s.precedentDistanceKm} km en ${_sportFormatDuree(s.precedentDurationSeconds)}` : '—')
         : (s.precedentWeightKg != null ? `${s.precedentWeightKg}kg x ${s.precedentReps}` : '—');
+
+    const peutSupprimer = !s.completed && ex.series.length > 1;
 
     return `
         <div class="sport-seance-table-row ${s.completed ? 'sport-seance-row-validee' : ''}" id="sport-serie-${exIndex}-${sIndex}">
@@ -1083,6 +1144,11 @@ function _sportRenderSerieSeance(ex, s, exIndex, sIndex) {
             <button class="sport-seance-check-btn ${s.completed ? 'active' : ''}" data-ex-index="${exIndex}" data-s-index="${sIndex}">
                 ${SPORT_ICONE_CHECK}
             </button>
+            ${peutSupprimer ? `
+                <button class="sport-seance-delete-btn" data-ex-index="${exIndex}" data-s-index="${sIndex}" title="Supprimer la série">
+                    ${SPORT_ICONE_X}
+                </button>
+            ` : `<span></span>`}
         </div>
     `;
 }
@@ -1104,7 +1170,7 @@ function _sportParseDuree(texte) {
     return (m * 60) + s;
 }
 
-// ── Attache les événements d'un exercice (coche, ajout de série, repos) ──
+// ── Attache les événements d'un exercice (coche, suppression, ajout, repos) ──
 function _sportBindExerciceSeance(exIndex) {
     const ex = _sportSeanceActive.exercices[exIndex];
 
@@ -1112,6 +1178,13 @@ function _sportBindExerciceSeance(exIndex) {
         btn.addEventListener('click', () => {
             const sIndex = parseInt(btn.dataset.sIndex, 10);
             _sportValiderSerie(exIndex, sIndex);
+        });
+    });
+
+    document.querySelectorAll(`#sport-seance-exercice-${exIndex} .sport-seance-delete-btn`).forEach(btn => {
+        btn.addEventListener('click', () => {
+            const sIndex = parseInt(btn.dataset.sIndex, 10);
+            _sportSupprimerSerie(exIndex, sIndex);
         });
     });
 
@@ -1203,6 +1276,19 @@ function _sportAjouterSerie(exIndex) {
         durationSeconds: derniere?.durationSeconds ?? null,
         restSeconds    : derniere?.restSeconds ?? 60
     });
+    _sportRenderEcranSeance();
+}
+
+// ── Suppression d'une série non validée : retrait en mémoire uniquement
+// (une série non cochée n'a jamais de logId en base) puis renumérotation
+// séquentielle des séries restantes de l'exercice.
+function _sportSupprimerSerie(exIndex, sIndex) {
+    const ex = _sportSeanceActive.exercices[exIndex];
+    if (ex.series[sIndex].completed || ex.series.length <= 1) return;
+
+    ex.series.splice(sIndex, 1);
+    ex.series.forEach((s, i) => { s.setNumber = i + 1; });
+
     _sportRenderEcranSeance();
 }
 
@@ -1310,7 +1396,7 @@ async function _sportTerminerSeance() {
     _sportFermerEcranSeance();
 }
 
-// ── Nettoyage et retour à la liste des routines ──
+// ── Nettoyage et retour au dashboard (stats à jour après la séance) ──
 function _sportFermerEcranSeance() {
     if (_sportSeanceTimerInterval) {
         clearInterval(_sportSeanceTimerInterval);
@@ -1318,7 +1404,9 @@ function _sportFermerEcranSeance() {
     }
     _sportReposFinTimestamps = {};
     _sportSeanceActive = null;
-    _sportChargerListeRoutines();
+    _sportSwitchSection('dashboard');
+    _sportChargerDashboardStats();
+    chargerSportStatsWidget();
 }
 
 // ── Info simple via modal global (esprit taches.js, sans confirm()) ──
@@ -1327,7 +1415,7 @@ function _sportOuvrirConfirmationInfo(texte) {
     document.body.classList.add('modal-open');
     history.pushState({ modalOpen: true }, '', '');
 
-    document.getElementById('modal-title').textContent = 'Information';
+        document.getElementById('modal-title').textContent = 'Information';
     document.getElementById('modal-body').innerHTML = `
         <p style="color:#333;font-size:15px;margin-bottom:20px">${_sportEchapper(texte)}</p>
         <div class="modal-actions">
@@ -1336,7 +1424,7 @@ function _sportOuvrirConfirmationInfo(texte) {
     document.getElementById('sport-modal-info-ok').onclick = () => closeModal();
 }
 
-// ── Phrases d'encouragement (widget colonne droite) ──
+// ── Phrases d'encouragement (widget colonne droite, si aucune séance) ──
 const SPORT_PHRASES_ENCOURAGEMENT = [
     "Chaque séance compte, même la plus courte. Lancez-vous !",
     "Votre progression commence par un premier pas.",
@@ -1345,11 +1433,41 @@ const SPORT_PHRASES_ENCOURAGEMENT = [
     "Votre corps vous remerciera pour chaque effort, même petit."
 ];
 
+const SPORT_ICONE_TROPHEE = `
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 21h8"></path>
+        <path d="M12 17v4"></path>
+        <path d="M7 4h10v5a5 5 0 0 1-10 0V4z"></path>
+        <path d="M7 5H5a2 2 0 0 0 0 4h1"></path>
+        <path d="M17 5h2a2 2 0 0 1 0 4h-1"></path>
+    </svg>
+`;
+
 // ── Widget Sport Stats (colonne droite, global) ──
-function chargerSportStatsWidget() {
+// Si aucune séance terminée : phrase d'encouragement aléatoire (état initial).
+// Sinon : nom/date/stats de la dernière séance terminée + icône trophée
+// si au moins un exercice a battu son record personnel sur cette séance.
+async function chargerSportStatsWidget() {
     const zone = document.getElementById('sport-stats-widget');
     if (!zone) return;
 
+    try {
+        const r = await fetch('/api/sport/dashboard-stats', { headers: _sportAuthHeaders() });
+        const d = await r.json();
+
+        if (!d.success || !d.derniere_seance) {
+            _sportRenderWidgetPhraseAleatoire(zone);
+            return;
+        }
+
+        _sportRenderWidgetDerniereSeance(zone, d.derniere_seance);
+    } catch (err) {
+        console.error('[SPORT] chargerSportStatsWidget :', err.message);
+        _sportRenderWidgetPhraseAleatoire(zone);
+    }
+}
+
+function _sportRenderWidgetPhraseAleatoire(zone) {
     const phrase = SPORT_PHRASES_ENCOURAGEMENT[
         Math.floor(Math.random() * SPORT_PHRASES_ENCOURAGEMENT.length)
     ];
@@ -1362,5 +1480,36 @@ function chargerSportStatsWidget() {
             </button>
         </div>
         <p class="sport-stats-text">${phrase}</p>
+    `;
+}
+
+function _sportRenderWidgetDerniereSeance(zone, seance) {
+    const dateTexte = _sportFormatDateCourte(seance.date_end || seance.date_start);
+
+    zone.innerHTML = `
+        <div class="sport-stats-header">
+            <h3 class="sport-stats-title">${SPORT_ICONE_DUMBBELL} Sport</h3>
+            <button class="sport-stats-arrow" onclick="switchTab('sport')" title="Aller au module Sport">
+                ${SPORT_ICONE_FLECHE}
+            </button>
+        </div>
+        <p class="sport-stats-text">
+            <strong>${_sportEchapper(seance.workout_name)}</strong> — ${dateTexte}
+            ${seance.record_battu ? ` ${SPORT_ICONE_TROPHEE} Nouveau record !` : ''}
+        </p>
+        <div class="sport-stats-row">
+            <div class="sport-stat">
+                <div class="sport-stat-val">${_sportFormatDureeLongue(seance.dureeSecondes)}</div>
+                <div class="sport-stat-lbl">Durée</div>
+            </div>
+            <div class="sport-stat">
+                <div class="sport-stat-val">${seance.volumeKg} kg</div>
+                <div class="sport-stat-lbl">Volume</div>
+            </div>
+            <div class="sport-stat">
+                <div class="sport-stat-val">${seance.nbSeries}</div>
+                <div class="sport-stat-lbl">Séries</div>
+            </div>
+        </div>
     `;
 }
