@@ -761,7 +761,7 @@ function _sportOuvrirFormulaireAjoutExercice(exercice) {
             ${estDuree ? `
             <div class="sport-routine-exercice-edit-champs" style="margin:16px 0">
                 <input type="number" id="sport-ajout-duree" value="20" min="1" placeholder="Durée (min)">
-                                <span>min</span>
+                <span>min</span>
             </div>` : `
             <div class="sport-routine-exercice-edit-champs" style="margin:16px 0">
                 <input type="number" id="sport-ajout-sets" value="3" min="1" placeholder="Séries">
@@ -1169,7 +1169,7 @@ function _sportLancerReposEntreSeries(secondesRepos) {
 function _sportConfirmerFinSeance() {
     _sportOuvrirModalChoix(
         'Terminer la séance',
-        'Voulez-vous terminer cette séance (elle sera enregistrée) ou l\'abandonner (elle sera aussi enregistrée mais marquée comme abandonnée) ?',
+        'Voulez-vous terminer cette séance (elle sera enregistrée) ou l\'abandonner (elle ne sera pas enregistrée) ?',
         'Terminer',
         'Abandonner',
         () => _sportCloturerSeance('completed'),
@@ -1177,15 +1177,24 @@ function _sportConfirmerFinSeance() {
     );
 }
 
+// Terminer : clôture normale (status = completed) via PUT.
+// Abandonner : suppression complète de la séance et de ses logs via DELETE
+// (aucun enregistrement conservé en base pour une séance abandonnée).
 async function _sportCloturerSeance(status) {
     clearInterval(_sportSeanceChronoInterval);
     clearInterval(_sportSeanceReposInterval);
 
     try {
-        await fetch(`/api/sport/sessions/${_sportSeanceActive.id}`, {
-            method: 'PUT', headers: _sportAuthHeaders(), body: JSON.stringify({ status })
-        });
-        } catch (err) {
+        if (status === 'abandoned') {
+            await fetch(`/api/sport/sessions/${_sportSeanceActive.id}`, {
+                method: 'DELETE', headers: _sportAuthHeaders()
+            });
+        } else {
+            await fetch(`/api/sport/sessions/${_sportSeanceActive.id}`, {
+                method: 'PUT', headers: _sportAuthHeaders(), body: JSON.stringify({ status })
+            });
+        }
+    } catch (err) {
         console.error('[SPORT] cloturerSeance :', err.message);
     }
 
