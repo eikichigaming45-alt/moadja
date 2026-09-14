@@ -911,6 +911,12 @@
     justify-content: center;
     flex-shrink: 0;
 }
+/* Bloc titre + date : flex:1 pour occuper l'espace restant et
+   pousser le bouton de suppression tout à droite du header. */
+.sport-seance-hevy-header-info {
+    flex: 1;
+    min-width: 0;
+}
 .sport-seance-hevy-titre {
     font-size: 17px;
     font-weight: 800;
@@ -921,6 +927,35 @@
     color: #9ca3af;
     font-weight: 600;
     margin-top: 2px;
+}
+
+/* Bouton de suppression SVG (remplace l'ancien emoji 🗑️).
+   Cercle discret, aligné à droite via margin-left:auto (ceinture
+   et bretelles avec le flex:1 du bloc info ci-dessus), hover rouge
+   cohérent avec .sport-seance-delete-btn / .sport-routine-btn-suppr-routine. */
+.sport-seance-hevy-btn-suppr {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.06);
+    color: #ef4444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-left: auto;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+.sport-seance-hevy-btn-suppr svg {
+    width: 15px;
+    height: 15px;
+}
+.sport-seance-hevy-btn-suppr:hover {
+    background: rgba(239, 68, 68, 0.16);
+    border-color: rgba(239, 68, 68, 0.4);
+    transform: translateY(-1px);
 }
 
 .sport-seance-hevy-stats {

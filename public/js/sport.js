@@ -23,6 +23,17 @@ const SPORT_ICONE_CHECK = `
     </svg>
 `;
 
+// Icône poubelle épurée (remplace l'emoji 🗑️ sur la carte de séance "façon Hevy").
+const SPORT_ICONE_POUBELLE = `
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="3 6 5 6 21 6"></polyline>
+        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+        <path d="M10 11v6"></path>
+        <path d="M14 11v6"></path>
+        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+    </svg>
+`;
+
 const SPORT_MAX_EXERCICES_APERCU = 5;
 
 let _sportSectionActive = 'dashboard';
@@ -137,7 +148,7 @@ function _sportRenderCarteSeanceHevy(s) {
                     <div class="sport-seance-hevy-titre">${_sportEchapper(s.workout_name)}</div>
                     <div class="sport-seance-hevy-date">${dateTexte}</div>
                 </div>
-                <button class="sport-seance-hevy-btn-suppr" data-session-id="${s.id}" title="Supprimer la séance">🗑️</button>
+                <button class="sport-seance-hevy-btn-suppr" data-session-id="${s.id}" title="Supprimer la séance">${SPORT_ICONE_POUBELLE}</button>
             </div>
 
             <div class="sport-seance-hevy-stats">
@@ -395,7 +406,7 @@ function _sportRenderDetailRoutine(workout, jour) {
         <div class="sport-card">
             <div class="sport-routine-detail-header">
                 <button class="sport-routine-btn-retour" onclick="_sportChargerListeRoutines()">‹ Retour</button>
-                <button class="sport-routine-btn-suppr-routine" data-workout-id="${workout.id}">🗑️ Supprimer la routine</button>
+                <button class="sport-routine-btn-suppr-routine" data-workout-id="${workout.id}">${SPORT_ICONE_POUBELLE} Supprimer la routine</button>
             </div>
             <div class="sport-routine-detail-nom">${_sportEchapper(workout.name)}</div>
             <button class="sport-cta-btn" onclick="_sportDemarrerSeance(${workout.id})">
@@ -421,12 +432,12 @@ function _sportRenderDetailRoutine(workout, jour) {
                                     data-poids="${ex.target_weight_kg != null ? ex.target_weight_kg : ''}"
                                     data-repos="${Number.isInteger(ex.target_rest_seconds) ? ex.target_rest_seconds : ''}"
                                     data-nom="${_sportEchapper(ex.exercise_name)}" title="Modifier">✏️</button>
-                            <button class="sport-routine-exercice-btn-del" data-exercice-id="${ex.id}" title="Supprimer">🗑️</button>
+                            <button class="sport-routine-exercice-btn-del" data-exercice-id="${ex.id}" title="Supprimer">${SPORT_ICONE_POUBELLE}</button>
                         </div>
                     `).join('')}
                 </div>
             `}
-            <button class="sport-cta-btn" style="margin-top:16px" onclick="_sportOuvrirSelecteurExercice()">
+                        <button class="sport-cta-btn" style="margin-top:16px" onclick="_sportOuvrirSelecteurExercice()">
                 + Ajouter un exercice
             </button>
         </div>
@@ -878,7 +889,7 @@ async function _sportReprendreSeance(session) {
             const nbLogsExercice = session.logs.filter(l => l.wger_exercise_id === ex.wger_exercise_id).length;
             const cible = Number.isInteger(ex.target_duration_seconds) ? 1 : ex.target_sets;
             return nbLogsExercice < cible;
-        });
+                });
         if (_sportSeanceIndexCourant === -1) _sportSeanceIndexCourant = 0;
 
         _sportRenderEcranSeance();
@@ -994,6 +1005,8 @@ function _sportRenderExerciceCourant() {
     document.getElementById('sport-seance-btn-next')?.addEventListener('click', () => {
         if (_sportSeanceIndexCourant < _sportSeanceExercices.length - 1) { _sportSeanceIndexCourant++; _sportRenderEcranSeance(); }
     });
+
+    _sportBrancherValidationExerciceCourant();
 }
 
 // ── Formulaire "musculation" : une ligne par série (reps + poids + coche) ──
@@ -1087,7 +1100,6 @@ async function _sportValiderLogSerie(ex, setNumber) {
             _sportSeanceActive.logs.push(d.log);
             _sportLancerReposEntreSeries(ex.target_rest_seconds || 60);
             _sportRenderExerciceCourant();
-            _sportBrancherValidationExerciceCourant();
         }
     } catch (err) {
         console.error('[SPORT] validerLogSerie :', err.message);
@@ -1116,7 +1128,6 @@ async function _sportValiderLogDuree(ex) {
         if (d.success) {
             _sportSeanceActive.logs.push(d.log);
             _sportRenderExerciceCourant();
-            _sportBrancherValidationExerciceCourant();
         }
     } catch (err) {
         console.error('[SPORT] validerLogDuree :', err.message);
@@ -1166,7 +1177,7 @@ async function _sportCloturerSeance(status) {
         await fetch(`/api/sport/sessions/${_sportSeanceActive.id}`, {
             method: 'PUT', headers: _sportAuthHeaders(), body: JSON.stringify({ status })
         });
-    } catch (err) {
+        } catch (err) {
         console.error('[SPORT] cloturerSeance :', err.message);
     }
 
