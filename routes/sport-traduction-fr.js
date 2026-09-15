@@ -1,16 +1,15 @@
 // ============================================================
 // routes/sport-traduction-fr.js
 // Traductions FR des exercices du catalogue, par catégorie.
-// Valeur "null" = doublon masqué (fiche identique conservée
-// ailleurs, en priorité celle avec une image).
-// Clé absente = exercice non traduit, affiché tel quel.
+// Valeur "null" = doublon masqué (n'apparaîtra pas dans la liste).
 // ============================================================
 
 const SPORT_TRADUCTION_FR = {
 
     // ── 1. Abdominaux ──
     'Plank'                                  : { nom: 'Gainage (Planche)',                  type: 'duree'  },
-    'Front Plank'                            : null,
+    'Plank (Планка)'                         : null, // Masqué
+    'Front Plank'                            : null, // Masqué
     'Side Plank'                             : { nom: 'Gainage latéral',                    type: 'duree'  },
     'High plank'                             : { nom: 'Gainage haut (bras tendus)',         type: 'duree'  },
     'Side plank right'                       : { nom: 'Gainage latéral (droite)',           type: 'duree'  },
@@ -254,7 +253,7 @@ const SPORT_TRADUCTION_FR = {
     'Pendelay Rows'                                  : { nom: 'Rowing Pendlay',                               type: 'series' },
     'Prone Scapular Retraction - Arms at Side'       : { nom: 'Rétraction scapulaire à plat ventre',          type: 'series' },
     'Pull-ups'                                       : { nom: 'Tractions',                                    type: 'series' },
-    'Pull Ups on Machine'                            : { nom: 'Tractions assistées (machine)',                type: 'series' },
+        'Pull Ups on Machine'                            : { nom: 'Tractions assistées (machine)',                type: 'series' },
     'Rack Deadlift'                                  : { nom: 'Soulevé de terre partiel',                     type: 'series' },
     'Renegade Row'                                   : { nom: 'Rowing renégat',                               type: 'series' },
     'Row'                                            : { nom: 'Rowing',                                       type: 'series' },
@@ -264,7 +263,7 @@ const SPORT_TRADUCTION_FR = {
     'Front Wood Chop'                                : { nom: 'Rotation du buste avant',                      type: 'series' },
     'Shotgun Row'                                    : { nom: 'Rowing unilatéral debout',                     type: 'series' },
     'Straight-arm Pull Down (bar Attachment)'        : { nom: 'Tirage bras tendus (barre)',                   type: 'series' },
-        'Straight-arm Pull Down (rope Attachment)'       : { nom: 'Tirage bras tendus (corde)',                   type: 'series' },
+    'Straight-arm Pull Down (rope Attachment)'       : { nom: 'Tirage bras tendus (corde)',                   type: 'series' },
     'Superman'                                       : { nom: 'Superman',                                     type: 'series' },
     'Rowing with TRX band'                           : { nom: 'Rowing avec bande TRX',                        type: 'series' },
     'Underhand Lat Pull Down'                        : { nom: 'Tirage vertical supination',                   type: 'series' },
@@ -411,13 +410,13 @@ const SPORT_TRADUCTION_FR = {
     'Run - Interval Training'                : { nom: 'Course fractionnée',        type: 'duree'  },
     'Run - Treadmill'                        : { nom: 'Course sur tapis',          type: 'duree'  },
     'Skipping - Standard'                    : { nom: 'Corde à sauter',            type: 'duree'  },
-    'Stationary Bike'                        : null,
+    'Stationary Bike'                        : null, // Masqué
     'Zone 2 Running'                         : { nom: 'Course endurance',          type: 'duree'  },
     'Suspended crossess'                     : { nom: 'Croisés suspendus',         type: 'series' },
     'Swimming 50m sprints'                   : { nom: 'Natation (sprints 50m)',    type: 'duree'  },
     'Elliptical'                             : { nom: 'Vélo elliptique',           type: 'duree'  },
     'High knees'                             : { nom: 'Montées de genoux',         type: 'series' },
-    'Jump rope: basic jumps'                 : null,
+    'Jump rope: basic jumps'                 : null, // Masqué
     'Bag training'                           : { nom: 'Sac de frappe',             type: 'duree'  },
     'Rowing Machine'                         : { nom: 'Rameur',                    type: 'duree'  },
     'Walking'                                : { nom: 'Marche',                    type: 'duree'  },
@@ -425,7 +424,7 @@ const SPORT_TRADUCTION_FR = {
     'Cycling cardio session'                 : { nom: 'Séance cardio vélo',        type: 'duree'  },
     'Talons fesses'                          : { nom: 'Talons fesses',             type: 'series' },
     'Stationary bike cardio'                 : { nom: 'Vélo RPM',                  type: 'duree'  },
-    'Jumping Jack HD'                        : null,
+    'Jumping Jack HD'                        : null, // Masqué
     'Jumping Jacks (Джампинг-Джек)'          : { nom: 'Jumping Jack',              type: 'duree'  },
     'High Knee Skips HD'                     : { nom: 'Montées de genoux',         type: 'series' },
 
@@ -502,7 +501,7 @@ const SPORT_TRADUCTION_FR = {
     'Wide Push-Up'                           : { nom: 'Pompes prise large',                  type: 'series' },
     'Box Handstand Push-up'                  : { nom: 'Pompes verticales sur box',           type: 'series' },
 
-        // ── 7. Jambes (Squats) ──
+    // ── 7. Jambes (Squats) ──
     'Barbell Hack Squats'                    : { nom: 'Squat hack (barre)',              type: 'series' },
     'Braced Squat'                           : { nom: 'Squat avec appui',                type: 'series' },
     'Dumbbell Goblet Squat'                  : { nom: 'Squat gobelet (haltère)',         type: 'series' },
@@ -511,11 +510,11 @@ const SPORT_TRADUCTION_FR = {
     'Squats on Multipress'                   : { nom: 'Squat au multipress',            type: 'series' },
     'Low Box Squat - Wide Stance'            : { nom: 'Squat sur box (jambes écartées)', type: 'series' },
     'Overhead Squat'                         : { nom: 'Squat overhead',                 type: 'series' },
-    'Pistol Squat'                           : { nom: 'Squat pistolet',                 type: 'series' },
+        'Pistol Squat'                           : { nom: 'Squat pistolet',                 type: 'series' },
     'Squat Jumps'                            : { nom: 'Squats sautés',                  type: 'series' },
-    'Squats'                                 : null,
-    'Squats (Приседания)'                    : null, // Doublon masqué (cyrillique)
-    'Wall Squat (Приседание у стены)'        : null, // Doublon masqué (cyrillique)
+    'Squats'                                 : { nom: 'Squat classique',                type: 'series' },
+    'Squats (Приседания)'                    : null, // Masqué
+    'Wall Squat (Приседание у стены)'        : null, // Masqué
     'Squat Thrust'                           : { nom: 'Squat thrust',                   type: 'series' },
     'Sumo Squats'                            : { nom: 'Squat sumo',                     type: 'series' },
     'Wall Squat'                             : { nom: 'Squat contre le mur',            type: 'duree'  },
@@ -526,7 +525,7 @@ const SPORT_TRADUCTION_FR = {
     'Bulgarian split squats right'           : { nom: 'Squat bulgare (droite)',         type: 'series' },
     'Split squats left'                      : { nom: 'Squat fendu (gauche)',           type: 'series' },
     'Split squats right'                     : { nom: 'Squat fendu (droite)',           type: 'series' },
-    'Pistol squats right'                    : null,
+    'Pistol squats right'                    : null, // Masqué
     'Side Slides + Squats'                   : { nom: 'Glissades latérales + squats',   type: 'series' },
     'Dragon squat'                           : { nom: 'Squat dragon',                   type: 'series' },
     'Prisoner Squat'                         : { nom: 'Squat prisonnier',               type: 'series' },
@@ -634,7 +633,7 @@ const SPORT_TRADUCTION_FR = {
     'High-Cable Lateral Raise'                       : { nom: 'Élévation latérale poulie haute',             type: 'series' },
     'YTWL Exercise'                                  : { nom: 'Exercice Y-T-W-L',                            type: 'series' },
     'Overhead Barbell Press'                         : { nom: 'Développé militaire (barre)',                 type: 'series' },
-    'Clean and Press'                                : { nom: 'Épaulé-développé',                            type: 'series' },
+        'Clean and Press'                                : { nom: 'Épaulé-développé',                            type: 'series' },
     'Isometria alle parallele'                       : { nom: 'Isométrie aux barres parallèles',             type: 'duree'  },
     'Tuck planche'                                   : { nom: 'Tuck planche',                                type: 'duree'  },
     'Extreme Shoulder Stretch'                       : { nom: 'Étirement intense des épaules',               type: 'duree'  },
