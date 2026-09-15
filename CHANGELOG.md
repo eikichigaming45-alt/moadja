@@ -1,10 +1,21 @@
 ## MoaDja
 
+## v1.92.15 — 15 septembre 2026
+- Amélioration du module Sport pour les exercices au temps (comme le gainage ou le cardio) : il est désormais possible d'indiquer un nombre de séries, et de régler la durée très précisément en minutes et secondes.
+- Les champs de saisie des exercices sont désormais vides par défaut lors de l'ajout, pour faciliter votre propre personnalisation.
+- Nettoyage du catalogue d'exercices : suppression de nombreux doublons pour rendre la liste plus claire.
+
+---
+
 ## v1.92.14 — 14 septembre 2026
 - Correction de l'espacement dans le module Sport : le titre "Dernières séances" était collé au bloc au-dessus, un espace a été ajouté pour plus de clarté.
 
+---
+
 ## v1.92.13 — 14 septembre 2026
 - Ajustement du plan alimentaire généré automatiquement : petit-déjeuner plus réaliste (pain complet, biscottes, œufs, yaourt, fruit...) sans légumes cuits, et meilleure rotation des protéines et ingrédients pour éviter les répétitions sur deux jours consécutifs.
+
+---
 
 ## v1.92.12 — 14 septembre 2026
 - Correction du profil, onglet Santé : les champs Allergies, Aliments exclus, Traitements en cours, Diabète et Cholestérol peuvent désormais être réellement modifiés ou vidés (ils revenaient automatiquement à leur ancienne valeur auparavant).
@@ -23,7 +34,6 @@
 - Nouvel affichage plus clair et plus lisible de l'écran de séance en cours (numéro de série, champs de saisie, bouton de validation).
 
 ---
-
 
 ## v1.92.7 — 14 septembre 2026
 - Ajout de la suppression d'une séance directement depuis le tableau de bord, avec une demande de confirmation avant toute suppression.
