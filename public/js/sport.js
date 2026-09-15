@@ -23,7 +23,7 @@ const SPORT_ICONE_CHECK = `
     </svg>
 `;
 
-// Icône poubelle épurée (remplace l'emoji 🗑️ sur la carte de récapitulatif de séance).
+// Icône poubelle épurée
 const SPORT_ICONE_POUBELLE = `
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="3 6 5 6 21 6"></polyline>
@@ -35,7 +35,6 @@ const SPORT_ICONE_POUBELLE = `
 `;
 
 const SPORT_MAX_EXERCICES_APERCU = 5;
-
 let _sportSectionActive = 'dashboard';
 
 // ── Construction initiale ──
@@ -64,11 +63,9 @@ function chargerSportDashboard() {
     _sportInitVerifSeanceActive();
 }
 
-// ── Stats réelles du dashboard (5 dernières séances) ──
 async function _sportChargerDashboardStats() {
     const zone = document.getElementById('sport-section-dashboard');
     if (!zone) return;
-
     try {
         const r = await fetch('/api/sport/dashboard-stats', { headers: _sportAuthHeaders() });
         const d = await r.json();
@@ -77,7 +74,6 @@ async function _sportChargerDashboardStats() {
         console.error('[SPORT] chargerDashboardStats :', err.message);
         zone.innerHTML = _sportRenderDashboard([]);
     }
-
     zone.querySelectorAll('.sport-seance-recap-btn-suppr').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -86,7 +82,6 @@ async function _sportChargerDashboardStats() {
     });
 }
 
-// ── Suppression d'une séance depuis le dashboard (message iso taches.js) ──
 function _sportConfirmerSuppressionSeanceDashboard(sessionId) {
     _sportOuvrirConfirmationSuppression(async () => {
         try {
@@ -101,7 +96,6 @@ function _sportConfirmerSuppressionSeanceDashboard(sessionId) {
 
 function _sportRenderDashboard(dernieresSeances) {
     const aDesSeances = dernieresSeances && dernieresSeances.length > 0;
-
     return `
         <div class="sport-card">
             <div class="sport-empty-state">
@@ -120,7 +114,6 @@ function _sportRenderDashboard(dernieresSeances) {
                 </button>
             </div>
         </div>
-
         <div class="sport-section-title" style="padding:0 4px">Dernières séances</div>
         ${aDesSeances ? `
             ${dernieresSeances.map(s => _sportRenderCarteSeanceRecap(s)).join('')}
@@ -132,14 +125,12 @@ function _sportRenderDashboard(dernieresSeances) {
     `;
 }
 
-// ── Carte de récapitulatif de séance : titre, Durée/Volume/Records, liste consolidée d'exercices ──
 function _sportRenderCarteSeanceRecap(s) {
     const dateTexte    = _sportFormatDateCourte(s.date_end || s.date_start);
     const exercices    = s.exercices || [];
     const apercu       = exercices.slice(0, SPORT_MAX_EXERCICES_APERCU);
     const reste        = exercices.length - apercu.length;
-    const nbRecords     = Number.isInteger(s.nb_records) ? s.nb_records : 0;
-
+    const nbRecords    = Number.isInteger(s.nb_records) ? s.nb_records : 0;
     return `
         <div class="sport-card sport-seance-carte-recap" id="sport-seance-carte-${s.id}">
             <div class="sport-seance-recap-header">
@@ -150,7 +141,6 @@ function _sportRenderCarteSeanceRecap(s) {
                 </div>
                 <button class="sport-seance-recap-btn-suppr" data-session-id="${s.id}" title="Supprimer la séance">${SPORT_ICONE_POUBELLE}</button>
             </div>
-
             <div class="sport-seance-recap-stats">
                 <div class="sport-seance-recap-stat">
                     <span class="sport-seance-recap-stat-label">Durée</span>
@@ -167,7 +157,6 @@ function _sportRenderCarteSeanceRecap(s) {
                     </span>
                 </div>
             </div>
-
             ${apercu.length ? `
                 <div class="sport-seance-recap-liste">
                     ${apercu.map(e => `
@@ -183,22 +172,17 @@ function _sportRenderCarteSeanceRecap(s) {
     `;
 }
 
-// ── Changement de section ──
 function _sportSwitchSection(section) {
     _sportSectionActive = section;
-
     document.querySelectorAll('.sport-pill').forEach(p => {
         p.classList.toggle('active', p.dataset.section === section);
     });
     document.querySelectorAll('.sport-section').forEach(s => { s.style.display = 'none'; });
-
     const cible = document.getElementById(`sport-section-${section}`);
     if (cible) cible.style.display = 'block';
-
     if (section === 'routines') _sportChargerListeRoutines();
 }
 
-// ── Conversion durée min ↔ sec (conservé pour utilité éventuelle) ──
 function _sportSecondesVersMinutes(secondes) {
     if (!Number.isInteger(secondes)) return 0;
     return Math.round(secondes / 60);
@@ -208,12 +192,11 @@ function _sportMinutesVersSecondes(minutes) {
     return minutes * 60;
 }
 
-// ── Modals génériques (réutilisent overlay/modal global) ──
+// ── Modals génériques ──
 function _sportOuvrirConfirmationSuppression(onConfirm) {
     document.getElementById('overlay').classList.add('on');
     document.body.classList.add('modal-open');
     history.pushState({ modalOpen: true }, '', '');
-
     document.getElementById('modal-title').textContent = 'Confirmation';
     document.getElementById('modal-body').innerHTML = `
         <p style="color:#333;font-size:15px;margin-bottom:20px;text-align:center">Confirmer la suppression ?</p>
@@ -221,7 +204,6 @@ function _sportOuvrirConfirmationSuppression(onConfirm) {
             <button class="btn-delete" id="sport-modal-suppr-oui">Confirmer</button>
             <button class="btn-cancel" id="sport-modal-suppr-non">Annuler</button>
         </div>`;
-
     document.getElementById('sport-modal-suppr-oui').onclick = async () => { closeModal(); await onConfirm(); };
     document.getElementById('sport-modal-suppr-non').onclick = () => closeModal();
 }
@@ -230,7 +212,6 @@ function _sportOuvrirModalChoix(titre, texte, libelleOui, libelleNon, onOui, onN
     document.getElementById('overlay').classList.add('on');
     document.body.classList.add('modal-open');
     history.pushState({ modalOpen: true }, '', '');
-
     document.getElementById('modal-title').textContent = titre;
     document.getElementById('modal-body').innerHTML = `
         <p style="color:#333;font-size:15px;margin-bottom:20px">${texte}</p>
@@ -238,7 +219,6 @@ function _sportOuvrirModalChoix(titre, texte, libelleOui, libelleNon, onOui, onN
             <button class="btn-save" id="sport-modal-choix-oui">${libelleOui}</button>
             <button class="btn-cancel" id="sport-modal-choix-non">${libelleNon}</button>
         </div>`;
-
     document.getElementById('sport-modal-choix-oui').onclick = async () => { closeModal(); await onOui(); };
     document.getElementById('sport-modal-choix-non').onclick = async () => { closeModal(); if (onNon) await onNon(); };
 }
@@ -247,7 +227,6 @@ function _sportOuvrirConfirmationInfo(texte) {
     document.getElementById('overlay').classList.add('on');
     document.body.classList.add('modal-open');
     history.pushState({ modalOpen: true }, '', '');
-
     document.getElementById('modal-title').textContent = 'Information';
     document.getElementById('modal-body').innerHTML = `
         <p style="color:#333;font-size:15px;margin-bottom:20px">${_sportEchapper(texte)}</p>
@@ -261,14 +240,12 @@ function _sportOuvrirConfirmationInfo(texte) {
 // ── MES ROUTINES ──
 // ══════════════════════════════════════════════════════════════
 
-let _sportRoutineDetailActive = null; // { workoutId, dayId }
+let _sportRoutineDetailActive = null;
 
 async function _sportChargerListeRoutines() {
     const zone = document.getElementById('sport-routines-zone');
     if (!zone) return;
-
     zone.innerHTML = `<p class="sport-catalogue-loading">Chargement des routines…</p>`;
-
     try {
         const r = await fetch('/api/sport/workouts', { headers: _sportAuthHeaders() });
         const d = await r.json();
@@ -286,21 +263,16 @@ async function _sportChargerListeRoutines() {
 function _sportRenderListeRoutines(routines) {
     const zone = document.getElementById('sport-routines-zone');
     if (!zone) return;
-
     zone.innerHTML = `
         <div class="sport-card">
             <div class="sport-routine-creation">
-                <input type="text" id="sport-routine-nouveau-nom" class="sport-catalogue-search"
-                       placeholder="Nom de la nouvelle routine…" autocomplete="off">
+                <input type="text" id="sport-routine-nouveau-nom" class="sport-catalogue-search" placeholder="Nom de la nouvelle routine…" autocomplete="off">
                 <button class="sport-cta-btn" onclick="_sportCreerRoutine()">+ Créer une routine</button>
             </div>
             <div id="sport-routine-creation-msg" class="sport-routine-msg-erreur"></div>
         </div>
-
         ${!routines.length ? `
-            <div class="sport-card">
-                <p class="sport-empty-note">Aucune routine créée pour l'instant.</p>
-            </div>
+            <div class="sport-card"><p class="sport-empty-note">Aucune routine créée pour l'instant.</p></div>
         ` : `
             <div class="sport-routine-liste">
                 ${routines.map(w => `
@@ -315,45 +287,34 @@ function _sportRenderListeRoutines(routines) {
             </div>
         `}
     `;
-
     document.getElementById('sport-routine-nouveau-nom').addEventListener('keydown', (e) => {
         if (e.key === 'Enter') _sportCreerRoutine();
     });
 }
 
-// ── Création d'une routine (+ jour caché) ──
 async function _sportCreerRoutine() {
     const input = document.getElementById('sport-routine-nouveau-nom');
     const msg   = document.getElementById('sport-routine-creation-msg');
     const nom   = input?.value.trim();
-
     if (!nom) {
         if (msg) msg.textContent = 'Le nom de la routine est obligatoire.';
         return;
     }
     if (msg) msg.textContent = '';
-
     try {
-        const rWorkout = await fetch('/api/sport/workouts', {
-            method: 'POST', headers: _sportAuthHeaders(), body: JSON.stringify({ name: nom })
-        });
+        const rWorkout = await fetch('/api/sport/workouts', { method: 'POST', headers: _sportAuthHeaders(), body: JSON.stringify({ name: nom }) });
         const dWorkout = await rWorkout.json();
         if (!dWorkout.success) {
             if (msg) msg.textContent = 'Erreur : ' + (dWorkout.message || 'création impossible.');
             return;
         }
-
         const workoutId = dWorkout.workout.id;
-        const rDay = await fetch(`/api/sport/workouts/${workoutId}/days`, {
-            method: 'POST', headers: _sportAuthHeaders(),
-            body: JSON.stringify({ description: 'Exercices', day_order: 1 })
-        });
+        const rDay = await fetch(`/api/sport/workouts/${workoutId}/days`, { method: 'POST', headers: _sportAuthHeaders(), body: JSON.stringify({ description: 'Exercices', day_order: 1 }) });
         const dDay = await rDay.json();
         if (!dDay.success) {
-            if (msg) msg.textContent = 'Routine créée, mais erreur d\'initialisation. Contactez le support.';
+            if (msg) msg.textContent = 'Routine créée, mais erreur d\'initialisation.';
             return;
         }
-
         _sportChargerListeRoutines();
     } catch (err) {
         console.error('[SPORT] creerRoutine :', err.message);
@@ -361,13 +322,10 @@ async function _sportCreerRoutine() {
     }
 }
 
-// ── Détail d'une routine ──
 async function _sportOuvrirDetailRoutine(workoutId) {
     const zone = document.getElementById('sport-routines-zone');
     if (!zone) return;
-
     zone.innerHTML = `<p class="sport-catalogue-loading">Chargement de la routine…</p>`;
-
     try {
         const r = await fetch(`/api/sport/workouts/${workoutId}`, { headers: _sportAuthHeaders() });
         const d = await r.json();
@@ -375,7 +333,6 @@ async function _sportOuvrirDetailRoutine(workoutId) {
             zone.innerHTML = `<p class="sport-catalogue-loading">Erreur : routine introuvable.</p>`;
             return;
         }
-
         const workout = d.workout;
         const jour    = workout.days?.[0] || null;
         _sportRoutineDetailActive = { workoutId, dayId: jour?.id || null };
@@ -386,16 +343,18 @@ async function _sportOuvrirDetailRoutine(workoutId) {
     }
 }
 
-// Meta affichée par exercice : séries/reps ou durée, + poids cible et repos si renseignés.
+// Meta d'affichage avec Séries pour tout le monde
 function _sportFormaterMetaExercice(ex) {
     const estDuree = Number.isInteger(ex.target_duration_seconds);
     let base = "";
     if (estDuree) {
         const m = Math.floor(ex.target_duration_seconds / 60);
         const s = ex.target_duration_seconds % 60;
-        if (m > 0 && s > 0) base = `${m} min ${s} sec`;
-        else if (m > 0) base = `${m} min`;
-        else base = `${s} sec`;
+        let temps = "";
+        if (m > 0 && s > 0) temps = `${m} min ${s} sec`;
+        else if (m > 0) temps = `${m} min`;
+        else temps = `${s} sec`;
+        base = `${ex.target_sets || 1} séries × ${temps}`;
     } else {
         base = `${ex.target_sets} séries × ${ex.target_reps} reps`;
     }
@@ -408,7 +367,6 @@ function _sportFormaterMetaExercice(ex) {
 function _sportRenderDetailRoutine(workout, jour) {
     const zone      = document.getElementById('sport-routines-zone');
     const exercices = jour?.exercises || [];
-
     zone.innerHTML = `
         <div class="sport-card">
             <div class="sport-routine-detail-header">
@@ -420,7 +378,6 @@ function _sportRenderDetailRoutine(workout, jour) {
                 ${SPORT_ICONE_DUMBBELL} Commencer la routine
             </button>
         </div>
-
         <div class="sport-card">
             <div class="sport-section-title">Exercices</div>
             ${!exercices.length ? `
@@ -434,7 +391,7 @@ function _sportRenderDetailRoutine(workout, jour) {
                                 <div class="sport-routine-exercice-meta">${_sportFormaterMetaExercice(ex)}</div>
                             </div>
                             <button class="sport-routine-exercice-btn-edit" data-exercice-id="${ex.id}"
-                                    data-sets="${ex.target_sets}" data-reps="${ex.target_reps}"
+                                    data-sets="${ex.target_sets || ''}" data-reps="${ex.target_reps || ''}"
                                     data-duree="${Number.isInteger(ex.target_duration_seconds) ? ex.target_duration_seconds : ''}"
                                     data-poids="${ex.target_weight_kg != null ? ex.target_weight_kg : ''}"
                                     data-repos="${Number.isInteger(ex.target_rest_seconds) ? ex.target_rest_seconds : ''}"
@@ -474,7 +431,6 @@ function _sportRenderDetailRoutine(workout, jour) {
     });
 }
 
-// ── Suppression routine (depuis détail) ──
 function _sportConfirmerSuppressionRoutineDetail(workoutId) {
     _sportOuvrirConfirmationSuppression(async () => {
         try {
@@ -486,7 +442,6 @@ function _sportConfirmerSuppressionRoutineDetail(workoutId) {
     });
 }
 
-// ── Suppression d'un exercice ──
 function _sportConfirmerSuppressionExercice(exerciceId) {
     _sportOuvrirConfirmationSuppression(async () => {
         try {
@@ -509,17 +464,15 @@ function _sportEditerExercice(exerciceId, nom, setsActuel, repsActuel, dureeActu
         <div class="sport-routine-exercice-edit">
             <span class="sport-routine-exercice-edit-nom">${_sportEchapper(nom)}</span>
             <div class="sport-routine-exercice-edit-champs">
+                <input type="number" id="sport-edit-sets-${exerciceId}" value="${setsActuel || ''}" min="1" placeholder="Séries" style="width: 60px;">
+                <span class="sport-edit-icone-x">${SPORT_ICONE_X}</span>
                 ${estDuree ? `
-                    <input type="number" id="sport-edit-duree-m-${exerciceId}"
-                           value="${Math.floor(dureeActuelleSecondes / 60)}" min="0" placeholder="min" style="width: 60px;">
-                    <span>min</span>
-                    <input type="number" id="sport-edit-duree-s-${exerciceId}"
-                           value="${dureeActuelleSecondes % 60}" min="0" max="59" placeholder="sec" style="width: 60px;">
-                    <span>sec</span>
+                    <input type="number" id="sport-edit-duree-m-${exerciceId}" value="${dureeActuelleSecondes ? Math.floor(dureeActuelleSecondes / 60) : ''}" min="0" placeholder="min" style="width: 60px;">
+                    <span>m</span>
+                    <input type="number" id="sport-edit-duree-s-${exerciceId}" value="${dureeActuelleSecondes ? dureeActuelleSecondes % 60 : ''}" min="0" max="59" placeholder="sec" style="width: 60px;">
+                    <span>s</span>
                 ` : `
-                    <input type="number" id="sport-edit-sets-${exerciceId}" value="${setsActuel}" min="1" placeholder="Séries">
-                    <span class="sport-edit-icone-x">${SPORT_ICONE_X}</span>
-                    <input type="number" id="sport-edit-reps-${exerciceId}" value="${repsActuel}" min="1" placeholder="Reps">
+                    <input type="number" id="sport-edit-reps-${exerciceId}" value="${repsActuel || ''}" min="1" placeholder="Reps">
                 `}
             </div>
             ${!estDuree ? `
@@ -528,7 +481,7 @@ function _sportEditerExercice(exerciceId, nom, setsActuel, repsActuel, dureeActu
                 <span>kg</span>
             </div>` : ''}
             <div class="sport-routine-exercice-edit-champs">
-                <input type="number" id="sport-edit-repos-${exerciceId}" value="${reposActuelSecondes ?? 60}" min="0" placeholder="Repos">
+                <input type="number" id="sport-edit-repos-${exerciceId}" value="${reposActuelSecondes ?? ''}" min="0" placeholder="Repos">
                 <span>sec de repos</span>
             </div>
             <div class="sport-routine-exercice-edit-actions">
@@ -543,13 +496,13 @@ function _sportEditerExercice(exerciceId, nom, setsActuel, repsActuel, dureeActu
 
     document.getElementById(`sport-edit-save-${exerciceId}`).addEventListener('click', async () => {
         const body = {};
+        body.target_sets = parseInt(document.getElementById(`sport-edit-sets-${exerciceId}`).value, 10) || 1;
 
         if (estDuree) {
             const m = parseInt(document.getElementById(`sport-edit-duree-m-${exerciceId}`).value, 10) || 0;
             const s = parseInt(document.getElementById(`sport-edit-duree-s-${exerciceId}`).value, 10) || 0;
-            body.target_duration_seconds = (m * 60) + s || 30; // 30 sec par défaut si vide
+            body.target_duration_seconds = (m * 60) + s;
         } else {
-            body.target_sets = parseInt(document.getElementById(`sport-edit-sets-${exerciceId}`).value, 10) || 1;
             body.target_reps = parseInt(document.getElementById(`sport-edit-reps-${exerciceId}`).value, 10) || 1;
             const poidsInput = document.getElementById(`sport-edit-poids-${exerciceId}`).value;
             body.target_weight_kg = poidsInput !== '' ? parseFloat(poidsInput) : null;
@@ -769,24 +722,28 @@ function _sportOuvrirFormulaireAjoutExercice(exercice) {
                 <button class="sport-routine-btn-retour" onclick="_sportOuvrirSelecteurExercice()">‹ Retour</button>
             </div>
             <div class="sport-routine-detail-nom">${_sportEchapper(exercice.name)}</div>
-            ${estDuree ? `
+            
             <div class="sport-routine-exercice-edit-champs" style="margin:16px 0">
-                <input type="number" id="sport-ajout-duree-m" value="0" min="0" placeholder="min" style="width: 60px;">
-                <span>min</span>
-                <input type="number" id="sport-ajout-duree-s" value="30" min="0" max="59" placeholder="sec" style="width: 60px;">
-                <span>sec</span>
-            </div>` : `
-            <div class="sport-routine-exercice-edit-champs" style="margin:16px 0">
-                <input type="number" id="sport-ajout-sets" value="3" min="1" placeholder="Séries">
+                <input type="number" id="sport-ajout-sets" value="" min="1" placeholder="Séries" style="width: 60px;">
                 <span class="sport-edit-icone-x">${SPORT_ICONE_X}</span>
-                <input type="number" id="sport-ajout-reps" value="10" min="1" placeholder="Reps">
+                ${estDuree ? `
+                    <input type="number" id="sport-ajout-duree-m" value="" min="0" placeholder="min" style="width: 60px;">
+                    <span>m</span>
+                    <input type="number" id="sport-ajout-duree-s" value="" min="0" max="59" placeholder="sec" style="width: 60px;">
+                    <span>s</span>
+                ` : `
+                    <input type="number" id="sport-ajout-reps" value="" min="1" placeholder="Reps">
+                `}
             </div>
+
+            ${!estDuree ? `
             <div class="sport-routine-exercice-edit-champs" style="margin:0 0 16px">
                 <input type="number" step="0.5" id="sport-ajout-poids" min="0" placeholder="Poids cible (optionnel)">
                 <span>kg</span>
-            </div>`}
+            </div>` : ''}
+
             <div class="sport-routine-exercice-edit-champs" style="margin:0 0 16px">
-                <input type="number" id="sport-ajout-repos" value="30" min="0" placeholder="Repos">
+                <input type="number" id="sport-ajout-repos" value="" min="0" placeholder="Repos">
                 <span>sec de repos</span>
             </div>
             <div id="sport-ajout-msg" class="sport-routine-msg-erreur"></div>
@@ -810,20 +767,20 @@ async function _sportValiderAjoutExercice(wgerExerciseId, exerciseName, estDuree
     }
 
     const body = { wger_exercise_id: wgerExerciseId, exercise_name: exerciseName };
+    body.target_sets = parseInt(document.getElementById('sport-ajout-sets').value, 10) || 1;
 
     if (estDuree) {
         const m = parseInt(document.getElementById('sport-ajout-duree-m').value, 10) || 0;
         const s = parseInt(document.getElementById('sport-ajout-duree-s').value, 10) || 0;
-        body.target_duration_seconds = (m * 60) + s || 30;
+        body.target_duration_seconds = (m * 60) + s;
     } else {
-        body.target_sets = parseInt(document.getElementById('sport-ajout-sets').value, 10) || 3;
-        body.target_reps = parseInt(document.getElementById('sport-ajout-reps').value, 10) || 10;
+        body.target_reps = parseInt(document.getElementById('sport-ajout-reps').value, 10) || 1;
         const poidsInput = document.getElementById('sport-ajout-poids').value;
         body.target_weight_kg = poidsInput !== '' ? parseFloat(poidsInput) : null;
     }
 
     const reposInput = document.getElementById('sport-ajout-repos').value;
-    body.target_rest_seconds = reposInput !== '' ? parseInt(reposInput, 10) : 30;
+    body.target_rest_seconds = reposInput !== '' ? parseInt(reposInput, 10) : 60;
 
     try {
         const r = await fetch(`/api/sport/days/${_sportRoutineDetailActive.dayId}/exercises`, {
@@ -901,7 +858,7 @@ async function _sportReprendreSeance(session) {
 
         _sportSeanceIndexCourant = _sportSeanceExercices.findIndex(ex => {
             const nbLogsExercice = session.logs.filter(l => l.wger_exercise_id === ex.wger_exercise_id).length;
-            const cible = Number.isInteger(ex.target_duration_seconds) ? 1 : ex.target_sets;
+            const cible = ex.target_sets || 1;
             return nbLogsExercice < cible;
         });
         if (_sportSeanceIndexCourant === -1) _sportSeanceIndexCourant = 0;
@@ -947,9 +904,6 @@ async function _sportDemarrerSeance(workoutId) {
     }
 }
 
-// Écran plein cadre de la séance (remplace toute la zone #grid-sport).
-// Utilise les classes déjà existantes dans sport.css (sport-seance-header-top,
-// sport-seance-stats, sport-card) pour un rendu cohérent avec le reste du module.
 function _sportRenderEcranSeance() {
     const zoneGlobale = document.getElementById('grid-sport');
     if (!zoneGlobale || !_sportSeanceExercices.length) return;
@@ -1050,38 +1004,44 @@ function _sportRenderFormulaireSeries(ex, logsExistants) {
     `;
 }
 
-// ── Formulaire "cardio/durée" : une seule validation, champs min et sec ──
+// ── Formulaire "cardio/durée" : tableau par série avec min et sec ──
 function _sportRenderFormulaireDuree(ex, logsExistants) {
-    const logExistant = logsExistants[0] || null;
-    const totalSec = logExistant ? logExistant.duration_seconds : ex.target_duration_seconds;
-    const m = Math.floor(totalSec / 60);
-    const s = totalSec % 60;
+    const lignes = [];
+    const nbSets = ex.target_sets || 1;
+    
+    for (let i = 1; i <= nbSets; i++) {
+        const logExistant = logsExistants.find(l => l.set_number === i);
+        lignes.push({ numero: i, log: logExistant || null });
+    }
 
     return `
-        <div class="sport-routine-exercice-edit-champs" style="margin:16px 0">
-            <input type="number" id="sport-duree-realisee-m" value="${m}" min="0" placeholder="min" ${logExistant?.completed ? 'disabled' : ''} style="width: 60px;">
-            <span>min</span>
-            <input type="number" id="sport-duree-realisee-s" value="${s}" min="0" max="59" placeholder="sec" ${logExistant?.completed ? 'disabled' : ''} style="width: 60px;">
-            <span>sec</span>
+        <div class="sport-seance-table">
+            <div class="sport-seance-table-header" style="grid-template-columns: 40px 1fr 1fr 40px">
+                <span>Série</span><span>Min</span><span>Sec</span><span></span>
+            </div>
+            ${lignes.map(l => {
+                const totalSec = l.log ? l.log.duration_seconds : ex.target_duration_seconds;
+                const m = Math.floor(totalSec / 60);
+                const s = totalSec % 60;
+                return `
+                <div class="sport-seance-table-row ${l.log?.completed ? 'sport-seance-row-validee' : ''}" style="grid-template-columns: 40px 1fr 1fr 40px">
+                    <span class="sport-seance-serie-numero">${l.numero}</span>
+                    <input type="number" class="sport-seance-input" id="sport-duree-m-${l.numero}"
+                           value="${totalSec > 0 ? m : ''}" placeholder="m" ${l.log?.completed ? 'disabled' : ''}>
+                    <input type="number" class="sport-seance-input" id="sport-duree-s-${l.numero}"
+                           value="${totalSec > 0 ? s : ''}" placeholder="s" ${l.log?.completed ? 'disabled' : ''}>
+                    <button class="sport-seance-check-btn ${l.log?.completed ? 'active' : ''}"
+                            id="sport-duree-check-${l.numero}" ${l.log?.completed ? 'disabled' : ''}>${SPORT_ICONE_CHECK}</button>
+                </div>
+                `;
+            }).join('')}
         </div>
-        <div class="sport-routine-exercice-edit-champs" style="margin:0 0 16px">
-            <input type="number" step="0.1" id="sport-duree-distance" value="${logExistant?.distance_km ?? ''}"
-                   ${logExistant?.completed ? 'disabled' : ''} placeholder="Distance (optionnel)">
-            <span>km</span>
+        
+        <div class="sport-routine-exercice-edit-champs" style="margin:16px 0 0; justify-content:center;">
+            <input type="number" step="0.1" id="sport-duree-distance" value="${logsExistants[0]?.distance_km || ''}" placeholder="Dist. (km)" style="width: 80px;">
+            <input type="number" step="0.1" id="sport-duree-vitesse" value="${logsExistants[0]?.speed_kmh || ''}" placeholder="Vit. (km/h)" style="margin:0 8px; width: 80px;">
+            <input type="number" step="0.1" id="sport-duree-inclinaison" value="${logsExistants[0]?.incline_percent || ''}" placeholder="Incl. (%)" style="width: 80px;">
         </div>
-        <div class="sport-routine-exercice-edit-champs" style="margin:0 0 16px">
-            <input type="number" step="0.1" id="sport-duree-vitesse" value="${logExistant?.speed_kmh ?? ''}"
-                   ${logExistant?.completed ? 'disabled' : ''} placeholder="Vitesse (optionnel)">
-            <span>km/h</span>
-        </div>
-        <div class="sport-routine-exercice-edit-champs" style="margin:0 0 16px">
-            <input type="number" step="0.1" id="sport-duree-inclinaison" value="${logExistant?.incline_percent ?? ''}"
-                   ${logExistant?.completed ? 'disabled' : ''} placeholder="Inclinaison (optionnel)">
-            <span>%</span>
-        </div>
-        <button class="sport-cta-btn ${logExistant?.completed ? 'disabled' : ''}" id="sport-duree-valider" ${logExistant?.completed ? 'disabled' : ''}>
-            ${logExistant?.completed ? 'Déjà validé' : 'Valider l\'exercice'}
-        </button>
     `;
 }
 
@@ -1090,10 +1050,14 @@ function _sportBrancherValidationExerciceCourant() {
     const ex = _sportSeanceExercices[_sportSeanceIndexCourant];
     if (!ex) return;
 
+    const nbSets = ex.target_sets || 1;
+
     if (Number.isInteger(ex.target_duration_seconds)) {
-        document.getElementById('sport-duree-valider')?.addEventListener('click', () => _sportValiderLogDuree(ex));
+        for (let i = 1; i <= nbSets; i++) {
+            document.getElementById(`sport-duree-check-${i}`)?.addEventListener('click', () => _sportValiderLogDuree(ex, i));
+        }
     } else {
-        for (let i = 1; i <= ex.target_sets; i++) {
+        for (let i = 1; i <= nbSets; i++) {
             document.getElementById(`sport-serie-check-${i}`)?.addEventListener('click', () => _sportValiderLogSerie(ex, i));
         }
     }
@@ -1123,28 +1087,32 @@ async function _sportValiderLogSerie(ex, setNumber) {
     }
 }
 
-async function _sportValiderLogDuree(ex) {
-    const m           = parseInt(document.getElementById('sport-duree-realisee-m').value, 10) || 0;
-    const s           = parseInt(document.getElementById('sport-duree-realisee-s').value, 10) || 0;
-    const distance     = document.getElementById('sport-duree-distance').value;
-    const vitesse      = document.getElementById('sport-duree-vitesse').value;
-    const inclinaison  = document.getElementById('sport-duree-inclinaison').value;
+async function _sportValiderLogDuree(ex, setNumber) {
+    const m = parseInt(document.getElementById(`sport-duree-m-${setNumber}`).value, 10) || 0;
+    const s = parseInt(document.getElementById(`sport-duree-s-${setNumber}`).value, 10) || 0;
+    
+    // On garde distance/vitesse de manière globale pour l'exercice si renseignés
+    const distance = document.getElementById('sport-duree-distance')?.value;
+    const vitesse = document.getElementById('sport-duree-vitesse')?.value;
+    const inclinaison = document.getElementById('sport-duree-inclinaison')?.value;
 
     try {
         const r = await fetch(`/api/sport/sessions/${_sportSeanceActive.id}/logs`, {
             method: 'POST', headers: _sportAuthHeaders(),
             body: JSON.stringify({
                 wger_exercise_id: ex.wger_exercise_id, exercise_name: ex.exercise_name,
-                set_number: 1, completed: true,
+                set_number: setNumber, completed: true,
                 duration_seconds: (m * 60) + s,
-                distance_km: distance !== '' ? parseFloat(distance) : null,
-                speed_kmh: vitesse !== '' ? parseFloat(vitesse) : null,
-                incline_percent: inclinaison !== '' ? parseFloat(inclinaison) : null
+                distance_km: distance !== '' && distance !== undefined ? parseFloat(distance) : null,
+                speed_kmh: vitesse !== '' && vitesse !== undefined ? parseFloat(vitesse) : null,
+                incline_percent: inclinaison !== '' && inclinaison !== undefined ? parseFloat(inclinaison) : null,
+                rest_seconds: ex.target_rest_seconds || 60
             })
         });
         const d = await r.json();
         if (d.success) {
             _sportSeanceActive.logs.push(d.log);
+            _sportLancerReposEntreSeries(ex.target_rest_seconds || 60);
             _sportRenderExerciceCourant();
         }
     } catch (err) {
@@ -1199,7 +1167,7 @@ async function _sportCloturerSeance(status) {
     clearInterval(_sportSeanceChronoInterval);
     clearInterval(_sportSeanceReposInterval);
 
-        try {
+    try {
         if (status === 'abandoned') {
             await fetch(`/api/sport/sessions/${_sportSeanceActive.id}`, {
                 method: 'DELETE', headers: _sportAuthHeaders()
@@ -1220,3 +1188,5 @@ async function _sportCloturerSeance(status) {
     chargerSportDashboard();
     if (typeof chargerSportStatsWidget === 'function') chargerSportStatsWidget();
 }
+                    
+
