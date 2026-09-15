@@ -263,6 +263,64 @@ router.post('/days/:dayId/exercises', auth, async (req, res) => {
     }
 });
 
+// Réordonnancement en masse des exercices d'un jour (drag-and-drop).
+// Reçoit un tableau ordonné d'IDs d'exercices ({ ordre: [id1, id2, ...] })
+// et réassigne order_in_day = position + 1. Transaction + vérification
+// stricte que les IDs reçus correspondent exactement aux exercices du jour.
+router.put('/days/:dayId/exercises/reorder', auth, async (req, res) => {
+    const moi   = req.user.id;
+    const dayId = parseInt(req.params.dayId, 10);
+    const ordre = req.body.ordre;
+
+    if (!Array.isArray(ordre) || !ordre.length) {
+        return res.status(400).json({ success: false, message: 'Ordre invalide.' });
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const { rows: owner } = await client.query(`
+            SELECT d.id
+            FROM sport_workout_days d
+            JOIN sport_workouts w ON w.id = d.workout_id
+            WHERE d.id = \$1 AND w.user_id = \$2
+        `, [dayId, moi]);
+        if (!owner.length) {
+            await client.query('ROLLBACK');
+            return res.status(403).json({ success: false, message: 'Interdit.' });
+        }
+
+        const { rows: existants } = await client.query(`
+            SELECT id FROM sport_day_exercises WHERE day_id = \$1
+        `, [dayId]);
+        const idsValides  = new Set(existants.map(e => e.id));
+        const idsRecus    = ordre.map(id => parseInt(id, 10));
+        const tousValides = idsRecus.length === idsValides.size
+            && idsRecus.every(id => idsValides.has(id));
+
+        if (!tousValides) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ success: false, message: "Liste d'exercices incohérente." });
+        }
+
+        for (let i = 0; i < idsRecus.length; i++) {
+            await client.query(`
+                UPDATE sport_day_exercises SET order_in_day = \$1 WHERE id = \$2
+            `, [i + 1, idsRecus[i]]);
+        }
+
+        await client.query('COMMIT');
+        res.json({ success: true });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('[SPORT] PUT /days/:dayId/exercises/reorder :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    } finally {
+        client.release();
+    }
+});
+
 // Accepte désormais target_weight_kg / target_rest_seconds en mise à jour.
 router.put('/exercises/:exerciseId', auth, async (req, res) => {
     const moi        = req.user.id;
@@ -974,7 +1032,7 @@ router.get('/wger/exercises', auth, async (req, res) => {
                     continue;
                 }
 
-                                resultats.push({
+                resultats.push({
                     wger_exercise_id: ex.id,
                     name            : nom,
                     category        : ex.category?.id ?? ex.category,
