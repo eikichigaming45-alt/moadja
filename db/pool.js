@@ -15,6 +15,9 @@ const pool = new Pool({
 async function initDB() {
     try {
 
+        // ── Extension unaccent — requise pour la recherche insensible aux accents ──
+        await pool.query(`CREATE EXTENSION IF NOT EXISTS unaccent;`);
+
         await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
                 id                   SERIAL PRIMARY KEY,
