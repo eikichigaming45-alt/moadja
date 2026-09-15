@@ -33,15 +33,8 @@ const upload  = multer({
 // ============================================================
 const CHAMPS_PUBLICS_VALIDES = ['age', 'profession', 'site_web', 'signe_astro', 'note'];
 
-// Sentinel utilisé pour distinguer "champ signe_zodiaque absent du body"
-// (ex: sauvegarde depuis l'onglet Santé) de "champ envoyé à null"
-// (ex: sauvegarde depuis l'onglet Profil avec "Laisser calculer" -> reset).
 const SENTINEL_NOCHANGE_SIGNE = '__NOCHANGE_SIGNE__';
 
-// Table des bornes de signes astrologiques (calcul depuis date_naissance uniquement)
-// FIX : bornes alignées sur la logique de routes/astrologie.js (calculerSigne)
-// pour éviter toute divergence entre le widget Astrologie et le widget Profil
-// sur les dates charnières (ex: 23 octobre = Scorpion, pas Balance).
 const SIGNES_ASTRO = [
     { cle: 'capricorne', label: 'Capricorne', emoji: '♑', mois: 1,  jour: 19 },
     { cle: 'verseau',    label: 'Verseau',    emoji: '♒', mois: 2,  jour: 18 },
@@ -99,13 +92,6 @@ router.get('/', authenticateToken, async (req, res) => {
 
         const profil = result.rows[0];
 
-        // FIX : le signe affiché au widget Profil est désormais calculé
-        // dynamiquement depuis date_naissance (même logique que le widget
-        // Astrologie et que public/:userId), au lieu de servir la colonne
-        // signe_zodiaque potentiellement obsolète ou incohérente sur les
-        // dates charnières (ex: 23 octobre).
-        // Si aucune date_naissance n'est renseignée mais qu'un signe a été
-        // choisi manuellement (signe_zodiaque), on garde ce choix explicite.
         if (profil.date_naissance) {
             const signeCalcule = calculerSigneAstro(profil.date_naissance);
             profil.signe_zodiaque = signeCalcule ? signeCalcule.cle : profil.signe_zodiaque;
@@ -135,21 +121,9 @@ router.post('/', authenticateToken, async (req, res) => {
             [req.user.id]
         );
 
-        // ── FIX Santé (allergies, aliments_exclus, traitements_en_cours,
-        // diabete, cholesterol) ─────────────────────────────────────────
-        // Ces 5 champs doivent pouvoir être vidés intentionnellement depuis
-        // l'onglet Santé, contrairement au mécanisme CASE WHEN ... IS NOT NULL
-        // utilisé plus bas pour les autres champs (qui traite "vide" et
-        // "absent" de la même façon = no-op).
-        // On distingue donc ici "champ absent du body" (onglet Profil, ne pas
-        // toucher à la colonne) de "champ présent mais vide" (onglet Santé,
-        // vider réellement la colonne) via hasOwnProperty : sauvegarderSante()
-        // envoie toujours ces 5 champs (vides ou non), sauvegarderProfil() ne
-        // les envoie jamais. Le SET correspondant n'est donc ajouté à la
-        // requête que si le champ est réellement présent dans le body.
         const setsSante   = [];
         const paramsSante = [];
-        let indexSante = 21; // \$1 à \$20 déjà réservés par la requête principale ci-dessous
+        let indexSante = 21;
 
         if (Object.prototype.hasOwnProperty.call(req.body, 'allergies')) {
             const { allergies } = req.body;
@@ -221,9 +195,6 @@ router.post('/', authenticateToken, async (req, res) => {
             telephone       != null && telephone       !== '' ? telephone       : null,
             profession      != null && profession      !== '' ? profession      : null,
             note            != null && note            !== '' ? note            : null,
-            // FIX signe_zodiaque : le sentinel SENTINEL_NOCHANGE_SIGNE signifie
-            // "champ absent du body -> ne pas toucher à la colonne".
-            // Toute autre valeur (y compris null explicite pour reset) est appliquée telle quelle.
             signe_zodiaque !== undefined ? (signe_zodiaque || null) : SENTINEL_NOCHANGE_SIGNE,
             sexe            != null && sexe            !== '' ? sexe            : null,
             taille          != null                           ? String(taille)  : null,
@@ -245,6 +216,14 @@ router.post('/', authenticateToken, async (req, res) => {
 // POST /api/profil/photo
 router.post('/photo', authenticateToken, upload.single('photo'), async (req, res) => {
     if (!req.file) return res.status(400).json({ success: false, message: 'Aucun fichier reçu.' });
+
+    // Vérifie que le fichier est réellement une image (contenu réel, pas juste l'étiquette déclarée)
+    try {
+        await sharp(req.file.buffer).metadata();
+    } catch {
+        return res.status(400).json({ success: false, message: 'Fichier image invalide.' });
+    }
+
     try {
         const ancienRes = await pool.query(
             'SELECT photo FROM profiles WHERE user_id = \$1',
@@ -401,7 +380,6 @@ router.get('/abonnes/:userId', authenticateToken, async (req, res) => {
 
 // ============================================================
 // GET /api/profil/public-champs
-// Renvoie les toggles de visibilité de l'utilisateur connecté
 // ============================================================
 router.get('/public-champs', authenticateToken, async (req, res) => {
     try {
@@ -419,10 +397,6 @@ router.get('/public-champs', authenticateToken, async (req, res) => {
 
 // ============================================================
 // PATCH /api/profil/public-champs
-// Met à jour les toggles de visibilité du profil public.
-// Body attendu : { champs: ['age', 'profession', ...] }
-// Filtrage strict sur CHAMPS_PUBLICS_VALIDES pour éviter
-// toute valeur arbitraire en base.
 // ============================================================
 router.patch('/public-champs', authenticateToken, async (req, res) => {
     const { champs } = req.body;
@@ -444,10 +418,6 @@ router.patch('/public-champs', authenticateToken, async (req, res) => {
 
 // ============================================================
 // GET /api/profil/public/:userId
-// Profil public enrichi : âge, profession, site web et signe
-// astro affichés uniquement si le toggle correspondant est
-// activé ET la donnée réellement renseignée en base.
-// Note conservée en dernier (comportement existant, inchangé).
 // ============================================================
 router.get('/public/:userId', authenticateToken, async (req, res) => {
     const cibleId = parseInt(req.params.userId);
@@ -474,27 +444,22 @@ router.get('/public/:userId', authenticateToken, async (req, res) => {
             pool.query('SELECT 1 FROM follows WHERE follower_id = \$1 AND following_id = \$2', [moi, cibleId])
         ].map(p => p.then(r => [r])));
 
-        // ── Âge (toggle + date_naissance renseignée) ──────────
         const age = (champsAutorises.includes('age') && profil.date_naissance)
             ? calculerAge(profil.date_naissance)
             : null;
 
-        // ── Profession (toggle + donnée renseignée) ───────────
         const profession = (champsAutorises.includes('profession') && profil.profession)
             ? profil.profession
             : null;
 
-        // ── Site internet (toggle + donnée renseignée) ────────
         const siteWeb = (champsAutorises.includes('site_web') && profil.site_web)
             ? profil.site_web
             : null;
 
-        // ── Signe astro — calcul exclusif depuis date_naissance ─
         const signeCalcule = (champsAutorises.includes('signe_astro') && profil.date_naissance)
             ? calculerSigneAstro(profil.date_naissance)
             : null;
 
-        // ── Note (toggle + donnée renseignée) — reste en dernier ─
         const note = (champsAutorises.includes('note') && profil.note)
             ? profil.note
             : null;

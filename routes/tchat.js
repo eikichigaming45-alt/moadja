@@ -197,6 +197,13 @@ router.post('/messages/image', auth, _upload.single('image'), async (req, res) =
         return res.status(400).json({ success: false, message: 'Données manquantes.' });
     }
 
+    // Vérifie que le fichier est réellement une image (contenu réel, pas juste l'étiquette déclarée)
+    try {
+        await sharp(req.file.buffer).metadata();
+    } catch {
+        return res.status(400).json({ success: false, message: 'Fichier image invalide.' });
+    }
+
     try {
         const filename = `tchat_${Date.now()}_${moi}.webp`;
         const filepath = path.join(TCHAT_UPLOADS_DIR, filename);
