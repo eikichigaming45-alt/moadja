@@ -328,3 +328,70 @@
 ::-webkit-scrollbar-track { background: rgba(255,255,255,0.2); border-radius: 10px; }
 ::-webkit-scrollbar-thumb { background: rgba(167,139,250,0.4); border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(139,92,246,0.6); }
+
+/* ============================================================
+   CORRECTIF MOBILE — Modale Administration
+   Problème : double scroll imbriqué (.modal + .admin-tab-content),
+   onglets et cartes trop larges, boutons d'action de la liste
+   utilisateurs qui débordent -> contenu visuellement "coupé".
+   ============================================================ */
+@media (max-width: 700px) {
+
+    /* Un seul scroll actif : celui de .modal (voir style.css).
+       On neutralise le scroll interne qui provoquait la coupure. */
+    #admin-users-liste, .admin-tab-content {
+        max-height: none !important;
+        overflow-y: visible !important;
+        padding-right: 0 !important;
+    }
+
+    /* Onglets Stats / Utilisateurs compacts */
+    .admin-tabs { padding: 4px; gap: 4px; }
+    .admin-tab { padding: 10px 6px; font-size: 12px; }
+
+    /* Cartes stats : 2 colonnes conservées mais resserrées */
+    .as-cards-grid { gap: 8px; }
+    .as-card { padding: 8px; }
+    .as-card-icon { font-size: 16px; }
+    .as-card-val  { font-size: 17px; }
+    .as-card-lbl  { font-size: 9px; }
+
+    /* Widgets les plus utilisés : libellé raccourci pour ne pas pousser la barre hors cadre */
+    .as-widget-label { flex-basis: 84px; font-size: 11px; }
+
+    /* Barre de recherche utilisateurs : padding réduit */
+    #admin-search { padding: 12px 16px !important; font-size: 13px; }
+
+    /* Formulaire de création : marges resserrées */
+    #admin-creer-form { padding: 16px !important; }
+
+    /* Ligne utilisateur : autorise le retour à la ligne, évite la coupe des boutons */
+    #admin-users-liste > div {
+        flex-wrap: wrap;
+        padding: 12px !important;
+        gap: 8px !important;
+    }
+    #admin-users-liste > div > div[style*="flex:1"] {
+        min-width: 55%;
+    }
+    #admin-users-liste > div > div[style*="display:flex;gap:4px"] {
+        flex-wrap: nowrap;
+        margin-left: auto;
+    }
+
+    /* Boutons d'action rapides réduits pour tenir sur une seule ligne */
+    .au-btn {
+        width: 34px !important;
+        height: 34px !important;
+        font-size: 14px !important;
+    }
+
+    /* Cartes d'édition / suppression : padding réduit */
+    .user-card { padding: 18px !important; }
+}
+
+@media (max-width: 380px) {
+    .as-cards-grid { grid-template-columns: 1fr 1fr; }
+    .au-btn { width: 30px !important; height: 30px !important; font-size: 13px !important; }
+    #admin-users-liste > div > div[style*="flex:1"] { min-width: 100%; }
+}
