@@ -79,9 +79,6 @@
 }
 .as-section-title:first-child { margin-top: 0; }
 
-/* ---- Cartes Utilisateurs (Total / Admins / Actifs 7j / Jamais actifs) ----
-   Correctif v1.83.2 : taille réduite (padding, icône, valeur) — étaient
-   surdimensionnées par rapport au contenu affiché. */
 .as-cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
 .as-card {
     border-radius: 16px; padding: 10px;
@@ -99,7 +96,6 @@
 .as-card-val  { font-size: 20px; font-weight: 800; color: #1f2937; }
 .as-card-lbl  { font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; }
 
-/* ---- Barre de progression "Profils remplis" ---- */
 .as-progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
 .as-progress-label { font-size: 13px; font-weight: 700; color: #374151; }
 .as-progress-pct   { font-size: 12px; font-weight: 700; color: #6b7280; }
@@ -107,7 +103,6 @@
 .as-progress-fill  { height: 100%; border-radius: 10px; transition: width 0.4s ease; }
 .as-fill-blue      { background: linear-gradient(90deg, #4f46e5, #7c3aed); }
 
-/* ---- Avatars & badges communs (contributeurs / dernière activité / liste users) ---- */
 .as-login-avatar {
     width: 36px; height: 36px; border-radius: 50%;
     font-size: 14px; font-weight: 700;
@@ -120,9 +115,6 @@
 .as-badge-admin { background: rgba(237, 233, 254, 0.9); color: #7c3aed; }
 .as-badge-user  { background: rgba(219, 234, 254, 0.9); color: #2563eb; }
 
-/* ---- Top contributeurs ----
-   Correctif v1.83.2 : lignes compactes (plus de carte individuelle par
-   contributeur), simple séparateur fin entre chaque ligne. */
 .as-contrib-list {
     display: flex; flex-direction: column;
     background: rgba(255, 255, 255, 0.6);
@@ -147,7 +139,6 @@
 }
 .as-contrib-score { font-size: 13px; font-weight: 800; color: #059669; flex-shrink: 0; white-space: nowrap; }
 
-/* ---- Widgets les plus utilisés ---- */
 .as-widgets-list {
     display: flex; flex-direction: column;
     background: rgba(255, 255, 255, 0.6);
@@ -167,8 +158,6 @@
 .as-widget-bar-fill { height: 100%; border-radius: 8px; transition: width 0.4s ease; }
 .as-widget-count { font-size: 12px; font-weight: 700; color: #1f2937; width: 28px; text-align: right; flex-shrink: 0; }
 
-/* ---- Dernière activité (liste complète, modale stats) ----
-   Correctif v1.83.2 : même traitement compact que Top contributeurs. */
 .as-logins-list {
     display: flex; flex-direction: column;
     background: rgba(255, 255, 255, 0.6);
@@ -189,7 +178,6 @@
 .as-login-date { font-size: 11px; color: #9ca3af; margin-top: 2px; }
 .as-login-relative { font-size: 11px; flex-shrink: 0; text-align: right; white-space: nowrap; }
 
-/* ---- Bloc "Profils remplis" — enveloppe carte, inchangé ---- */
 .as-progress-bloc {
     background: rgba(255, 255, 255, 0.6);
     backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
@@ -200,125 +188,121 @@
 }
 
 /* ===================== MODALE — USERS ===================== */
+
+/* Barre de recherche : garde le style glass, taille normale (hérite police body) */
 #admin-search {
     background: rgba(255, 255, 255, 0.6);
     backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.8);
-    border-radius: 50px !important; /* Remplacement du 10px du JS */
-    padding: 14px 20px !important;
+    border-radius: 50px;
+    padding: 12px 20px;
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.02), 0 4px 12px rgba(0,0,0,0.03);
     transition: all 0.3s ease; color: #1f2937;
+    font-size: 14px;
 }
 #admin-search:focus { background: rgba(255, 255, 255, 0.9); box-shadow: 0 4px 16px rgba(167,139,250,0.1); border-color: rgba(167,139,250,0.3); }
 
-#btn-creer-user {
-    background: rgba(167, 139, 250, 0.85) !important;
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    border-radius: 50px !important;
-    padding: 14px !important;
-    box-shadow: 0 8px 24px rgba(167, 139, 250, 0.25);
-    transition: all 0.3s ease;
-}
-#btn-creer-user:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(167, 139, 250, 0.35); background: rgba(167, 139, 250, 1) !important; }
+/* CORRECTIF : #btn-creer-user n'impose plus AUCUNE taille/police —
+   le bouton utilise class="add-btn" (style.css) qui a déjà le bon
+   padding/font-size/radius, identiques aux boutons "+" du reste du site.
+   L'ancien bloc forçait padding:14px + border-radius:50px en !important,
+   ce qui doublait/écrasait .add-btn et rendait le bouton énorme. */
 
 #admin-creer-form {
-    background: rgba(255, 255, 255, 0.5) !important;
+    background: rgba(255, 255, 255, 0.5);
     backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.8) !important;
-    border-radius: 24px !important;
-    padding: 24px !important;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 24px;
+    padding: 20px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.05);
 }
 #admin-creer-form input, #admin-creer-form select {
-    background: rgba(255, 255, 255, 0.7) !important;
-    border: 1.5px solid rgba(229, 231, 235, 0.6) !important;
-    border-radius: 12px !important; padding: 12px 14px !important;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1.5px solid rgba(229, 231, 235, 0.6);
+    border-radius: 12px; padding: 12px 14px;
+    font-size: 14px;
     transition: all 0.2s ease;
 }
-#admin-creer-form input:focus, #admin-creer-form select:focus { background: #fff !important; border-color: #a78bfa !important; }
+#admin-creer-form input:focus, #admin-creer-form select:focus { background: #fff; border-color: #a78bfa; }
 
-/* Liste des utilisateurs (Lignes générées par le JS) */
+/* Liste des utilisateurs (lignes générées par le JS) */
 #admin-users-liste { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
-#admin-users-liste > div {
-    background: rgba(255, 255, 255, 0.55) !important;
+.au-row {
+    background: rgba(255, 255, 255, 0.55);
     backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.9) !important;
-    border-radius: 20px !important;
-    padding: 16px !important; margin-bottom: 0 !important;
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    padding: 14px 16px;
     box-shadow: 0 4px 16px rgba(0,0,0,0.03);
     transition: all 0.3s ease;
 }
-#admin-users-liste > div:hover { background: rgba(255, 255, 255, 0.8) !important; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
+.au-row:hover { background: rgba(255, 255, 255, 0.8); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
 
-/* Boutons d'action rapides (Rôle, Clé, Éditer, Supprimer) */
-.au-btn {
-    width: 38px !important; height: 38px !important; 
-    border-radius: 12px !important; font-size: 16px !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    transition: all 0.2s ease;
-    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+.au-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.au-avatar { flex-shrink: 0; }
+.au-identity { flex: 1; min-width: 140px; }
+.au-name-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.au-name { font-size: 14px; font-weight: 700; color: #1f2937; }
+.au-date { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+
+/* Actions rapides — pill glass discret, cohérent avec .as-card / .as-badge :
+   fond blanc translucide unique, icônes colorées, pas d'aplats saturés. */
+.au-actions {
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
+    margin-left: auto;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 50px;
+    padding: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.03);
 }
-.au-btn:hover { transform: translateY(-2px); }
-.au-btn-role       { background: rgba(237, 233, 254, 0.8) !important; color: #7c3aed !important; }
-.au-btn-role:hover { background: rgba(221, 214, 254, 1) !important; }
-.au-btn-key        { background: rgba(254, 243, 199, 0.8) !important; color: #d97706 !important; }
-.au-btn-key:hover  { background: rgba(253, 230, 138, 1) !important; }
-.au-btn-edit       { background: rgba(219, 234, 254, 0.8) !important; color: #2563eb !important; }
-.au-btn-edit:hover { background: rgba(191, 219, 254, 1) !important; }
-.au-btn-del        { background: rgba(254, 226, 226, 0.8) !important; color: #ef4444 !important; }
-.au-btn-del:hover  { background: rgba(254, 202, 202, 1) !important; }
+.au-btn {
+    width: 34px; height: 34px;
+    flex-shrink: 0;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    font-size: 15px;
+    box-shadow: none;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease;
+    display: flex; align-items: center; justify-content: center;
+}
+.au-btn:hover { background: rgba(0,0,0,0.05); transform: translateY(-1px); }
 
-/* Modales d'édition / suppression (Générées par JS) */
+.au-btn-role { color: #7c3aed; }
+.au-btn-key  { color: #d97706; }
+.au-btn-edit { color: #2563eb; }
+.au-btn-del  { color: #ef4444; }
+
+/* Modales d'édition / suppression (générées par JS) */
 .user-card {
-    background: rgba(255, 255, 255, 0.6) !important;
+    background: rgba(255, 255, 255, 0.6);
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.9) !important;
-    border-radius: 24px !important;
-    padding: 24px !important;
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 24px;
+    padding: 24px;
     box-shadow: 0 12px 40px rgba(0,0,0,0.08);
 }
-.user-card[style*="border-color:#fee2e2"] { /* Cible la modale de suppression du JS */
-    background: rgba(254, 242, 242, 0.7) !important;
-    border: 1px solid rgba(254, 226, 226, 0.9) !important;
+.user-card[style*="border-color:#fee2e2"] {
+    background: rgba(254, 242, 242, 0.7);
+    border: 1px solid rgba(254, 226, 226, 0.9);
     box-shadow: 0 12px 40px rgba(239, 68, 68, 0.1);
 }
+.user-card-name { font-size: 15px; font-weight: 700; color: #1f2937; }
 
 .user-card input, .user-card textarea {
-    background: rgba(255, 255, 255, 0.7) !important;
-    border: 1.5px solid rgba(229, 231, 235, 0.6) !important;
-    border-radius: 12px !important; padding: 12px 14px !important; transition: all 0.2s;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1.5px solid rgba(229, 231, 235, 0.6);
+    border-radius: 12px; padding: 12px 14px; font-size: 14px;
+    width: 100%; box-sizing: border-box; outline: none;
+    transition: all 0.2s;
 }
-.user-card input:focus, .user-card textarea:focus { background: #fff !important; border-color: #a78bfa !important; }
-.user-card label { font-size: 11px !important; font-weight: 700 !important; color: #6b7280 !important; text-transform: uppercase; letter-spacing: 0.5px; }
-
-/* Boutons principaux (Sauvegarder, Confirmer, Annuler) */
-.ua-btn {
-    border-radius: 50px !important;
-    padding: 14px 20px !important;
-    font-weight: 700 !important;
-    border: none !important;
-    transition: all 0.3s ease !important;
-}
-.ua-btn-blue {
-    background: rgba(167, 139, 250, 0.85) !important;
-    box-shadow: 0 6px 20px rgba(167, 139, 250, 0.25) !important;
-}
-.ua-btn-blue:hover { background: rgba(167, 139, 250, 1) !important; transform: translateY(-2px); }
-
-.ua-btn-red {
-    background: rgba(239, 68, 68, 0.9) !important;
-    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.25) !important;
-}
-.ua-btn-red:hover { background: rgba(220, 38, 38, 1) !important; transform: translateY(-2px); }
-
-.user-card button[onclick="chargerAdminUsers()"],
-#admin-creer-form button[onclick="chargerAdminUsers()"] { /* Bouton annuler */
-    background: rgba(255, 255, 255, 0.6) !important;
-    border: 1px solid rgba(0,0,0,0.05) !important;
-    color: #4b5563 !important;
-}
-.user-card button[onclick="chargerAdminUsers()"]:hover { background: #fff !important; border-color: rgba(0,0,0,0.1) !important; }
+.user-card input:focus, .user-card textarea:focus { background: #fff; border-color: #a78bfa; }
+.user-card label { font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 4px; }
 
 /* ===================== SCROLLBARS INVISIBLES/DOUCES ===================== */
 #admin-users-liste, .admin-tab-content {
@@ -331,67 +315,39 @@
 
 /* ============================================================
    CORRECTIF MOBILE — Modale Administration
-   Problème : double scroll imbriqué (.modal + .admin-tab-content),
-   onglets et cartes trop larges, boutons d'action de la liste
-   utilisateurs qui débordent -> contenu visuellement "coupé".
    ============================================================ */
 @media (max-width: 700px) {
 
-    /* Un seul scroll actif : celui de .modal (voir style.css).
-       On neutralise le scroll interne qui provoquait la coupure. */
     #admin-users-liste, .admin-tab-content {
         max-height: none !important;
         overflow-y: visible !important;
         padding-right: 0 !important;
     }
 
-    /* Onglets Stats / Utilisateurs compacts */
-    .admin-tabs { padding: 4px; gap: 4px; }
+        .admin-tabs { padding: 4px; gap: 4px; }
     .admin-tab { padding: 10px 6px; font-size: 12px; }
 
-    /* Cartes stats : 2 colonnes conservées mais resserrées */
     .as-cards-grid { gap: 8px; }
     .as-card { padding: 8px; }
     .as-card-icon { font-size: 16px; }
     .as-card-val  { font-size: 17px; }
     .as-card-lbl  { font-size: 9px; }
 
-    /* Widgets les plus utilisés : libellé raccourci pour ne pas pousser la barre hors cadre */
     .as-widget-label { flex-basis: 84px; font-size: 11px; }
 
-    /* Barre de recherche utilisateurs : padding réduit */
-    #admin-search { padding: 12px 16px !important; font-size: 13px; }
+    #admin-search { padding: 10px 16px; font-size: 13px; }
 
-    /* Formulaire de création : marges resserrées */
-    #admin-creer-form { padding: 16px !important; }
+    #admin-creer-form { padding: 16px; }
 
-    /* Ligne utilisateur : autorise le retour à la ligne, évite la coupe des boutons */
-    #admin-users-liste > div {
-        flex-wrap: wrap;
-        padding: 12px !important;
-        gap: 8px !important;
-    }
-    #admin-users-liste > div > div[style*="flex:1"] {
-        min-width: 55%;
-    }
-    #admin-users-liste > div > div[style*="display:flex;gap:4px"] {
-        flex-wrap: nowrap;
-        margin-left: auto;
-    }
+    .au-row { padding: 12px; }
+    .au-actions { padding: 3px; }
+    .au-btn { width: 32px; height: 32px; font-size: 14px; }
 
-    /* Boutons d'action rapides réduits pour tenir sur une seule ligne */
-    .au-btn {
-        width: 34px !important;
-        height: 34px !important;
-        font-size: 14px !important;
-    }
-
-    /* Cartes d'édition / suppression : padding réduit */
-    .user-card { padding: 18px !important; }
+    .user-card { padding: 18px; }
 }
 
 @media (max-width: 380px) {
     .as-cards-grid { grid-template-columns: 1fr 1fr; }
-    .au-btn { width: 30px !important; height: 30px !important; font-size: 13px !important; }
-    #admin-users-liste > div > div[style*="flex:1"] { min-width: 100%; }
+    .au-btn { width: 30px; height: 30px; font-size: 13px; }
+    .au-actions { margin-left: 0; margin-top: 6px; align-self: flex-end; }
 }
