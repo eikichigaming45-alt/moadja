@@ -318,13 +318,28 @@
    ============================================================ */
 @media (max-width: 700px) {
 
-    #admin-users-liste, .admin-tab-content {
+    /* CORRECTIF : on ne touche plus au padding de .admin-tab-content ici.
+       L'ancienne règle appliquait "padding-right: 0 !important" à la fois
+       à #admin-users-liste ET à .admin-tab-content (le grand encart blanc
+       #admin-tab-users défini en inline dans modal.js avec padding:20px).
+       Un !important sur padding-right écrasait ce padding inline et
+       collait recherche/bouton/liste au bord droit du module — d'où le
+       rendu "contre le bord blanc" vu sur mobile.
+       Seul #admin-users-liste (la petite liste scrollable interne) doit
+       perdre son padding-right, pas le conteneur global. */
+    #admin-users-liste {
         max-height: none !important;
         overflow-y: visible !important;
         padding-right: 0 !important;
     }
+    .admin-tab-content {
+        max-height: none !important;
+        overflow-y: visible !important;
+        /* padding-right supprimé ici : on garde le padding:20px inline
+           défini dans modal.js sur les 4 côtés du bloc. */
+    }
 
-        .admin-tabs { padding: 4px; gap: 4px; }
+    .admin-tabs { padding: 4px; gap: 4px; }
     .admin-tab { padding: 10px 6px; font-size: 12px; }
 
     .as-cards-grid { gap: 8px; }
