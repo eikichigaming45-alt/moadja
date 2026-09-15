@@ -426,7 +426,7 @@ const SPORT_TRADUCTION_FR = {
     'Talons fesses'                          : { nom: 'Talons fesses',             type: 'series' },
     'Stationary bike cardio'                 : { nom: 'Vélo RPM',                  type: 'duree'  },
     'Jumping Jack HD'                        : null,
-    'Jumping Jacks (Джампинг-Джек)           : { nom: 'Jumping Jack',              type: 'duree'  },
+    'Jumping Jacks (Джампинг-Джек)'          : { nom: 'Jumping Jack',              type: 'duree'  },
     'High Knee Skips HD'                     : { nom: 'Montées de genoux',         type: 'series' },
 
     // ── 6. Poitrine ──
