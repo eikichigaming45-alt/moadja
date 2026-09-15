@@ -28,7 +28,7 @@ const SPORT_TRADUCTION_FR = {
     'Abdominal Stabilization'                : { nom: 'Stabilisation abdominale',           type: 'duree'  },
     'Cable Woodchoppers'                     : { nom: 'Bûcheron à la poulie (Woodchopper)', type: 'series' },
     'Ball crunches'                          : { nom: 'Crunch sur Swiss ball',              type: 'series' },
-    'Crunches (Скручивания)'                 : { nom: 'Crunch (Relevé de buste)',           type: 'series' },
+    'Crunches (Скручивания)'                 : null, // Masqué (doublon)
     'Incline Crunches'                       : { nom: 'Crunch incliné',                     type: 'series' },
     'Crunches on Machine'                    : { nom: 'Crunch (machine)',                   type: 'series' },
     'Crunches With Cable'                    : { nom: 'Crunch à la poulie',                 type: 'series' },
@@ -40,7 +40,7 @@ const SPORT_TRADUCTION_FR = {
     'Hollow Hold'                            : { nom: 'Gainage cuillère (Hollow hold)',     type: 'duree'  },
     'Leg Raises, Lying'                      : { nom: 'Relevé de jambes allongé',           type: 'series' },
     'Leg Raises, Standing'                   : { nom: 'Relevé de jambes debout',            type: 'series' },
-    'L Hold'                                 : { nom: 'Maintien en L (L-sit)',              type: 'duree'  },
+    'L Hold'                                 : null, // Masqué (doublon)
     'Negative Crunches'                      : { nom: 'Crunch négatif',                     type: 'series' },
     'Overhand Cable Curl'                    : { nom: 'Curl poulie pronation',              type: 'series' },
     'Roman Chair Crunch'                     : { nom: 'Crunch sur chaise romaine',          type: 'series' },
@@ -108,7 +108,7 @@ const SPORT_TRADUCTION_FR = {
     'Decline Bench Leg Raise'                : { nom: 'Relevé de jambes sur banc décliné',  type: 'series' },
     'Leg Wheel'                              : { nom: 'Roulette avec jambes',               type: 'series' },
     'Core Rotation'                          : { nom: 'Rotation du tronc',                  type: 'series' },
-    '3008 Abdominal Crunch'                  : { nom: 'Crunch abdominal',                   type: 'series' },
+    '3008 Abdominal Crunch'                  : null, // Masqué (doublon)
     'Abdominal Crunch'                       : { nom: 'Crunch abdominal',                   type: 'series' },
     '1/2 Kneeling Thoracic Rotation'         : { nom: 'Rotation thoracique genou à terre',  type: 'series' },
     'Posterior Pelvic Tilt'                  : { nom: 'Bascule pelvienne postérieure',      type: 'series' },
@@ -152,23 +152,23 @@ const SPORT_TRADUCTION_FR = {
     'Wall Pushup'                            : { nom: 'Pompes contre le mur',                    type: 'series' },
     'One Arm Triceps Extensions on Cable'    : { nom: 'Extension triceps unilatérale (poulie)',  type: 'series' },
     'Sloper hanging'                         : { nom: 'Suspension prise sloper',                 type: 'duree'  },
-    'Tricep Pushdown on Cable'               : { nom: 'Extension triceps à la poulie haute',     type: 'series' },
+    'Tricep Pushdown on Cable'               : null, // Masqué (doublon)
     'Fingerboard 20 mm edge'                 : { nom: 'Suspension pan résine 20 mm',             type: 'duree'  },
     'Pullup on fingerboard'                  : { nom: 'Traction sur pan résine',                 type: 'series' },
     'Incline Skull Crush'                    : { nom: 'Barre au front inclinée',                 type: 'series' },
     'Straight Bar Cable Curls'               : { nom: 'Curl barre droite (poulie)',              type: 'series' },
     'Reverse Preacher Curl (Close Grip)'     : { nom: 'Curl pupitre inversé prise serrée',       type: 'series' },
     'Reverse EZ Bar Cable Curls'             : { nom: 'Curl inversé barre EZ (poulie)',          type: 'series' },
-    'Biceps with TRX'                        : { nom: 'Curl biceps (TRX)',                       type: 'series' },
+    'Biceps with TRX'                        : null, // Masqué (doublon)
     'Curl with kettlebell two hands'         : { nom: 'Curl kettlebell à deux mains',            type: 'series' },
     'one-handed kettlebell curls'            : { nom: 'Curl kettlebell à une main',              type: 'series' },
     'Forward arm circles'                    : { nom: 'Cercles de bras avant',                   type: 'series' },
     'Backward arm circles'                   : { nom: 'Cercles de bras arrière',                 type: 'series' },
     'Floor dips'                             : { nom: 'Dips au sol',                             type: 'series' },
-    'Alternating bicep curls'                : { nom: 'Curl biceps alterné',                     type: 'series' },
+    'Alternating bicep curls'                : null, // Masqué (doublon)
     'Cable Concentration Curl'               : { nom: 'Curl concentration (poulie)',             type: 'series' },
     'Rest (for timed workouts)'              : { nom: 'Repos',                                   type: 'duree'  },
-    'Triceps Pushdown'                       : { nom: 'Extension triceps à la poulie',           type: 'series' },
+    'Triceps Pushdown'                       : null, // Masqué (doublon)
     'Alternating Biceps Curls With Dumbbell' : { nom: 'Curl biceps alterné (haltères)',         type: 'series' },
     'Wrist curl, dumbbells'                  : { nom: 'Curl du poignet (haltères)',              type: 'series' },
     'Recruitment Pulls'                      : { nom: 'Tirages de recrutement',                  type: 'series' },
@@ -221,7 +221,7 @@ const SPORT_TRADUCTION_FR = {
     'Overhead Cable Tricep Extension'        : { nom: 'Extension triceps nuque (poulie)',         type: 'series' },
     'Overhead Triceps Extension'             : { nom: 'Extension triceps nuque',                  type: 'series' },
     'Lying Dumbbell Curls'                   : { nom: 'Curl allongé (haltères)',                  type: 'series' },
-    'Cable Curls'                            : { nom: 'Curl (poulie)',                            type: 'series' },
+    'Cable Curls'                            : null, // Masqué (doublon)
     'Alternating dumbbell hammer curl'       : { nom: 'Curl marteau alterné (haltères)',          type: 'series' },
     'Arm Raises (T/Y/I)'                     : { nom: 'Élévations de bras',                       type: 'series' },
     'Bodyweight Biceps Curl'                 : { nom: 'Curl biceps au poids du corps',            type: 'series' },
@@ -271,7 +271,7 @@ const SPORT_TRADUCTION_FR = {
     'Wall Slides'                                    : { nom: 'Glissades au mur',                             type: 'series' },
     'Wide-grip Pulldown'                             : { nom: 'Tirage vertical prise large',                  type: 'series' },
     'Incline Bench Reverse Fly'                      : { nom: 'Oiseau sur banc incliné',                      type: 'series' },
-    'T-Bar row'                                      : { nom: 'Rowing T-bar',                                 type: 'series' },
+    'T-Bar row'                                      : null, // Masqué (doublon)
     'Seated Cable Mid Trap Shrug'                    : { nom: 'Shrug assis (poulie)',                         type: 'series' },
     'Lying Dumbbell Row SS Seated Shrug'             : { nom: 'Rowing allongé + Shrug assis',                 type: 'series' },
     'Quadriped Arm and Leg Raise'                    : { nom: 'Élévation bras et jambe à 4 pattes',           type: 'series' },
@@ -299,14 +299,14 @@ const SPORT_TRADUCTION_FR = {
     'Seated rear delt rise'                          : { nom: 'Élévation arrière assis (oiseau)',             type: 'series' },
     'Horizontal traction isometry'                   : { nom: 'Traction horizontale isométrique',             type: 'duree'  },
     'Seated Cable Row'                               : { nom: 'Rowing assis (poulie)',                        type: 'series' },
-    'Remo maquina agarre estrecho'                   : { nom: 'Rowing machine prise serrée',                  type: 'series' },
-    'Remo maquina agarre estrecho supino'            : { nom: 'Rowing machine prise serrée (supination)',     type: 'series' },
+    'Remo maquina agarre estrecho'                   : null, // Masqué (doublon)
+    'Remo maquina agarre estrecho supino'            : null, // Masqué (doublon)
     'Wide-grip supinated lat pulldown'               : { nom: 'Tirage vertical prise large supination',       type: 'series' },
     'Close-grip supinated lat pulldown'              : { nom: 'Tirage vertical prise serrée supination',      type: 'series' },
     'Neutral-grip chest pulldown'                    : { nom: 'Tirage poitrine prise neutre',                 type: 'series' },
     'High-pulley pullover'                           : { nom: 'Pull-over poulie haute',                       type: 'series' },
     'Incline bench pulldown'                         : { nom: 'Tirage vertical sur banc incliné',             type: 'series' },
-    'Back extensión'                                 : { nom: 'Extensions lombaires',                         type: 'series' },
+    'Back extensión'                                 : null, // Masqué (doublon)
     'One Arm Bent Row'                               : { nom: 'Rowing unilatéral buste penché',               type: 'series' },
     'Scorpion Kick'                                  : { nom: 'Coup de pied scorpion',                        type: 'series' },
     'Skydiver with arms in T-position'               : { nom: 'Skydiver bras en T',                           type: 'series' },
@@ -359,10 +359,10 @@ const SPORT_TRADUCTION_FR = {
     'Barbell Row (Underhand)'                        : { nom: 'Rowing barre (supination)',                    type: 'series' },
     'Barbell Romanian Deadlift (RDL)'                : { nom: 'Soulevé de terre roumain (barre)',             type: 'series' },
     'One-Arm Heavy Row'                              : { nom: 'Rowing lourd unilatéral',                      type: 'series' },
-    'Jalón al pecho con agarre ancho'                : { nom: 'Tirage poitrine prise large',                  type: 'series' },
+    'Jalón al pecho con agarre ancho'                : null, // Masqué (doublon)
     'Elevación lateral polea'                        : { nom: 'Élévation latérale poulie',                    type: 'series' },
-    'Remo alto polea alta'                           : { nom: 'Rowing haut à la poulie',                      type: 'series' },
-    'Jalon caballero unialteral'                     : { nom: 'Tirage unilatéral à genoux',                   type: 'series' },
+    'Remo alto polea alta'                           : null, // Masqué (doublon)
+    'Jalon caballero unialteral'                     : null, // Masqué (doublon)
     'Seated Row (Machine)'                           : { nom: 'Rowing assis (machine)',                       type: 'series' },
     'Straight-Arm Pulldown (Cable)'                  : { nom: 'Tirage bras tendus (poulie)',                  type: 'series' },
     'Side Straight-Arm Pulldown (Cable)'             : { nom: 'Tirage bras tendus latéral (poulie)',          type: 'series' },
@@ -455,11 +455,11 @@ const SPORT_TRADUCTION_FR = {
     'Incline Bench Press - MP'               : { nom: 'Développé incliné (multipress)',      type: 'series' },
     'Side to Side Push Ups'                  : { nom: 'Pompes latérales',                    type: 'series' },
     'Power Clean'                            : { nom: 'Épaulé (power clean)',                type: 'series' },
-    'Overhead Press'                         : { nom: 'Développé militaire',                 type: 'series' },
+    'Overhead Press'                         : null, // Masqué (doublon)
     'Upper External Oblique'                 : { nom: 'Obliques externes hauts',             type: 'series' },
     'Dumbbell Push-Up'                       : { nom: 'Pompes sur haltères',                 type: 'series' },
     'Smith Machine Slight Incline Press'     : { nom: 'Développé légèrement incliné (Smith)',type: 'series' },
-    'Machine chest fly'                      : { nom: 'Écarté couché (machine)',             type: 'series' },
+    'Machine chest fly'                      : null, // Masqué (doublon)
     'Mountain climbers'                      : { nom: 'Grimpeurs (mountain climbers)',       type: 'series' },
     '4-count burpees'                        : { nom: 'Burpees en 4 temps',                  type: 'series' },
     'No push-up burpees'                     : { nom: 'Burpees sans pompe',                  type: 'series' },
@@ -502,7 +502,7 @@ const SPORT_TRADUCTION_FR = {
     'Box Handstand Push-up'                  : { nom: 'Pompes verticales sur box',           type: 'series' },
 
     // ── 7. Jambes (Squats) ──
-    'Barbell Hack Squats'                    : { nom: 'Squat hack (barre)',              type: 'series' },
+    'Barbell Hack Squats'                    : null, // Masqué (doublon)
     'Braced Squat'                           : { nom: 'Squat avec appui',                type: 'series' },
     'Dumbbell Goblet Squat'                  : { nom: 'Squat gobelet (haltère)',         type: 'series' },
     'Front Squats'                           : { nom: 'Squat avant',                    type: 'series' },
@@ -511,7 +511,7 @@ const SPORT_TRADUCTION_FR = {
     'Low Box Squat - Wide Stance'            : { nom: 'Squat sur box (jambes écartées)', type: 'series' },
     'Overhead Squat'                         : { nom: 'Squat overhead',                 type: 'series' },
     'Pistol Squat'                           : { nom: 'Squat pistolet',                 type: 'series' },
-    'Squat Jumps'                            : { nom: 'Squats sautés',                  type: 'series' },
+        'Squat Jumps'                            : { nom: 'Squats sautés',                  type: 'series' },
     'Squats'                                 : { nom: 'Squat classique',                type: 'series' },
     'Squats (Приседания)'                    : null, // Masqué
     'Wall Squat (Приседание у стены)'        : null, // Masqué
@@ -529,7 +529,7 @@ const SPORT_TRADUCTION_FR = {
     'Side Slides + Squats'                   : { nom: 'Glissades latérales + squats',   type: 'series' },
     'Dragon squat'                           : { nom: 'Squat dragon',                   type: 'series' },
     'Prisoner Squat'                         : { nom: 'Squat prisonnier',               type: 'series' },
-    'Bodyweight Squat HD'                    : { nom: 'Squat au poids du corps',        type: 'series' },
+    'Bodyweight Squat HD'                    : null, // Masqué (doublon)
     'Double Kettlebell Front Squat'          : { nom: 'Squat avant double kettlebell',  type: 'series' },
     'Dumbbell Split Squat'                   : { nom: 'Squat fendu (haltères)',         type: 'series' },
     'Cossack squat'                          : { nom: 'Squat cosaque',                 type: 'series' },
@@ -614,7 +614,7 @@ const SPORT_TRADUCTION_FR = {
     'Shoulder Internal Rotation (Cable)'             : { nom: 'Rotation interne épaule (poulie)',            type: 'series' },
     'Shoulder External Rotation (Cable)'             : { nom: 'Rotation externe épaule (poulie)',            type: 'series' },
     'Front Raise (Cable)'                            : { nom: 'Élévation frontale (poulie)',                 type: 'series' },
-    'Machine Side Lateral Raises'                    : { nom: 'Élévations latérales (machine)',              type: 'series' },
+    'Machine Side Lateral Raises'                    : null, // Masqué (doublon)
     'Cable Front Raise with a small bar'             : { nom: 'Élévation frontale petite barre (poulie)',    type: 'series' },
     'Side lateral raise - Front (Cable)'             : { nom: 'Élévation latérale avant (poulie)',           type: 'series' },
     'Side lateral raise - Back (Cable)'              : { nom: 'Élévation latérale arrière (poulie)',         type: 'series' },
@@ -632,8 +632,8 @@ const SPORT_TRADUCTION_FR = {
     'Incline DB Y-Raise'                             : { nom: 'Élévations en Y sur banc incliné (haltères)', type: 'series' },
     'High-Cable Lateral Raise'                       : { nom: 'Élévation latérale poulie haute',             type: 'series' },
     'YTWL Exercise'                                  : { nom: 'Exercice Y-T-W-L',                            type: 'series' },
-    'Overhead Barbell Press'                         : { nom: 'Développé militaire (barre)',                 type: 'series' },
-    'Clean and Press'                                : { nom: 'Épaulé-développé',                            type: 'series' },
+    'Overhead Barbell Press'                         : null, // Masqué (doublon)
+    'Clean and Press'                                : null, // Masqué (doublon)
     'Isometria alle parallele'                       : { nom: 'Isométrie aux barres parallèles',             type: 'duree'  },
     'Tuck planche'                                   : { nom: 'Tuck planche',                                type: 'duree'  },
     'Extreme Shoulder Stretch'                       : { nom: 'Étirement intense des épaules',               type: 'duree'  },
@@ -641,7 +641,7 @@ const SPORT_TRADUCTION_FR = {
     'Cable Rear-Delt Fly (single arm)'               : { nom: 'Oiseau unilatéral (poulie)',                  type: 'series' },
     'Neck CARs'                                      : { nom: 'Rotations articulaires du cou',               type: 'series' },
     'Single-arm dumbbell shoulder press'             : { nom: 'Développé épaules unilatéral (haltère)',      type: 'series' },
-    'YTW Raises'                                     : { nom: 'Élévations Y-T-W',                            type: 'series' },
+        'YTW Raises'                                     : { nom: 'Élévations Y-T-W',                            type: 'series' },
     'Serratus Wall Slide Stretch'                    : { nom: 'Glissement au mur pour dentelé',              type: 'duree'  },
     'Planche Lean Hold'                              : { nom: 'Maintien planche inclinée',                   type: 'duree'  },
     'Arch Hang'                                      : { nom: 'Suspension cambrée',                          type: 'duree'  },
