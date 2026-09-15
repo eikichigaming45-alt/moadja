@@ -46,6 +46,17 @@ const SPORT_ICONE_POIGNEE = `
     </svg>
 `;
 
+// Icône crayon (édition inline d'un exercice de routine).
+// AJOUT : cette constante manquait, ce qui provoquait un ReferenceError
+// (SPORT_ICONE_CRAYON is not defined) dans _sportRenderDetailRoutine
+// et cassait tout l'affichage de "Mes Routines".
+const SPORT_ICONE_CRAYON = `
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 20h9"></path>
+        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
+    </svg>
+`;
+
 const SPORT_MAX_EXERCICES_APERCU = 5;
 
 let _sportSectionActive = 'dashboard';
@@ -423,7 +434,7 @@ function _sportRenderDetailRoutine(workout, jour) {
     const zone      = document.getElementById('sport-routines-zone');
     const exercices = jour?.exercises || [];
 
-    zone.innerHTML = `
+        zone.innerHTML = `
         <div class="sport-card">
             <div class="sport-routine-detail-header">
                 <button class="sport-routine-btn-retour" onclick="_sportChargerListeRoutines()">‹ Retour</button>
@@ -869,7 +880,7 @@ async function _sportConfirmerAjoutExercice(wgerId, nom, estDuree) {
             method : 'POST',
             headers: _sportAuthHeaders(),
             body   : JSON.stringify(payload)
-        });
+                });
         closeModal();
         _sportOuvrirDetailRoutineDepuisCache();
     } catch (err) {
