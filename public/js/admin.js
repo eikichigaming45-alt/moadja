@@ -207,7 +207,7 @@ async function chargerAdminStats() {
                         ? u.prenom + ' ' + u.nom.toUpperCase()
                         : u.username;
                                         return `
-                    <div class="as-login-row">
+                                        <div class="as-login-row">
                         <div class="as-login-avatar ${u.role === 'admin' ? 'as-av-admin' : 'as-av-user'}">${initiale}</div>
                         <div class="as-login-info">
                             <div class="as-login-name">${affichage}</div>
@@ -251,39 +251,25 @@ function _renderAdminUsers() {
             <input type="text" id="admin-search"
                 placeholder="🔍 Rechercher un utilisateur..."
                 oninput="_filtrerAdminUsers()"
-                autocomplete="off"
-                style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:10px;
-                       font-size:14px;outline:none;box-sizing:border-box;background:#f8fafc">
+                autocomplete="off">
         </form>
-        <button onclick="_toggleCreerForm()" id="btn-creer-user"
-            style="width:100%;padding:11px;background:linear-gradient(135deg,#4f46e5,#7c3aed);
-                   color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;
-                   cursor:pointer;margin-bottom:12px;display:flex;align-items:center;
-                   justify-content:center;gap:6px">
+        <button onclick="_toggleCreerForm()" id="btn-creer-user" class="add-btn">
             ➕ Créer un utilisateur
         </button>
-        <div id="admin-creer-form" style="display:none;background:#f8fafc;border-radius:12px;
-             padding:16px;margin-bottom:12px;border:1.5px solid #e5e7eb">
-            <div style="font-size:13px;font-weight:700;color:#1e1b4b;margin-bottom:12px">Nouveau compte</div>
+        <div id="admin-creer-form" style="display:none;margin-bottom:16px">
+            <div class="section-title" style="margin-top:0">Nouveau compte</div>
             <input type="text" id="new-username" placeholder="Nom d'utilisateur"
-                autocomplete="off" name="new-username-field"
-                style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;
-                       font-size:14px;outline:none;box-sizing:border-box;margin-bottom:8px">
+                autocomplete="off" name="new-username-field">
             <input type="text" id="new-password-fake"
                 style="display:none;position:absolute;left:-9999px" aria-hidden="true">
             <input type="password" id="new-password"
                 autocomplete="new-password" name="new-password-field"
-                placeholder="8 car. min · majuscule · minuscule · chiffre · spécial"
-                style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;
-                       font-size:14px;outline:none;box-sizing:border-box;margin-bottom:8px">
-            <select id="new-role"
-                style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;
-                       font-size:14px;outline:none;box-sizing:border-box;margin-bottom:12px;background:#fff">
+                placeholder="8 car. min · majuscule · minuscule · chiffre · spécial">
+            <select id="new-role">
                 <option value="user">user</option>
                 <option value="admin">admin</option>
             </select>
-            <button onclick="creerUser()" class="ua-btn ua-btn-blue"
-                style="width:100%;padding:10px;font-size:13px;justify-content:center">
+            <button onclick="creerUser()" class="btn-save" style="width:100%;justify-content:center">
                 ✓ Créer l'utilisateur
             </button>
             <div id="create-msg" style="text-align:center;margin-top:10px;font-size:13px;min-height:18px"></div>
@@ -394,55 +380,47 @@ async function adminEditerProfil(id, username) {
                 <div style="font-size:15px;font-weight:700;color:#1e1b4b;margin-bottom:16px">
                     ✏️ Éditer — <span style="color:#4f46e5">${u.username}</span>
                 </div>
-                                <div class="section-title">Compte</div>
+                <div class="section-title">Compte</div>
                 <div style="margin-bottom:14px">
-                    <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Nom d'utilisateur</label>
-                    <input id="edit-username" type="text" value="${u.username}"
-                        style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;box-sizing:border-box">
+                    <label>Nom d'utilisateur</label>
+                    <input id="edit-username" type="text" value="${u.username}">
                 </div>
                 <div class="section-title">Profil</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+                <div class="form-row">
                     <div>
-                        <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Prénom</label>
-                        <input id="edit-prenom" type="text" value="${p.prenom||''}"
-                            style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;box-sizing:border-box">
+                        <label>Prénom</label>
+                        <input id="edit-prenom" type="text" value="${p.prenom||''}">
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Nom</label>
-                        <input id="edit-nom" type="text" value="${p.nom||''}"
-                            style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;box-sizing:border-box">
+                        <label>Nom</label>
+                        <input id="edit-nom" type="text" value="${p.nom||''}">
                     </div>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+                <div class="form-row">
                     <div>
-                        <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Téléphone</label>
-                        <input id="edit-telephone" type="text" value="${p.telephone||''}"
-                            style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;box-sizing:border-box">
+                        <label>Téléphone</label>
+                        <input id="edit-telephone" type="text" value="${p.telephone||''}">
                     </div>
                     <div>
-                        <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Profession</label>
-                        <input id="edit-profession" type="text" value="${p.profession||''}"
-                            style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;box-sizing:border-box">
+                        <label>Profession</label>
+                        <input id="edit-profession" type="text" value="${p.profession||''}">
                     </div>
                 </div>
                 <div style="margin-bottom:10px">
-                    <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Email</label>
-                    <input id="edit-email" type="email" value="${p.email||''}"
-                        style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;box-sizing:border-box">
+                    <label>Email</label>
+                    <input id="edit-email" type="email" value="${p.email||''}">
                 </div>
                 <div style="margin-bottom:10px">
-                    <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Date de naissance</label>
-                    <input id="edit-naissance" type="date" value="${p.date_naissance ? p.date_naissance.split('T')[0] : ''}"
-                        style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;box-sizing:border-box">
+                    <label>Date de naissance</label>
+                    <input id="edit-naissance" type="date" value="${p.date_naissance ? p.date_naissance.split('T')[0] : ''}">
                 </div>
                 <div style="margin-bottom:16px">
-                    <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Note</label>
-                    <textarea id="edit-note" rows="3"
-                        style="width:100%;padding:10px 12px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;outline:none;resize:none;font-family:inherit;box-sizing:border-box">${p.note||''}</textarea>
+                    <label>Note</label>
+                    <textarea id="edit-note" rows="3">${p.note||''}</textarea>
                 </div>
                 <div style="display:flex;gap:8px">
-                    <button class="ua-btn ua-btn-blue" style="flex:1" onclick="adminSauvegarderProfil(${id})">💾 Sauvegarder</button>
-                    <button class="ua-btn" style="flex:1;background:#f3f4f6;color:#374151" onclick="chargerAdminUsers()">Annuler</button>
+                    <button class="btn-save" style="flex:1" onclick="adminSauvegarderProfil(${id})">💾 Sauvegarder</button>
+                    <button class="btn-cancel" style="flex:1" onclick="chargerAdminUsers()">Annuler</button>
                 </div>
                 <div id="edit-msg" style="margin-top:10px;font-size:13px;text-align:center"></div>
             </div>
@@ -512,11 +490,10 @@ function adminResetPwd(id, username) {
             <div class="user-card-name" style="margin-bottom:4px">🔑 Nouveau MDP — <strong>${username}</strong></div>
             <div style="font-size:11px;color:#9ca3af;margin-bottom:12px">8 car. min · majuscule · minuscule · chiffre · spécial</div>
             <input type="password" id="admin-new-pwd" placeholder="Nouveau mot de passe"
-                autocomplete="new-password" name="admin-pwd-field"
-                style="width:100%;padding:10px 12px;font-size:14px;outline:none;box-sizing:border-box;margin-bottom:10px">
+                autocomplete="new-password" name="admin-pwd-field">
             <div style="display:flex;gap:8px">
-                <button class="ua-btn ua-btn-blue" style="flex:1" onclick="adminConfirmResetPwd(${id})">✓ Confirmer</button>
-                <button class="ua-btn" style="flex:1;background:#f3f4f6;color:#374151" onclick="chargerAdminUsers()">Annuler</button>
+                <button class="btn-save" style="flex:1" onclick="adminConfirmResetPwd(${id})">✓ Confirmer</button>
+                <button class="btn-cancel" style="flex:1" onclick="chargerAdminUsers()">Annuler</button>
             </div>
             <div id="admin-pwd-msg" style="margin-top:8px;font-size:13px;color:#ef4444;text-align:center"></div>
         </div>
@@ -561,8 +538,8 @@ function adminSupprimerUser(id, username) {
                 Confirmer la suppression de <strong>${username}</strong> ?
             </div>
             <div style="display:flex;gap:8px">
-                <button class="ua-btn ua-btn-red" style="flex:1" onclick="adminConfirmSupprimer(${id})">Confirmer</button>
-                <button class="ua-btn" style="flex:1;background:#f3f4f6;color:#374151" onclick="chargerAdminUsers()">Annuler</button>
+                <button class="btn-delete" style="flex:1" onclick="adminConfirmSupprimer(${id})">Confirmer</button>
+                <button class="btn-cancel" style="flex:1" onclick="chargerAdminUsers()">Annuler</button>
             </div>
         </div>
     `;
