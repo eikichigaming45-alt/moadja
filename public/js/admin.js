@@ -346,30 +346,30 @@ function _filtrerAdminUsers() {
             ? u.prenom + ' ' + u.nom.toUpperCase()
             : u.username;
         return `
-        <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff;
-                    border:1px solid #e5e7eb;border-radius:10px;margin-bottom:8px">
-            <div class="as-login-avatar ${u.role === 'admin' ? 'as-av-admin' : 'as-av-user'}"
-                 style="width:36px;height:36px;font-size:15px;flex-shrink:0">${initiale}</div>
-            <div style="flex:1;min-width:0">
-                <div style="font-size:13px;font-weight:700;color:#1e1b4b;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-                    ${affichage}
-                    <span class="as-badge ${u.role === 'admin' ? 'as-badge-admin' : 'as-badge-user'}">${u.role}</span>
+        <div class="au-row">
+            <div class="au-top">
+                <div class="as-login-avatar ${u.role === 'admin' ? 'as-av-admin' : 'as-av-user'} au-avatar">${initiale}</div>
+                <div class="au-identity">
+                    <div class="au-name-line">
+                        <span class="au-name">${affichage}</span>
+                        <span class="as-badge ${u.role === 'admin' ? 'as-badge-admin' : 'as-badge-user'}">${u.role}</span>
+                    </div>
+                    <div class="au-date">
+                        ${u.lastActivity
+                            ? _formatDateComplete(u.lastActivity) + ' — ' + _formatDateRelative(u.lastActivity)
+                            : 'Jamais actif'}
+                    </div>
                 </div>
-                <div style="font-size:11px;color:#9ca3af;margin-top:2px">
-                    ${u.lastActivity
-                        ? _formatDateComplete(u.lastActivity) + ' — ' + _formatDateRelative(u.lastActivity)
-                        : 'Jamais actif'}
+                <div class="au-actions">
+                    <button class="au-btn au-btn-role" title="${u.role === 'admin' ? 'Passer user' : 'Passer admin'}"
+                        onclick="adminToggleRole(${u.id},'${u.role}')">${u.role === 'admin' ? '↓' : '↑'}</button>
+                    <button class="au-btn au-btn-key"  title="Changer MDP"
+                        onclick="adminResetPwd(${u.id},'${u.username}')">🔑</button>
+                    <button class="au-btn au-btn-edit" title="Éditer"
+                        onclick="adminEditerProfil(${u.id},'${u.username}')">✏️</button>
+                    <button class="au-btn au-btn-del"  title="Supprimer"
+                        onclick="adminSupprimerUser(${u.id},'${u.username}')">🗑️</button>
                 </div>
-            </div>
-            <div style="display:flex;gap:4px;flex-shrink:0">
-                <button class="au-btn au-btn-role" title="${u.role === 'admin' ? 'Passer user' : 'Passer admin'}"
-                    onclick="adminToggleRole(${u.id},'${u.role}')">${u.role === 'admin' ? '↓' : '↑'}</button>
-                <button class="au-btn au-btn-key"  title="Changer MDP"
-                    onclick="adminResetPwd(${u.id},'${u.username}')">🔑</button>
-                <button class="au-btn au-btn-edit" title="Éditer"
-                    onclick="adminEditerProfil(${u.id},'${u.username}')">✏️</button>
-                <button class="au-btn au-btn-del"  title="Supprimer"
-                    onclick="adminSupprimerUser(${u.id},'${u.username}')">🗑️</button>
             </div>
         </div>`;
     }).join('') : '<p style="color:#9ca3af;font-size:13px;text-align:center;padding:12px 0">Aucun résultat.</p>';
@@ -394,7 +394,7 @@ async function adminEditerProfil(id, username) {
                 <div style="font-size:15px;font-weight:700;color:#1e1b4b;margin-bottom:16px">
                     ✏️ Éditer — <span style="color:#4f46e5">${u.username}</span>
                 </div>
-                <div class="section-title">Compte</div>
+                                <div class="section-title">Compte</div>
                 <div style="margin-bottom:14px">
                     <label style="font-size:12px;font-weight:600;color:#6b7280;display:block;margin-bottom:4px">Nom d'utilisateur</label>
                     <input id="edit-username" type="text" value="${u.username}"
@@ -578,7 +578,7 @@ async function adminConfirmSupprimer(id) {
                 'Authorization': `Bearer ${user.token}`
             }
         });
-                const d = await r.json();
+        const d = await r.json();
         if (d.success) chargerAdminUsers();
         else {
             const el  = document.getElementById('admin-tab-users');
