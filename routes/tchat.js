@@ -61,7 +61,7 @@ router.get('/conversations', auth, async (req, res) => {
         res.json({ success: true, conversations: rows });
     } catch (err) {
         console.error('[TCHAT] conversations :', err.message);
-        res.status(500).json({ success: false, message: err.message });
+        res.status(500).json({ success: false, message: 'Erreur serveur.' });
     }
 });
 
@@ -109,7 +109,7 @@ router.get('/messages/:interlocuteurId', auth, async (req, res) => {
         res.json({ success: true, messages: rows.reverse() });
     } catch (err) {
         console.error('[TCHAT] messages :', err.message);
-        res.status(500).json({ success: false, message: err.message });
+        res.status(500).json({ success: false, message: 'Erreur serveur.' });
     }
 });
 
@@ -183,7 +183,7 @@ router.post('/messages', auth, async (req, res) => {
         res.json({ success: true, message: enriched });
     } catch (err) {
         console.error('[TCHAT] sendMessage :', err.message);
-        res.status(500).json({ success: false, message: err.message });
+        res.status(500).json({ success: false, message: 'Erreur serveur.' });
     }
 });
 
@@ -270,7 +270,7 @@ router.post('/messages/image', auth, _upload.single('image'), async (req, res) =
         res.json({ success: true, message: enriched });
     } catch (err) {
         console.error('[TCHAT] sendImage :', err.message);
-        res.status(500).json({ success: false, message: err.message });
+        res.status(500).json({ success: false, message: 'Erreur serveur.' });
     }
 });
 
@@ -291,7 +291,8 @@ router.post('/messages/lus', auth, async (req, res) => {
 
         res.json({ success: true });
     } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
+        console.error('[TCHAT] messages/lus :', err.message);
+        res.status(500).json({ success: false, message: 'Erreur serveur.' });
     }
 });
 
@@ -307,7 +308,8 @@ router.get('/non-lus', auth, async (req, res) => {
         `, [moi]);
         res.json({ success: true, total: rows[0].total });
     } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
+        console.error('[TCHAT] non-lus :', err.message);
+        res.status(500).json({ success: false, message: 'Erreur serveur.' });
     }
 });
 
@@ -325,7 +327,7 @@ router.get('/users', auth, async (req, res) => {
         res.json({ success: true, users: rows });
     } catch (err) {
         console.error('[TCHAT] /users error:', err.message);
-        res.status(500).json({ success: false, message: err.message });
+        res.status(500).json({ success: false, message: 'Erreur serveur.' });
     }
 });
 
@@ -369,7 +371,8 @@ router.patch('/messages/:id', auth, async (req, res) => {
 
         res.json({ success: true, message: msg });
     } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
+        console.error('[TCHAT] update message :', err.message);
+        res.status(500).json({ success: false, message: 'Erreur serveur.' });
     }
 });
 
@@ -395,7 +398,8 @@ router.delete('/messages/:id', auth, async (req, res) => {
 
         res.json({ success: true });
     } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
+        console.error('[TCHAT] delete message :', err.message);
+        res.status(500).json({ success: false, message: 'Erreur serveur.' });
     }
 });
 
@@ -413,7 +417,8 @@ router.delete('/conversations/:interlocuteurId', auth, async (req, res) => {
         `, [moi, autre]);
         res.json({ success: true });
     } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
+        console.error('[TCHAT] delete conversation :', err.message);
+        res.status(500).json({ success: false, message: 'Erreur serveur.' });
     }
 });
 
@@ -425,7 +430,8 @@ router.post('/purge', auth, async (req, res) => {
         );
         res.json({ success: true, supprimés: rowCount });
     } catch (err) {
-        res.status(500).json({ success: false, message: err.message });
+        console.error('[TCHAT] purge :', err.message);
+        res.status(500).json({ success: false, message: 'Erreur serveur.' });
     }
 });
 
