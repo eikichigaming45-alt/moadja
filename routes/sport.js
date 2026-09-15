@@ -208,12 +208,13 @@ router.delete('/days/:dayId', auth, async (req, res) => {
 // ── EXERCICES D'UN JOUR : sport_day_exercises ──
 
 // Accepte désormais target_weight_kg / target_rest_seconds (repos par défaut 60).
+// order_in_day est désormais calculé côté serveur (MAX + 1), jamais fourni par le client.
 router.post('/days/:dayId/exercises', auth, async (req, res) => {
     const moi   = req.user.id;
     const dayId = parseInt(req.params.dayId, 10);
     const {
         wger_exercise_id, exercise_name,
-        order_in_day, target_sets, target_reps, target_duration_seconds,
+        target_sets, target_reps, target_duration_seconds,
         target_weight_kg, target_rest_seconds
     } = req.body;
 
@@ -230,6 +231,14 @@ router.post('/days/:dayId/exercises', auth, async (req, res) => {
         `, [dayId, moi]);
         if (!owner.length) return res.status(403).json({ success: false, message: 'Interdit.' });
 
+        // Calcul automatique de la position : dernier ordre du jour + 1.
+        const { rows: maxOrderRows } = await pool.query(`
+            SELECT COALESCE(MAX(order_in_day), 0) AS max_order
+            FROM sport_day_exercises
+            WHERE day_id = \$1
+        `, [dayId]);
+        const prochainOrdre = maxOrderRows[0].max_order + 1;
+
         const { rows } = await pool.query(`
             INSERT INTO sport_day_exercises
                 (day_id, wger_exercise_id, exercise_name, order_in_day, target_sets, target_reps,
@@ -240,7 +249,7 @@ router.post('/days/:dayId/exercises', auth, async (req, res) => {
             dayId,
             wger_exercise_id,
             exercise_name.trim(),
-            Number.isInteger(order_in_day) ? order_in_day : 0,
+            prochainOrdre,
             Number.isInteger(target_sets)  ? target_sets  : 3,
             Number.isInteger(target_reps)  ? target_reps  : 10,
             Number.isInteger(target_duration_seconds) ? target_duration_seconds : null,
@@ -604,7 +613,7 @@ router.get('/dashboard-stats', auth, async (req, res) => {
             };
         });
 
-                const derniereSessionBrute = sessions[0];
+        const derniereSessionBrute = sessions[0];
         const logsDerniereSeance   = tousLogs.filter(l => l.session_id === derniereSessionBrute.id);
         const records              = await _sportDetecterRecords(moi, derniereSessionBrute.id, logsDerniereSeance);
 
@@ -965,7 +974,7 @@ router.get('/wger/exercises', auth, async (req, res) => {
                     continue;
                 }
 
-                resultats.push({
+                                resultats.push({
                     wger_exercise_id: ex.id,
                     name            : nom,
                     category        : ex.category?.id ?? ex.category,
