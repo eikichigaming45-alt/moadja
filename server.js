@@ -4,11 +4,12 @@
 
 require('dotenv').config();
 
-const express    = require('express');
-const http       = require('http');
-const { Server } = require('socket.io');
-const webpush    = require('web-push');
-const jwt        = require('jsonwebtoken');
+const express     = require('express');
+const http        = require('http');
+const { Server }  = require('socket.io');
+const webpush     = require('web-push');
+const jwt         = require('jsonwebtoken');
+const rateLimit   = require('express-rate-limit');
 const { pool, initDB }          = require('./db/pool');
 const { router: tchatRouter,
         purgerMessages }        = require('./routes/tchat');
@@ -51,6 +52,23 @@ if (!process.env.VAPID_MAILTO || !process.env.VAPID_PUBLIC_KEY || !process.env.V
     );
 }
 
+// ── Rate limiters — protection routes sensibles ───────────────
+const adminLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, message: 'Trop de requêtes, réessayez plus tard.' }
+});
+
+const tchatSocialLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 300,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, message: 'Trop de requêtes, réessayez plus tard.' }
+});
+
 // ── Routes ────────────────────────────────────────────────────
 app.use('/api',                  require('./routes/auth').router);
 app.use('/api',                  require('./routes/changelog'));
@@ -62,7 +80,7 @@ app.use('/api/anniversaires',    require('./routes/anniversaires'));
 app.use('/api/push',             require('./routes/push').router);
 app.use('/api/priere',           require('./routes/priere'));
 app.use('/api/islam',            require('./routes/islam'));
-app.use('/api/admin',            require('./routes/admin'));
+app.use('/api/admin',            adminLimiter, require('./routes/admin'));
 app.use('/api/cycle',            require('./routes/cycle'));
 app.use('/api/agenda',           require('./routes/agenda'));
 app.use('/api/astrologie',       require('./routes/astrologie'));
@@ -70,10 +88,10 @@ app.use('/api/theme-astral',     require('./routes/theme-astral'));
 app.use('/api/pierre-naissance', require('./routes/pierre-naissance'));
 app.use('/api/animal-totem',     require('./routes/animal-totem'));
 app.use('/api/feed',             require('./routes/feed'));
-app.use('/api/social',           require('./routes/social'));
+app.use('/api/social',           tchatSocialLimiter, require('./routes/social'));
 app.use('/api/eclats',           require('./routes/eclats'));
 app.use('/api/sport',            require('./routes/sport'));
-app.use('/api/tchat',            tchatRouter);
+app.use('/api/tchat',            tchatSocialLimiter, tchatRouter);
 
 // ── Socket.io — authentification middleware ───────────────────
 io.use((socket, next) => {
