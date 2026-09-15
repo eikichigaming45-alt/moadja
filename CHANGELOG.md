@@ -1,5 +1,13 @@
 ## MoaDja
 
+## v1.92.16 — 15 septembre 2026
+- Correction du bug empêchant l'affichage de "Mes Routines" et le démarrage d'une séance de sport.
+- Le chronomètre d'une séance en cours s'affiche à nouveau correctement.
+- Il est désormais possible de réorganiser l'ordre des exercices d'une routine simplement en les faisant glisser.
+- Stabilité générale du module Sport améliorée.
+
+---
+
 ## v1.92.15 — 15 septembre 2026
 - Amélioration du module Sport pour les exercices au temps (comme le gainage ou le cardio) : il est désormais possible d'indiquer un nombre de séries, et de régler la durée très précisément en minutes et secondes.
 - Les champs de saisie des exercices sont désormais vides par défaut lors de l'ajout, pour faciliter votre propre personnalisation.
