@@ -440,11 +440,11 @@ function _sportRenderDetailRoutine(workout, jour) {
             ${!exercices.length ? `
                 <p class="sport-empty-note">Aucun exercice dans cette routine pour l'instant.</p>
             ` : `
-                                <div class="sport-routine-exercices-liste">
+                <div class="sport-routine-exercices-liste">
                     ${exercices.map(ex => `
                         <div class="sport-routine-exercice-item" id="sport-exercice-${ex.id}" data-exercice-id="${ex.id}" draggable="true">
                             <span class="sport-routine-exercice-drag-handle" title="Glisser pour réordonner">${SPORT_ICONE_POIGNEE}</span>
-                            <div class="sport-routine-exercice-info">
+                                                        <div class="sport-routine-exercice-info">
                                 <div class="sport-routine-exercice-nom">${_sportEchapper(ex.exercise_name)}</div>
                                 <div class="sport-routine-exercice-meta">${_sportFormaterMetaExercice(ex)}</div>
                             </div>
@@ -466,7 +466,6 @@ function _sportRenderDetailRoutine(workout, jour) {
         </div>
     `;
 
-    // Suppression de la routine.
     zone.querySelector('.sport-routine-btn-suppr-routine')?.addEventListener('click', () => {
         _sportOuvrirConfirmationSuppression(async () => {
             await fetch(`/api/sport/workouts/${workout.id}`, { method: 'DELETE', headers: _sportAuthHeaders() });
@@ -474,7 +473,6 @@ function _sportRenderDetailRoutine(workout, jour) {
         });
     });
 
-    // Édition / suppression par exercice.
     zone.querySelectorAll('.sport-routine-exercice-btn-edit').forEach(btn => {
         btn.addEventListener('click', () => _sportOuvrirEditionExercice(parseInt(btn.dataset.exerciceId, 10), exercices));
     });
@@ -488,7 +486,6 @@ function _sportRenderDetailRoutine(workout, jour) {
         });
     });
 
-    // Drag-and-drop : réordonnancement des exercices.
     _sportInitDragAndDropExercices(zone, workout.id);
 }
 
@@ -515,7 +512,7 @@ function _sportInitDragAndDropExercices(zone, workoutId) {
             e.preventDefault();
             if (!elementGlisse || elementGlisse === item) return;
 
-            const rect       = item.getBoundingClientRect();
+            const rect        = item.getBoundingClientRect();
             const apresMilieu = e.clientY > rect.top + rect.height / 2;
 
             if (apresMilieu) {
@@ -524,6 +521,41 @@ function _sportInitDragAndDropExercices(zone, workoutId) {
                 item.before(elementGlisse);
             }
         });
+
+        // Support tactile (mobile) : réordonnancement au toucher via la poignée.
+        const poignee = item.querySelector('.sport-routine-exercice-drag-handle');
+        if (poignee) {
+            poignee.addEventListener('touchstart', (e) => {
+                elementGlisse = item;
+                item.classList.add('sport-exercice-en-glissement');
+                e.preventDefault();
+            }, { passive: false });
+        }
+    });
+
+    liste.addEventListener('touchmove', (e) => {
+        if (!elementGlisse) return;
+        e.preventDefault();
+        const touch  = e.touches[0];
+        const cible  = document.elementFromPoint(touch.clientX, touch.clientY);
+        const item   = cible?.closest('.sport-routine-exercice-item');
+        if (!item || item === elementGlisse) return;
+
+        const rect        = item.getBoundingClientRect();
+        const apresMilieu = touch.clientY > rect.top + rect.height / 2;
+
+        if (apresMilieu) {
+            item.after(elementGlisse);
+        } else {
+            item.before(elementGlisse);
+        }
+    }, { passive: false });
+
+    liste.addEventListener('touchend', () => {
+        if (!elementGlisse) return;
+        elementGlisse.classList.remove('sport-exercice-en-glissement');
+        _sportSauvegarderOrdreExercices(liste, workoutId);
+        elementGlisse = null;
     });
 }
 
@@ -548,8 +580,8 @@ async function _sportSauvegarderOrdreExercices(liste, workoutId) {
 
 // ── Édition inline d'un exercice (min/sec pour durée, poids/reps sinon) ──
 function _sportOuvrirEditionExercice(exerciceId, exercices) {
-    const ex     = exercices.find(e => e.id === exerciceId);
-    const item   = document.getElementById(`sport-exercice-${exerciceId}`);
+    const ex   = exercices.find(e => e.id === exerciceId);
+    const item = document.getElementById(`sport-exercice-${exerciceId}`);
     if (!ex || !item) return;
 
     const estDuree     = Number.isInteger(ex.target_duration_seconds);
@@ -627,4 +659,442 @@ function _sportOuvrirDetailRoutineDepuisCache() {
     if (_sportRoutineDetailActive?.workoutId) {
         _sportOuvrirDetailRoutine(_sportRoutineDetailActive.workoutId);
     }
+}
+
+// ══════════════════════════════════════════════════════════════
+// ── AJOUT D'EXERCICE (catalogue WGER) ──
+// ══════════════════════════════════════════════════════════════
+
+let _sportCatalogueOffset  = 0;
+let _sportCatalogueTermine = false;
+let _sportCatalogueEnCours = false;
+let _sportCatalogueFiltres = { search: '', category: '', equipment: '' };
+
+function _sportOuvrirModalAjoutExercice() {
+    document.getElementById('overlay').classList.add('on');
+    document.body.classList.add('modal-open');
+    history.pushState({ modalOpen: true }, '', '');
+
+    document.getElementById('modal-title').textContent = 'Ajouter un exercice';
+    document.getElementById('modal-body').innerHTML = `
+        <input type="text" id="sport-catalogue-search" class="sport-catalogue-search"
+               placeholder="Rechercher un exercice…" autocomplete="off">
+        <div class="sport-catalogue-filtres">
+            <select id="sport-catalogue-categorie"><option value="">Toutes catégories</option></select>
+            <select id="sport-catalogue-equipement"><option value="">Tout équipement</option></select>
+        </div>
+        <div id="sport-catalogue-liste" class="sport-catalogue-liste">
+            <p class="sport-catalogue-loading">Chargement du catalogue…</p>
+        </div>
+        <button class="sport-cta-btn sport-catalogue-btn-plus" id="sport-catalogue-btn-plus" style="display:none">
+            Afficher plus
+        </button>
+    `;
+
+    _sportCatalogueOffset  = 0;
+    _sportCatalogueTermine = false;
+    _sportCatalogueFiltres = { search: '', category: '', equipment: '' };
+
+    _sportChargerFiltresCatalogue();
+    _sportRechercherCatalogue(true);
+
+    let debounce = null;
+    document.getElementById('sport-catalogue-search').addEventListener('input', (e) => {
+        clearTimeout(debounce);
+        debounce = setTimeout(() => {
+            _sportCatalogueFiltres.search = e.target.value.trim();
+            _sportRechercherCatalogue(true);
+        }, 350);
+    });
+    document.getElementById('sport-catalogue-categorie').addEventListener('change', (e) => {
+        _sportCatalogueFiltres.category = e.target.value;
+        _sportRechercherCatalogue(true);
+    });
+    document.getElementById('sport-catalogue-equipement').addEventListener('change', (e) => {
+        _sportCatalogueFiltres.equipment = e.target.value;
+        _sportRechercherCatalogue(true);
+    });
+    document.getElementById('sport-catalogue-btn-plus').addEventListener('click', () => _sportRechercherCatalogue(false));
+}
+
+async function _sportChargerFiltresCatalogue() {
+    try {
+        const [rCat, rEqu] = await Promise.all([
+            fetch('/api/sport/wger/categories', { headers: _sportAuthHeaders() }),
+            fetch('/api/sport/wger/equipment', { headers: _sportAuthHeaders() })
+        ]);
+        const dCat = await rCat.json();
+        const dEqu = await rEqu.json();
+
+        const selCat = document.getElementById('sport-catalogue-categorie');
+        const selEqu = document.getElementById('sport-catalogue-equipement');
+        if (selCat && dCat.success) {
+            dCat.categories.forEach(c => selCat.insertAdjacentHTML('beforeend', `<option value="${c.id}">${_sportEchapper(c.name)}</option>`));
+        }
+        if (selEqu && dEqu.success) {
+            dEqu.equipment.forEach(e => selEqu.insertAdjacentHTML('beforeend', `<option value="${e.id}">${_sportEchapper(e.name)}</option>`));
+        }
+    } catch (err) {
+        console.error('[SPORT] chargerFiltresCatalogue :', err.message);
+    }
+}
+
+async function _sportRechercherCatalogue(reinit) {
+    if (_sportCatalogueEnCours) return;
+    _sportCatalogueEnCours = true;
+
+    if (reinit) {
+        _sportCatalogueOffset  = 0;
+        _sportCatalogueTermine = false;
+        document.getElementById('sport-catalogue-liste').innerHTML = `<p class="sport-catalogue-loading">Recherche…</p>`;
+    }
+
+    const btnPlus = document.getElementById('sport-catalogue-btn-plus');
+    if (btnPlus) btnPlus.style.display = 'none';
+
+    try {
+        const params = new URLSearchParams({
+            limit : '20',
+            offset: String(_sportCatalogueOffset),
+            search: _sportCatalogueFiltres.search,
+            category : _sportCatalogueFiltres.category,
+            equipment: _sportCatalogueFiltres.equipment
+        });
+        const r = await fetch(`/api/sport/wger/exercises?${params.toString()}`, { headers: _sportAuthHeaders() });
+        const d = await r.json();
+
+        const zone = document.getElementById('sport-catalogue-liste');
+        if (!d.success) {
+            zone.innerHTML = `<p class="sport-catalogue-loading">Erreur lors de la recherche.</p>`;
+            return;
+        }
+
+        if (reinit) zone.innerHTML = '';
+        if (!d.exercises.length && reinit) {
+            zone.innerHTML = `<p class="sport-catalogue-loading">Aucun exercice trouvé.</p>`;
+        } else {
+            d.exercises.forEach(ex => {
+                zone.insertAdjacentHTML('beforeend', `
+                    <div class="sport-catalogue-item" data-wger-id="${ex.wger_exercise_id}" data-type-suivi="${ex.type_suivi || ''}" data-nom="${_sportEchapper(ex.name)}">
+                        <div class="sport-catalogue-item-image">
+                            ${ex.image ? `<img src="${ex.image}" alt="">` : SPORT_ICONE_PAS_IMAGE}
+                        </div>
+                        <div class="sport-catalogue-item-nom">${_sportEchapper(ex.name)}</div>
+                    </div>
+                `);
+            });
+        }
+
+        _sportCatalogueOffset += d.exercises.length;
+        _sportCatalogueTermine = !d.has_more;
+
+        if (btnPlus) btnPlus.style.display = _sportCatalogueTermine ? 'none' : 'block';
+
+        zone.querySelectorAll('.sport-catalogue-item').forEach(item => {
+            item.addEventListener('click', () => _sportOuvrirFormulaireAjoutExercice(
+                parseInt(item.dataset.wgerId, 10), item.dataset.nom, item.dataset.typeSuivi || null
+            ));
+        });
+    } catch (err) {
+        console.error('[SPORT] rechercherCatalogue :', err.message);
+    } finally {
+        _sportCatalogueEnCours = false;
+    }
+}
+
+// ── Formulaire d'ajout : type de suivi (séries/reps vs séries/durée) ──
+function _sportOuvrirFormulaireAjoutExercice(wgerId, nom, typeSuivi) {
+    const estDuree = typeSuivi === 'duree';
+
+    document.getElementById('modal-title').textContent = 'Ajouter : ' + nom;
+    document.getElementById('modal-body').innerHTML = `
+        <div class="sport-ajout-form">
+            ${estDuree ? `
+                <div class="sport-edition-champ-groupe">
+                    <input type="number" min="1" id="sport-ajout-sets" value="1" class="sport-edition-input-court">
+                    <span class="sport-edition-label">séries ×</span>
+                    <input type="number" min="0" id="sport-ajout-min" value="0" class="sport-edition-input-court">
+                    <span class="sport-edition-label">min</span>
+                    <input type="number" min="0" max="59" id="sport-ajout-sec" value="30" class="sport-edition-input-court">
+                    <span class="sport-edition-label">sec</span>
+                </div>
+            ` : `
+                <div class="sport-edition-champ-groupe">
+                    <input type="number" min="1" id="sport-ajout-sets" value="3" class="sport-edition-input-court">
+                    <span class="sport-edition-label">séries ×</span>
+                    <input type="number" min="1" id="sport-ajout-reps" value="10" class="sport-edition-input-court">
+                    <span class="sport-edition-label">reps</span>
+                </div>
+            `}
+            <div class="sport-edition-champ-groupe">
+                <input type="number" min="0" id="sport-ajout-repos" value="30" class="sport-edition-input-court">
+                <span class="sport-edition-label">sec de repos</span>
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-save" id="sport-ajout-confirmer">Ajouter</button>
+            <button class="btn-cancel" id="sport-ajout-annuler">Annuler</button>
+        </div>
+    `;
+
+    document.getElementById('sport-ajout-annuler').onclick = () => closeModal();
+    document.getElementById('sport-ajout-confirmer').onclick = () => _sportConfirmerAjoutExercice(wgerId, nom, estDuree);
+}
+
+async function _sportConfirmerAjoutExercice(wgerId, nom, estDuree) {
+    if (!_sportRoutineDetailActive?.dayId) return;
+
+    const targetSets = parseInt(document.getElementById('sport-ajout-sets').value, 10) || 1;
+    const targetRest = parseInt(document.getElementById('sport-ajout-repos').value, 10) || 0;
+
+    const payload = {
+        wger_exercise_id   : wgerId,
+        exercise_name      : nom,
+        target_sets        : targetSets,
+        target_rest_seconds: targetRest
+    };
+
+    if (estDuree) {
+        const min = parseInt(document.getElementById('sport-ajout-min').value, 10) || 0;
+        const sec = parseInt(document.getElementById('sport-ajout-sec').value, 10) || 0;
+        payload.target_duration_seconds = (min * 60) + sec;
+        payload.target_reps = null;
+    } else {
+        payload.target_reps = parseInt(document.getElementById('sport-ajout-reps').value, 10) || 10;
+        payload.target_duration_seconds = null;
+    }
+
+    try {
+        await fetch(`/api/sport/days/${_sportRoutineDetailActive.dayId}/exercises`, {
+            method : 'POST',
+            headers: _sportAuthHeaders(),
+            body   : JSON.stringify(payload)
+        });
+        closeModal();
+        _sportOuvrirDetailRoutineDepuisCache();
+    } catch (err) {
+        console.error('[SPORT] confirmerAjoutExercice :', err.message);
+        _sportOuvrirConfirmationInfo("Erreur lors de l'ajout de l'exercice.");
+    }
+}
+
+// ══════════════════════════════════════════════════════════════
+// ── SÉANCE EN COURS ──
+// ══════════════════════════════════════════════════════════════
+
+let _sportSeanceActive      = null; // { sessionId, workoutId, exercices, startedAt }
+let _sportSeanceTimerHandle = null;
+
+async function _sportInitVerifSeanceActive() {
+    try {
+        const r = await fetch('/api/sport/sessions/active', { headers: _sportAuthHeaders() });
+        const d = await r.json();
+        if (d.success && d.session) {
+            _sportSeanceActive = d.session;
+            _sportRenderSeanceEnCours();
+        }
+    } catch (err) {
+        console.error('[SPORT] initVerifSeanceActive :', err.message);
+    }
+}
+
+async function _sportDemarrerSeance(workoutId) {
+    try {
+        const r = await fetch('/api/sport/sessions', {
+            method : 'POST',
+            headers: _sportAuthHeaders(),
+            body   : JSON.stringify({ workout_id: workoutId })
+        });
+                const d = await r.json();
+        if (!d.success) {
+            _sportOuvrirConfirmationInfo('Erreur lors du démarrage de la séance.');
+            return;
+        }
+        _sportSeanceActive = d.session;
+        _sportRenderSeanceEnCours();
+    } catch (err) {
+        console.error('[SPORT] demarrerSeance :', err.message);
+    }
+}
+
+function _sportRenderSeanceEnCours() {
+    const zone = document.getElementById('grid-sport');
+    if (!zone || !_sportSeanceActive) return;
+
+    const exercices = _sportSeanceActive.exercices || [];
+
+    zone.innerHTML = `
+        <div class="sport-wrap">
+            <div class="sport-card sport-seance-header">
+                <div class="sport-seance-chrono" id="sport-seance-chrono">00:00</div>
+                <button class="sport-seance-btn-terminer" id="sport-seance-btn-terminer">Terminer</button>
+            </div>
+
+            <div class="sport-seance-exercices-liste">
+                ${exercices.map(ex => _sportRenderExerciceSeance(ex)).join('')}
+            </div>
+        </div>
+    `;
+
+    document.getElementById('sport-seance-btn-terminer').addEventListener('click', _sportConfirmerFinSeance);
+
+    exercices.forEach(ex => _sportBindExerciceSeance(ex));
+
+    _sportDemarrerChronoSeance();
+}
+
+function _sportRenderExerciceSeance(ex) {
+    const estDuree = Number.isInteger(ex.target_duration_seconds);
+    const nbSeries = ex.target_sets || 1;
+    const series   = ex.series_completees || [];
+
+    const estCardio = ['Marche', 'Course', 'Vélo', 'Tapis'].some(mot => ex.exercise_name?.includes(mot)) || estDuree;
+
+    return `
+        <div class="sport-card sport-seance-exercice-card" id="sport-seance-ex-${ex.id}">
+            <div class="sport-seance-exercice-titre">${_sportEchapper(ex.exercise_name)}</div>
+            <div class="sport-seance-exercice-entete">
+                <span>SÉRIE</span>
+                ${estDuree ? `<span>MIN</span><span>SEC</span>` : `<span>POIDS (KG)</span><span>REPS</span>`}
+            </div>
+            ${Array.from({ length: nbSeries }).map((_, i) => {
+                const num  = i + 1;
+                const fait = series.find(s => s.serie === num);
+                const min  = estDuree ? Math.floor((fait?.duree_secondes ?? ex.target_duration_seconds ?? 0) / 60) : null;
+                const sec  = estDuree ? (fait?.duree_secondes ?? ex.target_duration_seconds ?? 0) % 60 : null;
+
+                return `
+                    <div class="sport-seance-serie-ligne ${fait ? 'sport-serie-validee' : ''}" data-exercice-id="${ex.id}" data-serie="${num}">
+                        <span class="sport-seance-serie-num">${num}</span>
+                        ${estDuree ? `
+                            <input type="number" min="0" class="sport-seance-input-min" value="${min}" ${fait ? 'disabled' : ''}>
+                            <input type="number" min="0" max="59" class="sport-seance-input-sec" value="${sec}" ${fait ? 'disabled' : ''}>
+                        ` : `
+                            <input type="number" min="0" class="sport-seance-input-poids" placeholder="kg" value="${fait?.poids_kg ?? ex.target_weight_kg ?? ''}" ${fait ? 'disabled' : ''}>
+                            <input type="number" min="0" class="sport-seance-input-reps" value="${fait?.reps ?? ex.target_reps ?? ''}" ${fait ? 'disabled' : ''}>
+                        `}
+                        <button class="sport-seance-btn-check ${fait ? 'sport-check-actif' : ''}" title="Valider la série">
+                            ${SPORT_ICONE_CHECK}
+                        </button>
+                    </div>
+                `;
+            }).join('')}
+            ${estCardio ? `
+                <div class="sport-seance-cardio-champs">
+                    <input type="number" min="0" step="0.01" class="sport-seance-input-dist" placeholder="Dist. (km)" value="${ex.distance_km ?? ''}">
+                    <input type="number" min="0" step="0.1" class="sport-seance-input-vit" placeholder="Vit. (km/h)" value="${ex.vitesse_kmh ?? ''}">
+                    <input type="number" min="0" class="sport-seance-input-incl" placeholder="Incl. (%)" value="${ex.inclinaison_pct ?? ''}">
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+function _sportBindExerciceSeance(ex) {
+    const card = document.getElementById(`sport-seance-ex-${ex.id}`);
+    if (!card) return;
+
+    card.querySelectorAll('.sport-seance-serie-ligne').forEach(ligne => {
+        const btn = ligne.querySelector('.sport-seance-btn-check');
+        btn?.addEventListener('click', () => _sportValiderSerie(ex, ligne));
+    });
+
+    ['dist', 'vit', 'incl'].forEach(champ => {
+        const input = card.querySelector(`.sport-seance-input-${champ}`);
+        input?.addEventListener('change', () => _sportSauvegarderCardioExercice(ex, card));
+    });
+}
+
+async function _sportValiderSerie(ex, ligne) {
+    if (ligne.classList.contains('sport-serie-validee')) return;
+
+    const numSerie = parseInt(ligne.dataset.serie, 10);
+    const estDuree = Number.isInteger(ex.target_duration_seconds);
+
+    const payload = { serie: numSerie };
+    if (estDuree) {
+        payload.duree_secondes = (parseInt(ligne.querySelector('.sport-seance-input-min').value, 10) || 0) * 60
+                                + (parseInt(ligne.querySelector('.sport-seance-input-sec').value, 10) || 0);
+    } else {
+        payload.poids_kg = parseFloat(ligne.querySelector('.sport-seance-input-poids').value) || 0;
+        payload.reps     = parseInt(ligne.querySelector('.sport-seance-input-reps').value, 10) || 0;
+    }
+
+    try {
+        await fetch(`/api/sport/sessions/${_sportSeanceActive.sessionId}/exercises/${ex.id}/series`, {
+            method : 'POST',
+            headers: _sportAuthHeaders(),
+            body   : JSON.stringify(payload)
+        });
+
+        ligne.classList.add('sport-serie-validee');
+        ligne.querySelector('.sport-seance-btn-check').classList.add('sport-check-actif');
+        ligne.querySelectorAll('input').forEach(i => i.disabled = true);
+    } catch (err) {
+        console.error('[SPORT] validerSerie :', err.message);
+    }
+}
+
+async function _sportSauvegarderCardioExercice(ex, card) {
+    const payload = {
+        distance_km    : parseFloat(card.querySelector('.sport-seance-input-dist')?.value) || null,
+        vitesse_kmh    : parseFloat(card.querySelector('.sport-seance-input-vit')?.value) || null,
+        inclinaison_pct: parseFloat(card.querySelector('.sport-seance-input-incl')?.value) || null
+    };
+
+    try {
+        await fetch(`/api/sport/sessions/${_sportSeanceActive.sessionId}/exercises/${ex.id}/cardio`, {
+            method : 'PUT',
+            headers: _sportAuthHeaders(),
+            body   : JSON.stringify(payload)
+        });
+    } catch (err) {
+        console.error('[SPORT] sauvegarderCardioExercice :', err.message);
+    }
+}
+
+// ── Chrono de séance ──
+function _sportDemarrerChronoSeance() {
+    if (_sportSeanceTimerHandle) clearInterval(_sportSeanceTimerHandle);
+
+    const debut = new Date(_sportSeanceActive.startedAt).getTime();
+
+    const majAffichage = () => {
+        const el = document.getElementById('sport-seance-chrono');
+        if (!el) { clearInterval(_sportSeanceTimerHandle); return; }
+        const ecoule = Math.floor((Date.now() - debut) / 1000);
+        const m = String(Math.floor(ecoule / 60)).padStart(2, '0');
+        const s = String(ecoule % 60).padStart(2, '0');
+        el.textContent = `${m}:${s}`;
+    };
+
+    majAffichage();
+    _sportSeanceTimerHandle = setInterval(majAffichage, 1000);
+}
+
+// ── Fin de séance ──
+function _sportConfirmerFinSeance() {
+    _sportOuvrirModalChoix(
+        'Terminer la séance',
+        'Voulez-vous vraiment terminer et enregistrer cette séance ?',
+        'Terminer',
+        'Annuler',
+        _sportTerminerSeance
+    );
+}
+
+async function _sportTerminerSeance() {
+    if (_sportSeanceTimerHandle) clearInterval(_sportSeanceTimerHandle);
+
+    try {
+        await fetch(`/api/sport/sessions/${_sportSeanceActive.sessionId}/finish`, {
+            method : 'POST',
+            headers: _sportAuthHeaders()
+        });
+    } catch (err) {
+        console.error('[SPORT] terminerSeance :', err.message);
+    }
+
+    _sportSeanceActive = null;
+    chargerSportDashboard();
 }
