@@ -22,11 +22,21 @@ function authenticateToken(req, res, next) {
     });
 }
 
-function requireAdmin(req, res, next) {
-    if (req.user?.role !== 'admin') {
+async function requireAdmin(req, res, next) {
+    if (!req.user?.id) {
         return res.status(403).json({ success: false, message: 'Accès refusé' });
     }
-    next();
+    try {
+        const result = await pool.query('SELECT role FROM users WHERE id = \$1', [req.user.id]);
+        const currentRole = result.rows[0]?.role;
+        if (currentRole !== 'admin') {
+            return res.status(403).json({ success: false, message: 'Accès refusé' });
+        }
+        next();
+    } catch (e) {
+        console.error('[AUTH] requireAdmin role check error:', e.message);
+        return res.status(500).json({ success: false, message: 'Erreur serveur' });
+    }
 }
 
 module.exports = { authenticateToken, requireAdmin };
