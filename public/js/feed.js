@@ -256,7 +256,7 @@ function renderPost(p) {
             <div class="feed-lieu-raw" id="post-lieu-raw-${p.id}" style="display:none">${escapeHtml(p.lieu || '')}</div>
             <div class="feed-lieulat-raw" id="post-lieulat-raw-${p.id}" style="display:none">${p.lieu_lat || ''}</div>
             <div class="feed-lieulon-raw" id="post-lieulon-raw-${p.id}" style="display:none">${p.lieu_lon || ''}</div>
-            ${p.contenu ? `<div class="feed-contenu">${renderContenuAvecMentions(p.contenu, p.mentions_data)}</div>` : ''}
+                        ${p.contenu ? `<div class="feed-contenu">${renderContenuAvecMentions(p.contenu, p.mentions_data)}</div>` : ''}
             ${p.photo_url ? `
             <div class="feed-photo-wrap" id="photo-wrap-${p.id}" data-post-id="${p.id}" data-photo-url="${escapeHtml(p.photo_url)}" data-ma-resonance="${escapeHtml(p.ma_resonance || '')}">
                 <img src="${p.photo_url}" class="feed-photo" alt="">
@@ -607,7 +607,7 @@ function editerPost(postId) {
                 <input type="hidden" id="edit-post-lon" value="${lieuLonActuel}">
             </div>
             
-            <div style="width:100%; background:rgba(255,255,255,0.4); border:1px solid rgba(255,255,255,0.6); border-radius:16px; padding:16px; box-sizing:border-box;">
+                        <div style="width:100%; background:rgba(255,255,255,0.4); border:1px solid rgba(255,255,255,0.6); border-radius:16px; padding:16px; box-sizing:border-box;">
                 <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;margin-bottom:12px;padding-left:4px;">Photo du post</div>
                 
                 ${photoActuelle ? `
@@ -902,7 +902,7 @@ async function ouvrirProfilPublic(userId) {
         const infosPubliques = [];
         if (p.age) infosPubliques.push(`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span style="font-size:11px;font-weight:700;color:#7c3aed;text-transform:uppercase">Âge</span><span style="font-size:13px;color:#374151;text-align:right">${escapeHtml(String(p.age))} ans</span></div>`);
         if (p.profession) infosPubliques.push(`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span style="font-size:11px;font-weight:700;color:#7c3aed;text-transform:uppercase">Profession</span><span style="font-size:13px;color:#374151;text-align:right">${escapeHtml(p.profession)}</span></div>`);
-        if (p.site_web) infosPubliques.push(`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span style="font-size:11px;font-weight:700;color:#7c3aed;text-transform:uppercase">Site</span><a href="${escapeHtml(p.site_web)}" target="_blank" rel="noopener" style="font-size:13px;color:#7c3aed;text-decoration:underline;text-align:right;word-break:break-all">${escapeHtml(p.site_web)}</a></div>`);
+        if (p.site_web && /^https?:\/\//i.test(p.site_web)) infosPubliques.push(`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span style="font-size:11px;font-weight:700;color:#7c3aed;text-transform:uppercase">Site</span><a href="${escapeHtml(p.site_web)}" target="_blank" rel="noopener" style="font-size:13px;color:#7c3aed;text-decoration:underline;text-align:right;word-break:break-all">${escapeHtml(p.site_web)}</a></div>`);
         if (p.signe_astro && p.signe_astro.label) infosPubliques.push(`<div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><span style="font-size:11px;font-weight:700;color:#7c3aed;text-transform:uppercase">Signe astro</span><span style="font-size:13px;color:#374151;text-align:right">${escapeHtml(p.signe_astro.emoji || '')} ${escapeHtml(p.signe_astro.label)}</span></div>`);
         const blocInfos = infosPubliques.length ? `<div style="width:100%;display:flex;flex-direction:column;gap:8px;background:#f9fafb;border-radius:12px;padding:12px 14px;box-sizing:border-box">${infosPubliques.join('')}</div>` : '';
 
@@ -971,7 +971,6 @@ async function partagerPost(postId) {
     const contenu = contenuEl ? contenuEl.textContent.trim() : '';
     const text = contenu.substring(0, 100) || 'Regarde ce post sur MoaDja';
     
-    // NOUVEAU : On utilise la route publique de partage au lieu de l'URL de l'image
     const shareUrl = `${location.origin}/api/feed/share/${postId}`;
 
     if (navigator.share) { 
@@ -997,5 +996,4 @@ async function partagerPost(postId) {
     }
 }
 
-function escapeHtml(str) { return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-
+function escapeHtml(str) { return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
