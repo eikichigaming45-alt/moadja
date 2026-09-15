@@ -1,12 +1,13 @@
 // routes/sport.js
 // Module Sport : CRUD routines/jours/exercices/séances/logs + mensurations.
 // Toutes les routes scopées par user. Catalogue WGER en lecture seule
-// (traduction FR cardio via SPORT_CARDIO_FR, recherche insensible accents/casse).
+// (traduction FR complète via SPORT_TRADUCTION_FR, toutes catégories,
+// recherche insensible accents/casse, bilingue anglais/français).
 const express = require('express');
 const router  = express.Router();
 const { pool } = require('../db/pool');
 const { authenticateToken: auth } = require('../middleware/auth');
-const { SPORT_CARDIO_FR } = require('./sport-cardio-fr');
+const { SPORT_TRADUCTION_FR } = require('./sport-traduction-fr');
 
 const WGER_BASE_URL = 'https://wger.de/api/v2';
 
@@ -603,7 +604,7 @@ router.get('/dashboard-stats', auth, async (req, res) => {
             };
         });
 
-        const derniereSessionBrute = sessions[0];
+                const derniereSessionBrute = sessions[0];
         const logsDerniereSeance   = tousLogs.filter(l => l.session_id === derniereSessionBrute.id);
         const records              = await _sportDetecterRecords(moi, derniereSessionBrute.id, logsDerniereSeance);
 
@@ -808,8 +809,11 @@ router.delete('/measurements/:id', auth, async (req, res) => {
 });
 
 // ── CATALOGUE WGER (lecture seule) ──
-// Noms "Anglais (Français)". Cardio (id 15) : nom remplacé via SPORT_CARDIO_FR
-// + type_suivi. mapping = null -> exercice masqué. Recherche insensible accents/casse.
+// Noms "Anglais (Français)". Traduction FR complète via SPORT_TRADUCTION_FR
+// (toutes catégories, mapping = null -> exercice masqué). Nettoyage de tout
+// texte non-latin résiduel entre parenthèses (ex. cyrillique WGER). Recherche
+// insensible accents/casse, portant sur le nom affiché ET le nom original
+// (pour retrouver un exercice traduit en cherchant son nom anglais d'origine).
 
 const SPORT_WGER_CATEGORIES_FR = {
     'Abs'      : 'Abdominaux',
@@ -851,6 +855,15 @@ function _construireNomBilingue(translations) {
 
 function _nettoyerNomBase(nom) {
     return nom.split('(')[0].trim();
+}
+
+// Supprime tout groupe entre parenthèses ne contenant aucune lettre latine
+// (ex. cyrillique WGER type "Squats (Приседания)"). Un contenu FR légitime
+// entre parenthèses (alphabet latin) reste affiché tel quel.
+function _nettoyerParenthesesNonLatines(nom) {
+    return nom.replace(/\s*$([^()]*)$/g, (match, interieur) => {
+        return /[a-zA-Z]/.test(interieur) ? match : '';
+    }).trim();
 }
 
 function _sansAccents(txt) {
@@ -928,22 +941,24 @@ router.get('/wger/exercises', auth, async (req, res) => {
 
             for (const ex of data.results) {
                 const translations = ex.translations || [];
-                let nom            = _construireNomBilingue(translations);
+                const nomOriginal  = _nettoyerParenthesesNonLatines(_construireNomBilingue(translations));
+                let nom            = nomOriginal;
                 let typeSuivi      = null;
 
-                if (ex.category?.id === 15) {
-                    const cle = _nettoyerNomBase(nom);
-                    if (Object.prototype.hasOwnProperty.call(SPORT_CARDIO_FR, cle)) {
-                        const mapping = SPORT_CARDIO_FR[cle];
-                        if (mapping === null) continue;
-                        nom       = mapping.nom;
-                        typeSuivi = mapping.type;
-                    }
+                const cle = _nettoyerNomBase(nomOriginal);
+                if (Object.prototype.hasOwnProperty.call(SPORT_TRADUCTION_FR, cle)) {
+                    const mapping = SPORT_TRADUCTION_FR[cle];
+                    if (mapping === null) continue;
+                    nom       = mapping.nom;
+                    typeSuivi = mapping.type;
                 }
 
                 const image = ex.images?.[0]?.image || null;
 
-                if (search && !_sansAccents(nom.toLowerCase()).includes(search)) continue;
+                if (search) {
+                    const texteRecherchable = _sansAccents(`${nom} ${nomOriginal}`.toLowerCase());
+                    if (!texteRecherchable.includes(search)) continue;
+                }
 
                 if (aIgnorer > 0) {
                     aIgnorer--;
