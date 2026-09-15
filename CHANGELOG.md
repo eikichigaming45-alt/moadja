@@ -1,5 +1,11 @@
 ## MoaDja
 
+## v1.92.22 — 15 septembre 2026
+- Ajout d'une vérification sur les liens du profil (site web) pour plus de sécurité.
+- Renforcement de la protection des posts et des lieux contre les contenus malveillants.
+
+---
+
 ## v1.92.16 — 15 septembre 2026
 - Correction du bug empêchant l'affichage de "Mes Routines" et le démarrage d'une séance de sport.
 - Le chronomètre d'une séance en cours s'affiche à nouveau correctement.
