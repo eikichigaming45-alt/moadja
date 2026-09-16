@@ -83,8 +83,9 @@ async function chargerFeed() {
 }
 
 function _renderHashtags(texte) {
-    return texte.replace(/(<[^>]*>)|#([a-zA-ZÀ-ÿ0-9_]+)/g, (match, tag_html, tag) => {
+    return texte.replace(/(<[^>]*>)|(&#?[a-zA-Z0-9]+;)|#([a-zA-ZÀ-ÿ0-9_]+)/g, (match, tag_html, entity_html, tag) => {
         if (tag_html) return tag_html;
+        if (entity_html) return entity_html;
         return `<span class="hashtag-tag" data-tag="${tag.toLowerCase()}">#${tag}</span>`;
     });
 }
@@ -252,7 +253,7 @@ function renderPost(p) {
                     ${isOwner || isAdmin ? `<button class="feed-action-btn" onclick="editerPost(${p.id})" title="Modifier"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="feed-delete-btn" onclick="supprimerPost(${p.id})" title="Supprimer"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>` : ''}
                 </div>
             </div>
-            <div class="feed-contenu-text" id="post-contenu-${p.id}" style="display:none">${escapeHtml(p.contenu || '')}</div>
+                        <div class="feed-contenu-text" id="post-contenu-${p.id}" style="display:none">${escapeHtml(p.contenu || '')}</div>
             <div class="feed-lieu-raw" id="post-lieu-raw-${p.id}" style="display:none">${escapeHtml(p.lieu || '')}</div>
             <div class="feed-lieulat-raw" id="post-lieulat-raw-${p.id}" style="display:none">${p.lieu_lat || ''}</div>
             <div class="feed-lieulon-raw" id="post-lieulon-raw-${p.id}" style="display:none">${p.lieu_lon || ''}</div>
@@ -605,7 +606,7 @@ function editerPost(postId) {
                 <input type="text" id="edit-post-lieu" class="loc-input" placeholder="Lieu (optionnel)" value="${escapeHtml(lieuActuel)}" style="border-radius:12px; margin:0;">
                 <input type="hidden" id="edit-post-lat" value="${lieuLatActuel}">
                 <input type="hidden" id="edit-post-lon" value="${lieuLonActuel}">
-            </div>
+                        </div>
             
             <div style="width:100%; background:rgba(255,255,255,0.4); border:1px solid rgba(255,255,255,0.6); border-radius:16px; padding:16px; box-sizing:border-box;">
                 <div style="font-size:11px;color:#6b7280;font-weight:700;text-transform:uppercase;margin-bottom:12px;padding-left:4px;">Photo du post</div>
@@ -986,7 +987,7 @@ async function partagerPost(postId) {
             await navigator.clipboard.writeText(`${text}\n${shareUrl}`); 
             document.getElementById('modal-title').textContent = 'Lien copié'; 
             
-            document.getElementById('modal-body').innerHTML = `
+                        document.getElementById('modal-body').innerHTML = `
                 <p style="text-align:center;color:#374151;padding:20px 0;font-size:14px;">Le lien de partage a été copié dans le presse-papier.</p>
                 <button onclick="closeModal()" style="width:100%;padding:14px;background:rgba(167,139,250,0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);color:white;border:1px solid rgba(255,255,255,0.5);border-radius:50px;font-size:15px;font-weight:600;cursor:pointer;box-shadow:0 8px 24px rgba(167,139,250,0.25);transition:all .2s;" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">OK</button>
             `; 
@@ -997,5 +998,4 @@ async function partagerPost(postId) {
     }
 }
 
-function escapeHtml(str) { return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-
+function escapeHtml(str) { return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
