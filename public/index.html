@@ -1,493 +1,497 @@
-// public/js/sportSeance.js
-// Module Sport — Séance en cours : démarrage/reprise, écran de séance,
-// chronos (global + timers de série), validation des logs, repos entre
-// séries, clôture (terminer/abandonner).
-// Dépend de sport-widget.js et sport.js chargés AVANT (auth, échappement,
-// icônes, Wake Lock, chargerSportDashboard, modales génériques).
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoaDja</title>
+    <link rel="icon" href="/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="MoaDja">
+    <meta name="theme-color" content="#7C3AED">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="apple-touch-icon" href="/icon-192.png">
 
-let _sportSeanceActive         = null; // { id, workout_id, logs: [...] }
-let _sportSeanceExercices      = [];   // liste des exercices de la routine
-let _sportSeanceChronoInterval = null;
-let _sportSeanceReposInterval  = null;
-let _sportSeryTimers           = {};   // Stockage des chronos individuels (exercices en durée)
+    <!-- CSS externes -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 
-async function _sportInitVerifSeanceActive() {
-    try {
-        const r = await fetch('/api/sport/sessions/active', { headers: _sportAuthHeaders() });
-        const d = await r.json();
-        if (d.success && d.session) {
-            _sportAfficherBandeauReprise(d.session);
+    <!-- CSS internes -->
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/feed.css">
+    <link rel="stylesheet" href="/css/sante.css">
+    <link rel="stylesheet" href="/css/agenda.css">
+    <link rel="stylesheet" href="/css/anniversaires.css">
+    <link rel="stylesheet" href="/css/admin.css">
+    <link rel="stylesheet" href="/css/astrologie.css">
+    <link rel="stylesheet" href="/css/cycle.css">
+    <link rel="stylesheet" href="/css/taches.css">
+    <link rel="stylesheet" href="/css/meteo.css">
+    <link rel="stylesheet" href="/css/priere.css">
+    <link rel="stylesheet" href="/css/islam.css">
+    <link rel="stylesheet" href="/css/profil.css">
+    <link rel="stylesheet" href="/css/theme-astral.css">
+    <link rel="stylesheet" href="/css/tchat.css">
+    <link rel="stylesheet" href="/css/pierre-naissance.css">
+    <link rel="stylesheet" href="/css/animal-totem.css">
+    <link rel="stylesheet" href="/css/sport.css">
+
+    <!-- Styles spécifiques intégrés -->
+    <style>
+        /* Icône Tchat du header : désormais affichée en permanence,
+           sur desktop comme sur mobile, pour que son badge de
+           notifications soit toujours visible et cohérent. */
+        .mobile-chat-btn {
+            display: inline-flex !important;
         }
-    } catch (err) {
-        console.error('[SPORT] initVerifSeanceActive :', err.message);
-    }
-}
-
-function _sportAfficherBandeauReprise(session) {
-    const zone = document.getElementById('sport-section-dashboard');
-    if (!zone) return;
-
-    const bandeau = document.createElement('div');
-    bandeau.className = 'sport-card sport-bandeau-reprise';
-    bandeau.innerHTML = `
-        <div class="sport-bandeau-reprise-texte">Une séance est en cours depuis ${_sportFormatDateCourte(session.date_start)}.</div>
-        <button class="sport-cta-btn" id="sport-btn-reprendre-seance">Reprendre la séance</button>
-    `;
-    zone.prepend(bandeau);
-
-    document.getElementById('sport-btn-reprendre-seance').addEventListener('click', () => {
-        _sportReprendreSeance(session);
-    });
-}
-
-async function _sportReprendreSeance(session) {
-    if (!session.workout_id) {
-        _sportOuvrirConfirmationInfo('Cette séance n\'est pas liée à une routine, reprise impossible.');
-        return;
-    }
-    try {
-        const r = await fetch(`/api/sport/workouts/${session.workout_id}`, { headers: _sportAuthHeaders() });
-        const d = await r.json();
-        if (!d.success) {
-            _sportOuvrirConfirmationInfo('Routine introuvable pour cette séance.');
-            return;
+        /* Correctif : avec 5 boutons dans la nav desktop, "Bien-être" repassait à la ligne
+           faute de largeur suffisante. Réduction ciblée de la taille du label, uniquement
+           dans la nav desktop, sans toucher au CSS global (style.css). */
+        .desktop-nav .bn-label {
+            font-size: 11px;
+            white-space: nowrap;
         }
-
-        const jour = d.workout.days?.[0];
-        _sportSeanceExercices = jour?.exercises || [];
-        _sportSeanceActive    = session;
-
-        await _sportDemanderWakeLock();
-        _sportRenderEcranSeance();
-    } catch (err) {
-        console.error('[SPORT] reprendreSeance :', err.message);
-    }
-}
-
-async function _sportDemarrerSeance(workoutId) {
-    try {
-        const r = await fetch('/api/sport/sessions', {
-            method: 'POST', headers: _sportAuthHeaders(), body: JSON.stringify({ workout_id: workoutId })
-        });
-        const d = await r.json();
-        if (!d.success) {
-            _sportOuvrirConfirmationInfo('Erreur : impossible de démarrer la séance.');
-            return;
+        /* Correctif v1.91 : l'icône Sport (SVG) n'était pas alignée verticalement avec
+           les icônes emoji des autres onglets (nav desktop + bottom-nav mobile). Un
+           <svg> inline a un vertical-align: baseline par défaut, laissant un espace
+           résiduel sous l'élément que les emojis (texte) n'ont pas. display:block
+           supprime cet espace ; margin:0 auto recentre horizontalement. N'affecte
+           que l'icône Sport (seul SVG du groupe), sans toucher au CSS global. */
+        .bn-icon svg {
+            display: block;
+            margin: 0 auto;
         }
+    </style>
+</head>
+<body>
 
-        const rWorkout = await fetch(`/api/sport/workouts/${workoutId}`, { headers: _sportAuthHeaders() });
-        const dWorkout = await rWorkout.json();
-        if (!dWorkout.success) {
-            _sportOuvrirConfirmationInfo('Erreur : routine introuvable.');
-            return;
-        }
+<!-- Honeypot anti-bot -->
+<div style="display:none;position:absolute;left:-9999px" aria-hidden="true">
+    <input type="text"     name="fake-user" tabindex="-1" autocomplete="username">
+    <input type="password" name="fake-pwd"  tabindex="-1" autocomplete="current-password">
+</div>
 
-        const jour = dWorkout.workout.days?.[0];
-        _sportSeanceExercices    = jour?.exercises || [];
-        _sportSeanceActive       = { ...d.session, logs: [] };
+<!-- Page de connexion -->
+<div class="login-card" id="login-page">
+    <img src="/icon-192.png" alt="MoaDja" style="width:72px;border-radius:16px;margin-bottom:12px;">
+    <h1>MoaDja</h1>
+    <form id="login-form" autocomplete="off" style="width:100%">
+        <input type="text" id="username" placeholder="Nom d'utilisateur" required>
+        <input type="password" id="password" placeholder="Mot de passe" required>
+        <button type="submit" class="btn">Se connecter</button>
+    </form>
+    <div id="error-msg"></div>
+</div>
 
-        if (!_sportSeanceExercices.length) {
-            _sportOuvrirConfirmationInfo('Cette routine ne contient aucun exercice.');
-            return;
-        }
+<!-- Application principale -->
+<div id="app">
 
-        await _sportDemanderWakeLock();
-        _sportRenderEcranSeance();
-    } catch (err) {
-        console.error('[SPORT] demarrerSeance :', err.message);
-    }
-}
+    <!-- Checkbox invisible pilotant l'ouverture/fermeture de la bulle de recherche (CSS-only, aucun JS ajouté hormis inline) -->
+    <input type="checkbox" id="search-toggle" class="search-toggle-checkbox">
 
-function _sportRenderEcranSeance() {
-    const zoneGlobale = document.getElementById('grid-sport');
-    if (!zoneGlobale || !_sportSeanceExercices.length) return;
+    <!-- Topbar épurée -->
+    <div class="topbar">
 
-    clearInterval(_sportSeanceChronoInterval);
-    _sportSeryTimers = {};
-    _sportSeanceChronoInterval = setInterval(_sportMettreAJourChronoSeance, 1000);
+        <div class="topbar-left">
+            <h2 id="topbar-title" onclick="switchTab('accueil');actualiser()" title="Accueil">MoaDja</h2>
+        </div>
 
-    zoneGlobale.innerHTML = `
-        <div class="sport-wrap">
-            <div class="sport-card">
-                <div class="sport-seance-header-top">
-                    <span id="sport-seance-chrono" class="sport-seance-nom">00:00</span>
-                    <button class="sport-seance-btn-abandon" id="sport-seance-btn-terminer">Terminer</button>
-                </div>
-                <div id="sport-seance-repos-zone"></div>
-                <div id="sport-seance-contenu"></div>
+        <!-- Bulle de recherche (desktop : centrée en permanence dans le header / mobile : descend sous le header, ancrée à droite) -->
+        <div class="topbar-search" id="topbar-search">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="topbar-search-input" placeholder="Explorer l'atelier..." autocomplete="off">
+        </div>
+
+        <div class="topbar-right" style="position:relative; display:flex; align-items:center; gap:8px;">
+
+                        <!-- Cloche notifications (icône vectorielle épurée) — ferme la recherche au clic -->
+            <div style="position:relative;display:inline-flex">
+                <button class="icon-btn" id="btn-cloche" onclick="document.getElementById('search-toggle').checked=false;togglePanelNotifs(event)" title="Notifications">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                </button>
+                <span id="notif-badge" style="
+                    display:none;
+                    position:absolute;
+                    top:-4px;right:-4px;
+                    background:#ef4444;
+                    color:#fff;
+                    font-size:10px;
+                    font-weight:700;
+                    min-width:18px;
+                    height:18px;
+                    border-radius:9px;
+                    align-items:center;
+                    justify-content:center;
+                    padding:0 4px;
+                    border:2px solid #7C3AED;
+                    pointer-events:none;
+                    line-height:1;
+                    z-index:1;
+                "></span>
+            </div>
+
+            <!-- Bouton Tchat (Visible sur desktop et mobile) — ferme la recherche au clic -->
+            <div style="position:relative;display:inline-flex">
+                <button class="icon-btn mobile-chat-btn" id="btn-tchat-mobile-header" onclick="document.getElementById('search-toggle').checked=false;window.Tchat && Tchat.toggle()" title="Messages">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                </button>
+                <span id="tchat-topbar-badge" style="
+                    display:none;
+                    position:absolute;
+                    top:-4px;right:-4px;
+                    background:#ef4444;
+                    color:#fff;
+                    font-size:10px;
+                    font-weight:700;
+                    min-width:18px;
+                    height:18px;
+                    border-radius:9px;
+                    align-items:center;
+                    justify-content:center;
+                    padding:0 4px;
+                    border:2px solid #7C3AED;
+                    pointer-events:none;
+                    line-height:1;
+                    z-index:1;
+                "></span>
+            </div>
+
+            <!-- Icône Recherche Mobile (label lié à la checkbox, même style que les autres icônes) — placée à droite du Tchat -->
+            <label for="search-toggle" class="icon-btn mobile-search-btn" id="btn-recherche-mobile" title="Rechercher">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            </label>
+
+            <!-- Bouton profil (Mobile et Avatar Desktop) -->
+            <button class="icon-btn" id="btn-profil-header" onclick="toggleUserMenu(event)" title="Mon compte">👤</button>
+
+            <!-- Menu déroulant utilisateur -->
+            <div id="user-menu" style="
+                display:none;
+                position:absolute;
+                top:calc(100% + 8px);
+                right:0;
+                background:#fff;
+                border-radius:12px;
+                box-shadow:0 8px 24px rgba(0,0,0,0.15);
+                min-width:180px;
+                z-index:1000;
+                overflow:hidden;
+                border:1px solid #f0f0f0;
+            ">
+                <button class="user-menu-item" onclick="ouvrirChangelog()" style="
+                    display:flex;align-items:center;gap:10px;
+                    width:100%;padding:12px 16px;border:none;
+                    background:none;text-align:left;font-size:14px;
+                    color:#1f2937;cursor:pointer;
+                " onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='none'">
+                    📋 Changelog
+                </button>
+
+                <button class="user-menu-item disabled" disabled style="
+                    display:flex;align-items:center;gap:10px;
+                    width:100%;padding:12px 16px;border:none;
+                    background:none;text-align:left;font-size:14px;
+                    color:#d1d5db;cursor:not-allowed;
+                ">❓ FAQ</button>
+
+                <button class="user-menu-item" onclick="ouvrirMonProfil()" style="
+                    display:flex;align-items:center;gap:10px;
+                    width:100%;padding:12px 16px;border:none;
+                    background:none;text-align:left;font-size:14px;
+                    color:#1f2937;cursor:pointer;
+                " onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='none'">
+                    👤 Mon profil
+                </button>
+
+                <!-- Lien Administration : caché par défaut, affiché en JS (app.js) si user.role === 'admin' -->
+                <button class="user-menu-item" id="user-menu-admin-item" onclick="fermerUserMenu();openModal('admin')" style="
+                    display:none;align-items:center;gap:10px;
+                    width:100%;padding:12px 16px;border:none;
+                    background:none;text-align:left;font-size:14px;
+                    color:#1f2937;cursor:pointer;
+                " onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='none'">
+                    ⚙️ Administration
+                </button>
+
+                <div style="height:1px;background:#f0f0f0;margin:4px 0"></div>
+
+                <button class="user-menu-item" onclick="logout()" style="
+                    display:flex;align-items:center;gap:10px;
+                    width:100%;padding:12px 16px;border:none;
+                    background:none;text-align:left;font-size:14px;
+                    color:#ef4444;cursor:pointer;
+                " onmouseover="this.style.background='#fff5f5'" onmouseout="this.style.background='none'">
+                    🔓 Se déconnecter
+                </button>
             </div>
         </div>
-    `;
+    </div>
 
-    document.getElementById('sport-seance-btn-terminer').addEventListener('click', _sportConfirmerFinSeance);
-
-    _sportRenderTousLesExercices();
-}
-
-function _sportMettreAJourChronoSeance() {
-    const el = document.getElementById('sport-seance-chrono');
-    if (!el || !_sportSeanceActive) return;
-    const secondes = Math.max(0, Math.round((Date.now() - new Date(_sportSeanceActive.date_start).getTime()) / 1000));
-    el.textContent = _sportFormatChrono(secondes);
-}
-
-function _sportFormatChrono(secondes) {
-    const absSec = Math.abs(secondes);
-    const h = Math.floor(absSec / 3600);
-    const m = Math.floor((absSec % 3600) / 60);
-    const s = absSec % 60;
-    const pad = n => String(n).padStart(2, '0');
-    const prefix = secondes < 0 ? '+' : '';
-    return h > 0 ? `${prefix}${h}:${pad(m)}:${pad(s)}` : `${prefix}${pad(m)}:${pad(s)}`;
-}
-
-function _sportRenderTousLesExercices() {
-    const zone = document.getElementById('sport-seance-contenu');
-    if (!zone) return;
-
-    let html = '';
-
-    _sportSeanceExercices.forEach((ex, index) => {
-        const estDuree = Number.isInteger(ex.target_duration_seconds);
-
-        // ── FIX doublon d'exercice : si le même exercice (wger_exercise_id identique)
-        // apparaît plusieurs fois dans la routine, on distingue ses logs grâce à
-        // "exIndex" (ajouté côté client lors de la validation d'une série).
-        // Les logs récupérés au chargement (reprise de séance / sans exIndex) retombent
-        // sur l'ancien filtre par wger_exercise_id (comportement historique, non cassé).
-        const logsExerciceExistants = (_sportSeanceActive.logs || []).filter(l =>
-            l.exIndex !== undefined ? l.exIndex === index : l.wger_exercise_id === ex.wger_exercise_id
-        );
-
-        html += `
-            <div class="sport-seance-exercice-bloc" style="margin-top: 24px; padding-bottom: 16px; border-bottom: 1px solid #f0f0f0;">
-                <div class="sport-seance-exercice-nom" style="margin-bottom: 12px; font-size: 16px;">${_sportEchapper(ex.exercise_name)}</div>
-                ${estDuree ? _sportRenderFormulaireDuree(ex, logsExerciceExistants, index) : _sportRenderFormulaireSeries(ex, logsExerciceExistants, index)}
+    <!-- Panel notifications -->
+    <div id="panel-notifs" style="display:none;position:fixed;top:68px;right:8px;width:min(380px, calc(100vw - 16px));max-height:calc(100vh - 80px);background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.18);z-index:500;overflow:hidden;border:1px solid #f0f0f0;flex-direction:column;">
+        <div style="padding:16px 16px 0;flex-shrink:0">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+                <span style="font-size:18px;font-weight:800;color:#1f2937">Notifications</span>
+                <button onclick="toutMarquerVu()" style="background:none;border:none;font-size:13px;font-weight:600;color:#7c3aed;cursor:pointer;padding:4px 8px;border-radius:8px">Tout marquer lu</button>
             </div>
-        `;
-    });
-
-    zone.innerHTML = html;
-    _sportBrancherValidationTousExercices();
-}
-
-function _sportRenderFormulaireSeries(ex, logsExistants, exIndex) {
-    const lignes = [];
-    for (let i = 1; i <= ex.target_sets; i++) {
-        const logExistant = logsExistants.find(l => l.set_number === i);
-        lignes.push({ numero: i, log: logExistant || null });
-    }
-
-    return `
-        <div class="sport-seance-table">
-            <div class="sport-seance-table-header" style="grid-template-columns: 40px 1fr 1fr 40px">
-                <span>Série</span><span>Poids (kg)</span><span>Reps</span><span></span>
+            <div style="display:flex;gap:0;border-bottom:2px solid #f3f4f6">
+                <button id="notif-tab-tout" onclick="switchNotifTab('tout')" style="flex:1;padding:8px 12px;border:none;border-bottom:2px solid #7c3aed;margin-bottom:-2px;background:none;font-size:14px;font-weight:700;color:#7c3aed;cursor:pointer">Tout</button>
+                <button id="notif-tab-nonlu" onclick="switchNotifTab('nonlu')" style="flex:1;padding:8px 12px;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;background:none;font-size:14px;font-weight:600;color:#9ca3af;cursor:pointer">Non lu</button>
             </div>
-            ${lignes.map(l => `
-                <div class="sport-seance-table-row ${l.log?.completed ? 'sport-seance-row-validee' : ''}" style="grid-template-columns: 40px 1fr 1fr 40px">
-                    <span class="sport-seance-serie-numero">${l.numero}</span>
-                    <input type="number" step="0.5" class="sport-seance-input" id="sport-serie-poids-${exIndex}-${l.numero}"
-                           value="${l.log?.weight_kg ?? ex.target_weight_kg ?? ''}" placeholder="kg" ${l.log?.completed ? 'disabled' : ''}>
-                    <input type="number" class="sport-seance-input" id="sport-serie-reps-${exIndex}-${l.numero}"
-                           value="${l.log?.reps ?? ex.target_reps ?? ''}" placeholder="reps" ${l.log?.completed ? 'disabled' : ''}>
-                    <button class="sport-seance-check-btn ${l.log?.completed ? 'active' : ''}"
-                            id="sport-serie-check-${exIndex}-${l.numero}" ${l.log?.completed ? 'disabled' : ''}>${SPORT_ICONE_CHECK}</button>
-                </div>
-            `).join('')}
         </div>
-    `;
-}
+        <div id="notif-liste" style="overflow-y:auto;flex:1;padding:8px 0"></div>
+        <div style="padding:8px 16px 12px;flex-shrink:0;border-top:1px solid #f3f4f6">
+            <button onclick="voirPlusNotifs()" id="btn-voir-plus-notifs" style="width:100%;padding:10px;background:#f9fafb;border:none;border-radius:10px;font-size:13px;font-weight:600;color:#6b7280;cursor:pointer">Voir les notifications précédentes</button>
+        </div>
+    </div>
 
-function _sportJouerAlerteObjectif() {
-    if ('vibrate' in navigator) {
-        navigator.vibrate([200, 100, 200, 100, 400]);
-    }
-    try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, ctx.currentTime);
-        gain.gain.setValueAtTime(1, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
-        osc.start();
-        osc.stop(ctx.currentTime + 0.6);
-    } catch (e) {
-        console.error("[SPORT] Erreur WebAudio:", e);
-    }
-}
+    <!-- WRAPPER : Grille applicative -->
+    <div class="app-layout-wrapper">
 
-function _sportToggleTimerSerie(exIndex, setNumber, targetSeconds) {
-    const key = `${exIndex}-${setNumber}`;
-    const btnPlayStop = document.getElementById(`sport-duree-playstop-${key}`);
-    const inputsZone  = document.getElementById(`sport-duree-inputs-${key}`);
-    const chronoZone  = document.getElementById(`sport-duree-chronotext-${key}`);
+        <!-- COLONNE GAUCHE (Identity Mirror & Navigation PC) -->
+        <aside class="sidebar-col left-sidebar" id="identity-mirror">
 
-    if (_sportSeryTimers[key] && _sportSeryTimers[key].active) {
-        clearInterval(_sportSeryTimers[key].interval);
-        _sportSeryTimers[key].active = false;
+            <!-- Composant Identity Mirror -->
+            <div class="glass-panel im-panel">
+                <div class="im-header">
+                    <div class="im-aura-wrap">
+                        <img src="/icon-192.png" alt="Avatar" id="im-avatar-img">
+                    </div>
+                    <h3 class="im-user-name" id="im-user-name">...</h3>
+                </div>
 
-        const elapsedSecs = Math.floor((Date.now() - _sportSeryTimers[key].startTime) / 1000);
-
-        document.getElementById(`sport-duree-m-${exIndex}-${setNumber}`).value = Math.floor(elapsedSecs / 60);
-        document.getElementById(`sport-duree-s-${exIndex}-${setNumber}`).value = elapsedSecs % 60;
-
-        chronoZone.style.display = 'none';
-        inputsZone.style.display = 'flex';
-        btnPlayStop.innerHTML = '▶️';
-        btnPlayStop.style.background = '';
-        btnPlayStop.style.color = '';
-    } else {
-        const now = Date.now();
-        _sportSeryTimers[key] = {
-            active: true,
-            startTime: now,
-            targetSeconds: targetSeconds,
-            alertPlayed: false,
-            interval: setInterval(() => {
-                const elapsed = Math.floor((Date.now() - _sportSeryTimers[key].startTime) / 1000);
-                const remaining = targetSeconds - elapsed;
-
-                if (remaining <= 0 && !_sportSeryTimers[key].alertPlayed) {
-                    _sportJouerAlerteObjectif();
-                    _sportSeryTimers[key].alertPlayed = true;
-                }
-
-                chronoZone.textContent = _sportFormatChrono(remaining);
-                chronoZone.style.color = remaining < 0 ? '#ef4444' : 'var(--text-main)';
-            }, 500)
-        };
-
-        inputsZone.style.display = 'none';
-        chronoZone.style.display = 'block';
-        chronoZone.textContent = _sportFormatChrono(targetSeconds);
-        chronoZone.style.color = 'var(--text-main)';
-
-                btnPlayStop.innerHTML = '⏹️';
-        btnPlayStop.style.background = 'rgba(239, 68, 68, 0.1)';
-        btnPlayStop.style.color = '#ef4444';
-        btnPlayStop.style.borderRadius = '50%';
-        btnPlayStop.style.border = '1px solid rgba(239, 68, 68, 0.4)';
-    }
-}
-
-function _sportRenderFormulaireDuree(ex, logsExistants, exIndex) {
-    const lignes = [];
-    const nbSets = ex.target_sets || 1;
-
-    for (let i = 1; i <= nbSets; i++) {
-        const logExistant = logsExistants.find(l => l.set_number === i);
-        lignes.push({ numero: i, log: logExistant || null });
-    }
-
-    // FIX : Dist./Vit./Incl. réservés aux vrais exercices cardio (voir
-    // SPORT_NOMS_EXERCICES_CARDIO en tête de sport.js). Auparavant affiché
-    // pour TOUT exercice de type "duree" (Jumping Jack, Gainage, etc.).
-    const estCardio = SPORT_NOMS_EXERCICES_CARDIO.has(ex.exercise_name);
-
-    return `
-        <div class="sport-seance-table">
-            <div class="sport-seance-table-header" style="grid-template-columns: 40px 1fr 34px 40px">
-                <span>Série</span><span style="text-align:center">Temps (m:s)</span><span></span><span></span>
-            </div>
-            ${lignes.map(l => {
-                const totalSec = l.log ? l.log.duration_seconds : ex.target_duration_seconds;
-                const m = Math.floor(totalSec / 60);
-                const s = totalSec % 60;
-                const isCompleted = !!l.log?.completed;
-
-                return `
-                <div class="sport-seance-table-row ${isCompleted ? 'sport-seance-row-validee' : ''}" style="grid-template-columns: 40px 1fr 34px 40px; align-items:center;">
-                    <span class="sport-seance-serie-numero">${l.numero}</span>
-
-                    <div style="display:flex; justify-content:center; align-items:center; width:100%; position:relative; min-height: 28px;">
-                        <div id="sport-duree-inputs-${exIndex}-${l.numero}" style="display:flex; gap:4px; width:100%;">
-                            <input type="number" class="sport-seance-input" id="sport-duree-m-${exIndex}-${l.numero}"
-                                   value="${totalSec > 0 ? m : ''}" placeholder="m" ${isCompleted ? 'disabled' : ''}>
-                            <input type="number" class="sport-seance-input" id="sport-duree-s-${exIndex}-${l.numero}"
-                                   value="${totalSec > 0 ? s : ''}" placeholder="s" ${isCompleted ? 'disabled' : ''}>
-                        </div>
-                        <div id="sport-duree-chronotext-${exIndex}-${l.numero}" style="display:none; font-size:15px; font-weight:800; font-variant-numeric: tabular-nums;">
-                            00:00
+                <div class="im-toggles-list">
+                    <!-- Toggle Astral -->
+                    <div class="im-toggle-item">
+                        <div class="im-toggle-left">
+                            <div class="im-toggle-icon-wrap" style="background: rgba(124, 58, 237, 0.1); color: #7C3AED;">🔮</div>
+                            <div class="im-toggle-text">
+                                <span class="im-toggle-title">Astral</span>
+                                <span class="im-toggle-subtitle">Humeur du jour</span>
+                            </div>
                         </div>
                     </div>
-
-                    <button class="sport-seance-check-btn" style="border-radius:8px; font-size:14px; width:28px; height:28px;"
-                            id="sport-duree-playstop-${exIndex}-${l.numero}" ${isCompleted ? 'disabled style="opacity:0.3"' : ''}>▶️</button>
-
-                    <button class="sport-seance-check-btn ${isCompleted ? 'active' : ''}"
-                            id="sport-duree-check-${exIndex}-${l.numero}" ${isCompleted ? 'disabled' : ''}>${SPORT_ICONE_CHECK}</button>
+                    <!-- Toggle Mini -->
+                    <div class="im-toggle-item">
+                        <div class="im-toggle-left">
+                            <div class="im-toggle-icon-wrap" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">🌸</div>
+                            <div class="im-toggle-text">
+                                <span class="im-toggle-title">Mini</span>
+                            </div>
+                        </div>
+                        <label class="im-switch">
+                            <input type="checkbox" checked>
+                            <span class="im-slider"></span>
+                        </label>
+                    </div>
+                    <!-- Toggle Sport -->
+                    <div class="im-toggle-item">
+                        <div class="im-toggle-left">
+                            <div class="im-toggle-icon-wrap" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">🏃</div>
+                            <div class="im-toggle-text">
+                                <span class="im-toggle-title">Sport</span>
+                            </div>
+                        </div>
+                        <label class="im-switch">
+                            <input type="checkbox">
+                            <span class="im-slider"></span>
+                        </label>
+                    </div>
                 </div>
-                `;
-            }).join('')}
-        </div>
+            </div>
 
-        ${estCardio ? `
-        <div style="display: flex; gap: 8px; margin-top: 12px;">
-            <input type="number" step="0.1" class="sport-seance-input" id="sport-duree-distance-${exIndex}" value="${logsExistants[0]?.distance_km || ''}" placeholder="Dist. (km)">
-            <input type="number" step="0.1" class="sport-seance-input" id="sport-duree-vitesse-${exIndex}" value="${logsExistants[0]?.speed_kmh || ''}" placeholder="Vit. (km/h)">
-            <input type="number" step="0.1" class="sport-seance-input" id="sport-duree-inclinaison-${exIndex}" value="${logsExistants[0]?.incline_percent || ''}" placeholder="Incl. (%)">
-        </div>
-        ` : ''}
-    `;
-}
+            <!-- Navigation Desktop (Horizontale) -->
+            <div class="glass-panel desktop-nav-container">
+                <nav class="desktop-nav" style="display: flex; flex-direction: row; justify-content: space-between; gap: 8px;">
+                    <button class="bn-item active" data-tab="accueil" onclick="switchTab('accueil')" style="flex: 1; padding: 10px 4px;">
+                        <span class="bn-icon">🏠</span>
+                        <span class="bn-label">Accueil</span>
+                    </button>
+                    <button class="bn-item" data-tab="quotidien" onclick="switchTab('quotidien')" style="flex: 1; padding: 10px 4px;">
+                        <span class="bn-icon">📅</span>
+                        <span class="bn-label">Quotidien</span>
+                    </button>
+                    <button class="bn-item" data-tab="bienetre" onclick="switchTab('bienetre')" style="flex: 1; padding: 10px 4px;">
+                        <span class="bn-icon">🌸</span>
+                        <span class="bn-label">Bien-être</span>
+                    </button>
+                    <button class="bn-item" data-tab="sport" onclick="switchTab('sport')" style="flex: 1; padding: 10px 4px;">
+                        <span class="bn-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M2 9v6"></path>
+                                <path d="M6 6v12"></path>
+                                <path d="M6 12h12"></path>
+                                <path d="M18 6v12"></path>
+                                <path d="M22 9v6"></path>
+                            </svg>
+                        </span>
+                        <span class="bn-label">Sport</span>
+                    </button>
+                    <button class="bn-item" data-tab="astral" onclick="switchTab('astral')" style="flex: 1; padding: 10px 4px;">
+                        <span class="bn-icon">🔮</span>
+                        <span class="bn-label">Astral</span>
+                    </button>
+                </nav>
+            </div>
 
-function _sportBrancherValidationTousExercices() {
-    _sportSeanceExercices.forEach((ex, index) => {
-        const nbSets = ex.target_sets || 1;
+                        <!-- Affichage de la version pour debug -->
+            <div style="text-align: center; margin-top: 16px;">
+                <span id="topbar-version" style="font-size:11px;opacity:0.5;font-weight:500;color:var(--text-main)"></span>
+            </div>
 
-        if (Number.isInteger(ex.target_duration_seconds)) {
-            for (let i = 1; i <= nbSets; i++) {
-                document.getElementById(`sport-duree-playstop-${index}-${i}`)?.addEventListener('click', () => {
-                    _sportToggleTimerSerie(index, i, ex.target_duration_seconds);
-                });
-                document.getElementById(`sport-duree-check-${index}-${i}`)?.addEventListener('click', () => _sportValiderLogDuree(ex, i, index));
-            }
-        } else {
-            for (let i = 1; i <= nbSets; i++) {
-                document.getElementById(`sport-serie-check-${index}-${i}`)?.addEventListener('click', () => _sportValiderLogSerie(ex, i, index));
-            }
-        }
-    });
-}
+        </aside>
 
-async function _sportValiderLogSerie(ex, setNumber, exIndex) {
-    const poids = parseFloat(document.getElementById(`sport-serie-poids-${exIndex}-${setNumber}`).value) || null;
-    const reps  = parseInt(document.getElementById(`sport-serie-reps-${exIndex}-${setNumber}`).value, 10) || null;
+        <!-- COLONNE CENTRALE (Living Feed) -->
+        <main class="center-col">
+            <!-- Contenu onglets -->
+            <div class="tab-content-wrap">
 
-    try {
-        const r = await fetch(`/api/sport/sessions/${_sportSeanceActive.id}/logs`, {
-            method: 'POST', headers: _sportAuthHeaders(),
-            body: JSON.stringify({
-                wger_exercise_id: ex.wger_exercise_id, exercise_name: ex.exercise_name,
-                set_number: setNumber, reps, weight_kg: poids, completed: true,
-                rest_seconds: ex.target_rest_seconds || 60
-            })
-        });
-        const d = await r.json();
-        if (d.success) {
-            // Marquage de l'exercice d'origine dans la routine, pour distinguer
-            // les doublons (même exercice utilisé plusieurs fois dans la séance).
-            d.log.exIndex = exIndex;
-            _sportSeanceActive.logs.push(d.log);
-            _sportLancerReposEntreSeries(ex.target_rest_seconds || 60);
-            _sportRenderTousLesExercices();
-        }
-    } catch (err) {
-        console.error('[SPORT] validerLogSerie :', err.message);
-    }
-}
+                <!-- ONGLET 1 — Accueil -->
+                <div class="tab-pane active" id="tab-accueil">
+                    <div class="accueil-meteo-fixed" id="accueil-meteo"></div>
+                    <div class="accueil-feed" id="accueil-feed">
+                        <div id="eclats-bandeau-1"></div>
+                        <div id="eclats-bandeau-2"></div>
+                    </div>
+                </div>
 
-async function _sportValiderLogDuree(ex, setNumber, exIndex) {
-    const key = `${exIndex}-${setNumber}`;
-    if (_sportSeryTimers[key] && _sportSeryTimers[key].active) {
-        _sportToggleTimerSerie(exIndex, setNumber, ex.target_duration_seconds);
-    }
+                <!-- ONGLET 2 — Mon Quotidien -->
+                <div class="tab-pane" id="tab-quotidien">
+                    <div class="grid" id="grid-quotidien"></div>
+                </div>
 
-    const m = parseInt(document.getElementById(`sport-duree-m-${exIndex}-${setNumber}`).value, 10) || 0;
-    const s = parseInt(document.getElementById(`sport-duree-s-${exIndex}-${setNumber}`).value, 10) || 0;
+                                <!-- ONGLET 3 — Bien-être -->
+                <div class="tab-pane" id="tab-bienetre">
+                    <div class="grid" id="grid-bienetre"></div>
+                </div>
 
-    // FIX : les champs Dist./Vit./Incl. n'existent dans le DOM que pour les
-    // exercices cardio (voir _sportRenderFormulaireDuree). L'optional chaining
-    // renvoie undefined pour les autres, donc les 3 valeurs seront null en base.
-    const distance = document.getElementById(`sport-duree-distance-${exIndex}`)?.value;
-    const vitesse = document.getElementById(`sport-duree-vitesse-${exIndex}`)?.value;
-    const inclinaison = document.getElementById(`sport-duree-inclinaison-${exIndex}`)?.value;
+                <!-- ONGLET 4 — Sport (nouveau module — vide pour l'instant, sera rempli par sport.js) -->
+                <div class="tab-pane" id="tab-sport">
+                    <div class="grid" id="grid-sport"></div>
+                </div>
 
-    try {
-        const r = await fetch(`/api/sport/sessions/${_sportSeanceActive.id}/logs`, {
-            method: 'POST', headers: _sportAuthHeaders(),
-            body: JSON.stringify({
-                wger_exercise_id: ex.wger_exercise_id, exercise_name: ex.exercise_name,
-                set_number: setNumber, completed: true,
-                duration_seconds: (m * 60) + s,
-                distance_km: distance !== '' && distance !== undefined ? parseFloat(distance) : null,
-                speed_kmh: vitesse !== '' && vitesse !== undefined ? parseFloat(vitesse) : null,
-                incline_percent: inclinaison !== '' && inclinaison !== undefined ? parseFloat(inclinaison) : null,
-                rest_seconds: ex.target_rest_seconds || 60
-            })
-        });
-                const d = await r.json();
-        if (d.success) {
-            // Marquage de l'exercice d'origine dans la routine (voir _sportValiderLogSerie).
-            d.log.exIndex = exIndex;
-            _sportSeanceActive.logs.push(d.log);
-            _sportLancerReposEntreSeries(ex.target_rest_seconds || 60);
-            _sportRenderTousLesExercices();
-        }
-    } catch (err) {
-        console.error('[SPORT] validerLogDuree :', err.message);
-    }
-}
+                <!-- ONGLET 5 — Astral -->
+                <div class="tab-pane" id="tab-astral">
+                    <div class="grid" id="grid-astral"></div>
+                </div>
 
-function _sportLancerReposEntreSeries(secondesRepos) {
-    const zone = document.getElementById('sport-seance-repos-zone');
-    if (!zone || !secondesRepos) return;
+                <!-- ONGLET 6 — Profil (orphelin de la navigation depuis l'ajout du module Sport ;
+                     conservé tel quel dans le DOM, non supprimé, conformément à la décision prise
+                     de ne pas toucher au contenu de ce pane) -->
+                <div class="tab-pane" id="tab-profil">
+                    <div class="grid" id="grid-profil"></div>
+                </div>
 
-    clearInterval(_sportSeanceReposInterval);
-    let restant = secondesRepos;
+            </div>
+        </main>
 
-    zone.innerHTML = `
-        <div class="sport-seance-repos-ligne" style="margin-top: 16px; padding: 12px; background: #eef2ff; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-            <span class="sport-seance-repos-label" style="font-weight: 600; color: #4f46e5;">Temps de repos</span>
-            <span class="sport-seance-repos-chrono" id="sport-repos-badge" style="font-size: 18px; font-weight: 700; color: #4f46e5;">${_sportFormatChrono(restant)}</span>
-        </div>
-    `;
+                <!-- COLONNE DROITE (Sport Stats + Human Link) -->
+        <aside class="sidebar-col right-sidebar" id="human-link">
 
-    _sportSeanceReposInterval = setInterval(() => {
-        restant--;
-        const badge = document.getElementById('sport-repos-badge');
-        if (!badge) { clearInterval(_sportSeanceReposInterval); return; }
-        if (restant <= 0) {
-            clearInterval(_sportSeanceReposInterval);
-            // Ding + vibration à la fin du temps de repos.
-            _sportJouerAlerteObjectif();
-            zone.innerHTML = '';
-            return;
-        }
-        badge.textContent = _sportFormatChrono(restant);
-    }, 1000);
-}
+            <!-- Widget Sport Stats — global, visible quel que soit l'onglet actif.
+                 Rempli dynamiquement par chargerSportStatsWidget() (sport.js) :
+                 phrase encourageante si aucune séance, sinon stats de la semaine. -->
+            <div class="glass-panel" id="sport-stats-widget">
+                <!-- Contenu injecté en JS -->
+            </div>
 
-function _sportConfirmerFinSeance() {
-    _sportOuvrirModalChoix(
-        'Terminer la séance',
-        'Voulez-vous terminer cette séance (elle sera enregistrée) ou l\'abandonner (elle ne sera pas enregistrée) ?',
-        'Terminer',
-        'Abandonner',
-        () => _sportCloturerSeance('completed'),
-        () => _sportCloturerSeance('abandoned')
-    );
-}
+            <div class="glass-panel">
+                <h3 style="margin-top:0;font-weight:600;color:#1f2937;">Human Link</h3>
+                <p style="font-size:13px;color:#6b7280;">(Espace contacts à venir)</p>
+            </div>
+        </aside>
 
-async function _sportCloturerSeance(status) {
-    clearInterval(_sportSeanceChronoInterval);
-    clearInterval(_sportSeanceReposInterval);
+    </div>
 
-    Object.values(_sportSeryTimers).forEach(timer => clearInterval(timer.interval));
-    _sportSeryTimers = {};
+            <!-- Bottom nav (Visible uniquement sur Mobile) -->
+    <nav class="bottom-nav" id="bottom-nav">
+        <button class="bn-item active" data-tab="accueil"   onclick="switchTab('accueil')">
+            <span class="bn-icon">🏠</span>
+            <span class="bn-label">Accueil</span>
+        </button>
+        <button class="bn-item" data-tab="quotidien" onclick="switchTab('quotidien')">
+            <span class="bn-icon">📅</span>
+            <span class="bn-label">Quotidien</span>
+        </button>
+        <button class="bn-item" data-tab="bienetre"  onclick="switchTab('bienetre')">
+            <span class="bn-icon">🌸</span>
+            <span class="bn-label">Bien-être</span>
+        </button>
+        <button class="bn-item" data-tab="sport"     onclick="switchTab('sport')">
+            <span class="bn-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 9v6"></path>
+                    <path d="M6 6v12"></path>
+                    <path d="M6 12h12"></path>
+                    <path d="M18 6v12"></path>
+                    <path d="M22 9v6"></path>
+                </svg>
+            </span>
+            <span class="bn-label">Sport</span>
+        </button>
+        <button class="bn-item" data-tab="astral"    onclick="switchTab('astral')">
+            <span class="bn-icon">🔮</span>
+            <span class="bn-label">Astral</span>
+        </button>
+    </nav>
 
-    try {
-        if (status === 'abandoned') {
-            await fetch(`/api/sport/sessions/${_sportSeanceActive.id}`, {
-                method: 'DELETE', headers: _sportAuthHeaders()
-            });
-        } else {
-            await fetch(`/api/sport/sessions/${_sportSeanceActive.id}`, {
-                method: 'PUT', headers: _sportAuthHeaders(), body: JSON.stringify({ status })
-            });
-        }
-    } catch (err) {
-        console.error('[SPORT] cloturerSeance :', err.message);
-    }
+    <div class="footer">© 2026 MoaDja — Tous droits réservés</div>
+</div>
 
-    _sportSeanceActive       = null;
-    _sportSeanceExercices    = [];
+<!-- Modale générique -->
+<div class="overlay" id="overlay" onclick="closeOutside(event)">
+    <div class="modal">
+        <button class="mclos" onclick="closeModal()">&#10005;</button>
+        <h3 id="modal-title"></h3>
+        <div id="modal-body"></div>
+    </div>
+</div>
 
-    _sportRelacherWakeLock();
-
-    chargerSportDashboard();
-    if (typeof chargerSportStatsWidget === 'function') chargerSportStatsWidget();
-}
+<!-- Scripts -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js" defer></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
+<script src="/socket.io/socket.io.js" defer></script>
+<script src="/js/app.js"              defer></script>
+<script src="/js/modal.js"            defer></script>
+<script src="/js/profil.js"           defer></script>
+<script src="/js/widgets.js"          defer></script>
+<script src="/js/meteo.js"            defer></script>
+<script src="/js/priere.js"           defer></script>
+<script src="/js/islam.js"            defer></script>
+<script src="/js/taches.js"           defer></script>
+<script src="/js/anniversaires.js"    defer></script>
+<script src="/js/admin.js"            defer></script>
+<script src="/js/cycle.js"            defer></script>
+<script src="/js/agenda.js"           defer></script>
+<script src="/js/push.js"             defer></script>
+<script src="/js/astrologie.js"       defer></script>
+<script src="/js/feed.js"             defer></script>
+<script src="/js/feedLocation.js"     defer></script>
+<script src="/js/feedMentions.js"     defer></script>
+<script src="/js/feedPostEditor.js"   defer></script>
+<script src="/js/social.js"           defer></script>
+<script src="/js/changelog.js"        defer></script>
+<script src="/js/sante.js"            defer></script>
+<script src="/js/theme-astral.js"     defer></script>
+<script src="/js/pierre-naissance.js" defer></script>
+<script src="/js/animal-totem.js"     defer></script>
+<script src="/js/eclats.js"           defer></script>
+<script src="/js/tchat.js"            defer></script>
+<script src="/js/sport-widget.js"     defer></script>
+<script src="/js/sport.js"            defer></script>
+<script src="/js/sportRoutines.js"    defer></script>
+<script src="/js/sportSelecteur.js"   defer></script>
+<script src="/js/sportSeance.js"      defer></script>
+</body>
+</html>
