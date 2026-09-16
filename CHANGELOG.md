@@ -1,5 +1,16 @@
 ## MoaDja
 
+## v1.92.27 — 16 septembre 2026
+- Amélioration de la fiabilité de la géolocalisation lors de l'ajout d'un lieu à une publication : en cas d'instabilité du service de suggestions de lieux à proximité, votre position exacte s'affiche désormais immédiatement, au lieu d'un message d'erreur bloquant.
+
+---
+
+## v1.92.23 — 15 septembre 2026
+- Correction d'un bug d'affichage (texte violet inattendu) au niveau des mots-clés (#hashtags) du fil d'actualité, tout en conservant la protection contre les contenus malveillants.
+- Dans la liste des personnes ayant réagi à une publication, il est désormais possible de cliquer sur un nom pour accéder directement à son profil.
+
+---
+
 ## v1.92.22 — 15 septembre 2026
 - Ajout d'une vérification sur les liens du profil (site web) pour plus de sécurité.
 - Renforcement de la protection des posts et des lieux contre les contenus malveillants.
