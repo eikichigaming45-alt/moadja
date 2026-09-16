@@ -1149,3 +1149,21 @@
 .sport-duree-chrono-texte.depassement {
     color: #ef4444;
 }
+
+/* ══════════════════════════════════════════════════════════════
+   ── FIX ZONE REPOS SÉANCE (sticky) ──
+   #sport-seance-repos-zone est injecté juste sous le header de
+   séance (chrono global / bouton Terminer). Sans ce fix, le
+   compte à rebours de repos entre séries n'était visible qu'en
+   bas de l'écran (après tous les exercices), donc masqué en
+   pratique pendant le scroll. Le sticky le garde visible en
+   permanence sous le header, quelle que soit la position de
+   scroll dans la liste d'exercices.
+   ══════════════════════════════════════════════════════════════ */
+
+#sport-seance-repos-zone {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--glass-bg);
+}
