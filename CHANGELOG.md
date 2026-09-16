@@ -1,5 +1,10 @@
 ## MoaDja
 
+## v1.92.29 — 16 septembre 2026
+- Correction du rafraîchissement des notifications (cloche) et du tchat en mode application mobile installée (PWA) : les compteurs se mettent désormais à jour immédiatement au retour au premier plan, sans nécessiter de rechargement manuel.
+
+---
+
 ## v1.92.27 — 16 septembre 2026
 - Amélioration de la fiabilité de la géolocalisation lors de l'ajout d'un lieu à une publication : en cas d'instabilité du service de suggestions de lieux à proximité, votre position exacte s'affiche désormais immédiatement, au lieu d'un message d'erreur bloquant.
 
