@@ -6,11 +6,43 @@
 
 const JOURS_MODAL = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 
-// ── ÉCOUTEUR RETOUR ANDROID (HISTORY API) ──
-window.addEventListener('popstate', (e) => {
-    // Si l'utilisateur fait "Retour" (geste ou bouton) et qu'une modale est ouverte
-    if (document.body.classList.contains('modal-open')) {
-        closeModal(true); // true = bypass l'appel history.back() car on y est déjà
+// ── GESTION GLOBALE DU RETOUR ANDROID (toutes origines de modale) ──
+// Correctif : certaines modales (feed.js notamment : réactions, carte,
+// édition de post, profil public...) ouvrent l'overlay directement sans
+// passer par openModal(). L'ancien mécanisme ne couvrait donc que les
+// modales ouvertes via openModal(). On observe désormais l'attribut class
+// de #overlay lui-même : peu importe le fichier qui ouvre/ferme la modale,
+// l'historique reste synchronisé et le bouton retour la ferme.
+let _modalHistoryPushed = false;
+let _modalClosingFromPopstate = false;
+
+(function _initModalBackButtonGlobal() {
+    const overlayEl = document.getElementById('overlay');
+    if (!overlayEl) return;
+
+    const observer = new MutationObserver(() => {
+        const isOpen = overlayEl.classList.contains('on');
+        if (isOpen && !_modalHistoryPushed) {
+            document.body.classList.add('modal-open');
+            history.pushState({ modalOpen: true }, '', '');
+            _modalHistoryPushed = true;
+        } else if (!isOpen && _modalHistoryPushed) {
+            document.body.classList.remove('modal-open');
+            _modalHistoryPushed = false;
+            if (!_modalClosingFromPopstate && history.state && history.state.modalOpen) {
+                history.back();
+            }
+        }
+    });
+    observer.observe(overlayEl, { attributes: true, attributeFilter: ['class'] });
+})();
+
+window.addEventListener('popstate', () => {
+    const overlayEl = document.getElementById('overlay');
+    if (overlayEl && overlayEl.classList.contains('on')) {
+        _modalClosingFromPopstate = true;
+        closeModal(true);
+        _modalClosingFromPopstate = false;
     }
 });
 
@@ -28,10 +60,6 @@ document.addEventListener('keydown', (e) => {
 
 async function openModal(type) {
     document.getElementById('overlay').classList.add('on');
-    document.body.classList.add('modal-open');
-
-    // Ajout d'une entrée dans l'historique pour intercepter le retour Android
-    history.pushState({ modalOpen: true }, '', '');
 
     const titres = {
         meteo          : 'Météo du jour',
@@ -318,7 +346,7 @@ async function openModal(type) {
                             <input type="hidden" id="p-naissance-lon" value="${p.naissance_lon||''}">
                             <div id="p-lieu-naissance-msg" style="font-size:12px;                                margin-top:4px;min-height:16px;
                                 ${p.naissance_lat ? 'color:#10b981' : 'color:#9ca3af'}">
-                                ${p.naissance_lat ? '✅ Coordonnées enregistrées' : ''}
+                                                               ${p.naissance_lat ? '✅ Coordonnées enregistrées' : ''}
                             </div>
                         </div>
 
@@ -551,7 +579,7 @@ async function openModal(type) {
                             Partager avec…
                         </button>
                     </div>
-                    <div id="social-tab-content" style="background:rgba(255,255,255,0.92); border:1px solid rgba(255,255,255,0.95); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.08);"></div>
+                                        <div id="social-tab-content" style="background:rgba(255,255,255,0.92); border:1px solid rgba(255,255,255,0.95); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.08);"></div>
                 </div>
                 </div>
             `;
@@ -676,14 +704,9 @@ function lirePriereModal(e) {
 function closeModal(skipHistory = false) {
     window.speechSynthesis?.cancel();
     document.getElementById('overlay').classList.remove('on');
-    document.body.classList.remove('modal-open');
     document.querySelector('.modal.modal-lightbox')?.classList.remove('modal-lightbox');
-
-    // Si la modale est fermée via la croix (ou le fond) et non par le bouton retour Android,
-    // on retire l'état de l'historique pour ne pas casser la navigation.
-    if (!skipHistory && history.state && history.state.modalOpen) {
-        history.back();
-    }
+    // La synchronisation avec l'historique (body.modal-open, history.back())
+    // est désormais gérée globalement par l'observer dans _initModalBackButtonGlobal().
 }
 
 // Correctif v1.83.3 : le clic sur l'overlay (en dehors de la modale) ne ferme
