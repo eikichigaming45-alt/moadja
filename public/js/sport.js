@@ -454,8 +454,7 @@ function _sportRenderDetailRoutine(workout, jour) {
     zone.innerHTML = `
         <div class="sport-card">
             <div class="sport-routine-detail-header">
-                <button class="sport-routine-btn-retour" onclick="_sportChargerListeRoutines()">‹ Retour</button>
-                <button class="sport-routine-btn-suppr-routine" data-workout-id="${workout.id}">${SPORT_ICONE_POUBELLE} Supprimer la routine</button>
+                                <button class="sport-routine-btn-suppr-routine" data-workout-id="${workout.id}">${SPORT_ICONE_POUBELLE} Supprimer la routine</button>
             </div>
             <div class="sport-routine-detail-nom">${_sportEchapper(workout.name)}</div>
             <button class="sport-cta-btn" onclick="_sportDemarrerSeance(${workout.id})">
@@ -904,7 +903,7 @@ function _sportOuvrirFormulaireAjoutExercice(exercice) {
                     <input type="number" id="sport-ajout-duree-s" value="" min="0" max="59" placeholder="sec" style="width: 60px;">
                     <span>sec</span>
                 ` : `
-                    <input type="number" id="sport-ajout-reps" value="" min="1" placeholder="Reps">
+                                    <input type="number" id="sport-ajout-reps" value="" min="1" placeholder="Reps">
                 `}
             </div>
 
@@ -958,7 +957,7 @@ async function _sportValiderAjoutExercice(wgerExerciseId, exerciseName, estDuree
         const r = await fetch(`/api/sport/days/${_sportRoutineDetailActive.dayId}/exercises`, {
             method: 'POST', headers: _sportAuthHeaders(), body: JSON.stringify(body)
         });
-                const d = await r.json();
+        const d = await r.json();
 
         if (!d.success) {
             if (msg) msg.textContent = 'Erreur : ' + (d.message || 'ajout impossible.');
@@ -1119,7 +1118,15 @@ function _sportRenderTousLesExercices() {
 
     _sportSeanceExercices.forEach((ex, index) => {
         const estDuree = Number.isInteger(ex.target_duration_seconds);
-        const logsExerciceExistants = (_sportSeanceActive.logs || []).filter(l => l.wger_exercise_id === ex.wger_exercise_id);
+
+        // ── FIX doublon d'exercice : si le même exercice (wger_exercise_id identique)
+        // apparaît plusieurs fois dans la routine, on distingue ses logs grâce à
+        // "exIndex" (ajouté côté client lors de la validation d'une série).
+        // Les logs récupérés au chargement (reprise de séance / sans exIndex) retombent
+        // sur l'ancien filtre par wger_exercise_id (comportement historique, non cassé).
+        const logsExerciceExistants = (_sportSeanceActive.logs || []).filter(l =>
+            l.exIndex !== undefined ? l.exIndex === index : l.wger_exercise_id === ex.wger_exercise_id
+        );
 
         html += `
             <div class="sport-seance-exercice-bloc" style="margin-top: 24px; padding-bottom: 16px; border-bottom: 1px solid #f0f0f0;">
@@ -1282,7 +1289,7 @@ function _sportRenderFormulaireDuree(ex, logsExistants, exIndex) {
         </div>
 
         <div style="display: flex; gap: 8px; margin-top: 12px;">
-            <input type="number" step="0.1" class="sport-seance-input" id="sport-duree-distance-${exIndex}" value="${logsExistants[0]?.distance_km || ''}" placeholder="Dist. (km)">
+                        <input type="number" step="0.1" class="sport-seance-input" id="sport-duree-distance-${exIndex}" value="${logsExistants[0]?.distance_km || ''}" placeholder="Dist. (km)">
             <input type="number" step="0.1" class="sport-seance-input" id="sport-duree-vitesse-${exIndex}" value="${logsExistants[0]?.speed_kmh || ''}" placeholder="Vit. (km/h)">
             <input type="number" step="0.1" class="sport-seance-input" id="sport-duree-inclinaison-${exIndex}" value="${logsExistants[0]?.incline_percent || ''}" placeholder="Incl. (%)">
         </div>
@@ -1323,6 +1330,9 @@ async function _sportValiderLogSerie(ex, setNumber, exIndex) {
         });
         const d = await r.json();
         if (d.success) {
+            // Marquage de l'exercice d'origine dans la routine, pour distinguer
+            // les doublons (même exercice utilisé plusieurs fois dans la séance).
+            d.log.exIndex = exIndex;
             _sportSeanceActive.logs.push(d.log);
             _sportLancerReposEntreSeries(ex.target_rest_seconds || 60);
             _sportRenderTousLesExercices();
@@ -1352,7 +1362,7 @@ async function _sportValiderLogDuree(ex, setNumber, exIndex) {
                 wger_exercise_id: ex.wger_exercise_id, exercise_name: ex.exercise_name,
                 set_number: setNumber, completed: true,
                 duration_seconds: (m * 60) + s,
-                                distance_km: distance !== '' && distance !== undefined ? parseFloat(distance) : null,
+                distance_km: distance !== '' && distance !== undefined ? parseFloat(distance) : null,
                 speed_kmh: vitesse !== '' && vitesse !== undefined ? parseFloat(vitesse) : null,
                 incline_percent: inclinaison !== '' && inclinaison !== undefined ? parseFloat(inclinaison) : null,
                 rest_seconds: ex.target_rest_seconds || 60
@@ -1360,6 +1370,8 @@ async function _sportValiderLogDuree(ex, setNumber, exIndex) {
         });
         const d = await r.json();
         if (d.success) {
+            // Marquage de l'exercice d'origine dans la routine (voir _sportValiderLogSerie).
+            d.log.exIndex = exIndex;
             _sportSeanceActive.logs.push(d.log);
             _sportLancerReposEntreSeries(ex.target_rest_seconds || 60);
             _sportRenderTousLesExercices();
@@ -1389,6 +1401,8 @@ function _sportLancerReposEntreSeries(secondesRepos) {
         if (!badge) { clearInterval(_sportSeanceReposInterval); return; }
         if (restant <= 0) {
             clearInterval(_sportSeanceReposInterval);
+            // Ding + vibration à la fin du temps de repos.
+            _sportJouerAlerteObjectif();
             zone.innerHTML = '';
             return;
         }
