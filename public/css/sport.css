@@ -931,8 +931,6 @@
     justify-content: center;
     flex-shrink: 0;
 }
-/* Bloc titre + date : flex:1 pour occuper l'espace restant et
-   pousser le bouton de suppression tout à droite du header. */
 .sport-seance-recap-header-info {
     flex: 1;
     min-width: 0;
@@ -949,10 +947,6 @@
     margin-top: 2px;
 }
 
-/* Bouton de suppression SVG (remplace l'ancien emoji 🗑️).
-   Cercle discret, aligné à droite via margin-left:auto (ceinture
-   et bretelles avec le flex:1 du bloc info ci-dessus), hover rouge
-   cohérent avec .sport-seance-delete-btn / .sport-routine-btn-suppr-routine. */
 .sport-seance-recap-btn-suppr {
     width: 32px;
     height: 32px;
@@ -1106,4 +1100,52 @@
     opacity: 0.4;
     border: 1px dashed rgba(167, 139, 250, 0.6);
     background: rgba(167, 139, 250, 0.06);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ── CHRONO DE SÉRIE (exercices en durée) ──
+   Bouton Démarrer/Arrêter + zone d'affichage du décompte, en
+   remplacement des styles inline posés dynamiquement par
+   _sportToggleTimerSerie() dans sport.js. Palette identique aux
+   autres boutons ronds du module (violet au repos, rouge actif).
+   ══════════════════════════════════════════════════════════════ */
+
+.sport-duree-playstop-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 1px solid rgba(167, 139, 250, 0.4);
+    background: rgba(255, 255, 255, 0.6);
+    color: rgb(167, 139, 250);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    cursor: pointer;
+    margin: 0 auto;
+    transition: all 0.2s ease;
+}
+.sport-duree-playstop-btn:hover {
+    border-color: rgba(167, 139, 250, 0.7);
+}
+.sport-duree-playstop-btn.actif {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #ef4444;
+}
+.sport-duree-playstop-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.sport-duree-chrono-texte {
+    font-size: 15px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-main);
+    text-align: center;
+    width: 100%;
+}
+.sport-duree-chrono-texte.depassement {
+    color: #ef4444;
 }
