@@ -334,6 +334,7 @@ router.post('/:id/resonance', authenticateToken, async (req, res) => {
 });
 
 // ── GET /api/feed/:id/likes ───────────────────────────────────
+// [MODIFIÉ] Ajout de u.id AS user_id pour permettre le lien vers le profil public
 router.get('/:id/likes', authenticateToken, async (req, res) => {
     const postId = parseInt(req.params.id);
     try {
@@ -419,15 +420,332 @@ router.post('/:id/comments', authenticateToken, async (req, res) => {
                     `INSERT INTO notifications (user_id, type, ref_id, sender_id) VALUES (\$1, 'reply', \$2, \$3)`,
                     [parentAuteurId, comment.id, userId]
                 );
-                await envoyerPush(parentAuteurId, '↩️ Nouvelle réponse',
+                await envoyerPush(parentAuteurId, '↩️ Réponse à ton commentaire',
                     `${prenom}${nom ? ' ' + nom : ''} a répondu à ton commentaire`, `reply-${comment.id}`);
             }
         }
-        if (mentionIds.length) await notifierMentions(mentionIds, userId, comment.id, 'comment', prenom, nom);
+        const exclus = [ownerId, parentId
+            ? (await pool.query(`SELECT user_id FROM post_comments WHERE id = \$1`, [parentId])).rows[0]?.user_id
+            : null].filter(Boolean);
+        const mentionsFiltered = mentionIds.filter(id => !exclus.includes(id));
+        if (mentionsFiltered.length) await notifierMentions(mentionsFiltered, userId, comment.id, 'comment', prenom, nom);
+        if (contientToutLeMonde(contenu) && req.user.role === 'admin') {
+            await notifierToutLeMonde(userId, comment.id, 'comment', prenom, nom);
+        }
         res.json({ success: true, comment });
     } catch (e) {
         console.error('[FEED COMMENT POST]', e.message);
         res.status(500).json({ success: false, message: 'Erreur serveur.' });
+    }
+});
+
+// ── PUT /api/feed/comments/:id ────────────────────────────────
+router.put('/comments/:id', authenticateToken, async (req, res) => {
+    const userId    = req.user.id;
+    const commentId = parseInt(req.params.id);
+    const contenu   = (req.body.contenu || '').trim();
+    if (!contenu) return res.status(400).json({ success: false, message: 'Contenu vide.' });
+    try {
+        const { rows } = await pool.query(`SELECT user_id FROM post_comments WHERE id = \$1`, [commentId]);
+        if (!rows.length) return res.status(404).json({ success: false, message: 'Commentaire introuvable.' });
+        if (rows[0].user_id !== userId && req.user.role !== 'admin') {
+            return res.status(403).json({ success: false, message: 'Interdit.' });
+        }
+        const mentionIds = await resoudreMentions(contenu, userId);
+        await pool.query(`UPDATE post_comments SET contenu = \$1, mentions = \$2 WHERE id = \$3`,
+            [contenu, mentionIds, commentId]);
+        const { prenom, nom } = await getProfilAuteur(userId);
+        if (mentionIds.length) await notifierMentions(mentionIds, userId, commentId, 'comment', prenom, nom);
+        if (contientToutLeMonde(contenu) && req.user.role === 'admin') {
+            await notifierToutLeMonde(userId, commentId, 'comment', prenom, nom);
+        }
+        res.json({ success: true });
+    } catch (e) {
+        console.error('[FEED COMMENT PUT]', e.message);
+        res.status(500).json({ success: false, message: 'Erreur serveur.' });
+    }
+});
+
+// ── DELETE /api/feed/comments/:id ────────────────────────────
+router.delete('/comments/:id', authenticateToken, async (req, res) => {
+    const userId    = req.user.id;
+    const commentId = parseInt(req.params.id);
+    try {
+        const { rows } = await pool.query(`SELECT user_id FROM post_comments WHERE id = \$1`, [commentId]);
+        if (!rows.length) return res.status(404).json({ success: false, message: 'Commentaire introuvable.' });
+        if (rows[0].user_id !== userId && req.user.role !== 'admin') {
+            return res.status(403).json({ success: false, message: 'Interdit.' });
+        }
+        await pool.query(`DELETE FROM post_comments WHERE id = \$1`, [commentId]);
+        res.json({ success: true });
+    } catch (e) {
+        console.error('[FEED COMMENT DELETE]', e.message);
+        res.status(500).json({ success: false, message: 'Erreur serveur.' });
+    }
+});
+
+// ── POST /api/feed/comments/:id/like ─────────────────────────
+router.post('/comments/:id/like', authenticateToken, async (req, res) => {
+    const userId    = req.user.id;
+    const commentId = parseInt(req.params.id);
+    try {
+        const { rows } = await pool.query(
+            `SELECT id FROM comment_likes WHERE comment_id = \$1 AND user_id = \$2`,
+            [commentId, userId]
+        );
+        if (rows.length) {
+            await pool.query(`DELETE FROM comment_likes WHERE comment_id = \$1 AND user_id = \$2`,
+                [commentId, userId]);
+            return res.json({ success: true, liked: false });
+        }
+        await pool.query(`INSERT INTO comment_likes (comment_id, user_id) VALUES (\$1, \$2)`,
+            [commentId, userId]);
+        res.json({ success: true, liked: true });
+    } catch (e) {
+        console.error('[COMMENT LIKE]', e.message);
+        res.status(500).json({ success: false, message: 'Erreur serveur.' });
+    }
+});
+
+// ── PUT /api/feed/:id ─────────────────────────────────────────
+router.put('/:id', authenticateToken, upload.single('photo'), async (req, res) => {
+    const userId    = req.user.id;
+    const postId    = parseInt(req.params.id);
+    const contenu   = (req.body.contenu || '').trim();
+    const photoB64  = req.body.photo || null;
+    const suppPhoto = req.body.supprimer_photo === true || req.body.supprimer_photo === 'true';
+    const lieu      = req.body.lieu !== undefined ? (req.body.lieu || '').trim() || null : undefined;
+    const lieu_lat  = req.body.lieu_lat !== undefined
+        ? (req.body.lieu_lat === null || req.body.lieu_lat === '' ? null : parseFloat(req.body.lieu_lat))
+        : undefined;
+    const lieu_lon  = req.body.lieu_lon !== undefined
+        ? (req.body.lieu_lon === null || req.body.lieu_lon === '' ? null : parseFloat(req.body.lieu_lon))
+        : undefined;
+    const personnes_taguees = req.body.personnes_taguees
+        ? JSON.parse(req.body.personnes_taguees)
+        : undefined;
+    try {
+        const { rows } = await pool.query(
+            `SELECT user_id, photo_url FROM posts WHERE id = \$1`, [postId]
+        );
+        if (!rows.length) return res.status(404).json({ success: false, message: 'Post introuvable.' });
+        const post = rows[0];
+        if (post.user_id !== userId && req.user.role !== 'admin') {
+            return res.status(403).json({ success: false, message: 'Interdit.' });
+        }
+        let photo_url = post.photo_url;
+        if ((suppPhoto || req.file || photoB64) && post.photo_url) {
+            supprimerImage(post.photo_url);
+            photo_url = null;
+        }
+        if (req.file) {
+            photo_url = await sauvegarderImage(req.file.buffer, userId);
+        } else if (photoB64) {
+            photo_url = await sauvegarderImage(Buffer.from(photoB64, 'base64'), userId);
+        }
+        const mentionIds = contenu ? await resoudreMentions(contenu, userId) : [];
+        const setClauses = [
+            `contenu = \$1`, `photo_url = \$2`, `mentions = \$3`
+        ];
+        const params = [contenu || null, photo_url, mentionIds];
+        if (lieu !== undefined)              { params.push(lieu);               setClauses.push(`lieu = $${params.length}`); }
+        if (lieu_lat !== undefined)          { params.push(lieu_lat);           setClauses.push(`lieu_lat = $${params.length}`); }
+        if (lieu_lon !== undefined)          { params.push(lieu_lon);           setClauses.push(`lieu_lon = $${params.length}`); }
+        if (personnes_taguees !== undefined) { params.push(personnes_taguees);  setClauses.push(`personnes_taguees = $${params.length}`); }
+        params.push(postId);
+        await pool.query(
+            `UPDATE posts SET ${setClauses.join(', ')} WHERE id = $${params.length}`,
+            params
+        );
+        const { prenom, nom } = await getProfilAuteur(userId);
+        if (mentionIds.length) await notifierMentions(mentionIds, userId, postId, 'post', prenom, nom);
+        if (contenu && contientToutLeMonde(contenu) && req.user.role === 'admin') {
+            await notifierToutLeMonde(userId, postId, 'post', prenom, nom);
+        }
+        res.json({ success: true, photo_url });
+    } catch (e) {
+        console.error('[FEED PUT]', e.message);
+        res.status(500).json({ success: false, message: 'Erreur serveur.' });
+    }
+});
+
+// ── DELETE /api/feed/:id ──────────────────────────────────────
+router.delete('/:id', authenticateToken, async (req, res) => {
+    const userId = req.user.id;
+    const postId = parseInt(req.params.id);
+    try {
+        const { rows } = await pool.query(
+            `SELECT user_id, photo_url FROM posts WHERE id = \$1`, [postId]
+        );
+        if (!rows.length) return res.status(404).json({ success: false, message: 'Post introuvable.' });
+        const post = rows[0];
+        if (post.user_id !== userId && req.user.role !== 'admin') {
+            return res.status(403).json({ success: false, message: 'Interdit.' });
+        }
+        supprimerImage(post.photo_url);
+        await pool.query(`DELETE FROM posts WHERE id = \$1`, [postId]);
+        res.json({ success: true });
+    } catch (e) {
+        console.error('[FEED DELETE]', e.message);
+        res.status(500).json({ success: false, message: 'Erreur serveur.' });
+    }
+});
+
+// ── GET /api/feed/share/:id (Route publique pour prévisualisation WhatsApp & affichage public) ──
+// Attention : Pas de middleware authenticateToken ici, car le post doit être visible publiquement par le lien
+router.get('/share/:id', async (req, res) => {
+    const postId = parseInt(req.params.id);
+    if (isNaN(postId)) return res.status(400).send('ID invalide');
+    try {
+        const { rows } = await pool.query(`
+            SELECT p.contenu, p.photo_url, pr.prenom, pr.nom, u.username, p.created_at
+            FROM posts p
+            JOIN users u ON u.id = p.user_id
+            LEFT JOIN profiles pr ON pr.user_id = p.user_id
+            WHERE p.id = \$1
+        `, [postId]);
+        if (!rows.length) return res.status(404).send('Post introuvable');
+        const post = rows[0];
+        const nomAuteur = [post.prenom, post.nom].filter(Boolean).join(' ') || post.username;
+        const initiale = (post.prenom ? post.prenom[0] : post.username[0]).toUpperCase();
+        const contenuBrut = post.contenu ? post.contenu.replace(/<[^>]*>?/gm, '').trim() : '';
+        const extrait = contenuBrut ? (contenuBrut.substring(0, 120) + '...') : `Voir la publication de ${nomAuteur}`;
+        const titre = `Post de ${nomAuteur} sur MoaDja`;
+        const imageUrl = post.photo_url ? `https://moadja.fr${post.photo_url}` : 'https://moadja.fr/images/logo.png';
+        const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${titre}</title>
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="https://moadja.fr/api/feed/share/${postId}" />
+    <meta property="og:title" content="${titre}" />
+    <meta property="og:description" content="${extrait}" />
+    <meta property="og:image" content="${imageUrl}" />
+    <meta property="og:site_name" content="MoaDja" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${titre}" />
+    <meta name="twitter:description" content="${extrait}" />
+    <meta name="twitter:image" content="${imageUrl}" />
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: 900;
+            color: #7c3aed;
+            margin-bottom: 30px;
+            margin-top: 20px;
+            letter-spacing: -0.5px;
+        }
+        .post-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.8);
+            border-radius: 24px;
+            padding: 24px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+            box-sizing: border-box;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(124,58,237,0.3);
+        }
+        .author-name {
+            font-weight: 800;
+            color: #1f2937;
+            font-size: 16px;
+        }
+        .author-handle {
+            color: #6b7280;
+            font-size: 13px;
+            margin-top: 2px;
+        }
+        .content {
+            font-size: 15px;
+            color: #374151;
+            line-height: 1.6;
+            margin-bottom: 16px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .post-image {
+            width: 100%;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            object-fit: cover;
+            max-height: 500px;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        .cta-button {
+            display: block;
+            width: 100%;
+            text-align: center;
+            padding: 14px;
+            background: rgba(167,139,250,0.85);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 700;
+            transition: all 0.2s;
+            box-shadow: 0 8px 24px rgba(167,139,250,0.25);
+            box-sizing: border-box;
+        }
+        .cta-button:hover {
+            transform: translateY(-2px);
+            background: rgba(167,139,250,1);
+        }
+    </style>
+</head>
+<body>
+    <div class="logo">MoaDja</div>
+    <div class="post-card">
+        <div class="header">
+            <div class="avatar">${initiale}</div>
+            <div>
+                <div class="author-name">${nomAuteur}</div>
+                <div class="author-handle">@${post.username}</div>
+            </div>
+        </div>
+        ${post.contenu ? `<div class="content">${contenuBrut}</div>` : ''}
+        ${post.photo_url ? `<img src="${imageUrl}" class="post-image" alt="Photo du post">` : ''}
+        <a href="https://moadja.fr" class="cta-button">Rejoindre MoaDja</a>
+    </div>
+</body>
+</html>`;
+        res.send(html);
+    } catch (e) {
+        console.error('[FEED SHARE]', e.message);
+        res.status(500).send('Erreur serveur');
     }
 });
 
