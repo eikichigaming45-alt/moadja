@@ -326,7 +326,7 @@ function actualiser() {
     if (typeof chargerPierreNaissance  === 'function') chargerPierreNaissance();
     if (typeof chargerAnimalTotem      === 'function') chargerAnimalTotem();
     if (typeof chargerSportStatsWidget === 'function') chargerSportStatsWidget();
-    chargerWidgetAnniversaires();
+        chargerWidgetAnniversaires();
     if (typeof Agenda !== 'undefined') Agenda.charger();
     if (typeof Cycle  !== 'undefined') Cycle.charger();
     if (typeof chargerBadgeNotifs === 'function') chargerBadgeNotifs();
@@ -463,3 +463,33 @@ function enregistrerServiceWorker() {
         navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
 }
+
+// ── Rafraîchissement badges au retour au premier plan (PWA) ────
+// Correctif v1.92.29 : en arrière-plan mobile, les setInterval sont
+// throttlés/suspendus par l'OS/navigateur (économie de batterie).
+// On force un refetch immédiat des compteurs dès que l'app redevient
+// visible, sans attendre le prochain tick du polling ni un F5 manuel.
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    if (typeof chargerBadgeNotifs === 'function') chargerBadgeNotifs();
+    if (typeof Tchat !== 'undefined' && Tchat.rafraichirBadge) {
+        Tchat.rafraichirBadge();
+    }
+    if (typeof Tchat !== 'undefined' && Tchat.reconnecter) {
+        Tchat.reconnecter();
+    }
+});
+
+// Complément : certains contextes PWA (retour depuis l'écran d'accueil,
+// restauration depuis le cache bfcache) déclenchent 'pageshow' sans
+// forcément déclencher 'visibilitychange'. On sécurise les deux cas.
+window.addEventListener('pageshow', () => {
+    if (!_appInitialisee) return;
+    if (typeof chargerBadgeNotifs === 'function') chargerBadgeNotifs();
+    if (typeof Tchat !== 'undefined' && Tchat.rafraichirBadge) {
+        Tchat.rafraichirBadge();
+    }
+    if (typeof Tchat !== 'undefined' && Tchat.reconnecter) {
+        Tchat.reconnecter();
+    }
+});
