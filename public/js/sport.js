@@ -50,6 +50,38 @@ const SPORT_MAX_EXERCICES_APERCU = 5;
 
 let _sportSectionActive = 'dashboard';
 
+// ── Gestion Wake Lock (Écran allumé pendant la séance) ──
+let _sportWakeLock = null;
+
+async function _sportDemanderWakeLock() {
+    if ('wakeLock' in navigator) {
+        try {
+            _sportWakeLock = await navigator.wakeLock.request('screen');
+            _sportWakeLock.addEventListener('release', () => {
+                console.log('[SPORT] Wake Lock relâché.');
+            });
+        } catch (err) {
+            console.error('[SPORT] Erreur Wake Lock:', err.message);
+        }
+    }
+}
+
+function _sportRelacherWakeLock() {
+    if (_sportWakeLock !== null) {
+        _sportWakeLock.release()
+            .catch(err => console.error('[SPORT] Erreur release Wake Lock:', err.message))
+            .finally(() => { _sportWakeLock = null; });
+    }
+}
+
+// Relancer le Wake Lock si on revient sur l'application en cours de séance
+document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'visible' && _sportSeanceActive) {
+        await _sportDemanderWakeLock();
+    }
+});
+
+
 // ── Construction initiale ──
 function chargerSportDashboard() {
     const zone = document.getElementById('grid-sport');
@@ -210,7 +242,6 @@ function _sportSwitchSection(section) {
     if (section === 'routines') _sportChargerListeRoutines();
 }
 
-// ── Conversion durée min ↔ sec (conservé pour compatibilité éventuelle) ──
 function _sportSecondesVersMinutes(secondes) {
     if (!Number.isInteger(secondes)) return 0;
     return Math.round(secondes / 60);
@@ -333,7 +364,6 @@ function _sportRenderListeRoutines(routines) {
     });
 }
 
-// ── Création d'une routine (+ jour caché) ──
 async function _sportCreerRoutine() {
     const input = document.getElementById('sport-routine-nouveau-nom');
     const msg   = document.getElementById('sport-routine-creation-msg');
@@ -373,7 +403,6 @@ async function _sportCreerRoutine() {
     }
 }
 
-// ── Détail d'une routine ──
 async function _sportOuvrirDetailRoutine(workoutId) {
     const zone = document.getElementById('sport-routines-zone');
     if (!zone) return;
@@ -398,7 +427,6 @@ async function _sportOuvrirDetailRoutine(workoutId) {
     }
 }
 
-// Meta affichée par exercice : séries/reps ou séries/durée, + poids cible et repos si renseignés.
 function _sportFormaterMetaExercice(ex) {
     const estDuree = Number.isInteger(ex.target_duration_seconds);
     let base = "";
@@ -419,10 +447,6 @@ function _sportFormaterMetaExercice(ex) {
     return base;
 }
 
-// Rendu du détail d'une routine, AVEC poignée de drag-and-drop (icône SVG dédiée)
-// et bouton d'édition en emoji ✏️ (pas de constante SPORT_ICONE_CRAYON : elle
-// n'existe pas dans ce module, son usage provoquait un ReferenceError qui
-// cassait tout l'affichage de "Mes Routines").
 function _sportRenderDetailRoutine(workout, jour) {
     const zone      = document.getElementById('sport-routines-zone');
     const exercices = jour?.exercises || [];
@@ -435,7 +459,7 @@ function _sportRenderDetailRoutine(workout, jour) {
             </div>
             <div class="sport-routine-detail-nom">${_sportEchapper(workout.name)}</div>
             <button class="sport-cta-btn" onclick="_sportDemarrerSeance(${workout.id})">
-                ${SPORT_ICONE_DUMBBELL} Commencer la routine
+                                ${SPORT_ICONE_DUMBBELL} Commencer la routine
             </button>
         </div>
 
@@ -495,10 +519,6 @@ function _sportRenderDetailRoutine(workout, jour) {
     _sportInitDragAndDropExercices(zone, workout.id);
 }
 
-// ── Drag-and-drop des exercices d'une routine ──
-// Réordonnancement à la souris (desktop, via dragstart/dragover/dragend) et
-// au toucher (mobile, via touchstart/touchmove/touchend sur la poignée).
-// À chaque relâchement, le nouvel ordre DOM est envoyé au serveur.
 function _sportInitDragAndDropExercices(zone, workoutId) {
     const liste = zone.querySelector('.sport-routine-exercices-liste');
     if (!liste) return;
@@ -521,7 +541,7 @@ function _sportInitDragAndDropExercices(zone, workoutId) {
             e.preventDefault();
             if (!elementGlisse || elementGlisse === item) return;
 
-            const rect        = item.getBoundingClientRect();
+            const rect = item.getBoundingClientRect();
             const apresMilieu = e.clientY > rect.top + rect.height / 2;
 
             if (apresMilieu) {
@@ -531,7 +551,6 @@ function _sportInitDragAndDropExercices(zone, workoutId) {
             }
         });
 
-        // Support tactile (mobile) : réordonnancement au toucher via la poignée.
         const poignee = item.querySelector('.sport-routine-exercice-drag-handle');
         if (poignee) {
             poignee.addEventListener('touchstart', (e) => {
@@ -550,7 +569,7 @@ function _sportInitDragAndDropExercices(zone, workoutId) {
         const item   = cible?.closest('.sport-routine-exercice-item');
         if (!item || item === elementGlisse) return;
 
-        const rect        = item.getBoundingClientRect();
+        const rect = item.getBoundingClientRect();
         const apresMilieu = touch.clientY > rect.top + rect.height / 2;
 
         if (apresMilieu) {
@@ -568,7 +587,6 @@ function _sportInitDragAndDropExercices(zone, workoutId) {
     });
 }
 
-// Envoie le nouvel ordre au serveur (liste des IDs dans l'ordre DOM courant).
 async function _sportSauvegarderOrdreExercices(liste, workoutId) {
     const ordre = Array.from(liste.querySelectorAll('.sport-routine-exercice-item'))
         .map(item => parseInt(item.dataset.exerciceId, 10));
@@ -587,7 +605,6 @@ async function _sportSauvegarderOrdreExercices(liste, workoutId) {
     }
 }
 
-// ── Suppression routine (depuis détail) ──
 function _sportConfirmerSuppressionRoutineDetail(workoutId) {
     _sportOuvrirConfirmationSuppression(async () => {
         try {
@@ -599,7 +616,6 @@ function _sportConfirmerSuppressionRoutineDetail(workoutId) {
     });
 }
 
-// ── Suppression d'un exercice ──
 function _sportConfirmerSuppressionExercice(exerciceId) {
     _sportOuvrirConfirmationSuppression(async () => {
         try {
@@ -611,7 +627,6 @@ function _sportConfirmerSuppressionExercice(exerciceId) {
     });
 }
 
-// ── Édition séries/reps (ou séries/durée) + poids cible + repos cible ──
 function _sportEditerExercice(exerciceId, nom, setsActuel, repsActuel, dureeActuelleSecondes, poidsActuel, reposActuelSecondes) {
     const itemEl = document.getElementById(`sport-exercice-${exerciceId}`);
     if (!itemEl) return;
@@ -666,10 +681,10 @@ function _sportEditerExercice(exerciceId, nom, setsActuel, repsActuel, dureeActu
             body.target_weight_kg = poidsInput !== '' ? parseFloat(poidsInput) : null;
         }
 
-                const reposInput = document.getElementById(`sport-edit-repos-${exerciceId}`).value;
+        const reposInput = document.getElementById(`sport-edit-repos-${exerciceId}`).value;
         body.target_rest_seconds = reposInput !== '' ? parseInt(reposInput, 10) : 60;
 
-        try {
+                try {
             await fetch(`/api/sport/exercises/${exerciceId}`, {
                 method: 'PUT', headers: _sportAuthHeaders(), body: JSON.stringify(body)
             });
@@ -867,7 +882,6 @@ function _sportRenderResultatsSelecteur(exercices, hasMore) {
     }
 }
 
-// Formulaire d'ajout : séries + reps (ou séries + durée) + poids cible + repos cible.
 function _sportOuvrirFormulaireAjoutExercice(exercice) {
     const zone = document.getElementById('sport-routines-zone');
     if (!zone || !_sportRoutineDetailActive) return;
@@ -941,10 +955,10 @@ async function _sportValiderAjoutExercice(wgerExerciseId, exerciseName, estDuree
     body.target_rest_seconds = reposInput !== '' ? parseInt(reposInput, 10) : 60;
 
     try {
-                const r = await fetch(`/api/sport/days/${_sportRoutineDetailActive.dayId}/exercises`, {
+        const r = await fetch(`/api/sport/days/${_sportRoutineDetailActive.dayId}/exercises`, {
             method: 'POST', headers: _sportAuthHeaders(), body: JSON.stringify(body)
         });
-        const d = await r.json();
+                const d = await r.json();
 
         if (!d.success) {
             if (msg) msg.textContent = 'Erreur : ' + (d.message || 'ajout impossible.');
@@ -961,12 +975,12 @@ async function _sportValiderAjoutExercice(wgerExerciseId, exerciseName, estDuree
 // ── SÉANCE EN COURS ──
 // ══════════════════════════════════════════════════════════════
 
-let _sportSeanceActive       = null; // { id, workout_id, logs: [...] }
-let _sportSeanceExercices    = [];   // liste des exercices de la routine
+let _sportSeanceActive         = null; // { id, workout_id, logs: [...] }
+let _sportSeanceExercices      = [];   // liste des exercices de la routine
 let _sportSeanceChronoInterval = null;
 let _sportSeanceReposInterval  = null;
+let _sportSeryTimers           = {};   // Stockage des chronos individuels (exercices en durée)
 
-// Vérifie au chargement du dashboard si une séance est déjà en cours (reprise après refresh).
 async function _sportInitVerifSeanceActive() {
     try {
         const r = await fetch('/api/sport/sessions/active', { headers: _sportAuthHeaders() });
@@ -1013,13 +1027,13 @@ async function _sportReprendreSeance(session) {
         _sportSeanceExercices = jour?.exercises || [];
         _sportSeanceActive    = session;
 
+        await _sportDemanderWakeLock();
         _sportRenderEcranSeance();
     } catch (err) {
         console.error('[SPORT] reprendreSeance :', err.message);
     }
 }
 
-// Démarrage d'une nouvelle séance depuis le détail d'une routine.
 async function _sportDemarrerSeance(workoutId) {
     try {
         const r = await fetch('/api/sport/sessions', {
@@ -1047,18 +1061,19 @@ async function _sportDemarrerSeance(workoutId) {
             return;
         }
 
+        await _sportDemanderWakeLock();
         _sportRenderEcranSeance();
     } catch (err) {
         console.error('[SPORT] demarrerSeance :', err.message);
     }
 }
 
-// Écran de séance : tous les exercices affichés en liste (plus de Précédent/Suivant).
 function _sportRenderEcranSeance() {
     const zoneGlobale = document.getElementById('grid-sport');
     if (!zoneGlobale || !_sportSeanceExercices.length) return;
 
     clearInterval(_sportSeanceChronoInterval);
+    _sportSeryTimers = {};
     _sportSeanceChronoInterval = setInterval(_sportMettreAJourChronoSeance, 1000);
 
     zoneGlobale.innerHTML = `
@@ -1087,14 +1102,15 @@ function _sportMettreAJourChronoSeance() {
 }
 
 function _sportFormatChrono(secondes) {
-    const h = Math.floor(secondes / 3600);
-    const m = Math.floor((secondes % 3600) / 60);
-    const s = secondes % 60;
+    const absSec = Math.abs(secondes);
+    const h = Math.floor(absSec / 3600);
+    const m = Math.floor((absSec % 3600) / 60);
+    const s = absSec % 60;
     const pad = n => String(n).padStart(2, '0');
-    return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+    const prefix = secondes < 0 ? '+' : '';
+    return h > 0 ? `${prefix}${h}:${pad(m)}:${pad(s)}` : `${prefix}${pad(m)}:${pad(s)}`;
 }
 
-// Rendu de TOUS les exercices de la séance à la suite les uns des autres.
 function _sportRenderTousLesExercices() {
     const zone = document.getElementById('sport-seance-contenu');
     if (!zone) return;
@@ -1117,7 +1133,6 @@ function _sportRenderTousLesExercices() {
     _sportBrancherValidationTousExercices();
 }
 
-// ── Formulaire "musculation" : une ligne par série (reps + poids + coche) ──
 function _sportRenderFormulaireSeries(ex, logsExistants, exIndex) {
     const lignes = [];
     for (let i = 1; i <= ex.target_sets; i++) {
@@ -1145,7 +1160,81 @@ function _sportRenderFormulaireSeries(ex, logsExistants, exIndex) {
     `;
 }
 
-// ── Formulaire "cardio/durée" : tableau par série (min/sec) + champs optionnels non tronqués ──
+function _sportJouerAlerteObjectif() {
+    if ('vibrate' in navigator) {
+        navigator.vibrate([200, 100, 200, 100, 400]);
+    }
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        gain.gain.setValueAtTime(1, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.6);
+    } catch (e) {
+        console.error("[SPORT] Erreur WebAudio:", e);
+    }
+}
+
+function _sportToggleTimerSerie(exIndex, setNumber, targetSeconds) {
+    const key = `${exIndex}-${setNumber}`;
+    const btnPlayStop = document.getElementById(`sport-duree-playstop-${key}`);
+    const inputsZone  = document.getElementById(`sport-duree-inputs-${key}`);
+    const chronoZone  = document.getElementById(`sport-duree-chronotext-${key}`);
+
+    if (_sportSeryTimers[key] && _sportSeryTimers[key].active) {
+        clearInterval(_sportSeryTimers[key].interval);
+        _sportSeryTimers[key].active = false;
+
+        const elapsedSecs = Math.floor((Date.now() - _sportSeryTimers[key].startTime) / 1000);
+
+        document.getElementById(`sport-duree-m-${exIndex}-${setNumber}`).value = Math.floor(elapsedSecs / 60);
+        document.getElementById(`sport-duree-s-${exIndex}-${setNumber}`).value = elapsedSecs % 60;
+
+        chronoZone.style.display = 'none';
+        inputsZone.style.display = 'flex';
+        btnPlayStop.innerHTML = '▶️';
+        btnPlayStop.style.background = '';
+        btnPlayStop.style.color = '';
+    } else {
+        const now = Date.now();
+        _sportSeryTimers[key] = {
+            active: true,
+            startTime: now,
+            targetSeconds: targetSeconds,
+            alertPlayed: false,
+            interval: setInterval(() => {
+                const elapsed = Math.floor((Date.now() - _sportSeryTimers[key].startTime) / 1000);
+                const remaining = targetSeconds - elapsed;
+
+                if (remaining <= 0 && !_sportSeryTimers[key].alertPlayed) {
+                    _sportJouerAlerteObjectif();
+                    _sportSeryTimers[key].alertPlayed = true;
+                }
+
+                chronoZone.textContent = _sportFormatChrono(remaining);
+                chronoZone.style.color = remaining < 0 ? '#ef4444' : 'var(--text-main)';
+            }, 500)
+        };
+
+        inputsZone.style.display = 'none';
+        chronoZone.style.display = 'block';
+        chronoZone.textContent = _sportFormatChrono(targetSeconds);
+        chronoZone.style.color = 'var(--text-main)';
+
+                btnPlayStop.innerHTML = '⏹️';
+        btnPlayStop.style.background = 'rgba(239, 68, 68, 0.1)';
+        btnPlayStop.style.color = '#ef4444';
+        btnPlayStop.style.borderRadius = '50%';
+        btnPlayStop.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+    }
+}
+
 function _sportRenderFormulaireDuree(ex, logsExistants, exIndex) {
     const lignes = [];
     const nbSets = ex.target_sets || 1;
@@ -1157,42 +1246,58 @@ function _sportRenderFormulaireDuree(ex, logsExistants, exIndex) {
 
     return `
         <div class="sport-seance-table">
-            <div class="sport-seance-table-header" style="grid-template-columns: 40px 1fr 1fr 40px">
-                <span>Série</span><span>Min</span><span>Sec</span><span></span>
+            <div class="sport-seance-table-header" style="grid-template-columns: 40px 1fr 34px 40px">
+                <span>Série</span><span style="text-align:center">Temps (m:s)</span><span></span><span></span>
             </div>
             ${lignes.map(l => {
                 const totalSec = l.log ? l.log.duration_seconds : ex.target_duration_seconds;
                 const m = Math.floor(totalSec / 60);
                 const s = totalSec % 60;
+                const isCompleted = !!l.log?.completed;
+
                 return `
-                <div class="sport-seance-table-row ${l.log?.completed ? 'sport-seance-row-validee' : ''}" style="grid-template-columns: 40px 1fr 1fr 40px">
+                <div class="sport-seance-table-row ${isCompleted ? 'sport-seance-row-validee' : ''}" style="grid-template-columns: 40px 1fr 34px 40px; align-items:center;">
                     <span class="sport-seance-serie-numero">${l.numero}</span>
-                    <input type="number" class="sport-seance-input" id="sport-duree-m-${exIndex}-${l.numero}"
-                           value="${totalSec > 0 ? m : ''}" placeholder="m" ${l.log?.completed ? 'disabled' : ''}>
-                    <input type="number" class="sport-seance-input" id="sport-duree-s-${exIndex}-${l.numero}"
-                           value="${totalSec > 0 ? s : ''}" placeholder="s" ${l.log?.completed ? 'disabled' : ''}>
-                    <button class="sport-seance-check-btn ${l.log?.completed ? 'active' : ''}"
-                            id="sport-duree-check-${exIndex}-${l.numero}" ${l.log?.completed ? 'disabled' : ''}>${SPORT_ICONE_CHECK}</button>
+
+                    <div style="display:flex; justify-content:center; align-items:center; width:100%; position:relative; min-height: 28px;">
+                        <div id="sport-duree-inputs-${exIndex}-${l.numero}" style="display:flex; gap:4px; width:100%;">
+                            <input type="number" class="sport-seance-input" id="sport-duree-m-${exIndex}-${l.numero}"
+                                   value="${totalSec > 0 ? m : ''}" placeholder="m" ${isCompleted ? 'disabled' : ''}>
+                            <input type="number" class="sport-seance-input" id="sport-duree-s-${exIndex}-${l.numero}"
+                                   value="${totalSec > 0 ? s : ''}" placeholder="s" ${isCompleted ? 'disabled' : ''}>
+                        </div>
+                        <div id="sport-duree-chronotext-${exIndex}-${l.numero}" style="display:none; font-size:15px; font-weight:800; font-variant-numeric: tabular-nums;">
+                            00:00
+                        </div>
+                    </div>
+
+                    <button class="sport-seance-check-btn" style="border-radius:8px; font-size:14px; width:28px; height:28px;"
+                            id="sport-duree-playstop-${exIndex}-${l.numero}" ${isCompleted ? 'disabled style="opacity:0.3"' : ''}>▶️</button>
+
+                    <button class="sport-seance-check-btn ${isCompleted ? 'active' : ''}"
+                            id="sport-duree-check-${exIndex}-${l.numero}" ${isCompleted ? 'disabled' : ''}>${SPORT_ICONE_CHECK}</button>
                 </div>
                 `;
             }).join('')}
         </div>
 
         <div style="display: flex; gap: 8px; margin-top: 12px;">
-            <input type="number" step="0.1" class="sport-seance-input" id="sport-duree-distance-${exIndex}" value="${logsExistants[0]?.distance_km || ''}" placeholder="Dist. (km)" style="flex: 1; min-width: 0;">
-            <input type="number" step="0.1" class="sport-seance-input" id="sport-duree-vitesse-${exIndex}" value="${logsExistants[0]?.speed_kmh || ''}" placeholder="Vit. (km/h)" style="flex: 1; min-width: 0;">
-            <input type="number" step="0.1" class="sport-seance-input" id="sport-duree-inclinaison-${exIndex}" value="${logsExistants[0]?.incline_percent || ''}" placeholder="Incl. (%)" style="flex: 1; min-width: 0;">
+            <input type="number" step="0.1" class="sport-seance-input" id="sport-duree-distance-${exIndex}" value="${logsExistants[0]?.distance_km || ''}" placeholder="Dist. (km)">
+            <input type="number" step="0.1" class="sport-seance-input" id="sport-duree-vitesse-${exIndex}" value="${logsExistants[0]?.speed_kmh || ''}" placeholder="Vit. (km/h)">
+            <input type="number" step="0.1" class="sport-seance-input" id="sport-duree-inclinaison-${exIndex}" value="${logsExistants[0]?.incline_percent || ''}" placeholder="Incl. (%)">
         </div>
     `;
 }
 
-// Délégation des clics de validation pour TOUS les exercices affichés.
 function _sportBrancherValidationTousExercices() {
     _sportSeanceExercices.forEach((ex, index) => {
         const nbSets = ex.target_sets || 1;
 
         if (Number.isInteger(ex.target_duration_seconds)) {
             for (let i = 1; i <= nbSets; i++) {
+                document.getElementById(`sport-duree-playstop-${index}-${i}`)?.addEventListener('click', () => {
+                    _sportToggleTimerSerie(index, i, ex.target_duration_seconds);
+                });
                 document.getElementById(`sport-duree-check-${index}-${i}`)?.addEventListener('click', () => _sportValiderLogDuree(ex, i, index));
             }
         } else {
@@ -1228,6 +1333,11 @@ async function _sportValiderLogSerie(ex, setNumber, exIndex) {
 }
 
 async function _sportValiderLogDuree(ex, setNumber, exIndex) {
+    const key = `${exIndex}-${setNumber}`;
+    if (_sportSeryTimers[key] && _sportSeryTimers[key].active) {
+        _sportToggleTimerSerie(exIndex, setNumber, ex.target_duration_seconds);
+    }
+
     const m = parseInt(document.getElementById(`sport-duree-m-${exIndex}-${setNumber}`).value, 10) || 0;
     const s = parseInt(document.getElementById(`sport-duree-s-${exIndex}-${setNumber}`).value, 10) || 0;
 
@@ -1259,7 +1369,6 @@ async function _sportValiderLogDuree(ex, setNumber, exIndex) {
     }
 }
 
-// ── Repos chronométré entre deux séries (décompte visuel, non bloquant) ──
 function _sportLancerReposEntreSeries(secondesRepos) {
     const zone = document.getElementById('sport-seance-repos-zone');
     if (!zone || !secondesRepos) return;
@@ -1287,7 +1396,6 @@ function _sportLancerReposEntreSeries(secondesRepos) {
     }, 1000);
 }
 
-// ── Fin de séance (Terminer) : choix Terminer / Abandonner / Annuler ──
 function _sportConfirmerFinSeance() {
     _sportOuvrirModalChoix(
         'Terminer la séance',
@@ -1299,11 +1407,12 @@ function _sportConfirmerFinSeance() {
     );
 }
 
-// Terminer : clôture normale (status = completed) via PUT.
-// Abandonner : suppression complète de la séance et de ses logs via DELETE.
 async function _sportCloturerSeance(status) {
     clearInterval(_sportSeanceChronoInterval);
     clearInterval(_sportSeanceReposInterval);
+
+    Object.values(_sportSeryTimers).forEach(timer => clearInterval(timer.interval));
+    _sportSeryTimers = {};
 
     try {
         if (status === 'abandoned') {
@@ -1321,6 +1430,8 @@ async function _sportCloturerSeance(status) {
 
     _sportSeanceActive       = null;
     _sportSeanceExercices    = [];
+
+    _sportRelacherWakeLock();
 
     chargerSportDashboard();
     if (typeof chargerSportStatsWidget === 'function') chargerSportStatsWidget();
