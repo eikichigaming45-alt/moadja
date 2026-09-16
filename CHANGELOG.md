@@ -1,5 +1,15 @@
 ## MoaDja
 
+## v1.92.33 — 16 septembre 2026
+- Pendant une séance de sport, l'écran du téléphone reste désormais allumé automatiquement, sans s'éteindre tout seul.
+- Ajout d'un chronomètre pour les exercices basés sur une durée, avec un signal sonore et une vibration lorsque l'objectif est atteint.
+- Le bandeau indiquant le temps de repos reste maintenant visible en permanence à l'écran pendant la séance.
+- Correction d'un bug qui pouvait dupliquer le suivi d'un exercice apparaissant plusieurs fois dans une même routine.
+- Ajout d'un signal sonore et d'une vibration à la fin du temps de repos entre les séries.
+- Les champs liés à la distance, la vitesse et l'inclinaison ne s'affichent désormais que pour les exercices de type cardio (marche, course, vélo, etc.), et non plus pour tous les exercices.
+
+---
+
 ## v1.92.29 — 16 septembre 2026
 - Correction du rafraîchissement des notifications (cloche) et du tchat en mode application mobile installée (PWA) : les compteurs se mettent désormais à jour immédiatement au retour au premier plan, sans nécessiter de rechargement manuel.
 
