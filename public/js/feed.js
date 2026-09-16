@@ -186,7 +186,7 @@ async function _mentionInput(inputEl, dropEl) {
         if (isAdmin && 'toutlemonde'.startsWith(q.toLowerCase())) {
             items.push(`<div class="mention-item active" data-special="toutlemonde" style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer"><div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">📢</div><span style="font-size:13px;font-weight:700;color:#7c3aed">@toutlemonde</span><span style="font-size:11px;color:#9ca3af;margin-left:4px">Tout le monde</span></div>`);
         }
-        if (d.users.length) {
+                if (d.users.length) {
             d.users.forEach((u, i) => {
                 const av = u.avatar ? `<img src="${u.avatar}" style="width:30px;height:30px;border-radius:50%;object-fit:cover;flex-shrink:0" alt="">` : `<div style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#e9d5ff,#fbcfe8);color:#7c3aed;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${_feedTrigramme(u.prenom, u.nom, u.username)}</div>`;
                 items.push(`<div class="mention-item${items.length === 0 && i === 0 ? ' active' : ''}" data-prenom="${escapeHtml(u.prenom || '')}" data-nom="${escapeHtml(u.nom || '')}">${av}<span style="font-size:13px;font-weight:600;color:#111">${escapeHtml(u.prenom || '')} ${escapeHtml(u.nom || '')}</span></div>`);
@@ -361,6 +361,9 @@ function _bindLocItems(drop, inputElId, latId, lonId) {
 }
 
 // ── RECHERCHE DE LIEU GEOLOC (clic sur l'icône — position exacte) ──
+// [MODIFIÉ] Nominatim et Overpass séparés : un échec d'Overpass (liste des
+// lieux à proximité) n'empêche plus d'afficher la position GPS précise
+// (ville actuelle), qui reste utilisable pour ouvrir la carte au bon endroit.
 async function rechercherLieuGeoloc(inputElId, latId, lonId, wrapId) {
     const wrap = document.getElementById(wrapId);
     let drop = wrap.querySelector('.loc-dropdown');
@@ -377,11 +380,19 @@ async function rechercherLieuGeoloc(inputElId, latId, lonId, wrapId) {
     }
     const { lat, lon } = position;
 
+    let ville = 'Autour de moi';
     try {
         const resNom = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14`);
         const dataNom = await resNom.json();
-        const ville = dataNom.address?.city || dataNom.address?.town || dataNom.address?.village || dataNom.address?.suburb || 'Autour de moi';
+        ville = dataNom.address?.city || dataNom.address?.town || dataNom.address?.village || dataNom.address?.suburb || 'Autour de moi';
+    } catch (err) {
+        // Échec Nominatim : on garde le nom générique et on continue quand
+        // même avec les coordonnées GPS précises, sans bloquer l'affichage.
+    }
 
+    let itemsHTML = _renderLocItem(ville, 'Ville actuelle', lat, lon);
+
+    try {
         const query = `
             [out:json][timeout:5];
             (
@@ -393,8 +404,6 @@ async function rechercherLieuGeoloc(inputElId, latId, lonId, wrapId) {
         `;
         const resOv = await fetch('https://overpass-api.de/api/interpreter', { method: 'POST', body: query });
         const dataOv = await resOv.json();
-
-        let itemsHTML = _renderLocItem(ville, 'Ville actuelle', lat, lon);
 
         if (dataOv.elements && dataOv.elements.length > 0) {
             const elementsAvecDistance = dataOv.elements
@@ -409,18 +418,17 @@ async function rechercherLieuGeoloc(inputElId, latId, lonId, wrapId) {
                 });
             }
         }
-
-        drop.innerHTML = itemsHTML;
-        _bindLocItems(drop, inputElId, latId, lonId);
-
-        document.addEventListener('click', function _closeLoc(e) {
-            if (!wrap.contains(e.target)) { drop.style.display = 'none'; document.removeEventListener('click', _closeLoc); }
-        });
-
     } catch (err) {
-        drop.innerHTML = '<div class="loc-item" style="text-align:center;color:#ef4444;">Erreur réseau OSM</div>';
-        setTimeout(() => drop.style.display = 'none', 3000);
+        // Échec Overpass (service tiers moins fiable) : la liste des lieux à
+        // proximité est simplement omise, la ville actuelle reste affichée.
     }
+
+    drop.innerHTML = itemsHTML;
+    _bindLocItems(drop, inputElId, latId, lonId);
+
+    document.addEventListener('click', function _closeLoc(e) {
+        if (!wrap.contains(e.target)) { drop.style.display = 'none'; document.removeEventListener('click', _closeLoc); }
+    });
 }
 
 // ── RECHERCHE DE LIEU PAR TEXTE (frappe — triée par proximité réelle) ──
@@ -485,7 +493,7 @@ async function _rechercherLieuTexte(q, inputElId, latId, lonId, wrapId) {
             _dist: position ? _distanceKm(position.lat, position.lon, parseFloat(r.lat), parseFloat(r.lon)) : null
         }));
 
-        if (position) {
+                if (position) {
             resultats.sort((a, b) => a._dist - b._dist);
         }
 
@@ -721,7 +729,7 @@ async function sauvegarderEditionPost(postId) {
         let photoB64 = null; if (photo) { photoB64 = await new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = e => resolve(e.target.result.split(',')[1]); reader.onerror = reject; reader.readAsDataURL(photo); }); }
         const body = { contenu, supprimer_photo: window._editSupprimerPhoto, lieu, lieu_lat, lieu_lon };
         if (photoB64) body.photo = photoB64;
-        const r = await fetch(`/api/feed/${postId}`, { method: 'PUT', headers: { 'Authorization': `Bearer ${user.token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                const r = await fetch(`/api/feed/${postId}`, { method: 'PUT', headers: { 'Authorization': `Bearer ${user.token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
         const d = await r.json();
         if (d.success) { window._editSupprimerPhoto = false; closeModal(); await chargerFeed(); } else { msg.style.color = '#ef4444'; msg.textContent = d.message || 'Erreur.'; }
     } catch { msg.style.color = '#ef4444'; msg.textContent = 'Erreur réseau.'; }
