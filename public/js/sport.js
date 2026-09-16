@@ -48,6 +48,15 @@ const SPORT_ICONE_POIGNEE = `
 
 const SPORT_MAX_EXERCICES_APERCU = 5;
 
+// Exercices "duree" pour lesquels les champs Distance/Vitesse/Inclinaison
+// ont un sens (vrai cardio). Doit correspondre aux entrées `cardio: true`
+// de routes/sport-traduction-fr.js (noms FR traduits, tels que stockés en base).
+const SPORT_NOMS_EXERCICES_CARDIO = new Set([
+    'Cyclisme', 'Jogging', 'Course à pied', 'Course fractionnée', 'Course sur tapis',
+    'Course endurance', 'Natation (sprints 50m)', 'Vélo elliptique', 'Rameur',
+    'Marche', 'Séance cardio vélo', 'Vélo RPM'
+]);
+
 let _sportSectionActive = 'dashboard';
 
 // ── Gestion Wake Lock (Écran allumé pendant la séance) ──
@@ -438,7 +447,7 @@ function _sportFormaterMetaExercice(ex) {
         else if (m > 0) temps = `${m} min`;
         else temps = `${s} sec`;
         base = `${ex.target_sets || 1} séries × ${temps}`;
-    } else {
+       } else {
         base = `${ex.target_sets} séries × ${ex.target_reps} reps`;
     }
 
@@ -894,6 +903,9 @@ function _sportOuvrirFormulaireAjoutExercice(exercice) {
             </div>
             <div class="sport-routine-detail-nom">${_sportEchapper(exercice.name)}</div>
             
+                        </div>
+            <div class="sport-routine-detail-nom">${_sportEchapper(exercice.name)}</div>
+            
             <div class="sport-routine-exercice-edit-champs" style="margin:16px 0">
                 <input type="number" id="sport-ajout-sets" value="" min="1" placeholder="Séries" style="width: 60px;">
                 <span class="sport-edit-icone-x">${SPORT_ICONE_X}</span>
@@ -1251,6 +1263,11 @@ function _sportRenderFormulaireDuree(ex, logsExistants, exIndex) {
         lignes.push({ numero: i, log: logExistant || null });
     }
 
+    // FIX : Dist./Vit./Incl. réservés aux vrais exercices cardio (voir
+    // SPORT_NOMS_EXERCICES_CARDIO en tête de fichier). Auparavant affiché
+    // pour TOUT exercice de type "duree" (Jumping Jack, Gainage, etc.).
+    const estCardio = SPORT_NOMS_EXERCICES_CARDIO.has(ex.exercise_name);
+
     return `
         <div class="sport-seance-table">
             <div class="sport-seance-table-header" style="grid-template-columns: 40px 1fr 34px 40px">
@@ -1288,11 +1305,13 @@ function _sportRenderFormulaireDuree(ex, logsExistants, exIndex) {
             }).join('')}
         </div>
 
+        ${estCardio ? `
         <div style="display: flex; gap: 8px; margin-top: 12px;">
-                        <input type="number" step="0.1" class="sport-seance-input" id="sport-duree-distance-${exIndex}" value="${logsExistants[0]?.distance_km || ''}" placeholder="Dist. (km)">
+            <input type="number" step="0.1" class="sport-seance-input" id="sport-duree-distance-${exIndex}" value="${logsExistants[0]?.distance_km || ''}" placeholder="Dist. (km)">
             <input type="number" step="0.1" class="sport-seance-input" id="sport-duree-vitesse-${exIndex}" value="${logsExistants[0]?.speed_kmh || ''}" placeholder="Vit. (km/h)">
             <input type="number" step="0.1" class="sport-seance-input" id="sport-duree-inclinaison-${exIndex}" value="${logsExistants[0]?.incline_percent || ''}" placeholder="Incl. (%)">
         </div>
+        ` : ''}
     `;
 }
 
@@ -1351,6 +1370,9 @@ async function _sportValiderLogDuree(ex, setNumber, exIndex) {
     const m = parseInt(document.getElementById(`sport-duree-m-${exIndex}-${setNumber}`).value, 10) || 0;
     const s = parseInt(document.getElementById(`sport-duree-s-${exIndex}-${setNumber}`).value, 10) || 0;
 
+    // FIX : les champs Dist./Vit./Incl. n'existent dans le DOM que pour les
+    // exercices cardio (voir _sportRenderFormulaireDuree). L'optional chaining
+    // renvoie undefined pour les autres, donc les 3 valeurs seront null en base.
     const distance = document.getElementById(`sport-duree-distance-${exIndex}`)?.value;
     const vitesse = document.getElementById(`sport-duree-vitesse-${exIndex}`)?.value;
     const inclinaison = document.getElementById(`sport-duree-inclinaison-${exIndex}`)?.value;
