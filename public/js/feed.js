@@ -577,7 +577,7 @@ async function voirLikers(postId, e) {
         document.getElementById('modal-body').innerHTML = d.likers.length ? d.likers.map(l => {
             const av = l.avatar ? `<img src="${l.avatar}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0" alt="">` : `<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#e9d5ff,#fbcfe8);color:#7c3aed;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">${_feedTrigramme(l.prenom, l.nom, l.username)}</div>`;
             const res = RESONANCES.find(r => r.type === l.type);
-            return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f3f4f6">${av}<div style="flex:1"><div style="font-size:14px;font-weight:700;color:#111">${escapeHtml(l.prenom || '')} ${escapeHtml(l.nom || '')}</div><div style="font-size:12px;color:#9ca3af">@${escapeHtml(l.username)}</div></div>${res ? `<span style="font-size:20px">${res.icone}</span>` : ''}</div>`;
+            return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f3f4f6;cursor:pointer" onclick="ouvrirProfilPublic(${l.user_id})">${av}<div style="flex:1"><div style="font-size:14px;font-weight:700;color:#111">${escapeHtml(l.prenom || '')} ${escapeHtml(l.nom || '')}</div><div style="font-size:12px;color:#9ca3af">@${escapeHtml(l.username)}</div></div>${res ? `<span style="font-size:20px">${res.icone}</span>` : ''}</div>`;
         }).join('') : '<p style="text-align:center;color:#9ca3af;padding:20px">Aucune résonance pour l\'instant.</p>';
         document.getElementById('overlay').classList.add('on');
     } catch {}
