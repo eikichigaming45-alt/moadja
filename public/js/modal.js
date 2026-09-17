@@ -1,7 +1,8 @@
 // ============================================================
 // public/js/modal.js
 // Modales : météo, prière, islam, tâches, anniversaires,
-// cycle, profil, admin, astrologie, theme-astral, agenda-unifie.
+// cycle, profil, admin, astrologie, theme-astral, agenda-unifie,
+// sport-stats.
 // ============================================================
 
 const JOURS_MODAL = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
@@ -73,6 +74,7 @@ async function openModal(type) {
         astrologie     : 'Astrologie',
         'theme-astral' : 'Thème Astral',
         'agenda-unifie': 'Mon Agenda',
+        'sport-stats'  : 'Statistiques Sport',
     };
     document.getElementById('modal-title').textContent = titres[type] || type;
 
@@ -229,6 +231,15 @@ async function openModal(type) {
     } else if (type === 'theme-astral') {
         await ouvrirModaleThemeAstral();
 
+    // ── Sport (stats détaillées, déclenché depuis le widget colonne droite) ──
+    } else if (type === 'sport-stats') {
+        document.getElementById('modal-body').innerHTML = '<p style="color:#9ca3af;text-align:center;padding:20px">Chargement...</p>';
+        if (typeof _ouvrirModaleSportStats === 'function') {
+            await _ouvrirModaleSportStats();
+        } else {
+            document.getElementById('modal-body').innerHTML = '<p>Module Sport indisponible.</p>';
+        }
+
     // ── Profil ────────────────────────────────────────────────
     } else if (type === 'profil') {
         document.getElementById('modal-body').innerHTML = '<p style="color:#9ca3af">Chargement...</p>';
@@ -288,7 +299,7 @@ async function openModal(type) {
                 </div>
 
                 <!-- ── ONGLET PROFIL ── -->
-                <div id="profil-tab-infos" class="profil-tab-content">
+                                                <div id="profil-tab-infos" class="profil-tab-content">
                     <div style="background:rgba(255,255,255,0.92); border:1px solid rgba(255,255,255,0.95); backdrop-filter:blur(10px); border-radius:24px; padding:20px; box-shadow:0 8px 32px rgba(0,0,0,0.08);">
                         <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:20px">
                             ${photoSrc
@@ -516,7 +527,7 @@ async function openModal(type) {
                                 <div style="font-size:12px;color:#9ca3af;margin-top:2px">8 car. min · majuscule · minuscule · chiffre · caractère spécial</div>
                             </div>
                         </div>
-                        <div style="margin-bottom:10px">
+                                                <div style="margin-bottom:10px">
                             <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Ancien mot de passe</label>
                             <input type="password" id="mdp-ancien" placeholder="••••••••"
                                 style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
