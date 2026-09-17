@@ -229,23 +229,16 @@ if (!window._customSelectGlobalClickBound) {
 // ==========================================
 
 
-async function chargerProfilHeader() {
-    const user = getUser();
-    if (!user?.token) return;
-    const btn = document.getElementById('btn-profil-header');
-    if (!btn) return;
-    try {
-        const r = await fetch('/api/profil', {
-            headers: { 'Authorization': `Bearer ${user.token}` }
-        });
-        const d = await r.json();
-        if (!d.success || !d.profil) return;
-        profilCache     = d.profil;
-        const p         = d.profil;
-        const trigramme = construireTrigramme(p.prenom, p.nom);
+// ── Correctif anti-flash (F5) : rendu extrait, réutilisable
+// depuis le cache localStorage OU depuis les données fraîches
+// du serveur, sans dupliquer la logique d'affichage.
+function _rendreProfilHeader(p) {
+    if (!p) return;
+    const user      = getUser();
+    const btn       = document.getElementById('btn-profil-header');
+    const trigramme = construireTrigramme(p.prenom, p.nom);
 
-        try { localStorage.setItem('moadja_profil', JSON.stringify({ photo: p.photo || null })); } catch { }
-
+    if (btn) {
         if (p.photo) {
             btn.innerHTML        = `<img src="${p.photo}" alt="profil">`;
             btn.style.fontSize   = '';
@@ -262,124 +255,166 @@ async function chargerProfilHeader() {
             btn.style.fontSize   = '';
             btn.style.fontWeight = '';
         }
+    }
 
-        _appliquerVisibiliteCycle(p.sexe);
+    _appliquerVisibiliteCycle(p.sexe);
 
-        const wc = document.getElementById('wc-profil');
-        const nom = [p.prenom, p.nom].filter(Boolean).join(' ') || 'Mon Profil';
+    const wc  = document.getElementById('wc-profil');
+    const nom = [p.prenom, p.nom].filter(Boolean).join(' ') || 'Mon Profil';
 
-        const age = p.date_naissance ? (() => {
-            const n     = new Date(p.date_naissance);
-            const today = new Date();
-            let a       = today.getFullYear() - n.getFullYear();
-            if (today < new Date(today.getFullYear(), n.getMonth(), n.getDate())) a--;
-            return a;
-        })() : null;
+    const age = p.date_naissance ? (() => {
+        const n     = new Date(p.date_naissance);
+        const today = new Date();
+        let a       = today.getFullYear() - n.getFullYear();
+        if (today < new Date(today.getFullYear(), n.getMonth(), n.getDate())) a--;
+        return a;
+    })() : null;
 
-        const signe = obtenirSigne(p);
+    const signe = obtenirSigne(p);
 
-        if (wc) {
-            wc.innerHTML = `
-                <div class="profil-widget">
-                    ${p.photo
-                        ? `<img src="${p.photo}" alt="profil" class="profil-widget-photo">`
-                        : `<div class="profil-widget-initiales">${trigramme || '👤'}</div>`
-                    }
-                    <div class="profil-widget-nom">${nom}</div>
-                    ${age          ? `<div class="profil-widget-info">${age} ans</div>`          : ''}
-                    ${p.profession ? `<div class="profil-widget-info">💼 ${p.profession}</div>` : ''}
-                    ${p.telephone  ? `<div class="profil-widget-info">📞 ${p.telephone}</div>`  : ''}
-                    ${signe        ? `<div class="profil-widget-info">${signe.emoji} ${signe.signe}</div>` : ''}
-                    ${p.site_web   ? `<div class="profil-widget-info">🔗 <a href="${p.site_web}" target="_blank" rel="noopener noreferrer" style="color:inherit">${p.site_web}</a></div>` : ''}
-                    ${p.note       ? `<div class="profil-widget-bio">${p.note}</div>`           : ''}
-                </div>
-            `;
-        }
-
-        const imAvatarImg   = document.getElementById('im-avatar-img');
-        const imUserName    = document.getElementById('im-user-name');
-        const imTogglesList = document.querySelector('.im-toggles-list');
-
-        if (imUserName) imUserName.textContent = nom;
-
-        if (imAvatarImg) {
-            if (p.photo) {
-                imAvatarImg.src = p.photo;
-                imAvatarImg.style.display = 'block';
-                const oldTri = imAvatarImg.parentElement.querySelector('.im-trigramme');
-                if (oldTri) oldTri.remove();
-            } else {
-                imAvatarImg.style.display = 'none';
-                let tri = imAvatarImg.parentElement.querySelector('.im-trigramme');
-                if (!tri) {
-                    tri = document.createElement('div');
-                    tri.className = 'im-trigramme';
-                    tri.style.cssText = 'width:100%;height:100%;border-radius:50%;background:rgb(167, 139, 250);color:#fff;font-size:32px;font-weight:700;display:flex;align-items:center;justify-content:center;border:3px solid #fff;';
-                    imAvatarImg.parentElement.appendChild(tri);
+    if (wc) {
+        wc.innerHTML = `
+            <div class="profil-widget">
+                ${p.photo
+                    ? `<img src="${p.photo}" alt="profil" class="profil-widget-photo">`
+                    : `<div class="profil-widget-initiales">${trigramme || '👤'}</div>`
                 }
-                tri.textContent = trigramme || '👤';
+                <div class="profil-widget-nom">${nom}</div>
+                ${age          ? `<div class="profil-widget-info">${age} ans</div>`          : ''}
+                ${p.profession ? `<div class="profil-widget-info">💼 ${p.profession}</div>` : ''}
+                ${p.telephone  ? `<div class="profil-widget-info">📞 ${p.telephone}</div>`  : ''}
+                ${signe        ? `<div class="profil-widget-info">${signe.emoji} ${signe.signe}</div>` : ''}
+                ${p.site_web   ? `<div class="profil-widget-info">🔗 <a href="${p.site_web}" target="_blank" rel="noopener noreferrer" style="color:inherit">${p.site_web}</a></div>` : ''}
+                ${p.note       ? `<div class="profil-widget-bio">${p.note}</div>`           : ''}
+            </div>
+        `;
+    }
+
+    const imAvatarImg   = document.getElementById('im-avatar-img');
+    const imUserName    = document.getElementById('im-user-name');
+    const imTogglesList = document.querySelector('.im-toggles-list');
+
+    if (imUserName) imUserName.textContent = nom;
+
+    if (imAvatarImg) {
+        if (p.photo) {
+            imAvatarImg.src = p.photo;
+            imAvatarImg.style.display = 'block';
+            const oldTri = imAvatarImg.parentElement.querySelector('.im-trigramme');
+            if (oldTri) oldTri.remove();
+        } else {
+            imAvatarImg.style.display = 'none';
+            let tri = imAvatarImg.parentElement.querySelector('.im-trigramme');
+            if (!tri) {
+                tri = document.createElement('div');
+                tri.className = 'im-trigramme';
+                tri.style.cssText = 'width:100%;height:100%;border-radius:50%;background:rgb(167, 139, 250);color:#fff;font-size:32px;font-weight:700;display:flex;align-items:center;justify-content:center;border:3px solid #fff;';
+                imAvatarImg.parentElement.appendChild(tri);
             }
+            tri.textContent = trigramme || '👤';
+        }
+    }
+
+    if (imTogglesList) {
+        imTogglesList.innerHTML = '';
+
+        imTogglesList.style.display = 'flex';
+        imTogglesList.style.flexDirection = 'row';
+        imTogglesList.style.flexWrap = 'wrap';
+        imTogglesList.style.justifyContent = 'center';
+        imTogglesList.style.gap = '8px';
+        imTogglesList.style.marginBottom = '16px';
+
+        const addPill = (icon, color, val) => {
+            if (!val) return;
+            imTogglesList.innerHTML += `
+            <div style="display:inline-flex; align-items:center; gap:6px; padding:6px 12px; background:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.8); border-radius:20px; box-shadow:0 2px 10px rgba(0,0,0,0.03);">
+                <span style="color:${color}; font-size:14px;">${icon}</span>
+                <span style="font-size:12px; font-weight:600; color:var(--text-main); white-space:nowrap;">${val}</span>
+            </div>`;
+        };
+
+        if (age) addPill('🎂', '#f59e0b', `${age} ans`);
+        if (signe) addPill(signe.emoji, '#8b5cf6', signe.signe);
+        if (p.profession) addPill('💼', '#3b82f6', p.profession);
+        if (p.telephone) addPill('📞', '#10b981', p.telephone);
+        if (p.site_web) addPill('🔗', '#ec4899', `<a href="${p.site_web}" target="_blank" style="color:inherit;text-decoration:none">${p.site_web.replace(/^https?:\/\//,'')}</a>`);
+
+        if (p.note) {
+            imTogglesList.innerHTML += `
+            <div style="width:100%; text-align:center; font-size:12px; color:#6b7280; line-height:1.4; margin-top:8px; font-style:italic; padding:0 10px;">
+                "${p.note}"
+            </div>`;
         }
 
-        if (imTogglesList) {
-            imTogglesList.innerHTML = ''; 
-            
-            imTogglesList.style.display = 'flex';
-            imTogglesList.style.flexDirection = 'row';
-            imTogglesList.style.flexWrap = 'wrap';
-            imTogglesList.style.justifyContent = 'center';
-            imTogglesList.style.gap = '8px';
-            imTogglesList.style.marginBottom = '16px';
+        let boutonsHtml = `
+        <div style="width:100%; margin-top:16px; display:flex; flex-direction:column; gap:8px;">
+            <button onclick="openModal('profil')" style="padding:10px; background:rgba(255,255,255,0.8); border:none; border-radius:20px; font-size:13px; font-weight:600; color:#1f2937; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.05); transition:all .2s">
+                ✏️ Modifier mon profil
+            </button>`;
 
-            const addPill = (icon, color, val) => {
-                if (!val) return;
-                imTogglesList.innerHTML += `
-                <div style="display:inline-flex; align-items:center; gap:6px; padding:6px 12px; background:rgba(255,255,255,0.6); border:1px solid rgba(255,255,255,0.8); border-radius:20px; box-shadow:0 2px 10px rgba(0,0,0,0.03);">
-                    <span style="color:${color}; font-size:14px;">${icon}</span>
-                    <span style="font-size:12px; font-weight:600; color:var(--text-main); white-space:nowrap;">${val}</span>
-                </div>`;
-            };
-
-            if (age) addPill('🎂', '#f59e0b', `${age} ans`);
-            if (signe) addPill(signe.emoji, '#8b5cf6', signe.signe);
-            if (p.profession) addPill('💼', '#3b82f6', p.profession);
-            if (p.telephone) addPill('📞', '#10b981', p.telephone);
-            if (p.site_web) addPill('🔗', '#ec4899', `<a href="${p.site_web}" target="_blank" style="color:inherit;text-decoration:none">${p.site_web.replace(/^https?:\/\//,'')}</a>`);
-
-            if (p.note) {
-                imTogglesList.innerHTML += `
-                <div style="width:100%; text-align:center; font-size:12px; color:#6b7280; line-height:1.4; margin-top:8px; font-style:italic; padding:0 10px;">
-                    "${p.note}"
-                </div>`;
-            }
-
-            let boutonsHtml = `
-            <div style="width:100%; margin-top:16px; display:flex; flex-direction:column; gap:8px;">
-                <button onclick="openModal('profil')" style="padding:10px; background:rgba(255,255,255,0.8); border:none; border-radius:20px; font-size:13px; font-weight:600; color:#1f2937; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.05); transition:all .2s">
-                    ✏️ Modifier mon profil
-                </button>`;
-
-            if (user?.role === 'admin') {
-                boutonsHtml += `
-                <button onclick="openModal('admin')" style="padding:10px; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); border-radius:20px; font-size:13px; font-weight:600; color:#d97706; cursor:pointer; transition:all .2s">
-                    ⚙️ Administration
-                </button>`;
-            }
-
-            boutonsHtml += `</div>`;
-            imTogglesList.innerHTML += boutonsHtml;
+        if (user?.role === 'admin') {
+            boutonsHtml += `
+            <button onclick="openModal('admin')" style="padding:10px; background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3); border-radius:20px; font-size:13px; font-weight:600; color:#d97706; cursor:pointer; transition:all .2s">
+                ⚙️ Administration
+            </button>`;
         }
-        
-                const userMenu = document.getElementById('user-menu');
-        if (userMenu && !document.getElementById('menu-version-display')) {
-            const versionNode = document.getElementById('topbar-version');
-            const vText = versionNode ? versionNode.textContent : '';
-            userMenu.innerHTML += `<div id="menu-version-display" style="text-align:center; padding:10px; font-size:10px; color:#9ca3af; border-top:1px solid #f0f0f0; margin-top:4px; font-weight:600;">${vText}</div>`;
+
+        boutonsHtml += `</div>`;
+        imTogglesList.innerHTML += boutonsHtml;
+    }
+
+    const userMenu = document.getElementById('user-menu');
+    if (userMenu && !document.getElementById('menu-version-display')) {
+        const versionNode = document.getElementById('topbar-version');
+        const vText = versionNode ? versionNode.textContent : '';
+        userMenu.innerHTML += `<div id="menu-version-display" style="text-align:center; padding:10px; font-size:10px; color:#9ca3af; border-top:1px solid #f0f0f0; margin-top:4px; font-weight:600;">${vText}</div>`;
+    }
+}
+
+// ── Affichage immédiat depuis le cache localStorage, avant tout
+// appel réseau — évite le flash "widget vide" au F5.
+function _afficherProfilDepuisCache() {
+    try {
+        const cache = JSON.parse(localStorage.getItem('moadja_profil'));
+        if (cache && (cache.prenom || cache.nom || cache.photo)) {
+            _rendreProfilHeader(cache);
         }
+    } catch { /* silencieux */ }
+}
+
+async function chargerProfilHeader() {
+    const user = getUser();
+    if (!user?.token) return;
+    try {
+        const r = await fetch('/api/profil', {
+            headers: { 'Authorization': `Bearer ${user.token}` }
+        });
+        const d = await r.json();
+        if (!d.success || !d.profil) return;
+        profilCache = d.profil;
+        const p     = d.profil;
+
+        try {
+            localStorage.setItem('moadja_profil', JSON.stringify({
+                photo          : p.photo || null,
+                prenom         : p.prenom || null,
+                nom            : p.nom || null,
+                date_naissance : p.date_naissance || null,
+                profession     : p.profession || null,
+                telephone      : p.telephone || null,
+                site_web       : p.site_web || null,
+                note           : p.note || null,
+                signe_zodiaque : p.signe_zodiaque || null,
+                sexe           : p.sexe || null
+            }));
+        } catch { /* silencieux */ }
+
+        _rendreProfilHeader(p);
 
         // --- Injection V3 : Initialiser les champs santé et custom selects une fois chargé ---
         _injecterChampsAllergies(p);
-        
+
         setTimeout(() => {
             _initCustomSelects();
             document.querySelectorAll('#profil-modal select').forEach(s => s.dispatchEvent(new Event('change')));
@@ -431,7 +466,7 @@ async function validerCrop() {
     if (!cropperInstance) return;
     const user = getUser();
 
-    const canvas = cropperInstance.getCroppedCanvas({ width: 300, height: 300 });
+        const canvas = cropperInstance.getCroppedCanvas({ width: 300, height: 300 });
     canvas.toBlob(async blob => {
         if (!blob) return;
 
@@ -454,7 +489,9 @@ async function validerCrop() {
             profilCache = { ...profilCache, photo: urlPhoto };
 
             try {
-                localStorage.setItem('moadja_profil', JSON.stringify({ photo: urlPhoto }));
+                const cached = JSON.parse(localStorage.getItem('moadja_profil')) || {};
+                cached.photo = urlPhoto;
+                localStorage.setItem('moadja_profil', JSON.stringify(cached));
             } catch { /* silencieux */ }
 
             let preview = document.getElementById('profil-photo-preview');
@@ -465,7 +502,7 @@ async function validerCrop() {
                 if (zone) {
                     const newImg         = document.createElement('img');
                     newImg.id            = 'profil-photo-preview';
-                                        newImg.src           = urlPhoto;
+                    newImg.src           = urlPhoto;
                     newImg.style.cssText = 'width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid rgb(167, 139, 250);cursor:pointer;box-shadow:0 4px 12px rgba(167, 139, 250, 0.3)';
                     newImg.onclick       = () => document.getElementById('photo-input').click();
                     zone.replaceWith(newImg);
@@ -473,12 +510,12 @@ async function validerCrop() {
                 }
             }
 
-                        let btnSuppr = document.getElementById('btn-supprimer-photo');
+            let btnSuppr = document.getElementById('btn-supprimer-photo');
             if (!btnSuppr && preview) {
                 btnSuppr               = document.createElement('button');
                 btnSuppr.id            = 'btn-supprimer-photo';
                 btnSuppr.className     = 'btn-delete';
-                               btnSuppr.onclick       = supprimerPhoto;
+                btnSuppr.onclick       = supprimerPhoto;
                 btnSuppr.style.cssText = 'margin-top:8px;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer';
                 btnSuppr.innerHTML     = '🗑️ Supprimer la photo';
                 preview.insertAdjacentElement('afterend', btnSuppr);
@@ -535,7 +572,9 @@ async function _confirmerSupprimerPhoto() {
         if (d.success) {
             profilCache = { ...profilCache, photo: null };
             try {
-                localStorage.setItem('moadja_profil', JSON.stringify({ photo: null }));
+                const cached = JSON.parse(localStorage.getItem('moadja_profil')) || {};
+                cached.photo = null;
+                localStorage.setItem('moadja_profil', JSON.stringify(cached));
             } catch { /* silencieux */ }
             closeModal();
             chargerProfilHeader();
@@ -607,6 +646,11 @@ async function sauvegarderProfil() {
             msg.textContent = '✅ Profil sauvegardé !';
             msg.style.color = '#10b981';
             profilCache     = { ...profilCache, ...body };
+            try {
+                const cached = JSON.parse(localStorage.getItem('moadja_profil')) || {};
+                Object.assign(cached, body);
+                localStorage.setItem('moadja_profil', JSON.stringify(cached));
+            } catch { /* silencieux */ }
             chargerProfilHeader();
         } else {
             msg.textContent = '❌ ' + (d.message || 'Erreur.');
@@ -673,8 +717,6 @@ function _injecterChampsAllergies(p) {
     const container = document.getElementById('profil-tab-sante');
     if (!container) return;
 
-    // Ce bloc ne s'occupe QUE du suivi médical. On ne bloque plus
-    // sur l'existence du champ "allergies" (déjà présent en dur dans le HTML).
     if (document.getElementById('p-traitements')) return;
 
     const blocMedical = document.createElement('div');
@@ -709,7 +751,6 @@ function _injecterChampsAllergies(p) {
         </div>
     `;
 
-    // Trouver le bouton de sauvegarde pour insérer juste au-dessus
     const btnSave = container.querySelector('button[onclick="sauvegarderSante()"]');
     if (btnSave) {
         btnSave.parentNode.insertBefore(blocMedical, btnSave);
@@ -736,12 +777,6 @@ async function afficherSectionWidgets() {
         { id:'agenda-unifie',    label:'📅 Mon Agenda' },
     ];
 
-    // --- Correctif v1.83.1 : tri alphabétique dynamique de l'affichage ---
-    // Le tableau WIDGETS_DISPONIBLES reste dans son ordre d'ajout (aucune
-    // modification du tableau source), mais l'affichage à l'écran est trié
-    // ici sur le libellé (emoji ignoré). Ainsi, tout futur widget ajouté à
-    // ce tableau se positionnera automatiquement à sa place alphabétique,
-    // sans intervention manuelle.
     const _texteLabel = (label) => label.replace(/^\p{Emoji_Presentation}\s*/u, '').trim();
     const WIDGETS_TRIES = [...WIDGETS_DISPONIBLES].sort((a, b) =>
         _texteLabel(a.label).localeCompare(_texteLabel(b.label), 'fr', { sensitivity: 'base' })
@@ -862,7 +897,7 @@ async function changerMdp() {
             document.getElementById('mdp-nouveau').value = '';
             document.getElementById('mdp-confirm').value = '';
         } else {
-                        msg.textContent = '❌ ' + (d.message || 'Erreur.');
+            msg.textContent = '❌ ' + (d.message || 'Erreur.');
             msg.style.color = '#ef4444';
         }
     } catch {
@@ -886,7 +921,7 @@ async function _injecterProfilPublicToggles() {
     const user = getUser();
     if (!user?.token) return;
 
-    const bloc = document.createElement('div');
+        const bloc = document.createElement('div');
     bloc.id = 'profil-public-toggles-bloc';
     bloc.style.cssText = 'background:#f8fafc;border-radius:14px;padding:16px;margin-bottom:16px';
     bloc.innerHTML = `
@@ -1011,11 +1046,12 @@ async function _socialOnglet(onglet) {
     }
 }
 
+// Affichage immédiat du profil depuis le cache au premier parsing du script
+_afficherProfilDepuisCache();
+
 document.addEventListener('DOMContentLoaded', () => {
     chargerProfilHeader();
-    
-    // Écouteur global pour intercepter l'ouverture de la modale Profil 
-    // et appliquer le design Glassmorphism aux listes déroulantes (chargées dynamiquement)
+
     const observer = new MutationObserver(() => {
         if (document.querySelector('#profil-modal select:not(.customized)')) {
             _initCustomSelects();
