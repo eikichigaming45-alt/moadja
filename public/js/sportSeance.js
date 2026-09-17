@@ -234,6 +234,26 @@ function _sportJouerAlerteObjectif() {
     }
 }
 
+// Bip court du compte à rebours final de repos (5, 4, 3, 2, 1).
+// Distinct de _sportJouerAlerteObjectif (alerte de fin, plus longue).
+function _sportJouerBipCompteARebours() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(660, ctx.currentTime);
+        gain.gain.setValueAtTime(0.8, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.15);
+    } catch (e) {
+        console.error("[SPORT] Erreur WebAudio (bip repos):", e);
+    }
+}
+
 function _sportToggleTimerSerie(exIndex, setNumber, targetSeconds) {
     const key = `${exIndex}-${setNumber}`;
     const btnPlayStop = document.getElementById(`sport-duree-playstop-${key}`);
@@ -455,6 +475,11 @@ function _sportLancerReposEntreSeries(secondesRepos, exIndex) {
             _sportReposActif = null;
             _sportRenderTousLesExercices();
             return;
+        }
+
+                // Bip court sur les 5 dernières secondes avant reprise (5, 4, 3, 2, 1).
+        if (_sportReposActif.restant <= 5) {
+            _sportJouerBipCompteARebours();
         }
 
         badge.textContent = _sportFormatChrono(_sportReposActif.restant);
