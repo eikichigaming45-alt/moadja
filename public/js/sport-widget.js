@@ -30,6 +30,19 @@ const SPORT_ICONE_TROPHEE = `
     </svg>
 `;
 
+// Petit logo dumbbell (14x14) dédié à la marque "MoaDja" en pied de carte —
+// distinct de SPORT_ICONE_DUMBBELL (28x28, utilisé ailleurs dans sport.js)
+// pour ne pas dépendre d'une résolution CSS forcée sur un SVG déjà dimensionné.
+const SPORT_ICONE_LOGO_MINI = `
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="2.5"  y1="7" x2="2.5"  y2="17"></line>
+        <line x1="5.5"  y1="9" x2="5.5"  y2="15"></line>
+        <line x1="18.5" y1="9" x2="18.5" y2="15"></line>
+        <line x1="21.5" y1="7" x2="21.5" y2="17"></line>
+        <line x1="5.5" y1="12" x2="18.5" y2="12"></line>
+    </svg>
+`;
+
 const SPORT_WIDGET_MAX_EXERCICES_APERCU = 3;
 
 // ── AUTH ──
@@ -83,8 +96,10 @@ const SPORT_PHRASES_ENCOURAGEMENT = [
 
 // ── Widget Sport Stats (colonne droite, global) ──
 // Aucune séance : phrase d'encouragement aléatoire. Sinon : carte
-// compacte de récapitulatif (titre, Durée/Volume/Records + badge trophée,
-// liste consolidée d'exercices tronquée).
+// compacte façon Hevy (titre, Durée/Volume/Séries en ligne, badge
+// trophée si records, liste consolidée d'exercices tronquée,
+// pied de carte "MoaDja"). Toute la carte de récap est cliquable
+// et ouvre la modal de stats détaillées.
 async function chargerSportStatsWidget() {
     const zone = document.getElementById('sport-stats-widget');
     if (!zone) return;
@@ -111,64 +126,79 @@ function _sportRenderWidgetPhraseAleatoire(zone) {
     ];
 
     zone.innerHTML = `
-        <div class="sport-stats-header">
-            <h3 class="sport-stats-title">${SPORT_ICONE_DUMBBELL} Sport</h3>
-            <button class="sport-stats-arrow" onclick="switchTab('sport')" title="Aller au module Sport">
+        <div class="sport-widget-top">
+            <h3 class="sport-widget-top-title">${SPORT_ICONE_DUMBBELL} Sport</h3>
+            <button class="sport-widget-top-arrow" onclick="switchTab('sport')" title="Aller au module Sport">
                 ${SPORT_ICONE_FLECHE}
             </button>
         </div>
-        <p class="sport-stats-text">${phrase}</p>
+        <p class="sport-widget-empty-text">${phrase}</p>
     `;
 }
 
-// Carte compacte de récapitulatif, adaptée à l'espace réduit de la colonne droite.
+// Carte compacte de récapitulatif, inspirée du format de partage Hevy :
+// titre + date, 3 stats en ligne (Durée / Volume / Séries), badge trophée
+// si records battus, liste d'exercices "Nx Nom", pied de carte "MoaDja".
 function _sportRenderWidgetDerniereSeance(zone, seance) {
-    const dateTexte = _sportFormatDateCourte(seance.date_end || seance.date_start);
-    const nbRecords = Number.isInteger(seance.nb_records) ? seance.nb_records : 0;
-    const exercices = seance.exercices || [];
-    const apercu    = exercices.slice(0, SPORT_WIDGET_MAX_EXERCICES_APERCU);
-    const reste     = exercices.length - apercu.length;
+    const dateTexte  = _sportFormatDateCourte(seance.date_end || seance.date_start);
+    const nbRecords  = Number.isInteger(seance.nb_records) ? seance.nb_records : 0;
+    const exercices  = seance.exercices || [];
+    const apercu     = exercices.slice(0, SPORT_WIDGET_MAX_EXERCICES_APERCU);
+    const reste      = exercices.length - apercu.length;
+    const totalSeries = exercices.reduce((acc, e) => acc + (Number(e.nb_series) || 0), 0);
 
     zone.innerHTML = `
-        <div class="sport-stats-header">
-            <h3 class="sport-stats-title">${SPORT_ICONE_DUMBBELL} Sport</h3>
-            <button class="sport-stats-arrow" onclick="switchTab('sport')" title="Aller au module Sport">
+        <div class="sport-widget-top">
+            <h3 class="sport-widget-top-title">${SPORT_ICONE_DUMBBELL} Sport</h3>
+            <button class="sport-widget-top-arrow" onclick="switchTab('sport')" title="Aller au module Sport">
                 ${SPORT_ICONE_FLECHE}
             </button>
         </div>
 
-        <div class="sport-widget-recap-titre">
-            <strong>${_sportEchapper(seance.workout_name)}</strong>
-            <span class="sport-widget-recap-date">${dateTexte}</span>
-        </div>
+        <div class="sport-widget-clickable" onclick="openModal('sport-stats')" role="button" tabindex="0">
 
-        <div class="sport-widget-recap-stats">
-            <div class="sport-widget-recap-stat">
-                <span class="sport-widget-recap-stat-label">Durée</span>
-                <span class="sport-widget-recap-stat-val">${_sportFormatDureeLongue(seance.dureeSecondes)}</span>
+                        <div class="sport-widget-recap-title-row">
+                <span class="sport-widget-recap-name">${_sportEchapper(seance.workout_name)}</span>
+                <span class="sport-widget-recap-date">${dateTexte}</span>
             </div>
-            <div class="sport-widget-recap-stat">
-                <span class="sport-widget-recap-stat-label">Volume</span>
-                <span class="sport-widget-recap-stat-val">${seance.volumeKg} kg</span>
-            </div>
-            <div class="sport-widget-recap-stat">
-                <span class="sport-widget-recap-stat-label">Records</span>
-                <span class="sport-widget-recap-stat-val">
-                    ${nbRecords}${nbRecords > 0 ? ` ${SPORT_ICONE_TROPHEE}` : ''}
-                </span>
-            </div>
-        </div>
 
-        ${apercu.length ? `
-            <div class="sport-widget-recap-liste">
-                ${apercu.map(e => `
-                    <div class="sport-widget-recap-ligne">
-                        <span class="sport-widget-recap-ligne-nb">${e.nb_series}x</span>
-                        <span class="sport-widget-recap-ligne-nom">${_sportEchapper(e.exercise_name)}</span>
-                    </div>
-                `).join('')}
-                ${reste > 0 ? `<div class="sport-widget-recap-reste">…et ${reste} autre${reste > 1 ? 's' : ''}</div>` : ''}
+            ${nbRecords > 0 ? `
+                <div class="sport-widget-badge-record">
+                    ${SPORT_ICONE_TROPHEE} ${nbRecords} record${nbRecords > 1 ? 's' : ''}
+                </div>
+            ` : ''}
+
+            <div class="sport-widget-stats-row">
+                <div class="sport-widget-stat">
+                    <span class="sport-widget-stat-label">Durée</span>
+                    <span class="sport-widget-stat-val">${_sportFormatDureeLongue(seance.dureeSecondes)}</span>
+                </div>
+                <div class="sport-widget-stat">
+                    <span class="sport-widget-stat-label">Volume</span>
+                    <span class="sport-widget-stat-val">${seance.volumeKg} kg</span>
+                </div>
+                <div class="sport-widget-stat">
+                    <span class="sport-widget-stat-label">Séries</span>
+                    <span class="sport-widget-stat-val">${totalSeries}</span>
+                </div>
             </div>
-        ` : ''}
+
+            ${apercu.length ? `
+                <div class="sport-widget-exercices-liste">
+                    ${apercu.map(e => `
+                        <div class="sport-widget-exercice-ligne">
+                            <span class="sport-widget-exercice-nb">${e.nb_series}x</span>
+                            <span class="sport-widget-exercice-nom">${_sportEchapper(e.exercise_name)}</span>
+                        </div>
+                    `).join('')}
+                    ${reste > 0 ? `<div class="sport-widget-exercice-reste">…et ${reste} autre${reste > 1 ? 's' : ''}</div>` : ''}
+                </div>
+            ` : ''}
+
+            <div class="sport-widget-footer">
+                <span class="sport-widget-footer-logo">${SPORT_ICONE_LOGO_MINI} MoaDja</span>
+            </div>
+
+        </div>
     `;
 }
