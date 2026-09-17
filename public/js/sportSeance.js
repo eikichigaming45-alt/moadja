@@ -183,6 +183,10 @@ function _sportRenderTousLesExercices() {
     _sportBrancherValidationTousExercices();
 }
 
+// FIX ALIGNEMENT : même structure 5 colonnes que _sportRenderFormulaireDuree
+// (40px 1fr 1fr 40px 40px), avec une 4e colonne invisible en lieu et place
+// du bouton Play absent ici. Garantit des colonnes 1fr de largeur identique
+// entre les deux types de tableaux, donc un alignement vertical parfait.
 function _sportRenderFormulaireSeries(ex, logsExistants, exIndex) {
     const lignes = [];
     for (let i = 1; i <= ex.target_sets; i++) {
@@ -192,19 +196,20 @@ function _sportRenderFormulaireSeries(ex, logsExistants, exIndex) {
 
     return `
         <div class="sport-seance-table">
-            <div class="sport-seance-table-header" style="grid-template-columns: 40px 1fr 1fr 40px">
+            <div class="sport-seance-table-header" style="grid-template-columns: 40px 1fr 1fr 40px 40px">
                 <span>Série</span>
                 <span style="text-align:center;">Poids (kg)</span>
                 <span style="text-align:center;">Reps</span>
-                <span></span>
+                <span></span><span></span>
             </div>
             ${lignes.map(l => `
-                <div class="sport-seance-table-row ${l.log?.completed ? 'sport-seance-row-validee' : ''}" style="grid-template-columns: 40px 1fr 1fr 40px">
+                <div class="sport-seance-table-row ${l.log?.completed ? 'sport-seance-row-validee' : ''}" style="grid-template-columns: 40px 1fr 1fr 40px 40px">
                     <span class="sport-seance-serie-numero">${l.numero}</span>
                     <input type="number" step="0.5" class="sport-seance-input" id="sport-serie-poids-${exIndex}-${l.numero}"
                            value="${l.log?.weight_kg ?? ex.target_weight_kg ?? ''}" placeholder="kg" ${l.log?.completed ? 'disabled' : ''}>
                     <input type="number" class="sport-seance-input" id="sport-serie-reps-${exIndex}-${l.numero}"
                            value="${l.log?.reps ?? ex.target_reps ?? ''}" placeholder="reps" ${l.log?.completed ? 'disabled' : ''}>
+                    <span></span>
                     <button class="sport-seance-check-btn ${l.log?.completed ? 'active' : ''}"
                             id="sport-serie-check-${exIndex}-${l.numero}" ${l.log?.completed ? 'disabled' : ''}>${SPORT_ICONE_CHECK}</button>
                 </div>
@@ -274,7 +279,7 @@ function _sportToggleTimerSerie(exIndex, setNumber, targetSeconds) {
         inputM.style.display = 'block';
         inputS.style.display = 'block';
         
-        btnPlayStop.innerHTML = '▶️';
+                btnPlayStop.innerHTML = '▶️';
         btnPlayStop.classList.remove('actif');
     } else {
         const now = Date.now();
@@ -477,7 +482,7 @@ function _sportLancerReposEntreSeries(secondesRepos, exIndex) {
             return;
         }
 
-                // Bip court sur les 5 dernières secondes avant reprise (5, 4, 3, 2, 1).
+        // Bip court sur les 5 dernières secondes avant reprise (5, 4, 3, 2, 1).
         if (_sportReposActif.restant <= 5) {
             _sportJouerBipCompteARebours();
         }
