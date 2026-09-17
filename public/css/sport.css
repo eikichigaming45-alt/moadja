@@ -127,10 +127,6 @@
     transform: none;
     box-shadow: 0 8px 24px rgba(167, 139, 250, 0.25);
 }
-/* Uniformise la taille de l'icône haltère dans les boutons CTA
-   (Commencer une séance / Commencer la routine) pour qu'ils
-   paraissent de la même taille que les CTA sans icône
-   (+ Ajouter un exercice / + Créer une routine). */
 .sport-cta-btn svg {
     width: 18px;
     height: 18px;
@@ -214,9 +210,6 @@
     padding: 12px 0;
 }
 
-/* Bandeau "Une séance est en cours..." (reprise après refresh) :
-   texte au-dessus du bouton Reprendre, séparé par une marge
-   (classe non stylée jusqu'ici, d'où le collage texte/bouton). */
 .sport-bandeau-reprise-texte {
     font-size: 14px;
     color: var(--text-main);
@@ -497,7 +490,7 @@
     transition: background 0.2s ease;
 }
 .sport-routine-btn-suppr-routine:hover {
-    background: rgba(239, 68, 68, 0.18);
+    background: rgba(239,  68, 0.18);
 }
 .sport-routine-detail-nom {
     font-size: 18px;
@@ -686,16 +679,13 @@
     margin-bottom: 10px;
 }
 
-/* Bandeau "Temps de repos" — désormais injecté inline juste après le bloc
-   de l'exercice concerné (voir sportSeance.js, _sportRenderBandeauRepos),
-   et non plus dans un conteneur fixe en haut de l'écran. Style repris de
-   l'ancien inline (fond/bordure violets, cohérents avec la palette module). */
+/* Bandeau de repos intégré dynamiquement */
 .sport-seance-repos-ligne {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    margin: 16px 0;
+    margin-bottom: 12px;
     padding: 12px 16px;
     background: rgba(167, 139, 250, 0.08);
     border: 1px solid rgba(167, 139, 250, 0.25);
@@ -1160,36 +1150,3 @@
 .sport-duree-chrono-texte.depassement {
     color: #ef4444;
 }
-
-/* FIX labels min/sec : les champs durée (Marche, Jumping Jack, Gainage...)
-   n'affichaient que deux nombres bruts sans repère ("1" et "0"), rendant
-   la valeur illisible (confondu avec un bug de données). Chaque champ
-   porte désormais un sous-label visible en permanence sous l'input. */
-.sport-duree-champs-groupe {
-    display: flex;
-    gap: 8px;
-    width: 100%;
-}
-.sport-duree-champ {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-}
-.sport-duree-champ-label {
-    font-size: 9.5px;
-    color: #9ca3af;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.3px;
-}
-
-/* ══════════════════════════════════════════════════════════════
-   ── FIX ZONE REPOS SÉANCE ──
-   Le bandeau "Temps de repos" (voir .sport-seance-repos-ligne plus
-   haut) est désormais injecté inline par sportSeance.js juste après
-   le bloc de l'exercice concerné, et non plus figé en haut de
-   l'écran via #sport-seance-repos-zone (position: sticky supprimée
-   ici — ce conteneur n'existe plus dans le DOM).
-   ══════════════════════════════════════════════════════════════ */
