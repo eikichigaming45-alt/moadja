@@ -450,7 +450,7 @@
 }
 .sport-routine-carte-icone svg { width: 24px; height: 24px; }
 .sport-routine-carte-info { flex: 1; min-width: 0; }
-.sport-routine-carte-nom {
+.sport-routine-carte-nom  {
     font-size: 15px;
     font-weight: 700;
     color: var(--text-main);
@@ -779,10 +779,11 @@
     color: #10b981;
 }
 
-/* FIX ALIGNEMENT : Retrait du padding haut/bas pour centrer verticalement le texte */
+/* FIX ALIGNEMENT : Retrait du padding haut/bas + margin: 0 pour centrer verticalement le texte */
 .sport-seance-input {
     width: 100%;
     height: 32px;
+    margin: 0;
     box-sizing: border-box;
     padding: 0 4px; 
     border: 1px solid rgba(255, 255, 255, 0.8);
@@ -1055,7 +1056,7 @@
 }
 
 /* ══════════════════════════════════════════════════════════════
-   ── DRAG-AND-DROP DES EXERCICESDE ROUTINE ──
+   ── DRAG-AND-DROP DES EXERCICES DE ROUTINE ──
    ══════════════════════════════════════════════════════════════ */
 
 .sport-routine-exercice-item {
@@ -1127,5 +1128,4 @@
 .sport-duree-chrono-texte.depassement {
     color: #ef4444;
 }
-
 
