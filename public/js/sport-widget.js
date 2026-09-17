@@ -202,3 +202,70 @@ function _sportRenderWidgetDerniereSeance(zone, seance) {
         </div>
     `;
 }
+
+// ── Modale Statistiques Sport (détail complet, ouverte depuis le widget) ──
+// Réutilise le même endpoint /api/sport/dashboard-stats que le widget,
+// mais affiche TOUS les exercices (pas de troncature à 3 comme la carte
+// widget colonne droite). Appelée par modal.js via openModal('sport-stats').
+async function _ouvrirModaleSportStats() {
+    const zone = document.getElementById('modal-body');
+    if (!zone) return;
+
+    try {
+        const r = await fetch('/api/sport/dashboard-stats', { headers: _sportAuthHeaders() });
+        const d = await r.json();
+
+        if (!d.success || !d.derniere_seance) {
+            zone.innerHTML = '<p style="color:#9ca3af;text-align:center;padding:20px">Aucune séance enregistrée pour l\'instant.</p>';
+            return;
+        }
+
+        const s = d.derniere_seance;
+        const dateTexte   = _sportFormatDateCourte(s.date_end || s.date_start);
+        const exercices   = s.exercices || [];
+        const totalSeries = exercices.reduce((acc, e) => acc + (Number(e.nb_series) || 0), 0);
+        const nbRecords   = Number.isInteger(s.nb_records) ? s.nb_records : 0;
+
+        zone.innerHTML = `
+            <div class="sport-modal-stats">
+                <div class="sport-widget-recap-title-row">
+                    <span class="sport-widget-recap-name">${_sportEchapper(s.workout_name)}</span>
+                    <span class="sport-widget-recap-date">${dateTexte}</span>
+                </div>
+
+                ${nbRecords > 0 ? `
+                    <div class="sport-widget-badge-record">
+                        ${SPORT_ICONE_TROPHEE} ${nbRecords} record${nbRecords > 1 ? 's' : ''}
+                    </div>
+                ` : ''}
+
+                <div class="sport-widget-stats-row">
+                    <div class="sport-widget-stat">
+                        <span class="sport-widget-stat-label">Durée</span>
+                        <span class="sport-widget-stat-val">${_sportFormatDureeLongue(s.dureeSecondes)}</span>
+                    </div>
+                    <div class="sport-widget-stat">
+                        <span class="sport-widget-stat-label">Volume</span>
+                        <span class="sport-widget-stat-val">${s.volumeKg} kg</span>
+                    </div>
+                    <div class="sport-widget-stat">
+                        <span class="sport-widget-stat-label">Séries</span>
+                        <span class="sport-widget-stat-val">${totalSeries}</span>
+                    </div>
+                </div>
+
+                <div class="sport-widget-exercices-liste">
+                    ${exercices.map(e => `
+                        <div class="sport-widget-exercice-ligne">
+                            <span class="sport-widget-exercice-nb">${e.nb_series}x</span>
+                            <span class="sport-widget-exercice-nom">${_sportEchapper(e.exercise_name)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    } catch (err) {
+        console.error('[SPORT] _ouvrirModaleSportStats :', err.message);
+        zone.innerHTML = '<p style="color:#ef4444;text-align:center;padding:20px">Erreur de chargement des statistiques.</p>';
+    }
+}
