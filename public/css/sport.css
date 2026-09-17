@@ -1107,4 +1107,25 @@
     .sport-seance-recap-stat-val {
         font-size: 13px;
     }
+   /* Neutralise les spinners natifs des inputs numériques (MIN/SEC/etc.)
+   qui cassaient l'alignement horizontal de la ligne de série */
+.sport-seance-input {
+    height: 32px;
+    box-sizing: border-box;
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+.sport-seance-input::-webkit-outer-spin-button,
+.sport-seance-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Harmonise la hauteur du bouton play/stop et du bouton check
+   pour qu'ils restent alignés avec les inputs sur la même ligne */
+.sport-duree-playstop-btn,
+.sport-seance-check-btn {
+    height: 30px;
+    box-sizing: border-box;
+}
 }
