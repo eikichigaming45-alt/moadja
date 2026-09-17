@@ -734,7 +734,7 @@
     display: grid;
     gap: 8px;
     align-items: center;
-    padding: 0 4px;
+    padding: 0 9px;
 }
 .sport-seance-table-header span {
     font-size: 10px;
@@ -1127,4 +1127,3 @@
 .sport-duree-chrono-texte.depassement {
     color: #ef4444;
 }
-
