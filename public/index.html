@@ -2,6 +2,14 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <script>
+    (function() {
+        try {
+            var u = JSON.parse(localStorage.getItem('moadja_user'));
+            if (u && u.token) document.documentElement.classList.add('auth-ok');
+        } catch (e) {}
+    })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MoaDja</title>
     <link rel="icon" href="/icon-192.png">
@@ -37,31 +45,26 @@
     <link rel="stylesheet" href="/css/sport.css">
     <link rel="stylesheet" href="/css/sport-widget.css">
 
-    <!-- Styles spécifiques intégrés -->
     <style>
-        /* Icône Tchat du header : désormais affichée en permanence,
-           sur desktop comme sur mobile, pour que son badge de
-           notifications soit toujours visible et cohérent. */
+        /* Icône Tchat visible en permanence (badge toujours accessible) */
         .mobile-chat-btn {
             display: inline-flex !important;
         }
-        /* Correctif : avec 5 boutons dans la nav desktop, "Bien-être" repassait à la ligne
-           faute de largeur suffisante. Réduction ciblée de la taille du label, uniquement
-           dans la nav desktop, sans toucher au CSS global (style.css). */
+        /* Réduction du label pour éviter le retour à la ligne avec 5 boutons */
         .desktop-nav .bn-label {
             font-size: 11px;
             white-space: nowrap;
         }
-        /* Correctif v1.91 : l'icône Sport (SVG) n'était pas alignée verticalement avec
-           les icônes emoji des autres onglets (nav desktop + bottom-nav mobile). Un
-           <svg> inline a un vertical-align: baseline par défaut, laissant un espace
-           résiduel sous l'élément que les emojis (texte) n'ont pas. display:block
-           supprime cet espace ; margin:0 auto recentre horizontalement. N'affecte
-           que l'icône Sport (seul SVG du groupe), sans toucher au CSS global. */
+        /* Alignement vertical de l'icône SVG Sport avec les icônes emoji */
         .bn-icon svg {
             display: block;
             margin: 0 auto;
         }
+
+        /* Anti-flash : masque le login / affiche l'app dès le premier rendu
+           si une session valide est détectée (voir script en tête de head) */
+        html.auth-ok #login-page { display: none; }
+        html.auth-ok #app { display: flex; }
     </style>
 </head>
 <body>
@@ -87,17 +90,16 @@
 <!-- Application principale -->
 <div id="app">
 
-    <!-- Checkbox invisible pilotant l'ouverture/fermeture de la bulle de recherche (CSS-only, aucun JS ajouté hormis inline) -->
     <input type="checkbox" id="search-toggle" class="search-toggle-checkbox">
 
-    <!-- Topbar épurée -->
+    <!-- Topbar -->
     <div class="topbar">
 
         <div class="topbar-left">
             <h2 id="topbar-title" onclick="switchTab('accueil');actualiser()" title="Accueil">MoaDja</h2>
         </div>
 
-        <!-- Bulle de recherche (desktop : centrée en permanence dans le header / mobile : descend sous le header, ancrée à droite) -->
+        <!-- Barre de recherche -->
         <div class="topbar-search" id="topbar-search">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="11" cy="11" r="8"></circle>
@@ -108,7 +110,7 @@
 
         <div class="topbar-right" style="position:relative; display:flex; align-items:center; gap:8px;">
 
-                        <!-- Cloche notifications (icône vectorielle épurée) — ferme la recherche au clic -->
+            <!-- Notifications -->
             <div style="position:relative;display:inline-flex">
                 <button class="icon-btn" id="btn-cloche" onclick="document.getElementById('search-toggle').checked=false;togglePanelNotifs(event)" title="Notifications">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -137,7 +139,7 @@
                 "></span>
             </div>
 
-            <!-- Bouton Tchat (Visible sur desktop et mobile) — ferme la recherche au clic -->
+            <!-- Tchat -->
             <div style="position:relative;display:inline-flex">
                 <button class="icon-btn mobile-chat-btn" id="btn-tchat-mobile-header" onclick="document.getElementById('search-toggle').checked=false;window.Tchat && Tchat.toggle()" title="Messages">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -165,7 +167,7 @@
                 "></span>
             </div>
 
-            <!-- Icône Recherche Mobile (label lié à la checkbox, même style que les autres icônes) — placée à droite du Tchat -->
+            <!-- Recherche mobile -->
             <label for="search-toggle" class="icon-btn mobile-search-btn" id="btn-recherche-mobile" title="Rechercher">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="11" cy="11" r="8"></circle>
@@ -173,10 +175,10 @@
                 </svg>
             </label>
 
-            <!-- Bouton profil (Mobile et Avatar Desktop) -->
+            <!-- Profil -->
             <button class="icon-btn" id="btn-profil-header" onclick="toggleUserMenu(event)" title="Mon compte">👤</button>
 
-            <!-- Menu déroulant utilisateur -->
+            <!-- Menu utilisateur -->
             <div id="user-menu" style="
                 display:none;
                 position:absolute;
@@ -215,7 +217,7 @@
                     👤 Mon profil
                 </button>
 
-                <!-- Lien Administration : caché par défaut, affiché en JS (app.js) si user.role === 'admin' -->
+                                <!-- Administration : visible si admin (app.js) -->
                 <button class="user-menu-item" id="user-menu-admin-item" onclick="fermerUserMenu();openModal('admin')" style="
                     display:none;align-items:center;gap:10px;
                     width:100%;padding:12px 16px;border:none;
@@ -260,10 +262,9 @@
     <!-- WRAPPER : Grille applicative -->
     <div class="app-layout-wrapper">
 
-        <!-- COLONNE GAUCHE (Identity Mirror & Navigation PC) -->
+        <!-- COLONNE GAUCHE -->
         <aside class="sidebar-col left-sidebar" id="identity-mirror">
 
-            <!-- Composant Identity Mirror -->
             <div class="glass-panel im-panel">
                 <div class="im-header">
                     <div class="im-aura-wrap">
@@ -273,7 +274,6 @@
                 </div>
 
                 <div class="im-toggles-list">
-                    <!-- Toggle Astral -->
                     <div class="im-toggle-item">
                         <div class="im-toggle-left">
                             <div class="im-toggle-icon-wrap" style="background: rgba(124, 58, 237, 0.1); color: #7C3AED;">🔮</div>
@@ -283,7 +283,6 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Toggle Mini -->
                     <div class="im-toggle-item">
                         <div class="im-toggle-left">
                             <div class="im-toggle-icon-wrap" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">🌸</div>
@@ -296,7 +295,6 @@
                             <span class="im-slider"></span>
                         </label>
                     </div>
-                    <!-- Toggle Sport -->
                     <div class="im-toggle-item">
                         <div class="im-toggle-left">
                             <div class="im-toggle-icon-wrap" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">🏃</div>
@@ -312,7 +310,7 @@
                 </div>
             </div>
 
-            <!-- Navigation Desktop (Horizontale) -->
+            <!-- Navigation Desktop -->
             <div class="glass-panel desktop-nav-container">
                 <nav class="desktop-nav" style="display: flex; flex-direction: row; justify-content: space-between; gap: 8px;">
                     <button class="bn-item active" data-tab="accueil" onclick="switchTab('accueil')" style="flex: 1; padding: 10px 4px;">
@@ -346,19 +344,16 @@
                 </nav>
             </div>
 
-                        <!-- Affichage de la version pour debug -->
             <div style="text-align: center; margin-top: 16px;">
                 <span id="topbar-version" style="font-size:11px;opacity:0.5;font-weight:500;color:var(--text-main)"></span>
             </div>
 
         </aside>
 
-        <!-- COLONNE CENTRALE (Living Feed) -->
+        <!-- COLONNE CENTRALE -->
         <main class="center-col">
-            <!-- Contenu onglets -->
             <div class="tab-content-wrap">
 
-                <!-- ONGLET 1 — Accueil -->
                 <div class="tab-pane active" id="tab-accueil">
                     <div class="accueil-meteo-fixed" id="accueil-meteo"></div>
                     <div class="accueil-feed" id="accueil-feed">
@@ -367,29 +362,23 @@
                     </div>
                 </div>
 
-                <!-- ONGLET 2 — Mon Quotidien -->
                 <div class="tab-pane" id="tab-quotidien">
                     <div class="grid" id="grid-quotidien"></div>
                 </div>
 
-                                <!-- ONGLET 3 — Bien-être -->
                 <div class="tab-pane" id="tab-bienetre">
                     <div class="grid" id="grid-bienetre"></div>
                 </div>
 
-                <!-- ONGLET 4 — Sport (nouveau module — vide pour l'instant, sera rempli par sport.js) -->
                 <div class="tab-pane" id="tab-sport">
                     <div class="grid" id="grid-sport"></div>
                 </div>
 
-                <!-- ONGLET 5 — Astral -->
                 <div class="tab-pane" id="tab-astral">
                     <div class="grid" id="grid-astral"></div>
                 </div>
 
-                <!-- ONGLET 6 — Profil (orphelin de la navigation depuis l'ajout du module Sport ;
-                     conservé tel quel dans le DOM, non supprimé, conformément à la décision prise
-                     de ne pas toucher au contenu de ce pane) -->
+                <!-- Pane orpheline de la navigation, conservée telle quelle -->
                 <div class="tab-pane" id="tab-profil">
                     <div class="grid" id="grid-profil"></div>
                 </div>
@@ -397,12 +386,9 @@
             </div>
         </main>
 
-                <!-- COLONNE DROITE (Sport Stats + Human Link) -->
+        <!-- COLONNE DROITE -->
         <aside class="sidebar-col right-sidebar" id="human-link">
 
-            <!-- Widget Sport Stats — global, visible quel que soit l'onglet actif.
-                 Rempli dynamiquement par chargerSportStatsWidget() (sport.js) :
-                 phrase encourageante si aucune séance, sinon stats de la semaine. -->
             <div class="glass-panel" id="sport-stats-widget">
                 <!-- Contenu injecté en JS -->
             </div>
@@ -415,7 +401,7 @@
 
     </div>
 
-            <!-- Bottom nav (Visible uniquement sur Mobile) -->
+    <!-- Bottom nav (Mobile) -->
     <nav class="bottom-nav" id="bottom-nav">
         <button class="bn-item active" data-tab="accueil"   onclick="switchTab('accueil')">
             <span class="bn-icon">🏠</span>
