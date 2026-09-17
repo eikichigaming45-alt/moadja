@@ -95,13 +95,13 @@ async function openModal(type) {
                         ? `<div style="font-size:13px;font-weight:700;color:#78350f;line-height:1.4">📖 ${priere.titre}</div>`
                         : '<div></div>'}
                     <button onclick="lirePriereModal(event)" id="btn-speaker-modal"
-                        style="background:linear-gradient(135deg,#f59e0b,#d97706);border:1px solid rgba(255,255,255,0.5);border-radius:50px;
-                               width:40px;height:40px;cursor:pointer;font-size:16px;color:#fff;
-                               display:flex;align-items:center;justify-content:center;
-                               box-shadow:0 8px 24px rgba(217,119,6,0.35);backdrop-filter:blur(8px);
-                               flex-shrink:0;margin-left:10px;transition:all 0.2s">
-                        🔊
-                    </button>
+    style="background:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.7);border-radius:50px;
+           width:40px;height:40px;cursor:pointer;font-size:16px;color:#92400e;
+           display:flex;align-items:center;justify-content:center;
+           box-shadow:0 2px 8px rgba(0,0,0,0.06);backdrop-filter:blur(6px);
+           flex-shrink:0;margin-left:10px;transition:all 0.2s">
+    🔊
+</button>
                 </div>
                 ${priere.evangile ? `
                 <div style="margin-bottom:14px">
