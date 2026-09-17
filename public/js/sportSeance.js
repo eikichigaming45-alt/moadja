@@ -10,8 +10,9 @@ let _sportSeanceExercices      = [];   // liste des exercices de la routine
 let _sportSeanceChronoInterval = null;
 let _sportSeanceReposInterval  = null;
 let _sportSeryTimers           = {};   // Stockage des chronos individuels (exercices en durée)
-let _sportReposActif           = null; // { exIndex, restant } — repos en cours, affiché
-                                        // inline juste après l'exercice concerné.
+let _sportReposActif           = null; // { exIndex, setNumber, restant } — repos en cours,
+                                        // affiché juste après la ligne de la série validée
+                                        // (voir _sportRenderFormulaireSeries/Duree).
 
 async function _sportInitVerifSeanceActive() {
     try {
@@ -168,19 +169,17 @@ function _sportRenderTousLesExercices() {
                 ${estDuree ? _sportRenderFormulaireDuree(ex, logsExerciceExistants, index) : _sportRenderFormulaireSeries(ex, logsExerciceExistants, index)}
             </div>
         `;
-
-        // FIX repos "entre deux exercices" : le bandeau de repos s'affiche ici,
-        // juste après l'exercice dont on vient de valider une série, et non plus
-        // figé en haut de l'écran (voir _sportLancerReposEntreSeries).
-        if (_sportReposActif && _sportReposActif.exIndex === index) {
-            html += _sportRenderBandeauRepos(_sportReposActif.restant);
-        }
     });
 
     zone.innerHTML = html;
     _sportBrancherValidationTousExercices();
 }
 
+// FIX repos "au-dessus de la série suivante" : le bandeau est désormais
+// injecté DANS le tableau, juste après la ligne de la série qui vient
+// d'être validée (peu importe qu'il reste des séries à faire pour le même
+// exercice, ou qu'on soit passé à l'exercice suivant). Un seul repos actif
+// à la fois : _sportReposActif pointe toujours sur la dernière série validée.
 function _sportRenderBandeauRepos(restant) {
     return `
         <div class="sport-seance-repos-ligne">
@@ -212,6 +211,8 @@ function _sportRenderFormulaireSeries(ex, logsExistants, exIndex) {
                     <button class="sport-seance-check-btn ${l.log?.completed ? 'active' : ''}"
                             id="sport-serie-check-${exIndex}-${l.numero}" ${l.log?.completed ? 'disabled' : ''}>${SPORT_ICONE_CHECK}</button>
                 </div>
+                ${(_sportReposActif && _sportReposActif.exIndex === exIndex && _sportReposActif.setNumber === l.numero)
+                    ? _sportRenderBandeauRepos(_sportReposActif.restant) : ''}
             `).join('')}
         </div>
     `;
@@ -302,9 +303,6 @@ function _sportRenderFormulaireDuree(ex, logsExistants, exIndex) {
     // pour TOUT exercice de type "duree" (Jumping Jack, Gainage, etc.).
     const estCardio = SPORT_NOMS_EXERCICES_CARDIO.has(ex.exercise_name);
 
-    // FIX grille harmonisée : la colonne "lecture/stop" passe de 34px à 40px
-    // pour s'aligner sur la largeur de la colonne "check" (comme dans le
-    // tableau Poids/Reps ci-dessus), au lieu d'une largeur arbitraire différente.
     return `
         <div class="sport-seance-table">
             <div class="sport-seance-table-header" style="grid-template-columns: 40px 1fr 40px 40px">
@@ -344,6 +342,8 @@ function _sportRenderFormulaireDuree(ex, logsExistants, exIndex) {
                     <button class="sport-seance-check-btn ${isCompleted ? 'active' : ''}"
                             id="sport-duree-check-${exIndex}-${l.numero}" ${isCompleted ? 'disabled' : ''}>${SPORT_ICONE_CHECK}</button>
                 </div>
+                ${(_sportReposActif && _sportReposActif.exIndex === exIndex && _sportReposActif.setNumber === l.numero)
+                    ? _sportRenderBandeauRepos(_sportReposActif.restant) : ''}
                 `;
             }).join('')}
         </div>
@@ -396,7 +396,7 @@ async function _sportValiderLogSerie(ex, setNumber, exIndex) {
             // les doublons (même exercice utilisé plusieurs fois dans la séance).
             d.log.exIndex = exIndex;
             _sportSeanceActive.logs.push(d.log);
-            _sportLancerReposEntreSeries(ex.target_rest_seconds || 60, exIndex);
+            _sportLancerReposEntreSeries(ex.target_rest_seconds || 60, exIndex, setNumber);
         }
     } catch (err) {
         console.error('[SPORT] validerLogSerie :', err.message);
@@ -437,19 +437,20 @@ async function _sportValiderLogDuree(ex, setNumber, exIndex) {
             // Marquage de l'exercice d'origine dans la routine (voir _sportValiderLogSerie).
             d.log.exIndex = exIndex;
             _sportSeanceActive.logs.push(d.log);
-            _sportLancerReposEntreSeries(ex.target_rest_seconds || 60, exIndex);
+            _sportLancerReposEntreSeries(ex.target_rest_seconds || 60, exIndex, setNumber);
         }
     } catch (err) {
         console.error('[SPORT] validerLogDuree :', err.message);
     }
 }
 
-// FIX repos "entre deux exercices" : le bandeau n'est plus injecté dans un
-// conteneur fixe en haut de l'écran (#sport-seance-repos-zone, supprimé).
-// Il est désormais porté par l'état _sportReposActif et réaffiché par
-// _sportRenderTousLesExercices() juste après le bloc de l'exercice concerné,
-// ce qui le fait apparaître au niveau où l'utilisateur se trouve réellement.
-function _sportLancerReposEntreSeries(secondesRepos, exIndex) {
+// FIX repos "au-dessus de la série suivante" : _sportReposActif enregistre
+// désormais l'index d'exercice ET le numéro de série validée. Le rendu
+// (_sportRenderFormulaireSeries / _sportRenderFormulaireDuree) affiche le
+// bandeau juste après cette ligne précise, plus après le bloc entier de
+// l'exercice. Un seul repos actif à la fois : valider une nouvelle série
+// (même exercice ou un autre) déplace naturellement le bandeau.
+function _sportLancerReposEntreSeries(secondesRepos, exIndex, setNumber) {
     clearInterval(_sportSeanceReposInterval);
 
     if (!secondesRepos) {
@@ -458,21 +459,26 @@ function _sportLancerReposEntreSeries(secondesRepos, exIndex) {
         return;
     }
 
-    _sportReposActif = { exIndex, restant: secondesRepos };
+    _sportReposActif = { exIndex, setNumber, restant: secondesRepos };
     _sportRenderTousLesExercices();
 
     _sportSeanceReposInterval = setInterval(() => {
         if (!_sportReposActif) { clearInterval(_sportSeanceReposInterval); return; }
         _sportReposActif.restant--;
 
-                if (_sportReposActif.restant <= 0) {
+        const badge = document.getElementById('sport-repos-badge');
+        if (!badge) { clearInterval(_sportSeanceReposInterval); return; }
+
+        if (_sportReposActif.restant <= 0) {
             clearInterval(_sportSeanceReposInterval);
             // Ding + vibration à la fin du temps de repos.
             _sportJouerAlerteObjectif();
             _sportReposActif = null;
+            _sportRenderTousLesExercices();
+            return;
         }
 
-        _sportRenderTousLesExercices();
+        badge.textContent = _sportFormatChrono(_sportReposActif.restant);
     }, 1000);
 }
 
