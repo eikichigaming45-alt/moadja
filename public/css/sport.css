@@ -713,12 +713,19 @@
     display: grid;
     gap: 8px;
     align-items: center;
-    background: rgba(255, 255, 255, 0.5);
+        background: rgba(255, 255, 255, 0.5);
     border: 1px solid rgba(255, 255, 255, 0.7);
     border-radius: 14px;
     padding: 8px;
     transition: background 0.2s ease, border-color 0.2s ease;
 }
+/* Sécurité : force l'alignement vertical de tous les éléments de la ligne
+   (numéro, inputs, boutons) sur le même axe central, quel que soit leur
+   mode de centrage interne. */
+.sport-seance-table-row > * {
+    align-self: center;
+}
+
 .sport-seance-row-validee {
     background: rgba(52, 211, 153, 0.12);
     border-color: rgba(52, 211, 153, 0.3);
@@ -744,9 +751,10 @@
 
 /* Input générique utilisé dans les tableaux de séance (poids, reps, min, sec, dist, vit, incl) */
 .sport-seance-input {
-    width: 100%;
+    height: 32px;
+    line-height: 32px;
+    padding: 0 4px;
     box-sizing: border-box;
-    padding: 6px 4px;
     border: none;
     background: transparent;
     font-size: 14px;
@@ -754,6 +762,8 @@
     color: var(--text-main);
     text-align: center;
     outline: none;
+    -moz-appearance: textfield;
+    appearance: textfield;
 }
 .sport-seance-input::placeholder {
     color: #c7c7d1;
@@ -761,6 +771,11 @@
 }
 .sport-seance-input:disabled {
     opacity: 0.6;
+}
+.sport-seance-input::-webkit-outer-spin-button,
+.sport-seance-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 .sport-seance-input-poids,
@@ -1107,25 +1122,4 @@
     .sport-seance-recap-stat-val {
         font-size: 13px;
     }
-   /* Neutralise les spinners natifs des inputs numériques (MIN/SEC/etc.)
-   qui cassaient l'alignement horizontal de la ligne de série */
-.sport-seance-input {
-    height: 32px;
-    box-sizing: border-box;
-    -moz-appearance: textfield;
-    appearance: textfield;
-}
-.sport-seance-input::-webkit-outer-spin-button,
-.sport-seance-input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-}
-
-/* Harmonise la hauteur du bouton play/stop et du bouton check
-   pour qu'ils restent alignés avec les inputs sur la même ligne */
-.sport-duree-playstop-btn,
-.sport-seance-check-btn {
-    height: 30px;
-    box-sizing: border-box;
-}
 }
