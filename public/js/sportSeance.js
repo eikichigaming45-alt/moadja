@@ -125,10 +125,14 @@ function _sportRenderEcranSeance() {
     _sportReposActif = null;
     _sportSeanceChronoInterval = setInterval(_sportMettreAJourChronoSeance, 1000);
 
-    // FIX STICKY : Ajout de -webkit-sticky pour iOS, et top: 90px pour s'arrêter SOUS la barre de recherche
+    // FIX SCROLL: Utilisation de Flexbox pour créer une zone de défilement interne parfaite.
+    // Le conteneur parent prend la hauteur de l'écran (moins la navbar estimée à 100px).
+    // Le bloc haut est fixe (flex-shrink: 0).
+    // Le bloc bas défile (flex: 1, overflow-y: auto) sans affecter la page entière.
     zoneGlobale.innerHTML = `
-        <div class="sport-wrap">
-            <div class="sport-card" style="position: -webkit-sticky; position: sticky; top: 90px; z-index: 999; margin-bottom: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.15);">
+        <div class="sport-wrap" style="height: calc(100vh - 100px); display: flex; flex-direction: column; overflow: hidden; padding-bottom: 0;">
+            
+            <div class="sport-card" style="flex-shrink: 0; margin-bottom: 12px; z-index: 10; border-bottom: 1px solid rgba(255,255,255,0.4); box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
                 <div class="sport-seance-header-top" style="margin-bottom: 0; align-items: center;">
                     <span id="sport-seance-chrono" class="sport-seance-nom">00:00</span>
                     <button class="sport-seance-btn-abandon" id="sport-seance-btn-terminer">Terminer</button>
@@ -136,9 +140,10 @@ function _sportRenderEcranSeance() {
                 <div id="sport-seance-repos-zone" style="display: none; margin-top: 16px;"></div>
             </div>
             
-            <div class="sport-card" style="margin-top: 0;">
+            <div class="sport-card" style="flex: 1; overflow-y: auto; margin-top: 0; padding-top: 12px; border-top-left-radius: 0; border-top-right-radius: 0;">
                 <div id="sport-seance-contenu"></div>
             </div>
+            
         </div>
     `;
 
@@ -195,6 +200,9 @@ function _sportRenderTousLesExercices() {
             </div>
         `;
     });
+
+    // Espace vide à la fin pour pouvoir scroller confortablement jusqu'au dernier bouton Check
+    html += `<div style="height: 60px;"></div>`;
 
     zone.innerHTML = html;
     _sportBrancherValidationTousExercices();
@@ -477,7 +485,7 @@ function _sportLancerReposEntreSeries(secondesRepos, exIndex) {
         _sportReposActif = null;
         if (zoneRepos) zoneRepos.style.display = 'none';
         _sportRenderTousLesExercices();
-                return;
+        return;
     }
 
     _sportReposActif = { exIndex, restant: secondesRepos };
@@ -558,4 +566,3 @@ async function _sportCloturerSeance(status) {
     chargerSportDashboard();
     if (typeof chargerSportStatsWidget === 'function') chargerSportStatsWidget();
 }
-
