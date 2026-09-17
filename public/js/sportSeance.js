@@ -140,7 +140,7 @@ function _sportRenderEcranSeance() {
                 <div id="sport-seance-repos-zone" style="display: none; margin-top: 16px;"></div>
             </div>
             
-            <div class="sport-card" style="flex: 1; overflow-y: auto; margin-top: 0; padding-top: 12px; border-top-left-radius: 0; border-top-right-radius: 0;">
+            <div class="sport-card" style="flex: 1; overflow-y: auto; margin-top: 0; padding-top: 12px;">
                 <div id="sport-seance-contenu"></div>
             </div>
             
