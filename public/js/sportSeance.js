@@ -146,7 +146,7 @@ function _sportFormatChrono(secondes) {
 
 function _sportRenderBandeauRepos(restant) {
     return `
-        <div class="sport-seance-repos-ligne" style="margin-bottom:12px;">
+        <div class="sport-seance-repos-ligne" style="margin-bottom:16px;">
             <span class="sport-seance-repos-label">Temps de repos</span>
             <span class="sport-seance-repos-chrono" id="sport-repos-badge">${_sportFormatChrono(restant)}</span>
         </div>
@@ -161,14 +161,13 @@ function _sportRenderTousLesExercices() {
 
     _sportSeanceExercices.forEach((ex, index) => {
         const estDuree = Number.isInteger(ex.target_duration_seconds);
-
         const logsExerciceExistants = (_sportSeanceActive.logs || []).filter(l =>
             l.exIndex !== undefined ? l.exIndex === index : l.wger_exercise_id === ex.wger_exercise_id
         );
 
         html += `<div class="sport-seance-exercice-bloc" style="margin-top: 24px; padding-bottom: 16px; border-bottom: 1px solid #f0f0f0;">`;
 
-        // Le bandeau s'affiche ICI, juste au-dessus du titre de l'exercice
+        // FIX REPOS : Injection unique juste au-dessus du nom de l'exercice
         if (_sportReposActif && _sportReposActif.exIndex === index) {
             html += _sportRenderBandeauRepos(_sportReposActif.restant);
         }
@@ -194,7 +193,10 @@ function _sportRenderFormulaireSeries(ex, logsExistants, exIndex) {
     return `
         <div class="sport-seance-table">
             <div class="sport-seance-table-header" style="grid-template-columns: 40px 1fr 1fr 40px">
-                <span>Série</span><span>Poids (kg)</span><span>Reps</span><span></span>
+                <span>Série</span>
+                <span style="text-align:center;">Poids (kg)</span>
+                <span style="text-align:center;">Reps</span>
+                <span></span>
             </div>
             ${lignes.map(l => `
                 <div class="sport-seance-table-row ${l.log?.completed ? 'sport-seance-row-validee' : ''}" style="grid-template-columns: 40px 1fr 1fr 40px">
@@ -235,7 +237,8 @@ function _sportJouerAlerteObjectif() {
 function _sportToggleTimerSerie(exIndex, setNumber, targetSeconds) {
     const key = `${exIndex}-${setNumber}`;
     const btnPlayStop = document.getElementById(`sport-duree-playstop-${key}`);
-    const inputsZone  = document.getElementById(`sport-duree-inputs-${key}`);
+    const inputM      = document.getElementById(`sport-duree-m-${key}`);
+    const inputS      = document.getElementById(`sport-duree-s-${key}`);
     const chronoZone  = document.getElementById(`sport-duree-chronotext-${key}`);
 
     if (_sportSeryTimers[key] && _sportSeryTimers[key].active) {
@@ -244,11 +247,13 @@ function _sportToggleTimerSerie(exIndex, setNumber, targetSeconds) {
 
         const elapsedSecs = Math.floor((Date.now() - _sportSeryTimers[key].startTime) / 1000);
 
-        document.getElementById(`sport-duree-m-${exIndex}-${setNumber}`).value = Math.floor(elapsedSecs / 60);
-        document.getElementById(`sport-duree-s-${exIndex}-${setNumber}`).value = elapsedSecs % 60;
+        inputM.value = Math.floor(elapsedSecs / 60);
+        inputS.value = elapsedSecs % 60;
 
         chronoZone.style.display = 'none';
-        inputsZone.style.display = 'flex';
+        inputM.style.display = 'block';
+        inputS.style.display = 'block';
+        
         btnPlayStop.innerHTML = '▶️';
         btnPlayStop.classList.remove('actif');
     } else {
@@ -272,8 +277,10 @@ function _sportToggleTimerSerie(exIndex, setNumber, targetSeconds) {
             }, 500)
         };
 
-        inputsZone.style.display = 'none';
+        inputM.style.display = 'none';
+        inputS.style.display = 'none';
         chronoZone.style.display = 'block';
+        
         chronoZone.textContent = _sportFormatChrono(targetSeconds);
         chronoZone.classList.remove('depassement');
 
@@ -293,14 +300,13 @@ function _sportRenderFormulaireDuree(ex, logsExistants, exIndex) {
 
     const estCardio = SPORT_NOMS_EXERCICES_CARDIO.has(ex.exercise_name);
 
+    // FIX ALIGNEMENT : 5 colonnes pures, pas de wrappers flexibles pour les inputs.
     return `
         <div class="sport-seance-table">
-            <div class="sport-seance-table-header" style="grid-template-columns: 40px 1fr 40px 40px">
+            <div class="sport-seance-table-header" style="grid-template-columns: 40px 1fr 1fr 40px 40px">
                 <span>Série</span>
-                <div style="display:flex; gap:8px; width:100%; justify-content:center;">
-                    <span style="flex:1; text-align:center;">MIN</span>
-                    <span style="flex:1; text-align:center;">SEC</span>
-                </div>
+                <span style="text-align:center;">MIN</span>
+                <span style="text-align:center;">SEC</span>
                 <span></span><span></span>
             </div>
             ${lignes.map(l => {
@@ -308,28 +314,27 @@ function _sportRenderFormulaireDuree(ex, logsExistants, exIndex) {
                 const m = Math.floor(totalSec / 60);
                 const s = totalSec % 60;
                 const isCompleted = !!l.log?.completed;
+                const key = `${exIndex}-${l.numero}`;
 
                 return `
-                <div class="sport-seance-table-row ${isCompleted ? 'sport-seance-row-validee' : ''}" style="grid-template-columns: 40px 1fr 40px 40px; align-items:center;">
+                <div class="sport-seance-table-row ${isCompleted ? 'sport-seance-row-validee' : ''}" style="grid-template-columns: 40px 1fr 1fr 40px 40px; align-items:center;">
                     <span class="sport-seance-serie-numero">${l.numero}</span>
 
-                    <div style="display:flex; justify-content:center; align-items:center; width:100%; position:relative; min-height:32px;">
-                        <div id="sport-duree-inputs-${exIndex}-${l.numero}" style="display:flex; gap:8px; width:100%;">
-                            <input type="number" class="sport-seance-input" style="flex:1;" id="sport-duree-m-${exIndex}-${l.numero}"
-                                   value="${totalSec > 0 ? m : ''}" placeholder="0" ${isCompleted ? 'disabled' : ''}>
-                            <input type="number" class="sport-seance-input" style="flex:1;" id="sport-duree-s-${exIndex}-${l.numero}"
-                                   value="${totalSec > 0 ? s : ''}" placeholder="0" ${isCompleted ? 'disabled' : ''}>
-                        </div>
-                        <div id="sport-duree-chronotext-${exIndex}-${l.numero}" class="sport-duree-chrono-texte" style="display:none; position:absolute; width:100%;">
-                            00:00
-                        </div>
+                    <input type="number" class="sport-seance-input" id="sport-duree-m-${key}"
+                           value="${totalSec > 0 ? m : ''}" placeholder="0" ${isCompleted ? 'disabled' : ''}>
+                    
+                    <input type="number" class="sport-seance-input" id="sport-duree-s-${key}"
+                           value="${totalSec > 0 ? s : ''}" placeholder="0" ${isCompleted ? 'disabled' : ''}>
+                           
+                    <div id="sport-duree-chronotext-${key}" class="sport-duree-chrono-texte" style="display:none; grid-column: 2 / 4; align-self:center;">
+                        00:00
                     </div>
 
                     <button class="sport-duree-playstop-btn"
-                            id="sport-duree-playstop-${exIndex}-${l.numero}" ${isCompleted ? 'disabled' : ''}>▶️</button>
+                            id="sport-duree-playstop-${key}" ${isCompleted ? 'disabled' : ''}>▶️</button>
 
                     <button class="sport-seance-check-btn ${isCompleted ? 'active' : ''}"
-                            id="sport-duree-check-${exIndex}-${l.numero}" ${isCompleted ? 'disabled' : ''}>${SPORT_ICONE_CHECK}</button>
+                            id="sport-duree-check-${key}" ${isCompleted ? 'disabled' : ''}>${SPORT_ICONE_CHECK}</button>
                 </div>
                 `;
             }).join('')}
@@ -394,12 +399,9 @@ async function _sportValiderLogDuree(ex, setNumber, exIndex) {
         _sportToggleTimerSerie(exIndex, setNumber, ex.target_duration_seconds);
     }
 
-    const m = parseInt(document.getElementById(`sport-duree-m-${exIndex}-${setNumber}`).value, 10) || 0;
-    const s = parseInt(document.getElementById(`sport-duree-s-${exIndex}-${setNumber}`).value, 10) || 0;
+    const m = parseInt(document.getElementById(`sport-duree-m-${key}`).value, 10) || 0;
+    const s = parseInt(document.getElementById(`sport-duree-s-${key}`).value, 10) || 0;
 
-    // FIX : les champs Dist./Vit./Incl. n'existent dans le DOM que pour les
-    // exercices cardio (voir _sportRenderFormulaireDuree). L'optional chaining
-    // renvoie undefined pour les autres, donc les 3 valeurs seront null en base.
     const distance = document.getElementById(`sport-duree-distance-${exIndex}`)?.value;
     const vitesse = document.getElementById(`sport-duree-vitesse-${exIndex}`)?.value;
     const inclinaison = document.getElementById(`sport-duree-inclinaison-${exIndex}`)?.value;
@@ -419,7 +421,6 @@ async function _sportValiderLogDuree(ex, setNumber, exIndex) {
         });
         const d = await r.json();
         if (d.success) {
-            // Marquage de l'exercice d'origine dans la routine (voir _sportValiderLogSerie).
             d.log.exIndex = exIndex;
             _sportSeanceActive.logs.push(d.log);
             _sportLancerReposEntreSeries(ex.target_rest_seconds || 60, exIndex);
@@ -429,9 +430,6 @@ async function _sportValiderLogDuree(ex, setNumber, exIndex) {
     }
 }
 
-// FIX repos "au-dessus du titre de l'exercice" : on a retiré le setNumber,
-// le bandeau est injecté dans _sportRenderTousLesExercices() juste avant
-// le titre de l'exercice en cours de repos.
 function _sportLancerReposEntreSeries(secondesRepos, exIndex) {
     clearInterval(_sportSeanceReposInterval);
 
@@ -453,7 +451,6 @@ function _sportLancerReposEntreSeries(secondesRepos, exIndex) {
 
         if (_sportReposActif.restant <= 0) {
             clearInterval(_sportSeanceReposInterval);
-            // Ding + vibration à la fin du temps de repos.
             _sportJouerAlerteObjectif();
             _sportReposActif = null;
             _sportRenderTousLesExercices();
