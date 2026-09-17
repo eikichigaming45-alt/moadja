@@ -1,0 +1,213 @@
+/* ============================================================
+   public/css/sport-widget.css
+   Widget Sport global (colonne droite, visible sur tous les
+   onglets). Carte compacte inspirée du format de partage Hevy :
+   titre + date, badge trophée, stats en ligne (Durée/Volume/
+   Séries), liste d'exercices, pied de carte "MoaDja".
+   Le conteneur #sport-stats-widget reste un .glass-panel (chrome
+   géré par style.css) : ce fichier ne stylise que son contenu.
+   Réutilise strictement les variables/couleurs déjà en place
+   (violet MoaDja rgb(167, 139, 250), jaune trophée #d97706).
+   ============================================================ */
+
+/* ── En-tête du widget (icône + titre "Sport" + flèche vers l'onglet) ── */
+.sport-widget-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+.sport-widget-top-title {
+    margin: 0;
+    font-weight: 600;
+    color: var(--text-main);
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.sport-widget-top-title svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+.sport-widget-top-arrow {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: rgb(167, 139, 250);
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+    flex-shrink: 0;
+}
+.sport-widget-top-arrow:hover {
+    background: rgba(167, 139, 250, 0.1);
+}
+
+/* ── État vide (phrase d'encouragement) ── */
+.sport-widget-empty-text {
+    margin: 0;
+    font-size: 13px;
+    color: #6b7280;
+    line-height: 1.4;
+}
+
+/* ── Carte de récap cliquable (ouvre la modal de stats détaillées) ── */
+.sport-widget-clickable {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    cursor: pointer;
+    border-radius: 16px;
+    padding: 10px;
+    margin: -10px;
+    transition: background 0.2s ease;
+}
+.sport-widget-clickable:hover {
+    background: rgba(167, 139, 250, 0.06);
+}
+.sport-widget-clickable:focus-visible {
+    outline: 2px solid rgba(167, 139, 250, 0.6);
+    outline-offset: 2px;
+}
+
+/* ── Titre de la routine + date ── */
+.sport-widget-recap-title-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+}
+.sport-widget-recap-name {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text-main);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+.sport-widget-recap-date {
+    font-size: 12px;
+    color: #9ca3af;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+/* ── Badge trophée (visible uniquement si records > 0) ── */
+.sport-widget-badge-record {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(217, 119, 6, 0.1);
+    border: 1px solid rgba(217, 119, 6, 0.25);
+    color: #d97706;
+    border-radius: 50px;
+    padding: 5px 10px;
+    font-size: 11.5px;
+    font-weight: 700;
+    width: fit-content;
+}
+.sport-widget-badge-record svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+}
+
+/* ── Stats en ligne : Durée / Volume / Séries ── */
+.sport-widget-stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+.sport-widget-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 12px;
+    padding: 8px 6px;
+    text-align: center;
+}
+.sport-widget-stat-label {
+    font-size: 10px;
+    color: #9ca3af;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.sport-widget-stat-val {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+/* ── Liste consolidée d'exercices ── */
+.sport-widget-exercices-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border-top: 1px solid rgba(255, 255, 255, 0.6);
+    padding-top: 8px;
+}
+.sport-widget-exercice-ligne {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-size: 12.5px;
+    color: var(--text-main);
+}
+.sport-widget-exercice-nb {
+    color: rgb(167, 139, 250);
+    font-weight: 800;
+    flex-shrink: 0;
+}
+.sport-widget-exercice-nom {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+.sport-widget-exercice-reste {
+    font-size: 12px;
+    color: #9ca3af;
+    font-style: italic;
+    margin-top: 2px;
+}
+
+/* ── Pied de carte "MoaDja" (équivalent du logo Hevy) ── */
+.sport-widget-footer {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255, 255, 255, 0.6);
+}
+.sport-widget-footer-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 800;
+    color: rgb(167, 139, 250);
+    letter-spacing: 0.2px;
+}
+.sport-widget-footer-logo svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+/* ── Responsive : colonne droite réduite sur petits écrans ── */
+@media (max-width: 900px) {
+    .sport-widget-stat-val {
+        font-size: 13px;
+    }
+    .sport-widget-recap-name {
+        font-size: 14px;
+    }
+}
