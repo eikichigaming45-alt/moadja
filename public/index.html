@@ -273,6 +273,27 @@
                     <h3 class="im-user-name" id="im-user-name">...</h3>
                 </div>
 
+                <!-- Anti-flash : préremplissage synchrone avatar/nom depuis le cache
+                     local, exécuté pendant le parsing du DOM (AVANT le premier paint
+                     de cette zone). Contrairement aux scripts en <script defer> de fin
+                     de page, celui-ci n'attend pas la fin du chargement de tout le
+                     document : il tourne dès que les deux balises précédentes existent. -->
+                <script>
+                (function() {
+                    try {
+                        var cache = JSON.parse(localStorage.getItem('moadja_profil'));
+                        if (cache) {
+                            var img = document.getElementById('im-avatar-img');
+                            var nom = document.getElementById('im-user-name');
+                            if (img && cache.photo) img.src = cache.photo;
+                            if (nom && (cache.prenom || cache.nom)) {
+                                nom.textContent = [cache.prenom, cache.nom].filter(Boolean).join(' ');
+                            }
+                        }
+                    } catch (e) { /* silencieux */ }
+                })();
+                </script>
+
                 <div class="im-toggles-list">
                     <div class="im-toggle-item">
                         <div class="im-toggle-left">
@@ -401,7 +422,7 @@
 
     </div>
 
-    <!-- Bottom nav (Mobile) -->
+        <!-- Bottom nav (Mobile) -->
     <nav class="bottom-nav" id="bottom-nav">
         <button class="bn-item active" data-tab="accueil"   onclick="switchTab('accueil')">
             <span class="bn-icon">🏠</span>
