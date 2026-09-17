@@ -210,4 +210,100 @@
     .sport-widget-recap-name {
         font-size: 14px;
     }
+
+/* ── Modale Statistiques Sport (détail complet) ── */
+.sport-modal-stats {
+    padding: 4px 0;
+}
+
+.sport-modal-stats .sport-widget-recap-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 14px;
+}
+
+.sport-modal-stats .sport-widget-recap-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #111;
+}
+
+.sport-modal-stats .sport-widget-recap-date {
+    font-size: 13px;
+    color: #9ca3af;
+}
+
+.sport-modal-stats .sport-widget-badge-record {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: linear-gradient(135deg, #fde68a, #fbbf24);
+    color: #78350f;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 12px;
+    border-radius: 50px;
+    margin-bottom: 14px;
+}
+
+.sport-modal-stats .sport-widget-stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.sport-modal-stats .sport-widget-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: rgba(167, 139, 250, 0.08);
+    border: 1px solid rgba(167, 139, 250, 0.15);
+    border-radius: 14px;
+    padding: 12px 8px;
+}
+
+.sport-modal-stats .sport-widget-stat-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+
+.sport-modal-stats .sport-widget-stat-val {
+    font-size: 16px;
+    font-weight: 700;
+    color: #111;
+}
+
+.sport-modal-stats .sport-widget-exercices-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(229, 231, 235, 0.6);
+    border-radius: 16px;
+    padding: 14px 16px;
+}
+
+.sport-modal-stats .sport-widget-exercice-ligne {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: #374151;
+}
+
+.sport-modal-stats .sport-widget-exercice-nb {
+    font-weight: 700;
+    color: rgb(167, 139, 250);
+    min-width: 26px;
+}
+
+.sport-modal-stats .sport-widget-exercice-nom {
+    font-weight: 500;
+}
 }
