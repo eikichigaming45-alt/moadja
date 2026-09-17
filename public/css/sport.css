@@ -737,138 +737,160 @@
     color: #10b981;
 }
 
-/* FIX ALIGNEMENT : Retrait du padding haut/bas + margin: 0 pour centrer verticalement le texte */
-.sport-seance-input {
+.sport-seance-input-poids,
+.sport-seance-input-reps,
+.sport-seance-input-dist,
+.sport-seance-input-vit,
+.sport-seance-input-incl {
     width: 100%;
-    height: 32px;
-    margin: 0;
     box-sizing: border-box;
-    padding: 0 4px; 
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    background: rgba(255, 255, 255, 0.7);
-    border-radius: 8px;
-    font-size: 13px;
+    padding: 6px 4px;
+    border: none;
+    background: transparent;
+    font-size: 14px;
     font-weight: 700;
     color: var(--text-main);
     text-align: center;
     outline: none;
-    transition: border-color 0.2s ease;
 }
-.sport-seance-input:focus {
-    border-color: rgba(167, 139, 250, 0.7);
-}
-.sport-seance-input::placeholder {
-    color: #c4c9d4;
-    font-weight: 600;
+.sport-seance-input-poids::placeholder,
+.sport-seance-input-reps::placeholder,
+.sport-seance-input-dist::placeholder,
+.sport-seance-input-vit::placeholder,
+.sport-seance-input-incl::placeholder {
+    color: #c7c7d1;
+    font-weight: 500;
 }
 
-.sport-seance-check-btn {
-    width: 32px;
-    height: 32px;
+.sport-seance-btn-play {
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
-    border: 1px solid rgba(167, 139, 250, 0.4);
-    background: rgba(255, 255, 255, 0.6);
-    color: rgba(167, 139, 250, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    margin: 0 auto;
-}
-.sport-seance-check-btn svg { width: 16px; height: 16px; }
-.sport-seance-check-btn:hover {
-    border-color: rgba(167, 139, 250, 0.7);
+    background: rgba(167, 139, 250, 0.12);
     color: rgb(167, 139, 250);
-}
-.sport-seance-check-btn.active {
-    background: #10b981;
-    border-color: #10b981;
-    color: #fff;
-}
-.sport-seance-check-btn.active:hover {
-    background: #0d9c6d;
-    border-color: #0d9c6d;
-    color: #fff;
-}
-
-.sport-seance-delete-btn {
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    border: 1px solid rgba(239, 68, 68, 0.3);
-    background: rgba(239, 68, 68, 0.08);
-    color: #ef4444;
+    border: none;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s ease;
-    margin: 0 auto;
+    flex-shrink: 0;
+    transition: background 0.2s ease;
 }
-.sport-seance-delete-btn:hover {
-    background: rgba(239, 68, 68, 0.18);
-    border-color: rgba(239, 68, 68, 0.5);
+.sport-seance-btn-play:hover {
+    background: rgba(167, 139, 250, 0.22);
 }
+.sport-seance-btn-play svg { width: 14px; height: 14px; }
 
-.sport-seance-btn-ajout-serie {
+.sport-seance-btn-valider {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.04);
+    color: #c7c7d1;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+.sport-seance-btn-valider:hover {
+    background: rgba(52, 211, 153, 0.15);
+    color: #10b981;
+}
+.sport-seance-row-validee .sport-seance-btn-valider {
+    background: #10b981;
+    color: #fff;
+}
+.sport-seance-btn-valider svg { width: 14px; height: 14px; }
+
+.sport-seance-btn-ajouter-serie {
     width: 100%;
     padding: 10px;
-    background: rgba(255, 255, 255, 0.5);
+    background: rgba(167, 139, 250, 0.08);
     border: 1px dashed rgba(167, 139, 250, 0.4);
     color: rgb(167, 139, 250);
-    border-radius: 12px;
+    border-radius: 14px;
     font-size: 13px;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background 0.2s ease;
+    margin-bottom: 20px;
 }
-.sport-seance-btn-ajout-serie:hover {
-    background: rgba(167, 139, 250, 0.08);
-    border-color: rgba(167, 139, 250, 0.7);
+.sport-seance-btn-ajouter-serie:hover {
+    background: rgba(167, 139, 250, 0.15);
 }
 
-@media (max-width: 500px) {
-    .sport-seance-table-header,
-    .sport-seance-table-row {
-        gap: 6px;
-    }
-    .sport-seance-serie-precedent {
-        font-size: 10.5px;
-    }
-    .sport-seance-input {
-        font-size: 12px;
-        padding: 0 3px;
-    }
-    .sport-seance-delete-btn {
-        width: 22px;
-        height: 22px;
-    }
+.sport-seance-btn-ajouter-exercice {
+    width: 100%;
+    padding: 14px;
+    background: rgba(167, 139, 250, 0.85);
+    border: none;
+    color: #fff;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 8px 24px rgba(167, 139, 250, 0.25);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+.sport-seance-btn-ajouter-exercice:hover {
+    background: rgba(167, 139, 250, 1);
+    transform: translateY(-2px);
+}
+
+.sport-seance-btn-terminer {
+    background: none;
+    border: none;
+    color: rgb(167, 139, 250);
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    padding: 4px 0;
+}
+.sport-seance-btn-terminer:hover {
+    text-decoration: underline;
 }
 
 /* ══════════════════════════════════════════════════════════════
-   ── CARTE DE RÉCAPITULATIF DE SÉANCE (dashboard) ──
-   Titre + emoji, Durée/Volume/Records en 3 colonnes, badge trophée
-   inline si records > 0, liste consolidée d'exercices NxNom.
-   Palette : violet MoaDja (#7C3AED / rgb(167,139,250)) + jaune
-   trophée déjà utilisé ailleurs dans style.css (#d97706).
+   ── CARTE DE RÉCAPITULATIF DE SÉANCE (Dashboard) ──
+   Version cliquable : ouvre la modale de stats détaillées pour la
+   séance concernée (cf. _sportOuvrirStatsSeance dans sport.js).
+   Le bouton suppr (position absolue) reste indépendant du clic
+   grâce à un stopPropagation() côté JS.
    ══════════════════════════════════════════════════════════════ */
 
 .sport-seance-carte-recap {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+    position: relative;
+}
+.sport-seance-carte-recap-clickable {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.sport-seance-carte-recap-clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(167, 139, 250, 0.18);
+}
+.sport-seance-carte-recap-clickable:active {
+    transform: translateY(0);
 }
 
 .sport-seance-recap-header {
     display: flex;
     align-items: center;
     gap: 12px;
+    margin-bottom: 14px;
 }
 .sport-seance-recap-icone {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
     background: rgba(167, 139, 250, 0.12);
     color: rgb(167, 139, 250);
     display: flex;
@@ -876,214 +898,119 @@
     justify-content: center;
     flex-shrink: 0;
 }
-.sport-seance-recap-header-info {
-    flex: 1;
-    min-width: 0;
-}
+.sport-seance-recap-icone svg { width: 20px; height: 20px; }
+.sport-seance-recap-header-info { flex: 1; min-width: 0; }
 .sport-seance-recap-titre {
-    font-size: 17px;
-    font-weight: 800;
+    font-size: 15px;
+    font-weight: 700;
     color: var(--text-main);
 }
 .sport-seance-recap-date {
     font-size: 12px;
     color: #9ca3af;
-    font-weight: 600;
     margin-top: 2px;
 }
-
 .sport-seance-recap-btn-suppr {
+    background: rgba(239, 68, 68, 0.08);
+    border: none;
+    color: #ef4444;
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    border: 1px solid rgba(239, 68, 68, 0.2);
-    background: rgba(239, 68, 68, 0.06);
-    color: #ef4444;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     flex-shrink: 0;
-    margin-left: auto;
-    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
-}
-.sport-seance-recap-btn-suppr svg {
-    width: 15px;
-    height: 15px;
+    transition: background 0.2s ease;
 }
 .sport-seance-recap-btn-suppr:hover {
-    background: rgba(239, 68, 68, 0.16);
-    border-color: rgba(239, 68, 68, 0.4);
-    transform: translateY(-1px);
+    background: rgba(239, 68, 68, 0.18);
 }
+.sport-seance-recap-btn-suppr svg { width: 15px; height: 15px; }
 
 .sport-seance-recap-stats {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
+    margin-bottom: 14px;
 }
 .sport-seance-recap-stat {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 14px;
+    padding: 10px 8px;
+    text-align: center;
 }
 .sport-seance-recap-stat-label {
-    font-size: 11px;
+    display: block;
+    font-size: 10px;
     color: #9ca3af;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.3px;
 }
-.sport-seance-recap-stat-valeur {
-    font-size: 16px;
+.sport-seance-recap-stat-val {
+    display: block;
+    font-size: 15px;
     font-weight: 800;
     color: var(--text-main);
+    margin-top: 2px;
 }
 
-.sport-seance-recap-badge-trophee {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background: rgba(217, 119, 6, 0.1);
-    border: 1px solid rgba(217, 119, 6, 0.25);
-    color: #d97706;
-    border-radius: 50px;
-    padding: 6px 12px;
-    font-size: 12px;
-    font-weight: 700;
-    width: fit-content;
-}
-.sport-seance-recap-badge-trophee svg {
-    width: 14px;
-    height: 14px;
-}
-
-.sport-seance-recap-exercices {
+.sport-seance-recap-liste {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    border-top: 1px solid rgba(255, 255, 255, 0.6);
-    padding-top: 12px;
 }
-.sport-seance-recap-exercice-ligne {
+.sport-seance-recap-ligne {
     display: flex;
     align-items: baseline;
-    gap: 8px;
+    gap: 6px;
     font-size: 13px;
-    color: var(--text-main);
 }
-.sport-seance-recap-exercice-nb {
+.sport-seance-recap-ligne-nb {
     color: rgb(167, 139, 250);
     font-weight: 800;
     flex-shrink: 0;
 }
-.sport-seance-recap-exercice-nom {
+.sport-seance-recap-ligne-nom {
+    color: var(--text-main);
     font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
-
-@media (max-width: 500px) {
-    .sport-seance-recap-header-info {
-        min-width: 0;
-    }
-    .sport-seance-recap-titre {
-        font-size: 15px;
-    }
-    .sport-seance-recap-stats {
-        gap: 6px;
-    }
-    .sport-seance-recap-stat-valeur {
-        font-size: 14px;
-    }
+.sport-seance-recap-reste {
+    font-size: 12px;
+    color: #9ca3af;
+    font-style: italic;
+    margin-top: 2px;
 }
 
 /* ══════════════════════════════════════════════════════════════
-   ── MODALES SPORT (confirmation générique + choix) ──
+   ── RESPONSIVE ──
    ══════════════════════════════════════════════════════════════ */
 
-.sport-modal-actions-centre {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 16px;
-}
-.sport-modal-texte-centre {
-    text-align: center;
+@media (max-width: 900px) {
+    .sport-empty-icon { width: 56px; height: 56px; }
+    .sport-empty-icon svg { width: 26px; height: 26px; }
+    .sport-stat-val { font-size: 17px; }
+    .sport-seance-stat-valeur { font-size: 16px; }
 }
 
-/* ══════════════════════════════════════════════════════════════
-   ── DRAG-AND-DROP DES EXERCICES DE ROUTINE ──
-   ══════════════════════════════════════════════════════════════ */
-
-.sport-routine-exercice-item {
-    cursor: default;
+@media (max-width: 700px) {
+    .sport-catalogue-grid {
+        gap: 8px;
+    }
+    .sport-catalogue-exercise-img,
+    .sport-catalogue-exercise-noimg {
+        height: 80px;
+    }
+    .sport-routine-carte {
+        padding: 12px 14px;
+    }
+    .sport-seance-table-header span {
+        font-size: 9px;
+    }
+    .sport-seance-recap-stat-val {
+        font-size: 13px;
+    }
 }
-.sport-routine-exercice-drag-handle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #c4c9d4;
-    cursor: grab;
-    flex-shrink: 0;
-    padding: 4px;
-    touch-action: none;
-    transition: color 0.2s ease;
-}
-.sport-routine-exercice-drag-handle:hover {
-    color: rgb(167, 139, 250);
-}
-.sport-routine-exercice-drag-handle:active {
-    cursor: grabbing;
-}
-.sport-exercice-en-glissement {
-    opacity: 0.4;
-    border: 1px dashed rgba(167, 139, 250, 0.6);
-    background: rgba(167, 139, 250, 0.06);
-}
-
-/* ══════════════════════════════════════════════════════════════
-   ── CHRONO DE SÉRIE (exercices en durée) ──
-   ══════════════════════════════════════════════════════════════ */
-
-.sport-duree-playstop-btn {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: 1px solid rgba(167, 139, 250, 0.4);
-    background: rgba(255, 255, 255, 0.6);
-    color: rgb(167, 139, 250);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    cursor: pointer;
-    margin: 0 auto;
-    transition: all 0.2s ease;
-}
-.sport-duree-playstop-btn:hover {
-    border-color: rgba(167, 139, 250, 0.7);
-}
-.sport-duree-playstop-btn.actif {
-    background: rgba(239, 68, 68, 0.1);
-    border-color: rgba(239, 68, 68, 0.4);
-    color: #ef4444;
-}
-.sport-duree-playstop-btn:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-}
-
-.sport-duree-chrono-texte {
-    font-size: 15px;
-    font-weight: 800;
-    font-variant-numeric: tabular-nums;
-    color: var(--text-main);
-    text-align: center;
-    width: 100%;
-}
-.sport-duree-chrono-texte.depassement {
-    color: #ef4444;
-}
-
