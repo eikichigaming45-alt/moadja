@@ -95,10 +95,10 @@ async function openModal(type) {
                         ? `<div style="font-size:13px;font-weight:700;color:#78350f;line-height:1.4">📖 ${priere.titre}</div>`
                         : '<div></div>'}
                     <button onclick="lirePriereModal(event)" id="btn-speaker-modal"
-                        style="background:rgba(217,119,6,0.85);border:1px solid rgba(255,255,255,0.5);border-radius:50px;
+                        style="background:linear-gradient(135deg,#f59e0b,#d97706);border:1px solid rgba(255,255,255,0.5);border-radius:50px;
                                width:40px;height:40px;cursor:pointer;font-size:16px;color:#fff;
                                display:flex;align-items:center;justify-content:center;
-                               box-shadow:0 8px 24px rgba(217,119,6,0.25);backdrop-filter:blur(8px);
+                               box-shadow:0 8px 24px rgba(217,119,6,0.35);backdrop-filter:blur(8px);
                                flex-shrink:0;margin-left:10px;transition:all 0.2s">
                         🔊
                     </button>
@@ -347,9 +347,9 @@ async function openModal(type) {
                                     style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
                             </div>
                         </div>
-                        <div style="margin-bottom:10px">
+                                                <div style="margin-bottom:10px">
                             <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Lieu de naissance</label>
-                                                            <input id="p-lieu-naissance" type="text" placeholder="Ville de naissance"
+                            <input id="p-lieu-naissance" type="text" placeholder="Ville de naissance"
                                 value="${p.lieu_naissance||''}"
                                 onblur="geocoderLieuNaissance()"
                                 style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
@@ -572,7 +572,7 @@ async function openModal(type) {
                 </div>
 
                 <!-- ── ONGLET SOCIAL ── -->
-                <div id="profil-tab-social" class="profil-tab-content" style="display:none">
+                                <div id="profil-tab-social" class="profil-tab-content" style="display:none">
                     <div style="display:flex;gap:8px;margin-bottom:20px;background:rgba(255,255,255,0.4);border:1px solid rgba(255,255,255,0.6);border-radius:50px;padding:4px;backdrop-filter:blur(10px);">
                         <button id="social-tab-miens"
                             data-action="social-onglet"
@@ -582,7 +582,7 @@ async function openModal(type) {
                                    box-shadow:0 8px 24px rgba(167,139,250,0.25);backdrop-filter:blur(8px);transition:all 0.3s ease;">
                             Ce que je partage
                         </button>
-                                                                                <button id="social-tab-nouveau"
+                                                <button id="social-tab-nouveau"
                             data-action="social-onglet"
                             data-onglet="nouveau"
                             style="flex:1;padding:12px;border:none;background:transparent;
