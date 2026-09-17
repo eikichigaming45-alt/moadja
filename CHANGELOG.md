@@ -1,5 +1,13 @@
 ## MoaDja
 
+## v1.92.42 — 17 septembre 2026
+- Amélioration visuelle des tableaux pendant la séance : les colonnes, les boutons et le texte dans les cases de saisie sont désormais parfaitement alignés.
+- Le bandeau du temps de repos ne reste plus bloqué en haut de l'écran ; il s'affiche maintenant au bon endroit, juste au-dessus de l'exercice concerné.
+- Ajout des indications "MIN" (minutes) et "SEC" (secondes) au-dessus des cases pour les exercices basés sur le temps (marche, gainage, etc.), afin de faciliter la lecture.
+- Ajout de courts bips sonores pour marquer les 5 dernières secondes du temps de repos, afin de se préparer à la reprise.
+
+---
+
 ## v1.92.33 — 16 septembre 2026
 - Pendant une séance de sport, l'écran du téléphone reste désormais allumé automatiquement, sans s'éteindre tout seul.
 - Ajout d'un chronomètre pour les exercices basés sur une durée, avec un signal sonore et une vibration lorsque l'objectif est atteint.
