@@ -65,6 +65,11 @@ const SPORT_NOMS_EXERCICES_CARDIO = new Set([
 
 let _sportSectionActive = 'dashboard';
 
+// Cache local des dernières séances affichées dans le Dashboard (issu du
+// dernier appel à /api/sport/dashboard-stats). Permet d'ouvrir la modale
+// de stats pour UNE séance précise cliquée, sans requête réseau supplémentaire.
+let _sportDashboardSeancesCache = [];
+
 // ── Gestion Wake Lock (Écran allumé pendant la séance) ──
 let _sportWakeLock = null;
 
@@ -131,9 +136,16 @@ async function _sportChargerDashboardStats() {
     try {
         const r = await fetch('/api/sport/dashboard-stats', { headers: _sportAuthHeaders() });
         const d = await r.json();
-        zone.innerHTML = _sportRenderDashboard(d.success ? (d.dernieres_seances || []) : []);
+        const seances = d.success ? (d.dernieres_seances || []) : [];
+
+        // Mise en cache locale : permet d'ouvrir la modale de stats pour
+        // la séance exacte cliquée, sans refaire d'appel réseau.
+        _sportDashboardSeancesCache = seances;
+
+        zone.innerHTML = _sportRenderDashboard(seances);
     } catch (err) {
         console.error('[SPORT] chargerDashboardStats :', err.message);
+        _sportDashboardSeancesCache = [];
         zone.innerHTML = _sportRenderDashboard([]);
     }
 
@@ -143,6 +155,21 @@ async function _sportChargerDashboardStats() {
             _sportConfirmerSuppressionSeanceDashboard(parseInt(btn.dataset.sessionId, 10));
         });
     });
+}
+
+// ── Ouverture de la modale de stats pour UNE séance précise du dashboard ──
+// Recherche la séance dans le cache local (par id) et la transmet à la
+// modale globale sport-stats (définie dans sport-widget.js) via une variable
+// partagée, afin d'éviter un nouvel appel réseau et de garantir que la bonne
+// séance (celle cliquée, matchée par date/id) est bien affichée.
+function _sportOuvrirStatsSeance(sessionId) {
+    const seance = _sportDashboardSeancesCache.find(s => s.id === sessionId);
+    if (!seance) {
+        console.error('[SPORT] _sportOuvrirStatsSeance : séance introuvable pour id', sessionId);
+        return;
+    }
+    window._sportSeanceStatsCourante = seance;
+    openModal('sport-stats');
 }
 
 // ── Suppression d'une séance depuis le dashboard ──
@@ -192,6 +219,8 @@ function _sportRenderDashboard(dernieresSeances) {
 }
 
 // ── Carte de récapitulatif de séance ──
+// Cliquable (hors bouton suppr) : ouvre la modale de stats détaillées pour
+// CETTE séance précise, identifiée par son id (cf. _sportOuvrirStatsSeance).
 function _sportRenderCarteSeanceRecap(s) {
     const dateTexte    = _sportFormatDateCourte(s.date_end || s.date_start);
     const exercices    = s.exercices || [];
@@ -200,7 +229,7 @@ function _sportRenderCarteSeanceRecap(s) {
     const nbRecords    = Number.isInteger(s.nb_records) ? s.nb_records : 0;
 
     return `
-        <div class="sport-card sport-seance-carte-recap" id="sport-seance-carte-${s.id}">
+        <div class="sport-card sport-seance-carte-recap sport-seance-carte-recap-clickable" id="sport-seance-carte-${s.id}" onclick="_sportOuvrirStatsSeance(${s.id})" role="button" tabindex="0">
             <div class="sport-seance-recap-header">
                 <span class="sport-seance-recap-icone">${SPORT_ICONE_DUMBBELL}</span>
                 <div class="sport-seance-recap-header-info">
