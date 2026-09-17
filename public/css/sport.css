@@ -751,10 +751,11 @@
 
 /* Input générique utilisé dans les tableaux de séance (poids, reps, min, sec, dist, vit, incl) */
 .sport-seance-input {
-    height: 32px;
-    line-height: 32px;
-    padding: 0 4px;
-    box-sizing: border-box;
+    height: 30px !important;
+    line-height: 30px !important;
+    padding: 0 4px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
     border: none;
     background: transparent;
     font-size: 14px;
@@ -762,8 +763,10 @@
     color: var(--text-main);
     text-align: center;
     outline: none;
-    -moz-appearance: textfield;
+    vertical-align: middle;
     appearance: textfield;
+    -moz-appearance: textfield;
+    -webkit-appearance: none;
 }
 .sport-seance-input::placeholder {
     color: #c7c7d1;
