@@ -213,25 +213,32 @@
 
 /* ── Modale Statistiques Sport (détail complet) ── */
 .sport-modal-stats {
-    padding: 4px 0;
+    padding: 6px 2px 2px;
 }
 
 .sport-modal-stats .sport-widget-recap-title-row {
     display: flex;
     justify-content: space-between;
-    align-items: baseline;
-    margin-bottom: 14px;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(229, 231, 235, 0.8);
 }
 
 .sport-modal-stats .sport-widget-recap-name {
-    font-size: 16px;
+    font-size: 17px;
     font-weight: 700;
     color: #111;
 }
 
 .sport-modal-stats .sport-widget-recap-date {
-    font-size: 13px;
-    color: #9ca3af;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgb(167, 139, 250);
+    background: rgba(167, 139, 250, 0.12);
+    padding: 4px 10px;
+    border-radius: 50px;
+    white-space: nowrap;
 }
 
 .sport-modal-stats .sport-widget-badge-record {
@@ -244,14 +251,14 @@
     font-weight: 700;
     padding: 6px 12px;
     border-radius: 50px;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
 }
 
 .sport-modal-stats .sport-widget-stats-row {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
-    margin-bottom: 18px;
+    margin-bottom: 20px;
 }
 
 .sport-modal-stats .sport-widget-stat {
@@ -283,7 +290,7 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
-    background: rgba(255, 255, 255, 0.6);
+    background: rgba(249, 250, 251, 0.9);
     border: 1px solid rgba(229, 231, 235, 0.6);
     border-radius: 16px;
     padding: 14px 16px;
@@ -306,4 +313,5 @@
 .sport-modal-stats .sport-widget-exercice-nom {
     font-weight: 500;
 }
+
 }
