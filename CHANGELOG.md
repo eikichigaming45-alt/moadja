@@ -1,5 +1,10 @@
 ## MoaDja
 
+## v1.92.43 — 17 septembre 2026
+- Amélioration de l'écran de séance : le chronomètre global et le bouton "Terminer" restent désormais fixes en haut de l'écran, tandis que la liste des exercices défile de manière fluide et indépendante en dessous.
+- Déblocage de l'audio sur iOS (iPhone/Safari) : les bips de compte à rebours et les alertes sonores fonctionnent maintenant correctement, même si le navigateur est en arrière-plan.
+- Finitions visuelles : harmonisation des bordures arrondies sur le bloc des exercices pour respecter le design global de l'application.
+
 ## v1.92.42 — 17 septembre 2026
 - Amélioration visuelle des tableaux pendant la séance : les colonnes, les boutons et le texte dans les cases de saisie sont désormais parfaitement alignés.
 - Le bandeau du temps de repos ne reste plus bloqué en haut de l'écran ; il s'affiche maintenant au bon endroit, juste au-dessus de l'exercice concerné.
