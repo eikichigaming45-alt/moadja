@@ -10,8 +10,21 @@ let _sportSeanceExercices      = [];   // liste des exercices de la routine
 let _sportSeanceChronoInterval = null;
 let _sportSeanceReposInterval  = null;
 let _sportSeryTimers           = {};   // Stockage des chronos individuels (exercices en durée)
-let _sportReposActif           = null; // { exIndex, restant } — repos en cours,
-                                        // affiché juste au-dessus du titre de l'exercice concerné.
+let _sportReposActif           = null; // { exIndex, restant }
+let _sportAudioCtx             = null; // Contexte global pour contourner le blocage iOS
+
+// Initialise et déverrouille l'audio au premier clic utilisateur (requis par iOS)
+function _sportInitAudio() {
+    if (!_sportAudioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) {
+            _sportAudioCtx = new AudioContext();
+        }
+    }
+    if (_sportAudioCtx && _sportAudioCtx.state === 'suspended') {
+        _sportAudioCtx.resume();
+    }
+}
 
 async function _sportInitVerifSeanceActive() {
     try {
@@ -38,6 +51,7 @@ function _sportAfficherBandeauReprise(session) {
     zone.prepend(bandeau);
 
     document.getElementById('sport-btn-reprendre-seance').addEventListener('click', () => {
+        _sportInitAudio();
         _sportReprendreSeance(session);
     });
 }
@@ -67,6 +81,7 @@ async function _sportReprendreSeance(session) {
 }
 
 async function _sportDemarrerSeance(workoutId) {
+    _sportInitAudio();
     try {
         const r = await fetch('/api/sport/sessions', {
             method: 'POST', headers: _sportAuthHeaders(), body: JSON.stringify({ workout_id: workoutId })
@@ -99,7 +114,6 @@ async function _sportDemarrerSeance(workoutId) {
         console.error('[SPORT] demarrerSeance :', err.message);
     }
 }
-
 function _sportRenderEcranSeance() {
     const zoneGlobale = document.getElementById('grid-sport');
     if (!zoneGlobale || !_sportSeanceExercices.length) return;
@@ -110,19 +124,29 @@ function _sportRenderEcranSeance() {
     _sportReposActif = null;
     _sportSeanceChronoInterval = setInterval(_sportMettreAJourChronoSeance, 1000);
 
+    // Structure modifiée : 2 blocs. 
+    // Bloc 1 = sticky en haut (Chrono global + Terminer + Bandeau repos).
+    // Bloc 2 = Liste des exercices en dessous.
     zoneGlobale.innerHTML = `
         <div class="sport-wrap">
-            <div class="sport-card">
-                <div class="sport-seance-header-top">
+            <div class="sport-card" style="position: sticky; top: 10px; z-index: 100; margin-bottom: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+                <div class="sport-seance-header-top" style="margin-bottom: 0; align-items: center;">
                     <span id="sport-seance-chrono" class="sport-seance-nom">00:00</span>
                     <button class="sport-seance-btn-abandon" id="sport-seance-btn-terminer">Terminer</button>
                 </div>
+                <div id="sport-seance-repos-zone" style="display: none; margin-top: 16px;"></div>
+            </div>
+            
+            <div class="sport-card" style="margin-top: 0;">
                 <div id="sport-seance-contenu"></div>
             </div>
         </div>
     `;
 
-    document.getElementById('sport-seance-btn-terminer').addEventListener('click', _sportConfirmerFinSeance);
+    document.getElementById('sport-seance-btn-terminer').addEventListener('click', () => {
+        _sportInitAudio();
+        _sportConfirmerFinSeance();
+    });
 
     _sportRenderTousLesExercices();
 }
@@ -146,7 +170,7 @@ function _sportFormatChrono(secondes) {
 
 function _sportRenderBandeauRepos(restant) {
     return `
-        <div class="sport-seance-repos-ligne" style="margin-bottom:16px;">
+        <div class="sport-seance-repos-ligne" style="margin-bottom: 0;">
             <span class="sport-seance-repos-label">Temps de repos</span>
             <span class="sport-seance-repos-chrono" id="sport-repos-badge">${_sportFormatChrono(restant)}</span>
         </div>
@@ -165,13 +189,8 @@ function _sportRenderTousLesExercices() {
             l.exIndex !== undefined ? l.exIndex === index : l.wger_exercise_id === ex.wger_exercise_id
         );
 
-        html += `<div class="sport-seance-exercice-bloc" style="margin-top: 24px; padding-bottom: 16px; border-bottom: 1px solid #f0f0f0;">`;
-
-        // FIX REPOS : Injection unique juste au-dessus du nom de l'exercice
-        if (_sportReposActif && _sportReposActif.exIndex === index) {
-            html += _sportRenderBandeauRepos(_sportReposActif.restant);
-        }
-
+        // Le bandeau de repos n'est plus injecté ici, il est dans le bloc fixe en haut
+        html += `<div class="sport-seance-exercice-bloc" style="${index > 0 ? 'margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(167, 139, 250, 0.2);' : ''}">`;
         html += `
                 <div class="sport-seance-exercice-nom" style="margin-bottom: 12px; font-size: 16px;">${_sportEchapper(ex.exercise_name)}</div>
                 ${estDuree ? _sportRenderFormulaireDuree(ex, logsExerciceExistants, index) : _sportRenderFormulaireSeries(ex, logsExerciceExistants, index)}
@@ -184,9 +203,6 @@ function _sportRenderTousLesExercices() {
 }
 
 // FIX ALIGNEMENT : même structure 5 colonnes que _sportRenderFormulaireDuree
-// (40px 1fr 1fr 40px 40px), avec une 4e colonne invisible en lieu et place
-// du bouton Play absent ici. Garantit des colonnes 1fr de largeur identique
-// entre les deux types de tableaux, donc un alignement vertical parfait.
 function _sportRenderFormulaireSeries(ex, logsExistants, exIndex) {
     const lignes = [];
     for (let i = 1; i <= ex.target_sets; i++) {
@@ -223,43 +239,43 @@ function _sportJouerAlerteObjectif() {
         navigator.vibrate([200, 100, 200, 100, 400]);
     }
     try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
+        if (!_sportAudioCtx) _sportInitAudio();
+        const osc = _sportAudioCtx.createOscillator();
+        const gain = _sportAudioCtx.createGain();
         osc.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(_sportAudioCtx.destination);
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, ctx.currentTime);
-        gain.gain.setValueAtTime(1, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.6);
+        osc.frequency.setValueAtTime(880, _sportAudioCtx.currentTime);
+        gain.gain.setValueAtTime(1, _sportAudioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, _sportAudioCtx.currentTime + 0.6);
         osc.start();
-        osc.stop(ctx.currentTime + 0.6);
+        osc.stop(_sportAudioCtx.currentTime + 0.6);
     } catch (e) {
-        console.error("[SPORT] Erreur WebAudio:", e);
+        console.error("[SPORT] Erreur WebAudio (alerte):", e);
     }
 }
 
 // Bip court du compte à rebours final de repos (5, 4, 3, 2, 1).
-// Distinct de _sportJouerAlerteObjectif (alerte de fin, plus longue).
 function _sportJouerBipCompteARebours() {
     try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
+        if (!_sportAudioCtx) _sportInitAudio();
+        const osc = _sportAudioCtx.createOscillator();
+        const gain = _sportAudioCtx.createGain();
         osc.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(_sportAudioCtx.destination);
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(660, ctx.currentTime);
-        gain.gain.setValueAtTime(0.8, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+        osc.frequency.setValueAtTime(660, _sportAudioCtx.currentTime);
+        gain.gain.setValueAtTime(0.8, _sportAudioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, _sportAudioCtx.currentTime + 0.15);
         osc.start();
-        osc.stop(ctx.currentTime + 0.15);
+        osc.stop(_sportAudioCtx.currentTime + 0.15);
     } catch (e) {
         console.error("[SPORT] Erreur WebAudio (bip repos):", e);
     }
 }
 
 function _sportToggleTimerSerie(exIndex, setNumber, targetSeconds) {
+    _sportInitAudio(); // Déverrouille l'audio iOS au clic sur Play
     const key = `${exIndex}-${setNumber}`;
     const btnPlayStop = document.getElementById(`sport-duree-playstop-${key}`);
     const inputM      = document.getElementById(`sport-duree-m-${key}`);
@@ -279,7 +295,7 @@ function _sportToggleTimerSerie(exIndex, setNumber, targetSeconds) {
         inputM.style.display = 'block';
         inputS.style.display = 'block';
         
-                btnPlayStop.innerHTML = '▶️';
+        btnPlayStop.innerHTML = '▶️';
         btnPlayStop.classList.remove('actif');
     } else {
         const now = Date.now();
@@ -325,7 +341,6 @@ function _sportRenderFormulaireDuree(ex, logsExistants, exIndex) {
 
     const estCardio = SPORT_NOMS_EXERCICES_CARDIO.has(ex.exercise_name);
 
-    // FIX ALIGNEMENT : 5 colonnes pures, pas de wrappers flexibles pour les inputs.
     return `
         <div class="sport-seance-table">
             <div class="sport-seance-table-header" style="grid-template-columns: 40px 1fr 1fr 40px 40px">
@@ -395,6 +410,7 @@ function _sportBrancherValidationTousExercices() {
 }
 
 async function _sportValiderLogSerie(ex, setNumber, exIndex) {
+    _sportInitAudio(); // Déverrouille l'audio iOS au clic sur Check
     const poids = parseFloat(document.getElementById(`sport-serie-poids-${exIndex}-${setNumber}`).value) || null;
     const reps  = parseInt(document.getElementById(`sport-serie-reps-${exIndex}-${setNumber}`).value, 10) || null;
 
@@ -419,6 +435,7 @@ async function _sportValiderLogSerie(ex, setNumber, exIndex) {
 }
 
 async function _sportValiderLogDuree(ex, setNumber, exIndex) {
+    _sportInitAudio(); // Déverrouille l'audio iOS au clic sur Check
     const key = `${exIndex}-${setNumber}`;
     if (_sportSeryTimers[key] && _sportSeryTimers[key].active) {
         _sportToggleTimerSerie(exIndex, setNumber, ex.target_duration_seconds);
@@ -457,15 +474,22 @@ async function _sportValiderLogDuree(ex, setNumber, exIndex) {
 
 function _sportLancerReposEntreSeries(secondesRepos, exIndex) {
     clearInterval(_sportSeanceReposInterval);
+    const zoneRepos = document.getElementById('sport-seance-repos-zone');
 
     if (!secondesRepos) {
         _sportReposActif = null;
+        if (zoneRepos) zoneRepos.style.display = 'none';
         _sportRenderTousLesExercices();
         return;
     }
 
     _sportReposActif = { exIndex, restant: secondesRepos };
-    _sportRenderTousLesExercices();
+    _sportRenderTousLesExercices(); // Met à jour l'état validé des lignes
+
+    if (zoneRepos) {
+        zoneRepos.style.display = 'block';
+        zoneRepos.innerHTML = _sportRenderBandeauRepos(_sportReposActif.restant);
+    }
 
     _sportSeanceReposInterval = setInterval(() => {
         if (!_sportReposActif) { clearInterval(_sportSeanceReposInterval); return; }
@@ -478,11 +502,10 @@ function _sportLancerReposEntreSeries(secondesRepos, exIndex) {
             clearInterval(_sportSeanceReposInterval);
             _sportJouerAlerteObjectif();
             _sportReposActif = null;
-            _sportRenderTousLesExercices();
+            if (zoneRepos) zoneRepos.style.display = 'none';
             return;
         }
 
-        // Bip court sur les 5 dernières secondes avant reprise (5, 4, 3, 2, 1).
         if (_sportReposActif.restant <= 5) {
             _sportJouerBipCompteARebours();
         }
@@ -506,6 +529,12 @@ async function _sportCloturerSeance(status) {
     clearInterval(_sportSeanceChronoInterval);
     clearInterval(_sportSeanceReposInterval);
     _sportReposActif = null;
+    
+    // Fermer l'audio proprement si existant
+    if (_sportAudioCtx && _sportAudioCtx.state !== 'closed') {
+        _sportAudioCtx.close().catch(() => {});
+        _sportAudioCtx = null;
+    }
 
     Object.values(_sportSeryTimers).forEach(timer => clearInterval(timer.interval));
     _sportSeryTimers = {};
@@ -532,3 +561,4 @@ async function _sportCloturerSeance(status) {
     chargerSportDashboard();
     if (typeof chargerSportStatsWidget === 'function') chargerSportStatsWidget();
 }
+
