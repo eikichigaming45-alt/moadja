@@ -490,7 +490,7 @@
     transition: background 0.2s ease;
 }
 .sport-routine-btn-suppr-routine:hover {
-    background: rgba(239,  68, 0.18);
+    background: rgba(239, 68, 68, 0.18);
 }
 .sport-routine-detail-nom {
     font-size: 18px;
@@ -745,10 +745,10 @@
     letter-spacing: 0.3px;
     text-align: center;
 }
-.sport-seance-table-header span:first-child,
-.sport-seance-table-header span:nth-child(2) {
-    text-align: left;
-}
+/* FIX ALIGNEMENT : Règle supprimée. 
+   L'ancienne règle forçait "SÉRIE" et "POIDS (KG)" à s'aligner à gauche,
+   ce qui décalait les en-têtes par rapport aux inputs centrés. 
+   Maintenant TOUS les en-têtes sont centrés au-dessus de leur colonne. */
 
 .sport-seance-table-row {
     display: grid;
@@ -777,6 +777,7 @@
     justify-content: center;
     font-size: 12px;
     font-weight: 800;
+    margin: 0 auto; /* Centrage explicite dans la grille */
 }
 .sport-seance-row-validee .sport-seance-serie-numero {
     background: rgba(52, 211, 153, 0.18);
@@ -1054,10 +1055,6 @@
 
 /* ══════════════════════════════════════════════════════════════
    ── MODALES SPORT (confirmation générique + choix) ──
-   Réutilise .modal-overlay / .modal-box déjà définis dans
-   style.css. Centrage explicite du texte et des actions pour
-   corriger le décalage observé (boutons Confirmer/Annuler
-   légèrement à gauche du centre par défaut).
    ══════════════════════════════════════════════════════════════ */
 
 .sport-modal-actions-centre {
@@ -1102,13 +1099,6 @@
 
 /* ══════════════════════════════════════════════════════════════
    ── CHRONO DE SÉRIE (exercices en durée) ──
-   Bouton Démarrer/Arrêter + zone d'affichage du décompte, en
-   remplacement des styles inline posés dynamiquement par
-   _sportToggleTimerSerie() dans sport.js. Palette identique aux
-   autres boutons ronds du module (violet au repos, rouge actif).
-   FIX alignement : bouton passé de 28px à 32px + border-radius 50%
-   pour s'aligner visuellement sur .sport-seance-check-btn (colonne
-   commune de 40px dans la grille, cf. sportSeance.js).
    ══════════════════════════════════════════════════════════════ */
 
 .sport-duree-playstop-btn {
@@ -1150,3 +1140,4 @@
 .sport-duree-chrono-texte.depassement {
     color: #ef4444;
 }
+
