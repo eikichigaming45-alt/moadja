@@ -1,9 +1,41 @@
 ## MoaDja
 
+## v1.92.50 — 17 septembre 2026
+- Le dashboard Sport et le widget Sport (colonne droite) sont désormais entièrement cliquables : cliquer sur une carte de récapitulatif de séance ouvre la modale "Statistiques Sport" avec le détail exact de la séance concernée.
+- Ajout d'un effet visuel de survol (léger soulèvement + ombre) sur les cartes cliquables, pour signaler clairement l'interactivité.
+- Le bouton de suppression (icône corbeille) reste indépendant du clic sur la carte.
+
+---
+
+## v1.92.49 — 17 septembre 2026
+- Correction d'un bug CSS critique sur la modale "Statistiques Sport" : une accolade de media query mal fermée neutralisait l'affichage des styles sur desktop.
+- Refonte visuelle complète de la modale de statistiques : titre et pastille de date bien alignés, blocs Durée/Volume/Séries en grille, liste d'exercices clairement présentée.
+
+---
+
+## v1.92.46 — 17 septembre 2026
+- Le widget Sport (colonne droite, visible sur tous les onglets) affiche désormais la dernière séance enregistrée sous forme de carte : durée, volume, séries, badge records, aperçu des exercices et pied de carte "MoaDja".
+
+---
+
+## v1.92.45 — 17 septembre 2026
+- Résolution du bug de chargement de l'onglet "Mes Routines" (erreur "Erreur lors du chargement des routines" rencontrée en v1.92.44).
+- Ajout du champ de création de routine et de la liste des routines existantes, chacune cliquable pour accéder au détail des exercices.
+
+---
+
+## v1.92.44 — 17 septembre 2026
+- Diagnostic d'un bug bloquant l'affichage de la liste des routines dans l'onglet "Mes Routines" (message d'erreur affiché à la place du contenu).
+
+---
+
 ## v1.92.43 — 17 septembre 2026
 - Amélioration de l'écran de séance : le chronomètre global et le bouton "Terminer" restent désormais fixes en haut de l'écran, tandis que la liste des exercices défile de manière fluide et indépendante en dessous.
 - Déblocage de l'audio sur iOS (iPhone/Safari) : les bips de compte à rebours et les alertes sonores fonctionnent maintenant correctement, même si le navigateur est en arrière-plan.
 - Finitions visuelles : harmonisation des bordures arrondies sur le bloc des exercices pour respecter le design global de l'application.
+
+---
+
 
 ## v1.92.42 — 17 septembre 2026
 - Amélioration visuelle des tableaux pendant la séance : les colonnes, les boutons et le texte dans les cases de saisie sont désormais parfaitement alignés.
