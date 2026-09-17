@@ -114,6 +114,7 @@ async function _sportDemarrerSeance(workoutId) {
         console.error('[SPORT] demarrerSeance :', err.message);
     }
 }
+
 function _sportRenderEcranSeance() {
     const zoneGlobale = document.getElementById('grid-sport');
     if (!zoneGlobale || !_sportSeanceExercices.length) return;
@@ -124,12 +125,10 @@ function _sportRenderEcranSeance() {
     _sportReposActif = null;
     _sportSeanceChronoInterval = setInterval(_sportMettreAJourChronoSeance, 1000);
 
-    // Structure modifiée : 2 blocs. 
-    // Bloc 1 = sticky en haut (Chrono global + Terminer + Bandeau repos).
-    // Bloc 2 = Liste des exercices en dessous.
+    // FIX STICKY : Ajout de -webkit-sticky pour iOS, et top: 90px pour s'arrêter SOUS la barre de recherche
     zoneGlobale.innerHTML = `
         <div class="sport-wrap">
-            <div class="sport-card" style="position: sticky; top: 10px; z-index: 100; margin-bottom: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+            <div class="sport-card" style="position: -webkit-sticky; position: sticky; top: 90px; z-index: 999; margin-bottom: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.15);">
                 <div class="sport-seance-header-top" style="margin-bottom: 0; align-items: center;">
                     <span id="sport-seance-chrono" class="sport-seance-nom">00:00</span>
                     <button class="sport-seance-btn-abandon" id="sport-seance-btn-terminer">Terminer</button>
@@ -189,7 +188,6 @@ function _sportRenderTousLesExercices() {
             l.exIndex !== undefined ? l.exIndex === index : l.wger_exercise_id === ex.wger_exercise_id
         );
 
-        // Le bandeau de repos n'est plus injecté ici, il est dans le bloc fixe en haut
         html += `<div class="sport-seance-exercice-bloc" style="${index > 0 ? 'margin-top: 24px; padding-top: 24px; border-top: 1px solid rgba(167, 139, 250, 0.2);' : ''}">`;
         html += `
                 <div class="sport-seance-exercice-nom" style="margin-bottom: 12px; font-size: 16px;">${_sportEchapper(ex.exercise_name)}</div>
@@ -202,7 +200,6 @@ function _sportRenderTousLesExercices() {
     _sportBrancherValidationTousExercices();
 }
 
-// FIX ALIGNEMENT : même structure 5 colonnes que _sportRenderFormulaireDuree
 function _sportRenderFormulaireSeries(ex, logsExistants, exIndex) {
     const lignes = [];
     for (let i = 1; i <= ex.target_sets; i++) {
@@ -480,7 +477,7 @@ function _sportLancerReposEntreSeries(secondesRepos, exIndex) {
         _sportReposActif = null;
         if (zoneRepos) zoneRepos.style.display = 'none';
         _sportRenderTousLesExercices();
-        return;
+                return;
     }
 
     _sportReposActif = { exIndex, restant: secondesRepos };
