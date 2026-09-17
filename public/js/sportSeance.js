@@ -10,6 +10,8 @@ let _sportSeanceExercices      = [];   // liste des exercices de la routine
 let _sportSeanceChronoInterval = null;
 let _sportSeanceReposInterval  = null;
 let _sportSeryTimers           = {};   // Stockage des chronos individuels (exercices en durée)
+let _sportReposActif           = null; // { exIndex, restant } — repos en cours, affiché
+                                        // inline juste après l'exercice concerné.
 
 async function _sportInitVerifSeanceActive() {
     try {
@@ -103,7 +105,9 @@ function _sportRenderEcranSeance() {
     if (!zoneGlobale || !_sportSeanceExercices.length) return;
 
     clearInterval(_sportSeanceChronoInterval);
+    clearInterval(_sportSeanceReposInterval);
     _sportSeryTimers = {};
+    _sportReposActif = null;
     _sportSeanceChronoInterval = setInterval(_sportMettreAJourChronoSeance, 1000);
 
     zoneGlobale.innerHTML = `
@@ -113,7 +117,6 @@ function _sportRenderEcranSeance() {
                     <span id="sport-seance-chrono" class="sport-seance-nom">00:00</span>
                     <button class="sport-seance-btn-abandon" id="sport-seance-btn-terminer">Terminer</button>
                 </div>
-                <div id="sport-seance-repos-zone"></div>
                 <div id="sport-seance-contenu"></div>
             </div>
         </div>
@@ -165,10 +168,26 @@ function _sportRenderTousLesExercices() {
                 ${estDuree ? _sportRenderFormulaireDuree(ex, logsExerciceExistants, index) : _sportRenderFormulaireSeries(ex, logsExerciceExistants, index)}
             </div>
         `;
+
+        // FIX repos "entre deux exercices" : le bandeau de repos s'affiche ici,
+        // juste après l'exercice dont on vient de valider une série, et non plus
+        // figé en haut de l'écran (voir _sportLancerReposEntreSeries).
+        if (_sportReposActif && _sportReposActif.exIndex === index) {
+            html += _sportRenderBandeauRepos(_sportReposActif.restant);
+        }
     });
 
     zone.innerHTML = html;
     _sportBrancherValidationTousExercices();
+}
+
+function _sportRenderBandeauRepos(restant) {
+    return `
+        <div class="sport-seance-repos-ligne">
+            <span class="sport-seance-repos-label">Temps de repos</span>
+            <span class="sport-seance-repos-chrono" id="sport-repos-badge">${_sportFormatChrono(restant)}</span>
+        </div>
+    `;
 }
 
 function _sportRenderFormulaireSeries(ex, logsExistants, exIndex) {
@@ -237,8 +256,7 @@ function _sportToggleTimerSerie(exIndex, setNumber, targetSeconds) {
         chronoZone.style.display = 'none';
         inputsZone.style.display = 'flex';
         btnPlayStop.innerHTML = '▶️';
-        btnPlayStop.style.background = '';
-        btnPlayStop.style.color = '';
+        btnPlayStop.classList.remove('actif');
     } else {
         const now = Date.now();
         _sportSeryTimers[key] = {
@@ -256,20 +274,17 @@ function _sportToggleTimerSerie(exIndex, setNumber, targetSeconds) {
                 }
 
                 chronoZone.textContent = _sportFormatChrono(remaining);
-                chronoZone.style.color = remaining < 0 ? '#ef4444' : 'var(--text-main)';
+                chronoZone.classList.toggle('depassement', remaining < 0);
             }, 500)
         };
 
         inputsZone.style.display = 'none';
         chronoZone.style.display = 'block';
         chronoZone.textContent = _sportFormatChrono(targetSeconds);
-        chronoZone.style.color = 'var(--text-main)';
+        chronoZone.classList.remove('depassement');
 
-                btnPlayStop.innerHTML = '⏹️';
-        btnPlayStop.style.background = 'rgba(239, 68, 68, 0.1)';
-        btnPlayStop.style.color = '#ef4444';
-        btnPlayStop.style.borderRadius = '50%';
-        btnPlayStop.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+        btnPlayStop.innerHTML = '⏹️';
+        btnPlayStop.classList.add('actif');
     }
 }
 
@@ -287,10 +302,13 @@ function _sportRenderFormulaireDuree(ex, logsExistants, exIndex) {
     // pour TOUT exercice de type "duree" (Jumping Jack, Gainage, etc.).
     const estCardio = SPORT_NOMS_EXERCICES_CARDIO.has(ex.exercise_name);
 
+    // FIX grille harmonisée : la colonne "lecture/stop" passe de 34px à 40px
+    // pour s'aligner sur la largeur de la colonne "check" (comme dans le
+    // tableau Poids/Reps ci-dessus), au lieu d'une largeur arbitraire différente.
     return `
         <div class="sport-seance-table">
-            <div class="sport-seance-table-header" style="grid-template-columns: 40px 1fr 34px 40px">
-                <span>Série</span><span style="text-align:center">Temps (m:s)</span><span></span><span></span>
+            <div class="sport-seance-table-header" style="grid-template-columns: 40px 1fr 40px 40px">
+                <span>Série</span><span style="text-align:center">Temps</span><span></span><span></span>
             </div>
             ${lignes.map(l => {
                 const totalSec = l.log ? l.log.duration_seconds : ex.target_duration_seconds;
@@ -299,23 +317,29 @@ function _sportRenderFormulaireDuree(ex, logsExistants, exIndex) {
                 const isCompleted = !!l.log?.completed;
 
                 return `
-                <div class="sport-seance-table-row ${isCompleted ? 'sport-seance-row-validee' : ''}" style="grid-template-columns: 40px 1fr 34px 40px; align-items:center;">
+                <div class="sport-seance-table-row ${isCompleted ? 'sport-seance-row-validee' : ''}" style="grid-template-columns: 40px 1fr 40px 40px; align-items:center;">
                     <span class="sport-seance-serie-numero">${l.numero}</span>
 
-                    <div style="display:flex; justify-content:center; align-items:center; width:100%; position:relative; min-height: 28px;">
-                        <div id="sport-duree-inputs-${exIndex}-${l.numero}" style="display:flex; gap:4px; width:100%;">
-                            <input type="number" class="sport-seance-input" id="sport-duree-m-${exIndex}-${l.numero}"
-                                   value="${totalSec > 0 ? m : ''}" placeholder="m" ${isCompleted ? 'disabled' : ''}>
-                            <input type="number" class="sport-seance-input" id="sport-duree-s-${exIndex}-${l.numero}"
-                                   value="${totalSec > 0 ? s : ''}" placeholder="s" ${isCompleted ? 'disabled' : ''}>
+                    <div style="display:flex; justify-content:center; align-items:center; width:100%; position:relative; min-height: 44px;">
+                        <div id="sport-duree-inputs-${exIndex}-${l.numero}" class="sport-duree-champs-groupe">
+                            <div class="sport-duree-champ">
+                                <input type="number" class="sport-seance-input" id="sport-duree-m-${exIndex}-${l.numero}"
+                                       value="${totalSec > 0 ? m : ''}" placeholder="0" ${isCompleted ? 'disabled' : ''}>
+                                <span class="sport-duree-champ-label">min</span>
+                            </div>
+                            <div class="sport-duree-champ">
+                                <input type="number" class="sport-seance-input" id="sport-duree-s-${exIndex}-${l.numero}"
+                                       value="${totalSec > 0 ? s : ''}" placeholder="0" ${isCompleted ? 'disabled' : ''}>
+                                <span class="sport-duree-champ-label">sec</span>
+                            </div>
                         </div>
-                        <div id="sport-duree-chronotext-${exIndex}-${l.numero}" style="display:none; font-size:15px; font-weight:800; font-variant-numeric: tabular-nums;">
+                        <div id="sport-duree-chronotext-${exIndex}-${l.numero}" class="sport-duree-chrono-texte" style="display:none;">
                             00:00
                         </div>
                     </div>
 
-                    <button class="sport-seance-check-btn" style="border-radius:8px; font-size:14px; width:28px; height:28px;"
-                            id="sport-duree-playstop-${exIndex}-${l.numero}" ${isCompleted ? 'disabled style="opacity:0.3"' : ''}>▶️</button>
+                    <button class="sport-duree-playstop-btn"
+                            id="sport-duree-playstop-${exIndex}-${l.numero}" ${isCompleted ? 'disabled' : ''}>▶️</button>
 
                     <button class="sport-seance-check-btn ${isCompleted ? 'active' : ''}"
                             id="sport-duree-check-${exIndex}-${l.numero}" ${isCompleted ? 'disabled' : ''}>${SPORT_ICONE_CHECK}</button>
@@ -372,8 +396,7 @@ async function _sportValiderLogSerie(ex, setNumber, exIndex) {
             // les doublons (même exercice utilisé plusieurs fois dans la séance).
             d.log.exIndex = exIndex;
             _sportSeanceActive.logs.push(d.log);
-            _sportLancerReposEntreSeries(ex.target_rest_seconds || 60);
-            _sportRenderTousLesExercices();
+            _sportLancerReposEntreSeries(ex.target_rest_seconds || 60, exIndex);
         }
     } catch (err) {
         console.error('[SPORT] validerLogSerie :', err.message);
@@ -409,45 +432,47 @@ async function _sportValiderLogDuree(ex, setNumber, exIndex) {
                 rest_seconds: ex.target_rest_seconds || 60
             })
         });
-                const d = await r.json();
+        const d = await r.json();
         if (d.success) {
             // Marquage de l'exercice d'origine dans la routine (voir _sportValiderLogSerie).
             d.log.exIndex = exIndex;
             _sportSeanceActive.logs.push(d.log);
-            _sportLancerReposEntreSeries(ex.target_rest_seconds || 60);
-            _sportRenderTousLesExercices();
+            _sportLancerReposEntreSeries(ex.target_rest_seconds || 60, exIndex);
         }
     } catch (err) {
         console.error('[SPORT] validerLogDuree :', err.message);
     }
 }
 
-function _sportLancerReposEntreSeries(secondesRepos) {
-    const zone = document.getElementById('sport-seance-repos-zone');
-    if (!zone || !secondesRepos) return;
-
+// FIX repos "entre deux exercices" : le bandeau n'est plus injecté dans un
+// conteneur fixe en haut de l'écran (#sport-seance-repos-zone, supprimé).
+// Il est désormais porté par l'état _sportReposActif et réaffiché par
+// _sportRenderTousLesExercices() juste après le bloc de l'exercice concerné,
+// ce qui le fait apparaître au niveau où l'utilisateur se trouve réellement.
+function _sportLancerReposEntreSeries(secondesRepos, exIndex) {
     clearInterval(_sportSeanceReposInterval);
-    let restant = secondesRepos;
 
-    zone.innerHTML = `
-        <div class="sport-seance-repos-ligne" style="margin-top: 16px; padding: 12px; background: #eef2ff; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-            <span class="sport-seance-repos-label" style="font-weight: 600; color: #4f46e5;">Temps de repos</span>
-            <span class="sport-seance-repos-chrono" id="sport-repos-badge" style="font-size: 18px; font-weight: 700; color: #4f46e5;">${_sportFormatChrono(restant)}</span>
-        </div>
-    `;
+    if (!secondesRepos) {
+        _sportReposActif = null;
+        _sportRenderTousLesExercices();
+        return;
+    }
+
+    _sportReposActif = { exIndex, restant: secondesRepos };
+    _sportRenderTousLesExercices();
 
     _sportSeanceReposInterval = setInterval(() => {
-        restant--;
-        const badge = document.getElementById('sport-repos-badge');
-        if (!badge) { clearInterval(_sportSeanceReposInterval); return; }
-        if (restant <= 0) {
+        if (!_sportReposActif) { clearInterval(_sportSeanceReposInterval); return; }
+        _sportReposActif.restant--;
+
+                if (_sportReposActif.restant <= 0) {
             clearInterval(_sportSeanceReposInterval);
             // Ding + vibration à la fin du temps de repos.
             _sportJouerAlerteObjectif();
-            zone.innerHTML = '';
-            return;
+            _sportReposActif = null;
         }
-        badge.textContent = _sportFormatChrono(restant);
+
+        _sportRenderTousLesExercices();
     }, 1000);
 }
 
@@ -465,6 +490,7 @@ function _sportConfirmerFinSeance() {
 async function _sportCloturerSeance(status) {
     clearInterval(_sportSeanceChronoInterval);
     clearInterval(_sportSeanceReposInterval);
+    _sportReposActif = null;
 
     Object.values(_sportSeryTimers).forEach(timer => clearInterval(timer.interval));
     _sportSeryTimers = {};
