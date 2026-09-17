@@ -686,17 +686,26 @@
     margin-bottom: 10px;
 }
 
+/* Bandeau "Temps de repos" — désormais injecté inline juste après le bloc
+   de l'exercice concerné (voir sportSeance.js, _sportRenderBandeauRepos),
+   et non plus dans un conteneur fixe en haut de l'écran. Style repris de
+   l'ancien inline (fond/bordure violets, cohérents avec la palette module). */
 .sport-seance-repos-ligne {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 8px;
-    margin-bottom: 14px;
+    margin: 16px 0;
+    padding: 12px 16px;
+    background: rgba(167, 139, 250, 0.08);
+    border: 1px solid rgba(167, 139, 250, 0.25);
+    border-radius: 14px;
     flex-wrap: wrap;
 }
 .sport-seance-repos-label {
-    font-size: 12px;
-    color: #6b7280;
-    font-weight: 600;
+    font-size: 13px;
+    color: rgb(167, 139, 250);
+    font-weight: 700;
 }
 .sport-seance-repos-input {
     width: 60px;
@@ -720,10 +729,9 @@
     font-weight: 600;
 }
 .sport-seance-repos-chrono {
-    font-size: 12px;
+    font-size: 18px;
     color: rgb(167, 139, 250);
-    font-weight: 700;
-    margin-left: auto;
+    font-weight: 800;
 }
 
 .sport-seance-table {
@@ -1108,12 +1116,15 @@
    remplacement des styles inline posés dynamiquement par
    _sportToggleTimerSerie() dans sport.js. Palette identique aux
    autres boutons ronds du module (violet au repos, rouge actif).
+   FIX alignement : bouton passé de 28px à 32px + border-radius 50%
+   pour s'aligner visuellement sur .sport-seance-check-btn (colonne
+   commune de 40px dans la grille, cf. sportSeance.js).
    ══════════════════════════════════════════════════════════════ */
 
 .sport-duree-playstop-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
     border: 1px solid rgba(167, 139, 250, 0.4);
     background: rgba(255, 255, 255, 0.6);
     color: rgb(167, 139, 250);
@@ -1150,20 +1161,35 @@
     color: #ef4444;
 }
 
-/* ══════════════════════════════════════════════════════════════
-   ── FIX ZONE REPOS SÉANCE (sticky) ──
-   #sport-seance-repos-zone est injecté juste sous le header de
-   séance (chrono global / bouton Terminer). Sans ce fix, le
-   compte à rebours de repos entre séries n'était visible qu'en
-   bas de l'écran (après tous les exercices), donc masqué en
-   pratique pendant le scroll. Le sticky le garde visible en
-   permanence sous le header, quelle que soit la position de
-   scroll dans la liste d'exercices.
-   ══════════════════════════════════════════════════════════════ */
-
-#sport-seance-repos-zone {
-    position: sticky;
-    top: 0;
-    z-index: 5;
-    background: var(--glass-bg);
+/* FIX labels min/sec : les champs durée (Marche, Jumping Jack, Gainage...)
+   n'affichaient que deux nombres bruts sans repère ("1" et "0"), rendant
+   la valeur illisible (confondu avec un bug de données). Chaque champ
+   porte désormais un sous-label visible en permanence sous l'input. */
+.sport-duree-champs-groupe {
+    display: flex;
+    gap: 8px;
+    width: 100%;
 }
+.sport-duree-champ {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+.sport-duree-champ-label {
+    font-size: 9.5px;
+    color: #9ca3af;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ── FIX ZONE REPOS SÉANCE ──
+   Le bandeau "Temps de repos" (voir .sport-seance-repos-ligne plus
+   haut) est désormais injecté inline par sportSeance.js juste après
+   le bloc de l'exercice concerné, et non plus figé en haut de
+   l'écran via #sport-seance-repos-zone (position: sticky supprimée
+   ici — ce conteneur n'existe plus dans le DOM).
+   ══════════════════════════════════════════════════════════════ */
