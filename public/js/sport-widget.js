@@ -95,13 +95,17 @@ async function chargerSportStatsWidget() {
         const r = await fetch('/api/sport/dashboard-stats', { headers: _sportAuthHeaders() });
         const d = await r.json();
 
-        if (!d.success || !d.derniere_seance) {
+        // L'API renvoie un TABLEAU "dernieres_seances" (pluriel), pas un objet "derniere_seance".
+        const seances = Array.isArray(d.dernieres_seances) ? d.dernieres_seances : [];
+
+        if (!d.success || !seances.length) {
             _sportWidgetDerniereSeanceCache = null;
             _sportRenderWidgetPhraseAleatoire(zone);
             return;
         }
 
-        _sportRenderWidgetDerniereSeance(zone, d.derniere_seance);
+        // La première entrée du tableau est la plus récente (ORDER BY date_start DESC côté backend).
+        _sportRenderWidgetDerniereSeance(zone, seances[0]);
     } catch (err) {
         console.error('[SPORT] chargerSportStatsWidget :', err.message);
         _sportWidgetDerniereSeanceCache = null;
@@ -222,12 +226,15 @@ async function _ouvrirModaleSportStats() {
         const r = await fetch('/api/sport/dashboard-stats', { headers: _sportAuthHeaders() });
         const d = await r.json();
 
-        if (!d.success || !d.derniere_seance) {
+        // Même correctif : tableau "dernieres_seances", pas objet "derniere_seance".
+        const seances = Array.isArray(d.dernieres_seances) ? d.dernieres_seances : [];
+
+        if (!d.success || !seances.length) {
             zone.innerHTML = '<p style="color:#9ca3af;text-align:center;padding:20px">Aucune séance enregistrée pour l\'instant.</p>';
             return;
         }
 
-        _sportRenderModaleStatsDepuisSeance(zone, d.derniere_seance);
+        _sportRenderModaleStatsDepuisSeance(zone, seances[0]);
     } catch (err) {
         console.error('[SPORT] _ouvrirModaleSportStats :', err.message);
         zone.innerHTML = '<p style="color:#ef4444;text-align:center;padding:20px">Erreur de chargement des statistiques.</p>';
