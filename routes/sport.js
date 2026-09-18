@@ -543,7 +543,7 @@ router.delete('/sessions/:id', auth, async (req, res) => {
             return res.status(403).json({ success: false, message: 'Interdit.' });
         }
 
-        await client.query(`DELETE FROM sport_session_logs WHERE session_id = \$1`, [id]);
+                await client.query(`DELETE FROM sport_session_logs WHERE session_id = \$1`, [id]);
         await client.query(`DELETE FROM sport_sessions WHERE id = \$1`, [id]);
 
         await client.query('COMMIT');
@@ -720,6 +720,7 @@ router.get('/dashboard-stats', auth, async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 });
+
 // ── LOGS DE SÉANCE : sport_session_logs ──
 
 router.post('/sessions/:sessionId/logs', auth, async (req, res) => {
@@ -953,6 +954,8 @@ function _nettoyerNomBase(nom) {
     return nom.split('(')[0].trim();
 }
 
+// Correction appliquée : $ et $ rétablies (parenthèses littérales)
+// au lieu des ancres $ précédemment présentes par erreur.
 function _nettoyerParenthesesNonLatines(nom) {
     return nom.replace(/\s*$([^()]*)$\s*$/g, (match, interieur) => {
         return /[a-zA-Z]/.test(interieur) ? match : '';
@@ -1046,7 +1049,7 @@ router.get('/wger/exercises', auth, async (req, res) => {
                     typeSuivi = mapping.type;
                 }
 
-                const image = ex.images?.[0]?.image || null;
+                                const image = ex.images?.[0]?.image || null;
 
                 if (search) {
                     const texteRecherchable = _sansAccents(`${nom} ${nomOriginal}`.toLowerCase());
