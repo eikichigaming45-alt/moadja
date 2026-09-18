@@ -1,6 +1,6 @@
 {
   "name": "ange-christelle",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "server.js",
   "scripts": {
@@ -14,8 +14,7 @@
     "node": "24.x"
   },
   "dependencies": {
-    "@simplewebauthn/server": "^10.0.0",
-    "@supabase/supabase-js": "^2.112.3",
+    "@simplewebauthn/server": "^14.0.2",
     "bcryptjs": "^3.0.3",
     "cheerio": "^1.2.0",
     "cors": "^2.8.6",
