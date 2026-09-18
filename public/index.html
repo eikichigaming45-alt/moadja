@@ -294,44 +294,15 @@
                 })();
                 </script>
 
-                <div class="im-toggles-list">
-                    <div class="im-toggle-item">
-                        <div class="im-toggle-left">
-                            <div class="im-toggle-icon-wrap" style="background: rgba(124, 58, 237, 0.1); color: #7C3AED;">🔮</div>
-                            <div class="im-toggle-text">
-                                <span class="im-toggle-title">Astral</span>
-                                <span class="im-toggle-subtitle">Humeur du jour</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="im-toggle-item">
-                        <div class="im-toggle-left">
-                            <div class="im-toggle-icon-wrap" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">🌸</div>
-                            <div class="im-toggle-text">
-                                <span class="im-toggle-title">Mini</span>
-                            </div>
-                        </div>
-                        <label class="im-switch">
-                            <input type="checkbox" checked>
-                            <span class="im-slider"></span>
-                        </label>
-                    </div>
-                    <div class="im-toggle-item">
-                        <div class="im-toggle-left">
-                            <div class="im-toggle-icon-wrap" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">🏃</div>
-                            <div class="im-toggle-text">
-                                <span class="im-toggle-title">Sport</span>
-                            </div>
-                        </div>
-                        <label class="im-switch">
-                            <input type="checkbox">
-                            <span class="im-slider"></span>
-                        </label>
-                    </div>
-                </div>
+                <!-- Conteneur repeuplé dynamiquement par profil.js (_rendreProfilHeader).
+                     Volontairement vide : tout contenu statique inséré ici serait
+                     affiché brièvement au chargement puis aussitôt écrasé par le
+                     rendu réel (cache local, puis données serveur), provoquant un
+                     flash visuel. -->
+                <div class="im-toggles-list"></div>
             </div>
 
-            <!-- Navigation Desktop -->
+                        <!-- Navigation Desktop -->
             <div class="glass-panel desktop-nav-container">
                 <nav class="desktop-nav" style="display: flex; flex-direction: row; justify-content: space-between; gap: 8px;">
                     <button class="bn-item active" data-tab="accueil" onclick="switchTab('accueil')" style="flex: 1; padding: 10px 4px;">
