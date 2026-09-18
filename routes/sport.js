@@ -572,8 +572,7 @@ function _sportCalculerStatsSession(session, logs, poidsUtilisateurKg) {
 
 // Liste consolidée des exercices distincts d'une séance, format
 // { exercise_name, nb_series, duree_totale_secondes }. Ordre conservé =
-// ordre de première apparition dans les logs (donc ordre réel de la
-// séance), et non plus trié par nombre de séries.
+// ordre de première apparition dans les logs (ordre réel de la séance).
 function _sportConsoliderExercicesSession(logs) {
     const logsValides = logs.filter(l => l.completed);
     const consolide   = new Map();
@@ -592,8 +591,6 @@ function _sportConsoliderExercicesSession(logs) {
     return Array.from(consolide.values());
 }
 
-// Détecte, pour la séance la plus récente, les exercices dont le meilleur
-// poids dépasse le record historique (hors séance courante). Cardio exclu.
 async function _sportDetecterRecords(moi, sessionId, logsSession) {
     const logsMusculationValides = logsSession.filter(l =>
         l.completed && l.weight_kg != null && l.distance_km == null && l.duration_seconds == null
@@ -632,9 +629,6 @@ async function _sportDetecterRecords(moi, sessionId, logsSession) {
     return records;
 }
 
-// GET /api/sport/dashboard-stats
-// 5 dernières séances terminées, avec stats agrégées + liste consolidée
-// d'exercices (ordre de la séance conservé) + records (dernière séance).
 router.get('/dashboard-stats', auth, async (req, res) => {
     const moi = req.user.id;
     try {
@@ -767,7 +761,7 @@ router.put('/logs/:logId', auth, async (req, res) => {
                 AND s.user_id = \\$10
             RETURNING l.*
         `, [
-                        Number.isInteger(reps) ? reps : null,
+            Number.isInteger(reps) ? reps : null,
             weight_kg != null ? weight_kg : null,
             typeof completed === 'boolean' ? completed : null,
             Number.isInteger(rest_seconds) ? rest_seconds : null,
@@ -879,10 +873,6 @@ router.delete('/measurements/:id', auth, async (req, res) => {
 });
 
 // ── CATALOGUE D'EXERCICES (lecture seule) ──
-// Noms "Anglais (Français)". Traduction FR complète via SPORT_TRADUCTION_FR
-// (mapping = null -> exercice masqué). Nettoyage de tout texte non-latin
-// résiduel entre parenthèses. Recherche insensible accents/casse, portant
-// sur le nom affiché ET le nom original.
 
 const SPORT_WGER_CATEGORIES_FR = {
     'Abs'      : 'Abdominaux',
