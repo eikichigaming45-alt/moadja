@@ -39,7 +39,7 @@ router.get('/dashboard-stats', auth, async (req, res) => {
 
         const seances = [];
         for (let s of sessions) {
-            // Utilise ta fonction existante pour récupérer durée, volume, et calories
+            // Utilise la fonction dédiée pour récupérer durée, volume, et calories
             const stats = await _sportCalculerStatsSession(s.id, moi);
 
             const { rows: logs } = await pool.query(
@@ -409,7 +409,7 @@ router.put('/exercises/:exerciseId', auth, async (req, res) => {
                  AND w.user_id = \$9
              RETURNING e.*`,
             [
-                                exercise_name?.trim() || null,
+                exercise_name?.trim() || null,
                 Number.isInteger(order_in_day) ? order_in_day : null,
                 Number.isInteger(target_sets)  ? target_sets  : null,
                 Number.isInteger(target_reps)  ? target_reps  : null,
@@ -536,49 +536,45 @@ router.post('/sessions', auth, async (req, res) => {
              LIMIT 1`,
             [moi]
         );
+
+        // Une séance en cours existe déjà : on la renvoie plutôt que d'en créer une seconde.
         if (existante.length) {
-            return res.json({ success: true, session: existante[0] });
+            return res.json({ success: true, session: existante[0], reprise: true });
         }
 
-        if (workoutId) {
-            const { rows: owner } = await pool.query(
-                `SELECT id FROM sport_workouts WHERE id = \$1 AND user_id = \$2`,
-                [workoutId, moi]
-            );
-            if (!owner.length) return res.status(403).json({ success: false, message: 'Interdit.' });
-        }
         const { rows } = await pool.query(
-            `INSERT INTO sport_sessions (user_id, workout_id, date_start)
-             VALUES (\$1, \$2, NOW())
-             RETURNING *`,
+            `INSERT INTO sport_sessions (user_id, workout_id, date_start, status)
+             VALUES (\$1, \$2, NOW(), 'in_progress')
+             RETURNING id, user_id, workout_id, date_start, date_end, status`,
             [moi, workoutId]
         );
-        res.json({ success: true, session: rows[0] });
+
+        res.json({ success: true, session: rows[0], reprise: false });
     } catch (err) {
         console.error('[SPORT] POST /sessions :', err.message);
         res.status(500).json({ success: false, message: err.message });
     }
 });
 
-router.put('/sessions/:id', auth, async (req, res) => {
+router.put('/sessions/:id/end', auth, async (req, res) => {
     const moi    = req.user.id;
     const id     = parseInt(req.params.id, 10);
-    const status = req.body.status;
-    if (!['completed', 'abandoned'].includes(status)) {
-        return res.status(400).json({ success: false, message: 'Statut invalide.' });
-    }
+    const status = req.body.status === 'abandoned' ? 'abandoned' : 'completed';
+
     try {
         const { rows } = await pool.query(
             `UPDATE sport_sessions
-             SET date_end = NOW(), status = \$1
-             WHERE id = \$2 AND user_id = \$3
-             RETURNING *`,
+             SET status = \$1, date_end = NOW()
+             WHERE id = \$2 AND user_id = \$3 AND status = 'in_progress'
+             RETURNING id, user_id, workout_id, date_start, date_end, status`,
             [status, id, moi]
         );
-        if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
+        if (!rows.length) {
+            return res.status(404).json({ success: false, message: 'Séance en cours introuvable.' });
+        }
         res.json({ success: true, session: rows[0] });
     } catch (err) {
-        console.error('[SPORT] PUT /sessions/:id :', err.message);
+        console.error('[SPORT] PUT /sessions/:id/end :', err.message);
         res.status(500).json({ success: false, message: err.message });
     }
 });
@@ -586,45 +582,36 @@ router.put('/sessions/:id', auth, async (req, res) => {
 router.delete('/sessions/:id', auth, async (req, res) => {
     const moi = req.user.id;
     const id  = parseInt(req.params.id, 10);
-    const client = await pool.connect();
     try {
-        await client.query('BEGIN');
-
-        const { rows: owner } = await client.query(
-            `SELECT id FROM sport_sessions WHERE id = \$1 AND user_id = \$2`,
+        const { rows } = await pool.query(
+            `DELETE FROM sport_sessions
+             WHERE id = \$1 AND user_id = \$2
+             RETURNING id`,
             [id, moi]
         );
-        if (!owner.length) {
-            await client.query('ROLLBACK');
-            return res.status(403).json({ success: false, message: 'Interdit.' });
-        }
-
-        await client.query(`DELETE FROM sport_session_logs WHERE session_id = \$1`, [id]);
-        await client.query(`DELETE FROM sport_sessions WHERE id = \$1`, [id]);
-
-        await client.query('COMMIT');
+        if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
         res.json({ success: true });
     } catch (err) {
-        await client.query('ROLLBACK');
         console.error('[SPORT] DELETE /sessions/:id :', err.message);
         res.status(500).json({ success: false, message: err.message });
-    } finally {
-        client.release();
     }
 });
 
-// ── LOGS D'UNE SÉANCE : sport_session_logs ──
+// ── LOGS DE SÉANCE : sport_session_logs ──
+// IMPORTANT : chaque ligne = une série unitaire (set_number), il n'existe
+// pas de colonne "sets" sur cette table. Ne jamais la référencer.
 
-router.post('/sessions/:sessionId/logs', auth, async (req, res) => {
-    const moi       = req.user.id;
-    const sessionId = parseInt(req.params.sessionId, 10);
+router.post('/sessions/:id/logs', auth, async (req, res) => {
+    const moi = req.user.id;
+    const sessionId = parseInt(req.params.id, 10);
     const {
-        wger_exercise_id, exercise_name,
-        sets, reps, weight_kg, duration_seconds
+        wger_exercise_id, exercise_name, set_number,
+        reps, weight_kg, completed, rest_seconds,
+        distance_km, speed_kmh, incline_percent, duration_seconds
     } = req.body;
 
-    if (!exercise_name?.trim()) {
-        return res.status(400).json({ success: false, message: 'Nom de l\'exercice requis.' });
+    if (!wger_exercise_id || !exercise_name?.trim() || !Number.isInteger(set_number)) {
+        return res.status(400).json({ success: false, message: 'Données manquantes.' });
     }
 
     try {
@@ -636,22 +623,73 @@ router.post('/sessions/:sessionId/logs', auth, async (req, res) => {
 
         const { rows } = await pool.query(
             `INSERT INTO sport_session_logs
-                 (session_id, wger_exercise_id, exercise_name, sets, reps, weight_kg, duration_seconds)
-             VALUES (\$1, \$2, \$3, \$4, \$5, \$6, \$7)
+                 (session_id, wger_exercise_id, exercise_name, set_number, reps, weight_kg,
+                  completed, logged_at, rest_seconds, distance_km, speed_kmh, incline_percent, duration_seconds)
+             VALUES (\$1, \$2, \$3, \$4, \$5, \$6, \$7, NOW(), \$8, \$9, \$10, \$11, \$12)
              RETURNING *`,
             [
                 sessionId,
-                wger_exercise_id || null,
+                wger_exercise_id,
                 exercise_name.trim(),
-                Number.isInteger(sets) ? sets : null,
+                set_number,
                 Number.isInteger(reps) ? reps : null,
                 weight_kg != null ? weight_kg : null,
+                completed === true,
+                Number.isInteger(rest_seconds) ? rest_seconds : null,
+                distance_km != null ? distance_km : null,
+                speed_kmh != null ? speed_kmh : null,
+                incline_percent != null ? incline_percent : null,
                 Number.isInteger(duration_seconds) ? duration_seconds : null
             ]
         );
         res.json({ success: true, log: rows[0] });
     } catch (err) {
-        console.error('[SPORT] POST /sessions/:sessionId/logs :', err.message);
+        console.error('[SPORT] POST /sessions/:id/logs :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.put('/logs/:logId', auth, async (req, res) => {
+    const moi   = req.user.id;
+    const logId = parseInt(req.params.logId, 10);
+    const {
+        reps, weight_kg, completed, rest_seconds,
+        distance_km, speed_kmh, incline_percent, duration_seconds
+    } = req.body;
+
+    try {
+        const { rows } = await pool.query(
+            `UPDATE sport_session_logs AS l
+             SET reps             = COALESCE(\$1, l.reps),
+                 weight_kg        = COALESCE(\$2, l.weight_kg),
+                 completed        = COALESCE(\$3, l.completed),
+                 rest_seconds     = COALESCE(\$4, l.rest_seconds),
+                 distance_km      = COALESCE(\$5, l.distance_km),
+                 speed_kmh        = COALESCE(\$6, l.speed_kmh),
+                 incline_percent  = COALESCE(\$7, l.incline_percent),
+                 duration_seconds = COALESCE(\$8, l.duration_seconds)
+             FROM sport_sessions s
+             WHERE l.id = \$9
+                 AND l.session_id = s.id
+                 AND s.user_id = \$10
+             RETURNING l.*`,
+            [
+                Number.isInteger(reps) ? reps : null,
+                weight_kg != null ? weight_kg : null,
+                typeof completed === 'boolean' ? completed : null,
+                Number.isInteger(rest_seconds) ? rest_seconds : null,
+                distance_km != null ? distance_km : null,
+                speed_kmh != null ? speed_kmh : null,
+                incline_percent != null ? incline_percent : null,
+                Number.isInteger(duration_seconds) ? duration_seconds : null,
+                logId,
+                moi
+            ]
+        );
+        if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
+        res.json({ success: true, log: rows[0] });
+    } catch (err) {
+        console.error('[SPORT] PUT /logs/:logId :', err.message);
         res.status(500).json({ success: false, message: err.message });
     }
 });
@@ -677,133 +715,103 @@ router.delete('/logs/:logId', auth, async (req, res) => {
     }
 });
 
-// ── CATALOGUE EXERCICES (Lecture Seule - Traduction FR) ──
+// ── CATALOGUE D'EXERCICES (proxy wger.de, traduit en FR) ──
 
-router.get('/wger/search', auth, async (req, res) => {
-    const query = req.query.q?.trim().toLowerCase();
-    if (!query) return res.json({ success: true, results: [] });
+router.get('/exercises/search', auth, async (req, res) => {
+    const terme = (req.query.q || '').trim();
+    if (!terme) return res.json({ success: true, exercises: [] });
 
     try {
-        const results = [];
-        for (const [nomEn, data] of Object.entries(SPORT_TRADUCTION_FR)) {
-            if (!data) continue;
-            const matchEn = nomEn.toLowerCase().includes(query);
-            const matchFr = data.nom.toLowerCase().includes(query);
-            if (matchEn || matchFr) {
-                results.push({
-                    id: nomEn,
-                    name: data.nom,
-                    original_name: nomEn,
-                    type: data.type,
-                    cardio: data.cardio || false,
-                    dynamique: data.dynamique || false
-                });
-            }
-        }
-        res.json({ success: true, results });
+        const url = `${WGER_BASE_URL}/exercise/search/?term=${encodeURIComponent(terme)}&language=english,french`;
+        const reponse = await fetch(url);
+        if (!reponse.ok) throw new Error(`wger API a répondu ${reponse.status}`);
+        const data = await reponse.json();
+
+        const resultats = (data.suggestions || []).map(s => {
+            const id  = s.data.base_id;
+            const trad = SPORT_TRADUCTION_FR[id];
+            return {
+                wger_exercise_id: id,
+                nom: trad ? trad.nom : s.value,
+                cardio: trad ? !!trad.cardio : false,
+                dynamique: trad ? !!trad.dynamique : false
+            };
+        });
+
+        res.json({ success: true, exercises: resultats });
     } catch (err) {
-        console.error('[SPORT] GET /wger/search :', err.message);
-        res.status(500).json({ success: false, message: 'Erreur lors de la recherche des exercices.' });
+        console.error('[SPORT] GET /exercises/search :', err.message);
+        res.status(502).json({ success: false, message: 'Catalogue d\'exercices indisponible.' });
     }
 });
 
-// ── RÉSUMÉ / STATS DE LA SÉANCE ──
+// ── HELPER : calcul des stats d'une séance (durée, volume, calories) ──
+// ATTENTION : sport_session_logs n'a PAS de colonne "sets".
+// Chaque ligne représente déjà une série unitaire (identifiée par set_number).
 
-router.get('/sessions/:id/stats', auth, async (req, res) => {
-    const moi = req.user.id;
-    const id  = parseInt(req.params.id, 10);
-
-    try {
-        const { rows: sessions } = await pool.query(
-            `SELECT id, user_id FROM sport_sessions WHERE id = \$1 AND user_id = \$2`,
-            [id, moi]
-        );
-        if (!sessions.length) return res.status(404).json({ success: false, message: 'Séance introuvable.' });
-
-        const stats = await _sportCalculerStatsSession(id, moi);
-        res.json({ success: true, stats });
-    } catch (err) {
-        console.error('[SPORT] GET /sessions/:id/stats :', err.message);
-        res.status(500).json({ success: false, message: err.message });
-    }
-});
-
-/**
- * Calcule les statistiques d'une séance (Volume, Séries, Durée et Calories)
- * Utilise les METs (6 pour cardio, 5 pour dynamique) et le poids de l'utilisateur.
- */
 async function _sportCalculerStatsSession(sessionId, userId) {
-    // 1. Récupérer la séance et ses temps
-    const { rows: sessionRows } = await pool.query(
-        `SELECT date_start, date_end FROM sport_sessions WHERE id = \$1`,
-        [sessionId]
-    );
-    if (!sessionRows.length) return null;
-    const session = sessionRows[0];
+    try {
+        const { rows: sessionRows } = await pool.query(
+            `SELECT date_start, date_end FROM sport_sessions WHERE id = \$1`,
+            [sessionId]
+        );
+        if (!sessionRows.length) return null;
+        const session = sessionRows[0];
 
-    // 2. Récupérer le poids de l'utilisateur depuis la table profiles (colonne poids)
-    //    Défaut 70kg si non renseigné.
-    let userWeightKg = 70;
-    const { rows: profRows } = await pool.query(
-        `SELECT poids FROM profiles WHERE user_id = \$1`,
-        [userId]
-    );
-    if (profRows.length > 0 && profRows[0].poids) {
-        userWeightKg = parseFloat(profRows[0].poids);
-    }
+        const { rows: profilRows } = await pool.query(
+            `SELECT poids FROM profiles WHERE user_id = \$1`,
+            [userId]
+        );
+        const userWeightKg = profilRows.length && profilRows[0].poids
+            ? parseFloat(profilRows[0].poids)
+            : 75; // valeur par défaut si le poids n'est pas renseigné
 
-    // 3. Récupérer tous les logs de la séance
-    const { rows: logs } = await pool.query(
-        `SELECT exercise_name, sets, reps, weight_kg, duration_seconds
-         FROM sport_session_logs
-         WHERE session_id = \$1`,
-        [sessionId]
-    );
+        const { rows: logs } = await pool.query(
+            `SELECT exercise_name, reps, weight_kg, duration_seconds
+             FROM sport_session_logs
+             WHERE session_id = \$1 AND completed = true`,
+            [sessionId]
+        );
 
-    let volumeTotal = 0;
-    let seriesTotales = 0;
-    let caloriesTotales = 0;
-    let dureeTotaleSec = 0;
+        let volumeTotal    = 0;
+        let seriesTotales  = 0;
+        let caloriesTotales = 0;
+        let dureeTotaleSec  = 0;
 
-    // Calcul de la durée globale de la séance si elle est terminée
-    if (session.date_start && session.date_end) {
-        dureeTotaleSec = Math.max(0, Math.floor((new Date(session.date_end) - new Date(session.date_start)) / 1000));
-    }
-
-    // Parcours des logs
-    logs.forEach(l => {
-        // Volume (poids * reps * séries)
-        const sets   = parseInt(l.sets, 10) || 0;
-        const reps   = parseInt(l.reps, 10) || 0;
-        const weight = parseFloat(l.weight_kg) || 0;
-        volumeTotal += (sets * reps * weight);
-        seriesTotales += sets;
-
-        // Calories log par log
-        const dureeExoSec = parseInt(l.duration_seconds, 10) || 0;
-        if (dureeExoSec > 0) {
-            const dureeExoHeures = dureeExoSec / 3600;
-            let met = 0;
-
-            if (SPORT_NOMS_CARDIO.has(l.exercise_name)) {
-                met = SPORT_MET_CARDIO; // 6
-            } else if (SPORT_NOMS_DYNAMIQUE.has(l.exercise_name)) {
-                met = SPORT_MET_DYNAMIQUE; // 5
-            }
-
-            if (met > 0) {
-                // Formule: kcal = MET * Poids(kg) * Temps(heures)
-                caloriesTotales += (met * userWeightKg * dureeExoHeures);
-            }
+        if (session.date_start && session.date_end) {
+            dureeTotaleSec = Math.max(
+                0,
+                Math.floor((new Date(session.date_end) - new Date(session.date_start)) / 1000)
+            );
         }
-    });
 
-    return {
-        duree_secondes: dureeTotaleSec,
-        volume_kg: volumeTotal,
-        series: seriesTotales,
-        calories: Math.round(caloriesTotales) // Arrondi à l'entier pour l'affichage
-    };
+        logs.forEach(l => {
+            // Chaque ligne = 1 série (set_number) : pas de multiplication par un nombre de sets.
+            const reps   = parseInt(l.reps, 10) || 0;
+            const weight = parseFloat(l.weight_kg) || 0;
+            volumeTotal   += (reps * weight);
+            seriesTotales += 1;
+
+            const dureeExoSec = parseInt(l.duration_seconds, 10) || 0;
+            if (dureeExoSec > 0) {
+                const dureeExoHeures = dureeExoSec / 3600;
+                let met = 0;
+                if (SPORT_NOMS_CARDIO.has(l.exercise_name)) met = SPORT_MET_CARDIO;
+                else if (SPORT_NOMS_DYNAMIQUE.has(l.exercise_name)) met = SPORT_MET_DYNAMIQUE;
+                if (met > 0) caloriesTotales += (met * userWeightKg * dureeExoHeures);
+            }
+        });
+
+        return {
+            duree_secondes: dureeTotaleSec,
+            volume_kg: Math.round(volumeTotal * 100) / 100,
+            series_totales: seriesTotales,
+            calories: Math.round(caloriesTotales)
+        };
+    } catch (err) {
+        console.error('[SPORT] _sportCalculerStatsSession :', err.message);
+        return null;
+    }
 }
 
 module.exports = router;
