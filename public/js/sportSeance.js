@@ -9,7 +9,7 @@ let _sportSeanceActive         = null; // { id, workout_id, logs: [...] }
 let _sportSeanceExercices      = [];   // liste des exercices de la routine
 let _sportSeanceChronoInterval = null;
 let _sportSeanceReposInterval  = null;
-let _sportSeryTimers           = {};   // Stockage des chronos individuels (exercices en durée)
+let _sportSeryTimers           = {};   // Stockage des chronos individuels (exercices en durée + séries)
 let _sportReposActif           = null; // { exIndex, restant }
 let _sportAudioCtx             = null; // Contexte global pour contourner le blocage iOS
 
@@ -223,18 +223,25 @@ function _sportRenderFormulaireSeries(ex, logsExistants, exIndex) {
                 <span style="text-align:center;">Reps</span>
                 <span></span><span></span>
             </div>
-            ${lignes.map(l => `
+            ${lignes.map(l => {
+                const key = `${exIndex}-${l.numero}`;
+                return `
                 <div class="sport-seance-table-row ${l.log?.completed ? 'sport-seance-row-validee' : ''}" style="grid-template-columns: 40px 1fr 1fr 40px 40px">
                     <span class="sport-seance-serie-numero">${l.numero}</span>
-                    <input type="number" step="0.5" class="sport-seance-input" id="sport-serie-poids-${exIndex}-${l.numero}"
+                    <input type="number" step="0.5" class="sport-seance-input" id="sport-serie-poids-${key}"
                            value="${l.log?.weight_kg ?? ex.target_weight_kg ?? ''}" placeholder="kg" ${l.log?.completed ? 'disabled' : ''}>
-                    <input type="number" class="sport-seance-input" id="sport-serie-reps-${exIndex}-${l.numero}"
+                    <input type="number" class="sport-seance-input" id="sport-serie-reps-${key}"
                            value="${l.log?.reps ?? ex.target_reps ?? ''}" placeholder="reps" ${l.log?.completed ? 'disabled' : ''}>
-                    <span></span>
+                    <div id="sport-serie-chronotext-${key}" class="sport-duree-chrono-texte" style="display:none; grid-column: 2 / 4; align-self:center;">
+                        00:00
+                    </div>
+                    <button class="sport-duree-playstop-btn"
+                            id="sport-serie-playstop-${key}" ${l.log?.completed ? 'disabled' : ''}>▶️</button>
                     <button class="sport-seance-check-btn ${l.log?.completed ? 'active' : ''}"
-                            id="sport-serie-check-${exIndex}-${l.numero}" ${l.log?.completed ? 'disabled' : ''}>${SPORT_ICONE_CHECK}</button>
+                            id="sport-serie-check-${key}" ${l.log?.completed ? 'disabled' : ''}>${SPORT_ICONE_CHECK}</button>
                 </div>
-            `).join('')}
+            `;
+            }).join('')}
         </div>
     `;
 }
@@ -335,6 +342,52 @@ function _sportToggleTimerSerie(exIndex, setNumber, targetSeconds) {
     }
 }
 
+// Chronomètre (temps écoulé, sans objectif) pour les exercices en séries/reps.
+// Contrairement à _sportToggleTimerSerie (décompte vers une durée cible),
+// celui-ci compte simplement le temps depuis le clic sur Play, sans alerte sonore.
+function _sportToggleChronoSerie(exIndex, setNumber) {
+    _sportInitAudio(); // Déverrouille l'audio iOS au clic sur Play
+    const key = `${exIndex}-${setNumber}`;
+    const btnPlayStop  = document.getElementById(`sport-serie-playstop-${key}`);
+    const inputPoids   = document.getElementById(`sport-serie-poids-${key}`);
+    const inputReps    = document.getElementById(`sport-serie-reps-${key}`);
+    const chronoZone   = document.getElementById(`sport-serie-chronotext-${key}`);
+
+    if (_sportSeryTimers[key] && _sportSeryTimers[key].active) {
+        clearInterval(_sportSeryTimers[key].interval);
+        _sportSeryTimers[key].active = false;
+
+        const elapsedSecs = Math.floor((Date.now() - _sportSeryTimers[key].startTime) / 1000);
+        _sportSeryTimers[key].elapsedSecs = elapsedSecs;
+
+        chronoZone.style.display = 'none';
+        inputPoids.style.display = 'block';
+        inputReps.style.display  = 'block';
+
+        btnPlayStop.innerHTML = '▶️';
+        btnPlayStop.classList.remove('actif');
+    } else {
+        const now = Date.now();
+        _sportSeryTimers[key] = {
+            active: true,
+            startTime: now,
+            elapsedSecs: 0,
+            interval: setInterval(() => {
+                const elapsed = Math.floor((Date.now() - _sportSeryTimers[key].startTime) / 1000);
+                chronoZone.textContent = _sportFormatChrono(elapsed);
+            }, 500)
+        };
+
+        inputPoids.style.display = 'none';
+        inputReps.style.display  = 'none';
+        chronoZone.style.display = 'block';
+        chronoZone.textContent   = '00:00';
+
+        btnPlayStop.innerHTML = '⏹️';
+        btnPlayStop.classList.add('actif');
+    }
+}
+
 function _sportRenderFormulaireDuree(ex, logsExistants, exIndex) {
     const lignes = [];
     const nbSets = ex.target_sets || 1;
@@ -408,6 +461,9 @@ function _sportBrancherValidationTousExercices() {
             }
         } else {
             for (let i = 1; i <= nbSets; i++) {
+                document.getElementById(`sport-serie-playstop-${index}-${i}`)?.addEventListener('click', () => {
+                    _sportToggleChronoSerie(index, i);
+                });
                 document.getElementById(`sport-serie-check-${index}-${i}`)?.addEventListener('click', () => _sportValiderLogSerie(ex, i, index));
             }
         }
@@ -416,8 +472,16 @@ function _sportBrancherValidationTousExercices() {
 
 async function _sportValiderLogSerie(ex, setNumber, exIndex) {
     _sportInitAudio(); // Déverrouille l'audio iOS au clic sur Check
-    const poids = parseFloat(document.getElementById(`sport-serie-poids-${exIndex}-${setNumber}`).value) || null;
-    const reps  = parseInt(document.getElementById(`sport-serie-reps-${exIndex}-${setNumber}`).value, 10) || null;
+    const key = `${exIndex}-${setNumber}`;
+
+    // Si le chrono de série tourne encore, on l'arrête pour ne pas perdre le temps mesuré.
+    if (_sportSeryTimers[key] && _sportSeryTimers[key].active) {
+        _sportToggleChronoSerie(exIndex, setNumber);
+    }
+    const dureeSerie = _sportSeryTimers[key]?.elapsedSecs ?? null;
+
+    const poids = parseFloat(document.getElementById(`sport-serie-poids-${key}`).value) || null;
+    const reps  = parseInt(document.getElementById(`sport-serie-reps-${key}`).value, 10) || null;
 
     try {
         const r = await fetch(`/api/sport/sessions/${_sportSeanceActive.id}/logs`, {
@@ -425,7 +489,8 @@ async function _sportValiderLogSerie(ex, setNumber, exIndex) {
             body: JSON.stringify({
                 wger_exercise_id: ex.wger_exercise_id, exercise_name: ex.exercise_name,
                 set_number: setNumber, reps, weight_kg: poids, completed: true,
-                rest_seconds: ex.target_rest_seconds || 60
+                rest_seconds: ex.target_rest_seconds || 60,
+                duration_seconds: dureeSerie
             })
         });
         const d = await r.json();
@@ -446,7 +511,7 @@ async function _sportValiderLogDuree(ex, setNumber, exIndex) {
         _sportToggleTimerSerie(exIndex, setNumber, ex.target_duration_seconds);
     }
 
-    const m = parseInt(document.getElementById(`sport-duree-m-${key}`).value, 10) || 0;
+        const m = parseInt(document.getElementById(`sport-duree-m-${key}`).value, 10) || 0;
     const s = parseInt(document.getElementById(`sport-duree-s-${key}`).value, 10) || 0;
 
     const distance = document.getElementById(`sport-duree-distance-${exIndex}`)?.value;
