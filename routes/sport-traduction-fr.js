@@ -34,7 +34,7 @@ const SPORT_TRADUCTION_FR = {
     'Crunches With Cable'                    : { nom: 'Crunch à la poulie',                 type: 'series' },
     'Crunches With Legs Up'                  : { nom: 'Crunch jambes levées',               type: 'series' },
     'Deadbug'                                : { nom: 'Insecte mort (Deadbug)',             type: 'series' },
-    'Flutter Kicks'                          : { nom: 'Battements de jambes',               type: 'duree'  },
+    'Flutter Kicks'                          : { nom: 'Battements de jambes',               type: 'duree', dynamique: true },
     'Full Sit Outs'                          : { nom: 'Sit outs complets',                  type: 'series' },
     'Hanging Leg Raises'                     : { nom: 'Relevé de jambes suspendu',          type: 'series' },
     'Hollow Hold'                            : { nom: 'Gainage cuillère (Hollow hold)',     type: 'duree'  },
@@ -44,7 +44,7 @@ const SPORT_TRADUCTION_FR = {
     'Negative Crunches'                      : { nom: 'Crunch négatif',                     type: 'series' },
     'Overhand Cable Curl'                    : { nom: 'Curl poulie pronation',              type: 'series' },
     'Roman Chair Crunch'                     : { nom: 'Crunch sur chaise romaine',          type: 'series' },
-    'Scissors'                               : { nom: 'Ciseaux',                            type: 'duree'  },
+    'Scissors'                               : { nom: 'Ciseaux',                            type: 'duree', dynamique: true },
     'Side Bends on Machine'                  : { nom: 'Flexion latérale (machine)',         type: 'series' },
     'Side Crunch'                            : { nom: 'Crunch oblique',                     type: 'series' },
     'Side Dumbbell Trunk Flexion'            : { nom: 'Flexion du tronc (haltère)',         type: 'series' },
@@ -96,7 +96,7 @@ const SPORT_TRADUCTION_FR = {
     'Tuck L-sit'                             : { nom: 'L-sit groupé',                       type: 'duree'  },
     'Windshield Wipers'                      : { nom: 'Essuie-glaces',                      type: 'series' },
     'Reverse crunch'                         : { nom: 'Crunch inversé',                     type: 'series' },
-    'Suitcase Carry'                         : { nom: 'Marche du fermier un bras',          type: 'duree'  },
+    'Suitcase Carry'                         : { nom: 'Marche du fermier un bras',          type: 'duree', dynamique: true },
     'Landmine Rotation'                      : { nom: 'Rotation Landmine',                  type: 'series' },
     'Sphinx'                                 : { nom: 'Posture du Sphinx',                  type: 'duree'  },
     'Clamshell'                              : { nom: 'L\'huître (Clamshell)',              type: 'series' },
@@ -113,7 +113,7 @@ const SPORT_TRADUCTION_FR = {
     '1/2 Kneeling Thoracic Rotation'         : { nom: 'Rotation thoracique genou à terre',  type: 'series' },
     'Posterior Pelvic Tilt'                  : { nom: 'Bascule pelvienne postérieure',      type: 'series' },
 
-    // ── 2. Bras ──
+        // ── 2. Bras ──
     'Axe Hold'                               : { nom: 'Maintien de la hache',                    type: 'duree'  },
     'Barbell Reverse Wrist Curl'             : { nom: 'Curl inversé du poignet (barre)',         type: 'series' },
     'Barbell Triceps Extension'              : { nom: 'Extension triceps (barre)',               type: 'series' },
@@ -198,7 +198,7 @@ const SPORT_TRADUCTION_FR = {
     'Triceps Overhead (Dumbbell)'            : { nom: 'Extension triceps nuque (haltère)',       type: 'series' },
     'Double Kettlebell Clean and Press'      : { nom: 'Épaulé-développé double kettlebell',      type: 'series' },
     'Triceps Dips (Assisted)'                : { nom: 'Dips triceps assistés',                   type: 'series' },
-        'Biceps Curl Machine'                    : { nom: 'Curl biceps (machine)',                   type: 'series' },
+    'Biceps Curl Machine'                    : { nom: 'Curl biceps (machine)',                   type: 'series' },
     'Plate Pinch Hold'                       : { nom: 'Maintien pince disque',                   type: 'duree'  },
     'Seated W Curl'                          : { nom: 'Curl W assis',                            type: 'series' },
     'punches'                                : { nom: 'Coups de poing (shadow boxing)',          type: 'series' },
@@ -289,7 +289,7 @@ const SPORT_TRADUCTION_FR = {
     'Clockwise neck circles'                         : { nom: 'Cercles du cou (sens horaire)',                type: 'series' },
     'Counterclockwise neck circles'                  : { nom: 'Cercles du cou (sens anti-horaire)',           type: 'series' },
     'Neck half circles'                              : { nom: 'Demi-cercles du cou',                          type: 'series' },
-    'Head tilts'                                     : { nom: 'Inclinaisons de la tête',                      type: 'series' },
+        'Head tilts'                                     : { nom: 'Inclinaisons de la tête',                      type: 'series' },
     'Elevated prayer stretch'                        : { nom: 'Étirement du prieur surélevé',                 type: 'duree'  },
     'Quadruped thoracic rotation left'               : { nom: 'Rotation thoracique (gauche)',                 type: 'series' },
     'Quadruped thoracic rotation right'              : { nom: 'Rotation thoracique (droite)',                 type: 'series' },
@@ -386,7 +386,7 @@ const SPORT_TRADUCTION_FR = {
     'Kettlebell sumo high pull'                      : { nom: 'Tirage menton sumo (kettlebell)',              type: 'series' },
     'Single-Arm Lat Pulldown'                        : { nom: 'Tirage vertical un bras',                      type: 'series' },
     'Lat Pulldown Isometric'                         : { nom: 'Tirage vertical isométrique',                  type: 'duree'  },
-        'Plate-Loaded Lat Pulldown'                      : { nom: 'Tirage vertical (machine à disques)',          type: 'series' },
+    'Plate-Loaded Lat Pulldown'                      : { nom: 'Tirage vertical (machine à disques)',          type: 'series' },
 
     // ── 4. Mollets ──
     'Calf Press Using Leg Press Machine'             : { nom: 'Mollets à la presse à cuisses',                type: 'series' },
@@ -409,7 +409,7 @@ const SPORT_TRADUCTION_FR = {
     'Run'                                    : { nom: 'Course à pied',             type: 'duree', cardio: true },
     'Run - Interval Training'                : { nom: 'Course fractionnée',        type: 'duree', cardio: true },
     'Run - Treadmill'                        : { nom: 'Course sur tapis',          type: 'duree', cardio: true },
-    'Skipping - Standard'                    : { nom: 'Corde à sauter',            type: 'duree'  },
+    'Skipping - Standard'                    : { nom: 'Corde à sauter',            type: 'duree', dynamique: true  },
     'Stationary Bike'                        : null, // Masqué
     'Zone 2 Running'                         : { nom: 'Course endurance',          type: 'duree', cardio: true },
     'Suspended crossess'                     : { nom: 'Croisés suspendus',         type: 'series' },
@@ -417,7 +417,7 @@ const SPORT_TRADUCTION_FR = {
     'Elliptical'                             : { nom: 'Vélo elliptique',           type: 'duree', cardio: true },
     'High knees'                             : { nom: 'Montées de genoux',         type: 'series' },
     'Jump rope: basic jumps'                 : null, // Masqué
-    'Bag training'                           : { nom: 'Sac de frappe',             type: 'duree'  },
+    'Bag training'                           : { nom: 'Sac de frappe',             type: 'duree', dynamique: true  },
     'Rowing Machine'                         : { nom: 'Rameur',                    type: 'duree', cardio: true },
     'Walking'                                : { nom: 'Marche',                    type: 'duree', cardio: true },
     '3D lunge warmup'                        : { nom: 'Échauffement fentes',       type: 'series' },
@@ -425,7 +425,7 @@ const SPORT_TRADUCTION_FR = {
     'Talons fesses'                          : { nom: 'Talons fesses',             type: 'series' },
     'Stationary bike cardio'                 : { nom: 'Vélo RPM',                  type: 'duree', cardio: true },
     'Jumping Jack HD'                        : null, // Masqué
-    'Jumping Jacks'                          : { nom: 'Jumping Jack',              type: 'duree'  },
+    'Jumping Jacks'                          : { nom: 'Jumping Jack',              type: 'duree', dynamique: true  },
     'High Knee Skips HD'                     : { nom: 'Montées de genoux',         type: 'series' },
 
     // ── 6. Poitrine ──
@@ -513,7 +513,7 @@ const SPORT_TRADUCTION_FR = {
     'Pistol Squat'                           : { nom: 'Squat pistolet',                 type: 'series' },
     'Squat Jumps'                            : { nom: 'Squats sautés',                  type: 'series' },
     'Squats'                                 : { nom: 'Squat classique',                type: 'series' },
-    'Squats (Приседания)'                    : null, // Masqué
+        'Squats (Приседания)'                    : null, // Masqué
     'Wall Squat (Приседание у стены)'        : null, // Masqué
     'Squat Thrust'                           : { nom: 'Squat thrust',                   type: 'series' },
     'Sumo Squats'                            : { nom: 'Squat sumo',                     type: 'series' },
@@ -590,7 +590,7 @@ const SPORT_TRADUCTION_FR = {
     'Incline OHP DB'                                 : { nom: 'Développé militaire incliné (haltères)',      type: 'series' },
     'Kreis Press DB'                                 : { nom: 'Développé Kreis (haltères)',                  type: 'series' },
     'Shoulder Raise Side and Front DB'               : { nom: 'Élévations frontales et latérales (haltères)',type: 'series' },
-        'Jerk OL'                                        : { nom: 'Épaulé-jeté',                                 type: 'series' },
+    'Jerk OL'                                        : { nom: 'Épaulé-jeté',                                 type: 'series' },
     'Clean and Jerk OL'                              : { nom: 'Épaulé-jeté olympique',                       type: 'series' },
     'Cable Shrug-In'                                 : { nom: 'Shrug vers l\'intérieur (poulie)',            type: 'series' },
     'Dumbbell Bradford press'                        : { nom: 'Développé Bradford (haltères)',               type: 'series' },
