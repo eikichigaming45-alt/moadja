@@ -30,9 +30,6 @@ const SPORT_ICONE_TROPHEE = `
     </svg>
 `;
 
-// Petit logo dumbbell (14x14) dédié à la marque "MoaDja" en pied de carte —
-// distinct de SPORT_ICONE_DUMBBELL (28x28, utilisé ailleurs dans sport.js)
-// pour ne pas dépendre d'une résolution CSS forcée sur un SVG déjà dimensionné.
 const SPORT_ICONE_LOGO_MINI = `
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <line x1="2.5"  y1="7" x2="2.5"  y2="17"></line>
@@ -44,8 +41,6 @@ const SPORT_ICONE_LOGO_MINI = `
 `;
 
 const SPORT_WIDGET_MAX_EXERCICES_APERCU = 3;
-
-// ── AUTH ──
 
 function _sportToken() {
     try { return JSON.parse(localStorage.getItem('moadja_user'))?.token || ''; }
@@ -59,7 +54,6 @@ function _sportAuthHeaders() {
     };
 }
 
-// ── Échappement HTML (anti-XSS) ──
 function _sportEchapper(str) {
     return (str || '')
         .replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -67,7 +61,6 @@ function _sportEchapper(str) {
         .replace(/'/g, '&#39;');
 }
 
-// ── Formatage date courte type "13 sept." ──
 function _sportFormatDateCourte(dateIso) {
     const MOIS_ABREGES = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
     const d = new Date(dateIso);
@@ -75,7 +68,6 @@ function _sportFormatDateCourte(dateIso) {
     return `${d.getDate()} ${MOIS_ABREGES[d.getMonth()]}`;
 }
 
-// ── Formatage durée longue type "3h12", "16min05", "9s" ──
 function _sportFormatDureeLongue(secondes) {
     const h = Math.floor(secondes / 3600);
     const m = Math.floor((secondes % 3600) / 60);
@@ -85,7 +77,6 @@ function _sportFormatDureeLongue(secondes) {
     return `${s}s`;
 }
 
-// ── Phrases d'encouragement (si aucune séance) ──
 const SPORT_PHRASES_ENCOURAGEMENT = [
     "Chaque séance compte, même la plus courte. Lancez-vous !",
     "Votre progression commence par un premier pas.",
@@ -94,17 +85,8 @@ const SPORT_PHRASES_ENCOURAGEMENT = [
     "Votre corps vous remerciera pour chaque effort, même petit."
 ];
 
-// Cache de la séance actuellement affichée dans le widget colonne droite.
-// Permet, au clic, de transmettre CETTE séance précise à la modale
-// sport-stats sans refetch (voir _sportWidgetOuvrirStats / _ouvrirModaleSportStats).
 let _sportWidgetDerniereSeanceCache = null;
 
-// ── Widget Sport Stats (colonne droite, global) ──
-// Aucune séance : phrase d'encouragement aléatoire. Sinon : carte
-// compacte façon Hevy (titre, Durée/Volume/Séries en ligne, badge
-// trophée si records, liste consolidée d'exercices tronquée,
-// pied de carte "MoaDja"). Toute la carte de récap est cliquable
-// et ouvre la modal de stats détaillées.
 async function chargerSportStatsWidget() {
     const zone = document.getElementById('sport-stats-widget');
     if (!zone) return;
@@ -143,28 +125,34 @@ function _sportRenderWidgetPhraseAleatoire(zone) {
     `;
 }
 
-// Ouverture de la modale de stats depuis le widget colonne droite : on
-// transmet la séance actuellement en cache (celle affichée dans la carte)
-// via la variable partagée, lue en priorité par _ouvrirModaleSportStats.
 function _sportWidgetOuvrirStats() {
     if (!_sportWidgetDerniereSeanceCache) return;
     window._sportSeanceStatsCourante = _sportWidgetDerniereSeanceCache;
     openModal('sport-stats');
 }
 
-// Carte compacte de récapitulatif, inspirée du format de partage Hevy :
-// titre + date, 3 stats en ligne (Durée / Volume / Séries), badge trophée
-// si records battus, liste d'exercices "Nx Nom", pied de carte "MoaDja".
+// Ligne d'exercice : "Nx Nom" + durée entre parenthèses si l'exercice
+// en comporte une (Marche, Gainage, Jumping Jack, etc.).
+function _sportRenderLigneExercice(e) {
+    const duree = e.duree_totale_secondes > 0
+        ? ` <span class="sport-widget-exercice-duree">(${_sportFormatDureeLongue(e.duree_totale_secondes)})</span>`
+        : '';
+    return `
+        <div class="sport-widget-exercice-ligne">
+            <span class="sport-widget-exercice-nb">${e.nb_series}x</span>
+            <span class="sport-widget-exercice-nom">${_sportEchapper(e.exercise_name)}</span>${duree}
+        </div>
+    `;
+}
+
 function _sportRenderWidgetDerniereSeance(zone, seance) {
-    // Mise en cache : la carte cliquée doit ouvrir la modale avec CETTE
-    // séance précise (cf. _sportWidgetOuvrirStats), sans nouvel appel réseau.
     _sportWidgetDerniereSeanceCache = seance;
 
-    const dateTexte  = _sportFormatDateCourte(seance.date_end || seance.date_start);
-    const nbRecords  = Number.isInteger(seance.nb_records) ? seance.nb_records : 0;
-    const exercices  = seance.exercices || [];
-    const apercu     = exercices.slice(0, SPORT_WIDGET_MAX_EXERCICES_APERCU);
-    const reste      = exercices.length - apercu.length;
+    const dateTexte   = _sportFormatDateCourte(seance.date_end || seance.date_start);
+    const nbRecords   = Number.isInteger(seance.nb_records) ? seance.nb_records : 0;
+    const exercices   = seance.exercices || [];
+    const apercu      = exercices.slice(0, SPORT_WIDGET_MAX_EXERCICES_APERCU);
+    const reste       = exercices.length - apercu.length;
     const totalSeries = exercices.reduce((acc, e) => acc + (Number(e.nb_series) || 0), 0);
 
     zone.innerHTML = `
@@ -177,7 +165,7 @@ function _sportRenderWidgetDerniereSeance(zone, seance) {
 
         <div class="sport-widget-clickable" onclick="_sportWidgetOuvrirStats()" role="button" tabindex="0">
 
-                        <div class="sport-widget-recap-title-row">
+            <div class="sport-widget-recap-title-row">
                 <span class="sport-widget-recap-name">${_sportEchapper(seance.workout_name)}</span>
                 <span class="sport-widget-recap-date">${dateTexte}</span>
             </div>
@@ -205,12 +193,7 @@ function _sportRenderWidgetDerniereSeance(zone, seance) {
 
             ${apercu.length ? `
                 <div class="sport-widget-exercices-liste">
-                    ${apercu.map(e => `
-                        <div class="sport-widget-exercice-ligne">
-                            <span class="sport-widget-exercice-nb">${e.nb_series}x</span>
-                            <span class="sport-widget-exercice-nom">${_sportEchapper(e.exercise_name)}</span>
-                        </div>
-                    `).join('')}
+                    ${apercu.map(_sportRenderLigneExercice).join('')}
                     ${reste > 0 ? `<div class="sport-widget-exercice-reste">…et ${reste} autre${reste > 1 ? 's' : ''}</div>` : ''}
                 </div>
             ` : ''}
@@ -223,19 +206,12 @@ function _sportRenderWidgetDerniereSeance(zone, seance) {
     `;
 }
 
-// ── Modale Statistiques Sport (détail complet) ──
-// Appelée par modal.js via openModal('sport-stats'). Priorité à la séance
-// explicitement sélectionnée (clic sur une carte du dashboard via
-// _sportOuvrirStatsSeance, ou clic sur la carte du widget droit via
-// _sportWidgetOuvrirStats), transmise via window._sportSeanceStatsCourante.
-// Si absente (ouverture directe sans clic sur une carte précise), on retombe
-// sur l'ancien comportement : fetch de la dernière séance via l'API.
 async function _ouvrirModaleSportStats() {
     const zone = document.getElementById('modal-body');
     if (!zone) return;
 
     const seanceCourante = window._sportSeanceStatsCourante;
-    window._sportSeanceStatsCourante = null; // consommée : on nettoie pour éviter un résidu obsolète
+    window._sportSeanceStatsCourante = null;
 
     if (seanceCourante) {
         _sportRenderModaleStatsDepuisSeance(zone, seanceCourante);
@@ -258,9 +234,6 @@ async function _ouvrirModaleSportStats() {
     }
 }
 
-// Construction du HTML de la modale à partir d'un objet séance donné
-// (factorisé pour être utilisé aussi bien avec une séance transmise par clic
-// qu'avec la dernière séance récupérée par défaut via l'API).
 function _sportRenderModaleStatsDepuisSeance(zone, s) {
     const dateTexte   = _sportFormatDateCourte(s.date_end || s.date_start);
     const exercices   = s.exercices || [];
@@ -296,12 +269,7 @@ function _sportRenderModaleStatsDepuisSeance(zone, s) {
             </div>
 
             <div class="sport-widget-exercices-liste">
-                ${exercices.map(e => `
-                    <div class="sport-widget-exercice-ligne">
-                        <span class="sport-widget-exercice-nb">${e.nb_series}x</span>
-                        <span class="sport-widget-exercice-nom">${_sportEchapper(e.exercise_name)}</span>
-                    </div>
-                `).join('')}
+                ${exercices.map(_sportRenderLigneExercice).join('')}
             </div>
         </div>
     `;
