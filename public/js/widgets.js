@@ -1,16 +1,12 @@
-// ============================================================
 // public/js/widgets.js
 // Grille par onglet, drag & drop souris + tactile, opt-out widgets.
 // Dépend de : app.js (WIDGETS_DEF, dragSrc, dragActif, longPressTimer)
-// ============================================================
 
 let gridConstruit = false;
 
 function resetGrid() {
     gridConstruit = false;
 }
-
-// ── Définition par onglet ─────────────────────────────────────────────
 
 const WIDGETS_PAR_ONGLET = {
     quotidien : ['agenda', 'taches', 'priere', 'islam', 'anniversaires', 'social'],
@@ -27,8 +23,6 @@ function getOngletWidget(id) {
     return null;
 }
 
-// ── Tracking ouverture ────────────────────────────────────────────────
-
 function _trackerOuverture(widgetId) {
     const user = getUser();
     if (!user?.token) return;
@@ -41,8 +35,6 @@ function _trackerOuverture(widgetId) {
         body: JSON.stringify({ widget: widgetId })
     }).catch(() => {});
 }
-
-// ── Build principal ───────────────────────────────────────────────────
 
 async function buildGrid() {
     if (gridConstruit) return;
@@ -96,7 +88,6 @@ async function buildGrid() {
 
     _buildAccueilMeteo();
 
-    if (typeof chargerProfilHeader        === 'function') chargerProfilHeader();
     if (typeof Agenda                     !== 'undefined') Agenda.charger();
     if (typeof Cycle                      !== 'undefined') Cycle.charger();
     if (typeof chargerWidgetSocial        === 'function')  chargerWidgetSocial();
@@ -145,8 +136,6 @@ async function buildTabGrid(onglet, allDefs, ordre, widgetsCaches, user) {
     defs.forEach(def => grid.appendChild(creerWidget(def, gridId)));
 }
 
-// ── Météo onglet accueil ──────────────────────────────────────────────
-
 function _buildAccueilMeteo() {
     const el = document.getElementById('accueil-meteo');
     if (!el) return;
@@ -157,8 +146,6 @@ function _buildAccueilMeteo() {
     `;
     if (typeof chargerMeteoAuto === 'function') chargerMeteoAuto();
 }
-
-// ── Créer widget ──────────────────────────────────────────────────────
 
 function creerWidget(def, gridId) {
     const div        = document.createElement('div');
@@ -225,8 +212,6 @@ function creerWidget(def, gridId) {
     return div;
 }
 
-// ── Drag & drop souris ────────────────────────────────────────────────
-
 function onDragStart(e) {
     dragSrc = this;
     this.classList.add('dragging');
@@ -262,8 +247,6 @@ function onDragEnd() {
     this.classList.remove('dragging');
     document.querySelectorAll('.widget').forEach(w => w.classList.remove('drag-over'));
 }
-
-// ── Drag & drop tactile ───────────────────────────────────────────────
 
 function ajouterTouchDrag(el) {
     let startX, startY, clone, origRect;
@@ -337,8 +320,6 @@ function ajouterTouchDrag(el) {
     }, { passive: true });
 }
 
-// ── Sauvegarde ordre ──────────────────────────────────────────────────
-
 async function sauvegarderOrdre() {
     const user  = getUser();
     const ordre = [];
@@ -359,8 +340,6 @@ async function sauvegarderOrdre() {
         });
     } catch { /* silencieux */ }
 }
-
-// ── Appliquer widgets visibles ────────────────────────────────────────
 
 function appliquerWidgetsVisibles(widgetsCaches) {
     const user              = getUser();
