@@ -22,6 +22,54 @@ Object.values(SPORT_TRADUCTION_FR).forEach(ex => {
     if (ex.dynamique === true) SPORT_NOMS_DYNAMIQUE.add(ex.nom);
 });
 
+// ── DASHBOARD & STATS ──
+
+router.get('/dashboard-stats', auth, async (req, res) => {
+    const moi = req.user.id;
+    try {
+        const { rows: sessions } = await pool.query(
+            `SELECT s.id, s.date_start, s.date_end, s.status, w.name AS workout_name
+             FROM sport_sessions s
+             LEFT JOIN sport_workouts w ON s.workout_id = w.id
+             WHERE s.user_id = \$1 AND s.status = 'completed'
+             ORDER BY s.date_start DESC
+             LIMIT 5`,
+            [moi]
+        );
+
+        const seances = [];
+        for (let s of sessions) {
+            // Utilise ta fonction existante pour récupérer durée, volume, et calories
+            const stats = await _sportCalculerStatsSession(s.id, moi);
+
+            const { rows: logs } = await pool.query(
+                `SELECT exercise_name, COUNT(*) as nb_series
+                 FROM sport_session_logs
+                 WHERE session_id = \$1
+                 GROUP BY exercise_name
+                 ORDER BY MIN(id) ASC`,
+                [s.id]
+            );
+
+            seances.push({
+                id: s.id,
+                workout_name: s.workout_name || 'Séance Libre',
+                date_start: s.date_start,
+                date_end: s.date_end,
+                dureeSecondes: stats ? stats.duree_secondes : 0,
+                volumeKg: stats ? stats.volume_kg : 0,
+                nb_records: 0,
+                calories: stats ? stats.calories : 0,
+                exercices: logs
+            });
+        }
+        res.json({ success: true, dernieres_seances: seances });
+    } catch (err) {
+        console.error('[SPORT] GET /dashboard-stats :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 // ── ROUTINES : sport_workouts ──
 
 router.get('/workouts', auth, async (req, res) => {
@@ -638,12 +686,12 @@ router.get('/wger/search', auth, async (req, res) => {
     try {
         const results = [];
         for (const [nomEn, data] of Object.entries(SPORT_TRADUCTION_FR)) {
-            if (!data) continue; // Masqué
+            if (!data) continue;
             const matchEn = nomEn.toLowerCase().includes(query);
             const matchFr = data.nom.toLowerCase().includes(query);
             if (matchEn || matchFr) {
                 results.push({
-                    id: nomEn, // On utilise le nom anglais comme ID unique pour le mapping Wger
+                    id: nomEn, 
                     name: data.nom,
                     original_name: nomEn,
                     type: data.type,
@@ -652,7 +700,7 @@ router.get('/wger/search', auth, async (req, res) => {
                 });
             }
         }
-                res.json({ success: true, results });
+        res.json({ success: true, results });
     } catch (err) {
         console.error('[SPORT] GET /wger/search :', err.message);
         res.status(500).json({ success: false, message: 'Erreur lors de la recherche des exercices.' });
