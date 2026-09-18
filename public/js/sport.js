@@ -55,7 +55,7 @@ const SPORT_ICONE_POIGNEE = `
 const SPORT_MAX_EXERCICES_APERCU = 5;
 
 // Exercices "duree" pour lesquels les champs Distance/Vitesse/Inclinaison
-// ont un sens (vrai cardio). Doit correspondre aux entrées `cardio: true`
+// ont un sens (vrai cardio). Doit correspondre aux entrées \`cardio: true\`
 // de routes/sport-traduction-fr.js (noms FR traduits, tels que stockés en base).
 const SPORT_NOMS_EXERCICES_CARDIO = new Set([
     'Cyclisme', 'Jogging', 'Course à pied', 'Course fractionnée', 'Course sur tapis',
@@ -227,6 +227,7 @@ function _sportRenderCarteSeanceRecap(s) {
     const apercu       = exercices.slice(0, SPORT_MAX_EXERCICES_APERCU);
     const reste        = exercices.length - apercu.length;
     const nbRecords    = Number.isInteger(s.nb_records) ? s.nb_records : 0;
+    const calories     = s.calories || 0; // Ajout des calories
 
     return `
         <div class="sport-card sport-seance-carte-recap sport-seance-carte-recap-clickable" id="sport-seance-carte-${s.id}" onclick="_sportOuvrirStatsSeance(${s.id})" role="button" tabindex="0">
@@ -253,6 +254,10 @@ function _sportRenderCarteSeanceRecap(s) {
                     <span class="sport-seance-recap-stat-val">
                         ${nbRecords}${nbRecords > 0 ? ` ${SPORT_ICONE_TROPHEE}` : ''}
                     </span>
+                </div>
+                <div class="sport-seance-recap-stat">
+                    <span class="sport-seance-recap-stat-label">Calories</span>
+                    <span class="sport-seance-recap-stat-val" style="color: #ff7675;">${calories} kcal</span>
                 </div>
             </div>
 
