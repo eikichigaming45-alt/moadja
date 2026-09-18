@@ -409,7 +409,7 @@ router.put('/exercises/:exerciseId', auth, async (req, res) => {
                  AND w.user_id = \$9
              RETURNING e.*`,
             [
-                exercise_name?.trim() || null,
+                                exercise_name?.trim() || null,
                 Number.isInteger(order_in_day) ? order_in_day : null,
                 Number.isInteger(target_sets)  ? target_sets  : null,
                 Number.isInteger(target_reps)  ? target_reps  : null,
@@ -691,7 +691,7 @@ router.get('/wger/search', auth, async (req, res) => {
             const matchFr = data.nom.toLowerCase().includes(query);
             if (matchEn || matchFr) {
                 results.push({
-                    id: nomEn, 
+                    id: nomEn,
                     name: data.nom,
                     original_name: nomEn,
                     type: data.type,
@@ -741,14 +741,15 @@ async function _sportCalculerStatsSession(sessionId, userId) {
     if (!sessionRows.length) return null;
     const session = sessionRows[0];
 
-    // 2. Récupérer le poids de l'utilisateur depuis son profil de santé (par défaut 70kg si non renseigné)
+    // 2. Récupérer le poids de l'utilisateur depuis la table profiles (colonne poids)
+    //    Défaut 70kg si non renseigné.
     let userWeightKg = 70;
-    const { rows: healthRows } = await pool.query(
-        `SELECT weight_kg FROM health_profiles WHERE user_id = \$1`,
+    const { rows: profRows } = await pool.query(
+        `SELECT poids FROM profiles WHERE user_id = \$1`,
         [userId]
     );
-    if (healthRows.length > 0 && healthRows[0].weight_kg) {
-        userWeightKg = parseFloat(healthRows[0].weight_kg);
+    if (profRows.length > 0 && profRows[0].poids) {
+        userWeightKg = parseFloat(profRows[0].poids);
     }
 
     // 3. Récupérer tous les logs de la séance
