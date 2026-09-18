@@ -195,12 +195,6 @@ function _sportRenderDetailRoutine(workout, jour) {
     document.querySelector('.sport-routine-btn-suppr-routine').addEventListener('click', () => {
         _sportConfirmerSuppressionRoutineDetail(workout.id);
     });
-    zone.querySelectorAll('.sport-routine-exercice-btn-del').forEach(btn => {
-        btn.addEventListener('click', () => {
-            _sportConfirmerSuppressionExercice(parseInt(btn.dataset.exerciceId, 10));
-        });
-    });
-
     zone.querySelectorAll('.sport-routine-exercice-btn-edit').forEach(btn => {
         btn.addEventListener('click', () => {
             _sportEditerExercice(
