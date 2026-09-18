@@ -957,7 +957,7 @@ function _nettoyerNomBase(nom) {
 // Correction appliquée : $ et $ rétablies (parenthèses littérales)
 // au lieu des ancres $ précédemment présentes par erreur.
 function _nettoyerParenthesesNonLatines(nom) {
-    return nom.replace(/\s*$([^()]*)$\s*$/g, (match, interieur) => {
+    return nom.replace(/\s*\x28([^()]*)\x29\s*$/g, (match, interieur) => {
         return /[a-zA-Z]/.test(interieur) ? match : '';
     }).trim();
 }
