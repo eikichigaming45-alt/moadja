@@ -1,5 +1,20 @@
 ## MoaDja
 
+## v1.92.68 — 20 septembre 2026
+- Amélioration du partage des posts sur les réseaux sociaux : l'image s'affiche désormais correctement sans être étirée sur la page web, et l'aperçu pour WhatsApp/Facebook a été optimisé (format et dimensions).
+
+---
+
+## v1.92.67 — 20 septembre 2026
+- Amélioration technique invisible : création automatique d'une seconde image (format JPEG) lors de la publication d'un post, spécifiquement pour garantir l'affichage de l'aperçu lors des partages.
+
+---
+
+## v1.92.66 — 20 septembre 2026
+- Retouche visuelle du bouton audio dans la Prière du jour : le bouton a maintenant un fond transparent avec un contour ambre pour mieux s'intégrer au design.
+
+---
+
 ## v1.92.65 — 20 septembre 2026
 - Correction d'un petit défaut visuel : le logo affichait un flash au chargement de la page ou en rafraîchissant (F5). C'est maintenant corrigé.
 
