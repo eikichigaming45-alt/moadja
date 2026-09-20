@@ -1,9 +1,18 @@
-# MoaDja
+## MoaDja
+
+## v1.92.61 — 20 septembre 2026
+- La carte « Prêt pour une nouvelle séance ? » a été réorganisée pour un affichage plus compact et harmonieux.
+
+## v1.92.60 — 20 septembre 2026
+- Le nombre de calories brûlées est désormais affiché sur vos séances, dans le tableau de bord comme dans le widget Sport.
+- Correction d'un bug qui pouvait bloquer indéfiniment une reprise de séance dans certains cas particuliers.
+- Le bouton de suppression d'une séance ne chevauche plus la date affichée sur la carte.
 
 ## v1.92.59 — 20 septembre 2026
 - Vous pouvez maintenant changer l'ordre de vos routines dans la liste en les faisant glisser de haut en bas (glisser-déposer). L'ordre est sauvegardé sur tous vos appareils.
 
 ---
+
 
 ## v1.92.58 — 20 septembre 2026
 - Amélioration visuelle de la fenêtre des statistiques de sport (qui s'ouvre au clic sur une séance) : la liste des exercices est plus aérée, mieux espacée et mise en valeur dans un encadré.
