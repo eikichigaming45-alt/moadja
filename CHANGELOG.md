@@ -1,4 +1,35 @@
-## MoaDja
+# MoaDja
+
+## v1.92.59 — 20 septembre 2026
+- Vous pouvez maintenant changer l'ordre de vos routines dans la liste en les faisant glisser de haut en bas (glisser-déposer). L'ordre est sauvegardé sur tous vos appareils.
+
+---
+
+## v1.92.58 — 20 septembre 2026
+- Amélioration visuelle de la fenêtre des statistiques de sport (qui s'ouvre au clic sur une séance) : la liste des exercices est plus aérée, mieux espacée et mise en valeur dans un encadré.
+
+---
+
+## v1.92.57 — 20 septembre 2026
+- Nouveau design pour le détail des exercices terminés : affichage sur une ligne de texte plus compacte et colorée, plus agréable à lire.
+- Le petit encadré Sport sur le côté droit de l'écran (sur ordinateur) a été modifié pour être visuellement identique à la carte principale au centre.
+
+---
+
+## v1.92.56 — 20 septembre 2026
+- Simplification de l'affichage : si toutes vos séries pour un même exercice sont strictement identiques (par exemple, 3 séries de 10 répétitions), elles sont maintenant regroupées en un seul texte pour ne pas surcharger l'écran.
+
+---
+
+## v1.92.55 — 20 septembre 2026
+- Le résumé de vos séances terminées affiche désormais le vrai détail pour chaque série effectuée (le temps, les répétitions, le poids, etc.), et non plus un simple aperçu global.
+
+---
+
+## v1.92.54 — 20 septembre 2026
+- Correction de l'ordre d'affichage des exercices dans le résumé d'une séance terminée (ils s'affichent bien dans l'ordre où ils ont été faits).
+
+---
 
 ## v1.92.53 — 20 septembre 2026
 - Dans "Mes Routines", chaque routine affiche désormais deux icônes (crayon / corbeille) permettant de la renommer ou de la supprimer directement depuis la liste.

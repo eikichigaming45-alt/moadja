@@ -1,4 +1,6 @@
+// ============================================================
 // public/js/sport.js
+// ============================================================
 // Module Sport : socle commun — icônes/constantes partagées entre les
 // sous-modules, Dashboard, Wake Lock, cartes de récapitulatif de séance,
 // changement de section, modales génériques (confirmation/choix/info).
@@ -55,7 +57,7 @@ const SPORT_ICONE_POIGNEE = `
 const SPORT_MAX_EXERCICES_APERCU = 5;
 
 // Exercices "duree" pour lesquels les champs Distance/Vitesse/Inclinaison
-// ont un sens (vrai cardio). Doit correspondre aux entrées `cardio: true`
+// ont un sens (vrai cardio). Doit correspondre aux entrées \`cardio: true\`
 // de routes/sport-traduction-fr.js (noms FR traduits, tels que stockés en base).
 const SPORT_NOMS_EXERCICES_CARDIO = new Set([
     'Cyclisme', 'Jogging', 'Course à pied', 'Course fractionnée', 'Course sur tapis',
@@ -158,10 +160,6 @@ async function _sportChargerDashboardStats() {
 }
 
 // ── Ouverture de la modale de stats pour UNE séance précise du dashboard ──
-// Recherche la séance dans le cache local (par id) et la transmet à la
-// modale globale sport-stats (définie dans sport-widget.js) via une variable
-// partagée, afin d'éviter un nouvel appel réseau et de garantir que la bonne
-// séance (celle cliquée, matchée par date/id) est bien affichée.
 function _sportOuvrirStatsSeance(sessionId) {
     const seance = _sportDashboardSeancesCache.find(s => s.id === sessionId);
     if (!seance) {
@@ -176,7 +174,7 @@ function _sportOuvrirStatsSeance(sessionId) {
 function _sportConfirmerSuppressionSeanceDashboard(sessionId) {
     _sportOuvrirConfirmationSuppression(async () => {
         try {
-            await fetch(`/api/sport/sessions/${sessionId}`, { method: 'DELETE', headers: _sportAuthHeaders() });
+            await fetch(\`/api/sport/sessions/\${sessionId}\`, { method: 'DELETE', headers: _sportAuthHeaders() });
             _sportChargerDashboardStats();
             if (typeof chargerSportStatsWidget === 'function') chargerSportStatsWidget();
         } catch (err) {
@@ -218,53 +216,18 @@ function _sportRenderDashboard(dernieresSeances) {
     `;
 }
 
-// ── Carte de récapitulatif de séance ──
-// Cliquable (hors bouton suppr) : ouvre la modale de stats détaillées pour
-// CETTE séance précise, identifiée par son id (cf. _sportOuvrirStatsSeance).
-// Point #3 : chaque exercice affiche désormais son détail réel par série
-// (via _sportRenderBlocExerciceDetail, défini dans sport-widget.js), et non
-// plus une simple ligne "Nx Nom".
+// ── Carte de récapitulatif de séance (Dashboard) ──
+// Strictement ISO avec le widget colonne droite (utilisation de _sportRenderSeanceIso),
+// mais avec ajout du bouton supprimer en position absolue haut/droite.
 function _sportRenderCarteSeanceRecap(s) {
-    const dateTexte    = _sportFormatDateCourte(s.date_end || s.date_start);
-    const exercices    = s.exercices || [];
-    const apercu       = exercices.slice(0, SPORT_MAX_EXERCICES_APERCU);
-    const reste        = exercices.length - apercu.length;
-    const nbRecords    = Number.isInteger(s.nb_records) ? s.nb_records : 0;
-
+    const isoHtml = _sportRenderSeanceIso(s, 'dashboard');
+    
     return `
         <div class="sport-card sport-seance-carte-recap sport-seance-carte-recap-clickable" id="sport-seance-carte-${s.id}" onclick="_sportOuvrirStatsSeance(${s.id})" role="button" tabindex="0">
-            <div class="sport-seance-recap-header">
-                <span class="sport-seance-recap-icone">${SPORT_ICONE_DUMBBELL}</span>
-                <div class="sport-seance-recap-header-info">
-                    <div class="sport-seance-recap-titre">${_sportEchapper(s.workout_name)}</div>
-                    <div class="sport-seance-recap-date">${dateTexte}</div>
-                </div>
-                <button class="sport-seance-recap-btn-suppr" data-session-id="${s.id}" title="Supprimer la séance">${SPORT_ICONE_POUBELLE}</button>
-            </div>
-
-            <div class="sport-seance-recap-stats">
-                <div class="sport-seance-recap-stat">
-                    <span class="sport-seance-recap-stat-label">Durée</span>
-                    <span class="sport-seance-recap-stat-val">${_sportFormatDureeLongue(s.dureeSecondes)}</span>
-                </div>
-                <div class="sport-seance-recap-stat">
-                    <span class="sport-seance-recap-stat-label">Volume</span>
-                    <span class="sport-seance-recap-stat-val">${s.volumeKg} kg</span>
-                </div>
-                <div class="sport-seance-recap-stat">
-                    <span class="sport-seance-recap-stat-label">Records</span>
-                    <span class="sport-seance-recap-stat-val">
-                        ${nbRecords}${nbRecords > 0 ? ` ${SPORT_ICONE_TROPHEE}` : ''}
-                    </span>
-                </div>
-            </div>
-
-            ${apercu.length ? `
-                <div class="sport-seance-recap-liste">
-                    ${apercu.map(e => _sportRenderBlocExerciceDetail(e)).join('')}
-                    ${reste > 0 ? `<div class="sport-seance-recap-reste">…et ${reste} autre${reste > 1 ? 's' : ''} exercice${reste > 1 ? 's' : ''}</div>` : ''}
-                </div>
-            ` : ''}
+            <button class="sport-seance-recap-btn-suppr" data-session-id="${s.id}" title="Supprimer la séance" style="position: absolute; top: 16px; right: 16px; z-index: 10;">
+                ${SPORT_ICONE_POUBELLE}
+            </button>
+            ${isoHtml}
         </div>
     `;
 }
@@ -278,7 +241,7 @@ function _sportSwitchSection(section) {
     });
     document.querySelectorAll('.sport-section').forEach(s => { s.style.display = 'none'; });
 
-    const cible = document.getElementById(`sport-section-${section}`);
+    const cible = document.getElementById(\`sport-section-\${section}\`);
     if (cible) cible.style.display = 'block';
 
     if (section === 'routines') _sportChargerListeRoutines();

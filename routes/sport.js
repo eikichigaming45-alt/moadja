@@ -1,3 +1,6 @@
+// ============================================================
+// routes/sport.js
+// ============================================================
 // Module Sport : CRUD routines/jours/exercices/séances/logs + mensurations.
 // Toutes les routes scopées par user. Catalogue WGER en lecture seule
 // (traduction FR complète via SPORT_TRADUCTION_FR, toutes catégories,
@@ -584,8 +587,23 @@ router.delete('/sessions/:id', auth, async (req, res) => {
     }
 });
 
-// ── DASHBOARD & WIDGET : stats agrégées ──
-function _sportCalculerStatsSession(session, logs, poidsUtilisateurKg) {
+// ── DASHBOARD & WIDGET : stats agrégées + Mifflin-St Jeor ──
+
+// Calcule l'âge à partir d'une date de naissance
+function _calculerAge(dateNaissance) {
+    if (!dateNaissance) return null;
+    const n = new Date(dateNaissance);
+    if (isNaN(n.getTime())) return null;
+    const aujourdhui = new Date();
+    let age = aujourdhui.getFullYear() - n.getFullYear();
+    const pasEncoreAnniversaire =
+        aujourdhui.getMonth() < n.getMonth() ||
+        (aujourdhui.getMonth() === n.getMonth() && aujourdhui.getDate() < n.getDate());
+    if (pasEncoreAnniversaire) age--;
+    return age;
+}
+
+function _sportCalculerStatsSession(session, logs, profil) {
     const logsValides = logs.filter(l => l.completed);
 
     const dureeSecondes = session.date_end
@@ -608,17 +626,32 @@ function _sportCalculerStatsSession(session, logs, poidsUtilisateurKg) {
     });
 
     const totalSeries = nbCardio + nbMusculation;
-    let calories = 0;
-    if (totalSeries > 0 && poidsUtilisateurKg && dureeSecondes > 0) {
-        const metPondere = ((nbMusculation * SPORT_MET_MUSCULATION) + (nbCardio * SPORT_MET_CARDIO)) / totalSeries;
-        calories = Math.round(metPondere * poidsUtilisateurKg * (dureeSecondes / 3600));
+    let calories = null;
+    let profil_incomplet = false;
+
+    if (totalSeries > 0 && dureeSecondes > 0) {
+        const poids = profil?.poids != null ? parseFloat(profil.poids) : null;
+        const taille = profil?.taille != null ? parseFloat(profil.taille) : null;
+        const age = _calculerAge(profil?.date_naissance);
+        const sexe = profil?.sexe ? profil.sexe.toLowerCase() : null;
+
+        if (poids && taille && age && (sexe === 'homme' || sexe === 'femme')) {
+            const s = (sexe === 'homme') ? 5 : -161;
+            const bmr = (10 * poids) + (6.25 * taille) - (5 * age) + s;
+            const metPondere = ((nbMusculation * SPORT_MET_MUSCULATION) + (nbCardio * SPORT_MET_CARDIO)) / totalSeries;
+            
+            calories = Math.round(metPondere * (bmr / 24) * (dureeSecondes / 3600));
+        } else {
+            profil_incomplet = true;
+        }
     }
 
     return {
         dureeSecondes,
         volumeKg: Math.round(volumeKg * 10) / 10,
         nbSeries: logsValides.length,
-        calories
+        calories,
+        profil_incomplet
     };
 }
 
@@ -701,9 +734,9 @@ router.get('/dashboard-stats', auth, async (req, res) => {
     const moi = req.user.id;
     try {
         const { rows: profilRows } = await pool.query(`
-            SELECT poids FROM profiles WHERE user_id = \$1
+            SELECT poids, taille, sexe, date_naissance FROM profiles WHERE user_id = \$1
         `, [moi]);
-        const poidsUtilisateurKg = profilRows[0]?.poids != null ? parseFloat(profilRows[0].poids) : null;
+        const profil = profilRows[0] || {};
 
         const { rows: sessions } = await pool.query(`
             SELECT s.id, s.workout_id, s.date_start, s.date_end, w.name AS workout_name
@@ -725,7 +758,7 @@ router.get('/dashboard-stats', auth, async (req, res) => {
 
         const dernieresSeances = sessions.map(s => {
             const logsSession = tousLogs.filter(l => l.session_id === s.id);
-            const stats = _sportCalculerStatsSession(s, logsSession, poidsUtilisateurKg);
+            const stats = _sportCalculerStatsSession(s, logsSession, profil);
             const exercicesConsolides = _sportConsoliderExercicesSession(logsSession);
             return {
                 id: s.id,
@@ -1067,7 +1100,7 @@ router.get('/wger/exercises', auth, async (req, res) => {
                 let nom            = nomOriginal;
                 let typeSuivi      = null;
 
-                const cle = _nettoyerNomBase(nomOriginal);
+                                const cle = _nettoyerNomBase(nomOriginal);
                 if (Object.prototype.hasOwnProperty.call(SPORT_TRADUCTION_FR, cle)) {
                     const mapping = SPORT_TRADUCTION_FR[cle];
                     if (mapping === null) continue;

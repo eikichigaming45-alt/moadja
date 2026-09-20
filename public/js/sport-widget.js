@@ -1,4 +1,6 @@
+// ============================================================
 // public/js/sport-widget.js
+// ============================================================
 // Widget Sport global (colonne droite, visible sur tous les onglets) +
 // utilitaires partagés avec sport.js (auth, formatage, échappement HTML,
 // icônes communes). DOIT être chargé AVANT sport.js dans index.html.
@@ -103,9 +105,7 @@ function _sportFormatDetailSerie(serie, estCardio) {
     return serie.reps != null ? `${serie.reps} reps` : '—';
 }
 
-// ── Détecte si toutes les séries d'un exercice consolidé sont strictement
-// identiques (mêmes valeurs pertinentes selon musculation/cardio). Un
-// exercice à une seule série est par définition "identique". ──
+// ── Détecte si toutes les séries d'un exercice consolidé sont strictement identiques ──
 function _sportSeriesIdentiques(series, estCardio) {
     if (series.length <= 1) return true;
     const cle = s => estCardio
@@ -115,14 +115,7 @@ function _sportSeriesIdentiques(series, estCardio) {
     return series.every(s => cle(s) === premiere);
 }
 
-// Bloc détaillé d'un exercice consolidé — format compact "texte coloré sur
-// une ligne" (remplace l'ancien format en pills empilées) :
-//   - Séries identiques : "3x Pompes inclinées · 10 reps" (le "3x" et le
-//     détail en violet, le nom du reste en texte normal).
-//   - Séries différentes : "2x Développé couché · 12×20kg, 10×22kg" — un
-//     détail par série, séparés par des virgules, toujours sur une ligne.
-// Fonction partagée : utilisée par la carte dashboard (sport.js), la
-// modale de stats et le widget colonne droite — un seul rendu, partout.
+// Bloc détaillé d'un exercice consolidé — format compact "texte coloré sur une ligne"
 function _sportRenderBlocExerciceDetail(e) {
     const series    = Array.isArray(e.series) ? e.series : [];
     const estCardio = !!e.est_cardio;
@@ -144,6 +137,82 @@ function _sportRenderBlocExerciceDetail(e) {
     `;
 }
 
+// ── Bloc partagé ISO (Dashboard / Widget droite / Modale) ──
+// Factorise l'affichage Titre, Trophées, Stats (Durée/Volume/Calories), 
+// Warning profil incomplet, Liste d'exercices et Footer MoaDja.
+function _sportRenderSeanceIso(s, mode = 'modal') {
+    const dateTexte   = _sportFormatDateCourte(s.date_end || s.date_start);
+    const nbRecords   = Number.isInteger(s.nb_records) ? s.nb_records : 0;
+    const exercices   = s.exercices || [];
+    
+    // Rendu de la liste
+    let listeHtml = '';
+    if (mode === 'widget' || mode === 'dashboard') {
+        const limit = mode === 'dashboard' ? 5 : SPORT_WIDGET_MAX_EXERCICES_APERCU;
+        const apercu = exercices.slice(0, limit);
+        const reste  = exercices.length - apercu.length;
+        if (apercu.length) {
+            listeHtml = `
+                <div class="${mode === 'dashboard' ? 'sport-seance-recap-liste' : 'sport-widget-exercices-liste'}">
+                    ${apercu.map(e => _sportRenderBlocExerciceDetail(e)).join('')}
+                    ${reste > 0 ? `<div class="${mode === 'dashboard' ? 'sport-seance-recap-reste' : 'sport-widget-exercice-reste'}">…et ${reste} autre${reste > 1 ? 's' : ''}</div>` : ''}
+                </div>
+            `;
+        }
+    } else {
+        listeHtml = `
+            <div class="sport-modal-exercices-liste">
+                ${exercices.map(e => _sportRenderBlocExerciceDetail(e)).join('')}
+            </div>
+        `;
+    }
+
+    // Gestion de l'erreur profil incomplet (calories)
+    const warningCalories = s.profil_incomplet
+        ? `<div style="grid-column: 1 / -1; font-size: 11.5px; color: #ef4444; text-align: center; margin-top: 6px; padding: 6px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px;">
+            Complétez votre profil (poids, taille, sexe, date de naissance) pour voir vos calories brûlées.
+           </div>`
+        : '';
+    const valCalories = s.profil_incomplet ? '—' : `${s.calories} kcal`;
+
+    return `
+        <div class="sport-widget-recap-title-row">
+            <span class="sport-widget-recap-name">${_sportEchapper(s.workout_name)}</span>
+            <span class="sport-widget-recap-date">${dateTexte}</span>
+        </div>
+
+        ${nbRecords > 0 ? `
+            <div class="sport-widget-badge-record">
+                ${SPORT_ICONE_TROPHEE} ${nbRecords} record${nbRecords > 1 ? 's' : ''}
+            </div>
+        ` : ''}
+
+        <div class="sport-widget-stats-row">
+            <div class="sport-widget-stat">
+                <span class="sport-widget-stat-label">Durée</span>
+                <span class="sport-widget-stat-val">${_sportFormatDureeLongue(s.dureeSecondes)}</span>
+            </div>
+            <div class="sport-widget-stat">
+                <span class="sport-widget-stat-label">Volume</span>
+                <span class="sport-widget-stat-val">${s.volumeKg} kg</span>
+            </div>
+            <div class="sport-widget-stat">
+                <span class="sport-widget-stat-label">Calories</span>
+                <span class="sport-widget-stat-val" ${s.profil_incomplet ? 'style="color:#ef4444"' : ''}>${valCalories}</span>
+            </div>
+            ${warningCalories}
+        </div>
+
+        ${listeHtml}
+
+        ${(mode === 'widget' || mode === 'dashboard') ? `
+            <div class="sport-widget-footer">
+                <span class="sport-widget-footer-logo">${SPORT_ICONE_LOGO_MINI} MoaDja</span>
+            </div>
+        ` : ''}
+    `;
+}
+
 // ── Phrases d'encouragement (si aucune séance) ──
 const SPORT_PHRASES_ENCOURAGEMENT = [
     "Chaque séance compte, même la plus courte. Lancez-vous !",
@@ -154,14 +223,9 @@ const SPORT_PHRASES_ENCOURAGEMENT = [
 ];
 
 // Cache de la séance actuellement affichée dans le widget colonne droite.
-// Permet, au clic, de transmettre CETTE séance précise à la modale
-// sport-stats sans refetch (voir _sportWidgetOuvrirStats / _ouvrirModaleSportStats).
 let _sportWidgetDerniereSeanceCache = null;
 
 // ── Widget Sport Stats (colonne droite, global) ──
-// Aucune séance : phrase d'encouragement aléatoire. Sinon : carte
-// compacte façon Hevy, avec liste d'exercices en détail réel par série,
-// rendu strictement identique à la carte du Dashboard.
 async function chargerSportStatsWidget() {
     const zone = document.getElementById('sport-stats-widget');
     if (!zone) return;
@@ -200,31 +264,15 @@ function _sportRenderWidgetPhraseAleatoire(zone) {
     `;
 }
 
-// Ouverture de la modale de stats depuis le widget colonne droite : on
-// transmet la séance actuellement en cache (celle affichée dans la carte)
-// via la variable partagée, lue en priorité par _ouvrirModaleSportStats.
 function _sportWidgetOuvrirStats() {
     if (!_sportWidgetDerniereSeanceCache) return;
     window._sportSeanceStatsCourante = _sportWidgetDerniereSeanceCache;
     openModal('sport-stats');
 }
 
-// Carte compacte de récapitulatif, inspirée du format de partage Hevy :
-// titre + date, 3 stats en ligne (Durée / Volume / Séries), badge trophée
-// si records battus, liste d'exercices avec détail réel par série —
-// rendu strictement identique à la carte du Dashboard —, pied de carte
-// "MoaDja".
+// Rendu du widget colonne droite en utilisant la fonction ISO
 function _sportRenderWidgetDerniereSeance(zone, seance) {
-    // Mise en cache : la carte cliquée doit ouvrir la modale avec CETTE
-    // séance précise (cf. _sportWidgetOuvrirStats), sans nouvel appel réseau.
     _sportWidgetDerniereSeanceCache = seance;
-
-    const dateTexte   = _sportFormatDateCourte(seance.date_end || seance.date_start);
-    const nbRecords   = Number.isInteger(seance.nb_records) ? seance.nb_records : 0;
-    const exercices   = seance.exercices || [];
-    const apercu      = exercices.slice(0, SPORT_WIDGET_MAX_EXERCICES_APERCU);
-    const reste       = exercices.length - apercu.length;
-    const totalSeries = exercices.reduce((acc, e) => acc + (Number(e.nb_series) || 0), 0);
 
     zone.innerHTML = `
         <div class="sport-widget-top">
@@ -235,61 +283,18 @@ function _sportRenderWidgetDerniereSeance(zone, seance) {
         </div>
 
         <div class="sport-widget-clickable" onclick="_sportWidgetOuvrirStats()" role="button" tabindex="0">
-
-            <div class="sport-widget-recap-title-row">
-                <span class="sport-widget-recap-name">${_sportEchapper(seance.workout_name)}</span>
-                <span class="sport-widget-recap-date">${dateTexte}</span>
-            </div>
-
-            ${nbRecords > 0 ? `
-                <div class="sport-widget-badge-record">
-                    ${SPORT_ICONE_TROPHEE} ${nbRecords} record${nbRecords > 1 ? 's' : ''}
-                </div>
-            ` : ''}
-
-            <div class="sport-widget-stats-row">
-                <div class="sport-widget-stat">
-                    <span class="sport-widget-stat-label">Durée</span>
-                    <span class="sport-widget-stat-val">${_sportFormatDureeLongue(seance.dureeSecondes)}</span>
-                </div>
-                <div class="sport-widget-stat">
-                    <span class="sport-widget-stat-label">Volume</span>
-                    <span class="sport-widget-stat-val">${seance.volumeKg} kg</span>
-                </div>
-                <div class="sport-widget-stat">
-                    <span class="sport-widget-stat-label">Séries</span>
-                    <span class="sport-widget-stat-val">${totalSeries}</span>
-                </div>
-            </div>
-
-            ${apercu.length ? `
-                <div class="sport-widget-exercices-liste">
-                    ${apercu.map(e => _sportRenderBlocExerciceDetail(e)).join('')}
-                    ${reste > 0 ? `<div class="sport-widget-exercice-reste">…et ${reste} autre${reste > 1 ? 's' : ''}</div>` : ''}
-                </div>
-            ` : ''}
-
-            <div class="sport-widget-footer">
-                <span class="sport-widget-footer-logo">${SPORT_ICONE_LOGO_MINI} MoaDja</span>
-            </div>
-
+            ${_sportRenderSeanceIso(seance, 'widget')}
         </div>
     `;
 }
 
 // ── Modale Statistiques Sport (détail complet) ──
-// Appelée par modal.js via openModal('sport-stats'). Priorité à la séance
-// explicitement sélectionnée (clic sur une carte du dashboard via
-// _sportOuvrirStatsSeance, ou clic sur la carte du widget droit via
-// _sportWidgetOuvrirStats), transmise via window._sportSeanceStatsCourante.
-// Si absente (ouverture directe sans clic sur une carte précise), on retombe
-// sur l'ancien comportement : fetch de la dernière séance via l'API.
 async function _ouvrirModaleSportStats() {
     const zone = document.getElementById('modal-body');
     if (!zone) return;
 
     const seanceCourante = window._sportSeanceStatsCourante;
-    window._sportSeanceStatsCourante = null; // consommée : on nettoie pour éviter un résidu obsolète
+    window._sportSeanceStatsCourante = null;
 
     if (seanceCourante) {
         _sportRenderModaleStatsDepuisSeance(zone, seanceCourante);
@@ -312,46 +317,11 @@ async function _ouvrirModaleSportStats() {
     }
 }
 
-// Construction du HTML de la modale à partir d'un objet séance donné
-// (factorisé pour être utilisé aussi bien avec une séance transmise par clic
-// qu'avec la dernière séance récupérée par défaut via l'API).
+// Rendu de la modale en utilisant la fonction ISO
 function _sportRenderModaleStatsDepuisSeance(zone, s) {
-    const dateTexte   = _sportFormatDateCourte(s.date_end || s.date_start);
-    const exercices   = s.exercices || [];
-    const totalSeries = exercices.reduce((acc, e) => acc + (Number(e.nb_series) || 0), 0);
-    const nbRecords   = Number.isInteger(s.nb_records) ? s.nb_records : 0;
-
     zone.innerHTML = `
         <div class="sport-modal-stats">
-            <div class="sport-widget-recap-title-row">
-                <span class="sport-widget-recap-name">${_sportEchapper(s.workout_name)}</span>
-                <span class="sport-widget-recap-date">${dateTexte}</span>
-            </div>
-
-            ${nbRecords > 0 ? `
-                <div class="sport-widget-badge-record">
-                    ${SPORT_ICONE_TROPHEE} ${nbRecords} record${nbRecords > 1 ? 's' : ''}
-                </div>
-            ` : ''}
-
-            <div class="sport-widget-stats-row">
-                <div class="sport-widget-stat">
-                    <span class="sport-widget-stat-label">Durée</span>
-                    <span class="sport-widget-stat-val">${_sportFormatDureeLongue(s.dureeSecondes)}</span>
-                </div>
-                <div class="sport-widget-stat">
-                    <span class="sport-widget-stat-label">Volume</span>
-                    <span class="sport-widget-stat-val">${s.volumeKg} kg</span>
-                </div>
-                <div class="sport-widget-stat">
-                    <span class="sport-widget-stat-label">Séries</span>
-                    <span class="sport-widget-stat-val">${totalSeries}</span>
-                </div>
-            </div>
-
-            <div class="sport-modal-exercices-liste">
-                ${exercices.map(e => _sportRenderBlocExerciceDetail(e)).join('')}
-            </div>
+            ${_sportRenderSeanceIso(s, 'modal')}
         </div>
     `;
 }
