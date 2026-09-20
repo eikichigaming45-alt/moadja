@@ -42,9 +42,6 @@ const SPORT_ICONE_PARTAGE = `
     </svg>
 `;
 
-// Petit logo dumbbell (14x14) dédié à la marque "MoaDja" en pied de carte —
-// distinct de SPORT_ICONE_DUMBBELL (28x28, utilisé ailleurs dans sport.js)
-// pour ne pas dépendre d'une résolution CSS forcée sur un SVG déjà dimensionné.
 const SPORT_ICONE_LOGO_MINI = `
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <line x1="2.5"  y1="7" x2="2.5"  y2="17"></line>
@@ -79,7 +76,7 @@ function _sportEchapper(str) {
         .replace(/'/g, '&#39;');
 }
 
-// ── Formatage date courte type "13 sept." ──
+// ── Formatage date courte ──
 function _sportFormatDateCourte(dateIso) {
     const MOIS_ABREGES = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
     const d = new Date(dateIso);
@@ -87,7 +84,7 @@ function _sportFormatDateCourte(dateIso) {
     return `${d.getDate()} ${MOIS_ABREGES[d.getMonth()]}`;
 }
 
-// ── Formatage durée longue type "3h12", "16min05", "9s" ──
+// ── Formatage durée longue ──
 function _sportFormatDureeLongue(secondes) {
     const h = Math.floor(secondes / 3600);
     const m = Math.floor((secondes % 3600) / 60);
@@ -113,7 +110,7 @@ function _sportFormatDetailSerie(serie, estCardio) {
     return serie.reps != null ? `${serie.reps} reps` : '—';
 }
 
-// ── Détecte si toutes les séries d'un exercice consolidé sont strictement identiques ──
+// ── Détecte si toutes les séries d'un exercice consolidé sont identiques ──
 function _sportSeriesIdentiques(series, estCardio) {
     if (series.length <= 1) return true;
     const cle = s => estCardio
@@ -145,16 +142,14 @@ function _sportRenderBlocExerciceDetail(e) {
     `;
 }
 
-// ── Bloc partagé ISO (Dashboard / Widget droite / Modale) ──
+// ── Bloc partagé ISO ──
 function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
     const dateTexte   = _sportFormatDateCourte(s.date_end || s.date_start);
     const nbRecords   = Number.isInteger(s.nb_records) ? s.nb_records : 0;
     const exercices   = s.exercices || [];
     
-    // Trophée en jaune (Tailwind yellow-500)
     const iconeTropheeJaune = `<span style="color: #eab308; display: inline-flex; align-items: center;">${SPORT_ICONE_TROPHEE}</span>`;
 
-    // Rendu de la liste
     let listeHtml = '';
     if (mode === 'widget' || mode === 'dashboard') {
         const limit = mode === 'dashboard' ? 5 : SPORT_WIDGET_MAX_EXERCICES_APERCU;
@@ -176,7 +171,6 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
         `;
     }
 
-    // Gestion de l'erreur profil incomplet (calories)
     const warningCalories = s.profil_incomplet
         ? `<div style="grid-column: 1 / -1; font-size: 11.5px; color: #ef4444; text-align: center; margin-top: 6px; padding: 6px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px;">
             Complétez votre profil (poids, taille, sexe, date de naissance) pour voir vos calories brûlées.
@@ -184,7 +178,6 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
         : '';
     const valCalories = s.profil_incomplet ? '—' : `${s.calories} kcal`;
 
-    // Détail des records (uniquement pour la modale, et UNIQUEMENT s'il y a des records)
     let detailsRecordsHtml = '';
     if (mode === 'modal' && nbRecords > 0 && Array.isArray(s.records)) {
         detailsRecordsHtml = `
@@ -207,7 +200,6 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
         `;
     }
 
-    // Le badge en haut est toujours généré, mais le texte devient gris si 0 record (l'icône reste jaune)
     const styleGris = 'color: #9ca3af; background: rgba(156, 163, 175, 0.1); border: 1px solid rgba(156, 163, 175, 0.2);';
     const badgeHtml = `
         <div class="sport-widget-badge-record" ${nbRecords === 0 ? `style="${styleGris}"` : ''}>
@@ -215,7 +207,6 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
         </div>
     `;
 
-    // ── FOOTER : Modifié pour inclure le bouton de partage en mode Dashboard ──
     let footerHtml = '';
     if (mode === 'dashboard') {
         footerHtml = `
@@ -322,8 +313,9 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
         const imageUrl = data.imageUrl;
         const openGraphUrl = `${window.location.origin}/share/seance/${sessionId}`;
         
-        // CORRECTION TCHAT: Texte sur une seule ligne (espace au lieu de \n)
-        const textePartage = `🏋️‍♂️ Ma séance : ${nomRoutine} - Découvre mes stats sur MoaDja !`;
+        // CORRECTION TCHAT: Double saut de ligne pour forcer le Tchat à isoler l'URL
+        const textePartage = `🏋️‍♂️ Ma séance : ${nomRoutine}\nDécouvre mes stats sur MoaDja !`;
+        const texteTchat = `${textePartage}\n\n${openGraphUrl}`;
 
         closeModal();
 
@@ -333,43 +325,38 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
             switchTab('accueil');
             if (typeof openPostEditor === 'function') openPostEditor();
             
-            // Pré-remplit le texte
-            const inputTexte = document.getElementById('post-contenu');
-            if (inputTexte) inputTexte.value = textePartage;
-            
-            // CORRECTION FEED: Téléchargement de l'image et injection dans l'input file HTML
-            try {
-                const repImg = await fetch(imageUrl);
-                const blob = await repImg.blob();
+            // CORRECTION FEED: Le setTimeout garantit que l'input du feed existe bien dans le DOM
+            setTimeout(async () => {
+                const inputTexte = document.getElementById('post-contenu');
+                if (inputTexte) inputTexte.value = textePartage;
                 
-                // Création d'un objet File valide pour JavaScript
-                const file = new File([blob], `seance_${sessionId}.jpg`, { type: 'image/jpeg' });
-                const dataTransfer = new DataTransfer();
-                dataTransfer.items.add(file);
+                try {
+                    const repImg = await fetch(imageUrl);
+                    const blob = await repImg.blob();
+                    
+                    const file = new File([blob], `seance_${sessionId}.jpg`, { type: 'image/jpeg' });
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
 
-                // Récupération de l'input hidden ou file du post editor
-                // (le feed MoaDja utilise #post-photo)
-                const fileInput = document.getElementById('post-photo');
-                if (fileInput) {
-                    fileInput.files = dataTransfer.files;
-                    // Déclenche l'événement "change" pour que le script du feed (feedPostEditor.js)
-                    // lance l'aperçu et le cropping automatique.
-                    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
-                } else {
-                    console.warn('[SPORT] Input file #post-photo non trouvé.');
+                    const fileInput = document.getElementById('post-photo');
+                    if (fileInput) {
+                        fileInput.files = dataTransfer.files;
+                        fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    } else {
+                        console.warn('[SPORT] Input file #post-photo non trouvé.');
+                    }
+                } catch (e) {
+                    console.error('[SPORT] Impossible d\'attacher l\'image au feed:', e);
                 }
-            } catch (e) {
-                console.error('[SPORT] Impossible d\'attacher l\'image au feed:', e);
-            }
+            }, 300); // 300ms de délai pour laisser la modale s'ouvrir
         } 
         else if (destination === 'tchat') {
-            // Lien propre sans saut de ligne
-            const texteComplet = `${textePartage} ${openGraphUrl}`;
-            await navigator.clipboard.writeText(texteComplet);
+            // Lien isolé avec double saut de ligne
+            await navigator.clipboard.writeText(texteTchat);
             alert('Lien de la séance copié ! Sélectionnez un contact et collez le message.');
             
             if (window.Tchat && typeof Tchat.toggle === 'function') {
-                Tchat.toggle(); // Ouvre le panneau latéral du tchat
+                Tchat.toggle(); 
                 setTimeout(() => {
                     const btnNouvelle = document.querySelector('.tchat-btn-new-conv');
                     if (btnNouvelle) btnNouvelle.click();
@@ -385,9 +372,8 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
                     url: openGraphUrl
                 }).catch(console.error);
             } else {
-                // Fallback PC
-                const texteComplet = `${textePartage} ${openGraphUrl}`;
-                await navigator.clipboard.writeText(texteComplet);
+                // Fallback PC (double saut de ligne aussi pour être propre)
+                await navigator.clipboard.writeText(texteTchat);
                 alert('Lien copié dans le presse-papiers ! Vous pouvez le coller où vous voulez (WhatsApp Web, Facebook...).');
             }
         }
