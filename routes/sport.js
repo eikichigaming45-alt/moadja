@@ -1197,10 +1197,10 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
         const exercicesConsolides = _sportConsoliderExercicesSession(logs);
         const records = await _sportDetecterRecords(moi, id, logs);
         
-        // 4. Formatage textes pour l'image
+        // 4. Formatage
         const routineName = session.workout_name || 'Séance MoaDja';
         const dateStr = session.date_end 
-            ? new Date(session.date_end).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+            ? new Date(session.date_end).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
             : 'En cours';
             
         const dureeStr = _formatDurationShort(stats.dureeSecondes);
@@ -1208,82 +1208,83 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
         const caloriesStr = stats.calories ? `${stats.calories} kcal` : '--';
         const nbRecords = records.length;
 
-        // 5. Génération du SVG
-        // Couleurs : fond dégradé violet (MoaDja), carte blanche (façon Hevy)
+        // 5. Génération du SVG - Design Premium Dark Mode
         let svg = `
         <svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
             <defs>
+                <!-- Dégradé de fond -->
                 <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#9333ea" />
-                    <stop offset="100%" stop-color="#4c1d95" />
+                    <stop offset="0%" stop-color="#0f172a" /> <!-- Slate 900 -->
+                    <stop offset="100%" stop-color="#2e1065" /> <!-- Violet foncé -->
                 </linearGradient>
-                <filter id="dropShadow" x="-10%" y="-10%" width="120%" height="120%">
-                    <feDropShadow dx="0" dy="15" stdDeviation="20" flood-opacity="0.15" />
+                <!-- Ombre de la carte -->
+                <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+                    <feDropShadow dx="0" dy="12" stdDeviation="15" flood-color="#000000" flood-opacity="0.4" />
                 </filter>
             </defs>
 
-            <!-- Fond de l'image -->
+            <!-- Fond global -->
             <rect width="1200" height="630" fill="url(#bgGradient)" />
 
-            <!-- Carte centrale blanche -->
-            <rect x="80" y="60" width="1040" height="510" rx="40" fill="#ffffff" filter="url(#dropShadow)" />
+            <!-- Carte principale -->
+            <rect x="80" y="60" width="1040" height="510" rx="32" fill="#1e293b" filter="url(#shadow)" stroke="#4c1d95" stroke-width="2" />
 
             <!-- Titre et Date -->
-            <text x="140" y="140" font-family="system-ui, -apple-system, sans-serif" font-size="46" font-weight="bold" fill="#111827">${routineName}</text>
-            <text x="140" y="185" font-family="system-ui, -apple-system, sans-serif" font-size="28" fill="#6b7280">${dateStr}</text>
+            <text x="140" y="150" font-family="system-ui, -apple-system, sans-serif" font-size="44" font-weight="900" fill="#ffffff">${routineName}</text>
+            <text x="140" y="195" font-family="system-ui, -apple-system, sans-serif" font-size="26" fill="#94a3b8">${dateStr}</text>
         `;
 
-        // Badge records (en haut à droite)
+        // Badge Records (aligné à droite de l'en-tête)
         if (nbRecords > 0) {
             svg += `
-            <rect x="910" y="100" width="150" height="50" rx="25" fill="#fef08a" />
-            <text x="985" y="133" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="bold" fill="#854d0e" text-anchor="middle">🏆 ${nbRecords} Record${nbRecords > 1 ? 's' : ''}</text>
+            <rect x="890" y="110" width="170" height="50" rx="25" fill="#a855f7" fill-opacity="0.15" stroke="#a855f7" stroke-width="1.5" />
+            <text x="975" y="142" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="bold" fill="#d8b4fe" text-anchor="middle">🏆 ${nbRecords} Record${nbRecords > 1 ? 's' : ''}</text>
             `;
         }
 
-        // Ligne de Stats (Durée, Volume, Calories)
+        // Ligne de Statistiques (Labels en petites majuscules espacées)
         svg += `
             <!-- Labels -->
-            <text x="140" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="#6b7280">Durée</text>
-            <text x="360" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="#6b7280">Volume</text>
-            <text x="580" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="#6b7280">Calories</text>
+            <text x="140" y="270" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#64748b" letter-spacing="2">DURÉE</text>
+            <text x="420" y="270" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#64748b" letter-spacing="2">VOLUME</text>
+            <text x="700" y="270" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#64748b" letter-spacing="2">CALORIES</text>
 
             <!-- Valeurs -->
-            <text x="140" y="305" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="bold" fill="#111827">${dureeStr}</text>
-            <text x="360" y="305" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="bold" fill="#111827">${volumeStr}</text>
-            <text x="580" y="305" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="bold" fill="#ef4444">${caloriesStr}</text>
+            <text x="140" y="320" font-family="system-ui, -apple-system, sans-serif" font-size="42" font-weight="bold" fill="#f8fafc">${dureeStr}</text>
+            <text x="420" y="320" font-family="system-ui, -apple-system, sans-serif" font-size="42" font-weight="bold" fill="#f8fafc">${volumeStr}</text>
+            <text x="700" y="320" font-family="system-ui, -apple-system, sans-serif" font-size="42" font-weight="bold" fill="#fb7185">${caloriesStr}</text>
             
-            <!-- Ligne séparatrice -->
-            <line x1="140" y1="340" x2="1060" y2="340" stroke="#f3f4f6" stroke-width="2" />
+            <!-- Ligne séparatrice discrète -->
+            <line x1="140" y1="365" x2="1060" y2="365" stroke="#334155" stroke-width="2" />
         `;
 
-        // Liste des exercices (max 5)
-        let yEx = 390;
-        const maxEx = 5;
+        // Liste des exercices (max 4 pour garder un rendu ultra aéré)
+        let yEx = 425;
+        const maxEx = 4;
         const nbAffiches = Math.min(exercicesConsolides.length, maxEx);
 
         for (let i = 0; i < nbAffiches; i++) {
             const ex = exercicesConsolides[i];
             svg += `
-            <text x="140" y="${yEx}" font-family="system-ui, -apple-system, sans-serif" font-size="26" font-weight="bold" fill="#7c3aed">${ex.nb_series}x</text>
-            <text x="200" y="${yEx}" font-family="system-ui, -apple-system, sans-serif" font-size="26" fill="#1f2937">${ex.exercise_name}</text>
+            <text x="140" y="${yEx}" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="bold" fill="#a855f7">${ex.nb_series}x</text>
+            <text x="195" y="${yEx}" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="500" fill="#e2e8f0">${ex.exercise_name}</text>
             `;
-            yEx += 45;
+            yEx += 40;
         }
 
         if (exercicesConsolides.length > maxEx) {
             const restants = exercicesConsolides.length - maxEx;
-            svg += `<text x="140" y="${yEx}" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-style="italic" fill="#9ca3af">...et ${restants} autre${restants > 1 ? 's' : ''} exercice${restants > 1 ? 's' : ''}</text>`;
+            svg += `<text x="140" y="${yEx}" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-style="italic" fill="#64748b">...et ${restants} autre${restants > 1 ? 's' : ''} exercice${restants > 1 ? 's' : ''}</text>`;
         }
 
-        // Pied de page (Logo MoaDja)
+        // Marque MoaDja (Alignée à droite, isolée dans le coin inférieur)
         svg += `
-            <text x="950" y="525" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="bold" fill="#7c3aed">MoaDja</text>
-            <text x="950" y="545" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#9ca3af">Sport &amp; Bien-être</text>
+            <text x="1060" y="500" font-family="system-ui, -apple-system, sans-serif" font-size="34" font-weight="900" fill="#a855f7" text-anchor="end">MoaDja</text>
+            <text x="1060" y="525" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="500" fill="#94a3b8" text-anchor="end">Sport &amp; Bien-être</text>
         </svg>
         `;
 
-        // 6. Conversion via sharp et sauvegarde
+        // 6. Conversion et sauvegarde
         const uploadsDir = path.join(__dirname, '..', 'public', 'uploads', 'sport_shares');
         if (!fs.existsSync(uploadsDir)) {
             fs.mkdirSync(uploadsDir, { recursive: true });
@@ -1293,7 +1294,7 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
         const filePath = path.join(uploadsDir, fileName);
 
         await sharp(Buffer.from(svg))
-            .jpeg({ quality: 90 })
+            .jpeg({ quality: 95 }) // Qualité augmentée pour éviter la pixellisation des textes
             .toFile(filePath);
 
         res.json({ 
