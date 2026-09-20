@@ -1,6 +1,6 @@
 // public/js/sportRoutines.js
 // Module Sport — Mes Routines : liste, création, détail, édition/suppression
-// d'exercice, réorganisation par glisser-déposer.
+// d'exercice, réorganisation par glisser-déposer, renommage/suppression de routine.
 // Dépend de sport-widget.js et sport.js chargés AVANT (auth, échappement,
 // icônes, modales génériques _sportOuvrirConfirmationSuppression, etc.).
 
@@ -47,12 +47,15 @@ function _sportRenderListeRoutines(routines) {
         ` : `
             <div class="sport-routine-liste">
                 ${routines.map(w => `
-                    <div class="sport-routine-carte" onclick="_sportOuvrirDetailRoutine(${w.id})">
+                    <div class="sport-routine-carte" id="sport-routine-carte-${w.id}" onclick="_sportOuvrirDetailRoutine(${w.id})">
                         <div class="sport-routine-carte-icone">${SPORT_ICONE_DUMBBELL}</div>
                         <div class="sport-routine-carte-info">
                             <div class="sport-routine-carte-nom">${_sportEchapper(w.name)}</div>
                             <div class="sport-routine-carte-meta">Voir les exercices</div>
                         </div>
+                        <button class="sport-routine-exercice-btn-edit" data-workout-id="${w.id}"
+                                data-nom="${_sportEchapper(w.name)}" title="Renommer">✏️</button>
+                        <button class="sport-routine-exercice-btn-del" data-workout-id="${w.id}" title="Supprimer">${SPORT_ICONE_POUBELLE}</button>
                     </div>
                 `).join('')}
             </div>
@@ -61,6 +64,72 @@ function _sportRenderListeRoutines(routines) {
 
     document.getElementById('sport-routine-nouveau-nom').addEventListener('keydown', (e) => {
         if (e.key === 'Enter') _sportCreerRoutine();
+    });
+
+    zone.querySelectorAll('.sport-routine-carte .sport-routine-exercice-btn-edit').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            _sportRenommerRoutineCarte(parseInt(btn.dataset.workoutId, 10), btn.dataset.nom);
+        });
+    });
+
+    zone.querySelectorAll('.sport-routine-carte .sport-routine-exercice-btn-del').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            _sportConfirmerSuppressionRoutine(parseInt(btn.dataset.workoutId, 10));
+        });
+    });
+}
+
+// ── Renommage inline d'une routine depuis la liste ──
+function _sportRenommerRoutineCarte(workoutId, nomActuel) {
+    const carte = document.getElementById(`sport-routine-carte-${workoutId}`);
+    if (!carte) return;
+
+    carte.onclick = null;
+    carte.innerHTML = `
+        <div class="sport-routine-carte-icone">${SPORT_ICONE_DUMBBELL}</div>
+        <div class="sport-routine-carte-info" style="display:flex;flex-direction:column;gap:8px">
+            <input type="text" id="sport-routine-rename-input-${workoutId}" class="sport-catalogue-search"
+                   value="${_sportEchapper(nomActuel)}" autocomplete="off" style="width:100%">
+            <div class="sport-routine-exercice-edit-actions">
+                <button class="btn-save" id="sport-routine-rename-save-${workoutId}">Sauvegarder</button>
+                <button class="btn-cancel" id="sport-routine-rename-cancel-${workoutId}">Annuler</button>
+            </div>
+        </div>
+    `;
+
+    document.getElementById(`sport-routine-rename-cancel-${workoutId}`).addEventListener('click', (e) => {
+        e.stopPropagation();
+        _sportChargerListeRoutines();
+    });
+
+    document.getElementById(`sport-routine-rename-save-${workoutId}`).addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const input = document.getElementById(`sport-routine-rename-input-${workoutId}`);
+        const nouveauNom = input?.value.trim();
+        if (!nouveauNom) return;
+
+        try {
+            await fetch(`/api/sport/workouts/${workoutId}`, {
+                method: 'PUT', headers: _sportAuthHeaders(), body: JSON.stringify({ name: nouveauNom })
+            });
+            _sportChargerListeRoutines();
+        } catch (err) {
+            console.error('[SPORT] renommerRoutine :', err.message);
+        }
+    });
+}
+
+// ── Suppression d'une routine depuis la liste ──
+function _sportConfirmerSuppressionRoutine(workoutId) {
+    _sportOuvrirConfirmationSuppression(async () => {
+        try {
+            await fetch(`/api/sport/workouts/${workoutId}`, { method: 'DELETE', headers: _sportAuthHeaders() });
+            _sportChargerListeRoutines();
+        } catch (err) {
+            console.error('[SPORT] supprimerRoutine :', err.message);
+        }
     });
 }
 
@@ -153,12 +222,9 @@ function _sportRenderDetailRoutine(workout, jour) {
 
     zone.innerHTML = `
         <div class="sport-card">
-            <div class="sport-routine-detail-header">
-                                <button class="sport-routine-btn-suppr-routine" data-workout-id="${workout.id}">${SPORT_ICONE_POUBELLE} Supprimer la routine</button>
-            </div>
             <div class="sport-routine-detail-nom">${_sportEchapper(workout.name)}</div>
-            <button class="sport-cta-btn" onclick="_sportDemarrerSeance(${workout.id})">
-                                                               ${SPORT_ICONE_DUMBBELL} Commencer la routine
+            <button class="sport-cta-btn" style="width:100%;justify-content:center" onclick="_sportDemarrerSeance(${workout.id})">
+                ${SPORT_ICONE_DUMBBELL} Commencer la routine
             </button>
         </div>
 
@@ -186,15 +252,12 @@ function _sportRenderDetailRoutine(workout, jour) {
                     `).join('')}
                 </div>
             `}
-            <button class="sport-cta-btn" style="margin-top:16px" onclick="_sportOuvrirSelecteurExercice()">
+            <button class="sport-cta-btn" style="width:100%;justify-content:center;margin-top:16px" onclick="_sportOuvrirSelecteurExercice()">
                 + Ajouter un exercice
             </button>
         </div>
     `;
 
-    document.querySelector('.sport-routine-btn-suppr-routine').addEventListener('click', () => {
-        _sportConfirmerSuppressionRoutineDetail(workout.id);
-    });
     zone.querySelectorAll('.sport-routine-exercice-btn-del').forEach(btn => {
         btn.addEventListener('click', () => {
             _sportConfirmerSuppressionExercice(parseInt(btn.dataset.exerciceId, 10));
@@ -304,17 +367,6 @@ async function _sportSauvegarderOrdreExercices(liste, workoutId) {
     }
 }
 
-function _sportConfirmerSuppressionRoutineDetail(workoutId) {
-    _sportOuvrirConfirmationSuppression(async () => {
-        try {
-            await fetch(`/api/sport/workouts/${workoutId}`, { method: 'DELETE', headers: _sportAuthHeaders() });
-            _sportChargerListeRoutines();
-        } catch (err) {
-            console.error('[SPORT] supprimerRoutineDetail :', err.message);
-        }
-    });
-}
-
 function _sportConfirmerSuppressionExercice(exerciceId) {
     _sportOuvrirConfirmationSuppression(async () => {
         try {
@@ -383,7 +435,7 @@ function _sportEditerExercice(exerciceId, nom, setsActuel, repsActuel, dureeActu
         const reposInput = document.getElementById(`sport-edit-repos-${exerciceId}`).value;
         body.target_rest_seconds = reposInput !== '' ? parseInt(reposInput, 10) : 60;
 
-                try {
+        try {
             await fetch(`/api/sport/exercises/${exerciceId}`, {
                 method: 'PUT', headers: _sportAuthHeaders(), body: JSON.stringify(body)
             });
