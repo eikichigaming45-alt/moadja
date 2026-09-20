@@ -144,44 +144,31 @@ app.get('/share/seance/:id', async (req, res) => {
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            background: #0f172a;
             margin: 0;
             padding: 20px;
             display: flex;
-            flex-direction: column;
+            justify-content: center;
             align-items: center;
             min-height: 100vh;
             box-sizing: border-box;
+            color: #f8fafc;
         }
-        .logo {
-            font-size: 24px;
-            font-weight: 900;
-            color: #7c3aed;
-            margin-bottom: 30px;
-            margin-top: 20px;
-            letter-spacing: -0.5px;
-        }
-        .post-card {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255,255,255,0.8);
-            border-radius: 24px;
-            padding: 24px;
-            max-width: 500px;
+        .container {
+            max-width: 480px;
             width: 100%;
-            box-shadow: 0 12px 32px rgba(0,0,0,0.08);
-            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
         .header {
             display: flex;
             align-items: center;
             gap: 12px;
-            margin-bottom: 16px;
         }
         .avatar {
-            width: 48px;
-            height: 48px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             background: linear-gradient(135deg, #7c3aed, #6d28d9);
             color: white;
@@ -189,53 +176,48 @@ app.get('/share/seance/:id', async (req, res) => {
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 18px;
-            flex-shrink: 0;
+            font-size: 16px;
             box-shadow: 0 4px 12px rgba(124,58,237,0.3);
         }
         .author-name {
-            font-weight: 800;
-            color: #1f2937;
-            font-size: 16px;
+            font-weight: 700;
+            font-size: 15px;
+            color: #f1f5f9;
         }
         .author-handle {
-            color: #6b7280;
+            color: #94a3b8;
             font-size: 13px;
             margin-top: 2px;
         }
         .post-image {
-            max-width: 100%;
+            width: 100%;
             height: auto;
             border-radius: 16px;
-            margin-bottom: 20px;
-            object-fit: contain;
-            border: 1px solid rgba(0,0,0,0.05);
             display: block;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
         .cta-button {
             display: block;
             width: 100%;
             text-align: center;
-            padding: 14px;
-            background: rgba(167,139,250,0.85);
-            color: white;
+            padding: 16px;
+            background: rgba(124, 58, 237, 0.15);
+            color: #a78bfa;
+            border: 1px solid rgba(124, 58, 237, 0.3);
             text-decoration: none;
-            border-radius: 50px;
-            font-weight: 700;
+            border-radius: 16px;
+            font-weight: 600;
             transition: all 0.2s;
-            box-shadow: 0 8px 24px rgba(167,139,250,0.25);
             box-sizing: border-box;
         }
         .cta-button:hover {
-            transform: translateY(-2px);
-            background: rgba(167,139,250,1);
+            background: rgba(124, 58, 237, 0.25);
+            color: #fff;
         }
     </style>
 </head>
 <body>
-    <div class="logo">MoaDja</div>
-    <div class="post-card">
+    <div class="container">
         <div class="header">
             <div class="avatar">${initiale}</div>
             <div>
@@ -244,7 +226,7 @@ app.get('/share/seance/:id', async (req, res) => {
             </div>
         </div>
         <img src="${imageUrl}" class="post-image" alt="Statistiques de la séance">
-        <a href="https://moadja.fr" class="cta-button">Rejoindre MoaDja</a>
+        <a href="https://moadja.fr" class="cta-button">Découvrir MoaDja</a>
     </div>
 </body>
 </html>`;

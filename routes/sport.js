@@ -585,15 +585,15 @@ router.delete('/sessions/:id', auth, async (req, res) => {
         await client.query(`DELETE FROM sport_session_logs WHERE session_id = \$1`, [id]);
         await client.query(`DELETE FROM sport_sessions WHERE id = \$1`, [id]);
 
-                    await client.query('COMMIT');
-            res.json({ success: true });
-        } catch (err) {
-            await client.query('ROLLBACK');
-            console.error('[SPORT] DELETE /sessions/:id :', err.message);
-            res.status(500).json({ success: false, message: err.message });
-        } finally {
-            client.release();
-        }
+        await client.query('COMMIT');
+        res.json({ success: true });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('[SPORT] DELETE /sessions/:id :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    } finally {
+        client.release();
+    }
 });
 
 // ── DASHBOARD & WIDGET : stats agrégées + Mifflin-St Jeor ──
@@ -1278,8 +1278,8 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
 
         // Pied de page (Logo MoaDja)
         svg += `
-            <text x="140" y="525" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="bold" fill="#7c3aed">MoaDja</text>
-            <text x="140" y="545" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#9ca3af">Sport &amp; Bien-être</text>
+            <text x="950" y="525" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="bold" fill="#7c3aed">MoaDja</text>
+            <text x="950" y="545" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#9ca3af">Sport &amp; Bien-être</text>
         </svg>
         `;
 
