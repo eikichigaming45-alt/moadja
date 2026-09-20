@@ -212,9 +212,22 @@
     }
 }
 
-/* ── Modale Statistiques Sport (détail complet) ── */
+/* ══════════════════════════════════════════════════════════════
+   ── MODALE STATISTIQUES SPORT (détail complet) ──
+   Correctif v1.92.58 : les règles ciblaient d'anciennes classes
+   issues du format pills (.sport-widget-exercice-ligne*), jamais
+   générées depuis le format ligne compacte v1.92.57. Les classes
+   réelles produites par _sportRenderBlocExerciceDetail() sont
+   .sport-exo-ligne* (définies dans sport.css), et le conteneur
+   réel est .sport-modal-exercices-liste (pas
+   .sport-widget-exercices-liste, réservé au widget colonne
+   droite). Ce correctif cible les bons sélecteurs et ajoute une
+   hiérarchie visuelle nette : encadré pour la liste, séparateurs
+   fins entre chaque exercice, espacement vertical confortable.
+   ══════════════════════════════════════════════════════════════ */
+
 .sport-modal-stats {
-    padding: 6px 2px 2px;
+    padding: 4px 2px 2px;
 }
 
 .sport-modal-stats .sport-widget-recap-title-row {
@@ -287,30 +300,41 @@
     color: #111;
 }
 
-.sport-modal-stats .sport-widget-exercices-liste {
+/* Conteneur réel de la liste d'exercices dans la modale (corrige le
+   sélecteur obsolète .sport-widget-exercices-liste) : encadré avec
+   fond légèrement distinct pour marquer la séparation avec le bloc
+   stats au-dessus. */
+.sport-modal-stats .sport-modal-exercices-liste {
     display: flex;
     flex-direction: column;
-    gap: 10px;
     background: rgba(249, 250, 251, 0.9);
     border: 1px solid rgba(229, 231, 235, 0.6);
     border-radius: 16px;
-    padding: 14px 16px;
+    padding: 4px 16px;
 }
 
-.sport-modal-stats .sport-widget-exercice-ligne {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+/* Chaque ligne d'exercice (classe réelle .sport-exo-ligne, définie
+   dans sport.css) : espacement vertical confortable + séparateur fin
+   entre chaque exercice (sauf le premier), corrige l'effet "collé". */
+.sport-modal-stats .sport-exo-ligne {
+    padding: 11px 0;
     font-size: 14px;
-    color: #374151;
+}
+.sport-modal-stats .sport-exo-ligne + .sport-exo-ligne {
+    border-top: 1px solid rgba(229, 231, 235, 0.6);
 }
 
-.sport-modal-stats .sport-widget-exercice-nb {
-    font-weight: 700;
-    color: rgb(167, 139, 250);
-    min-width: 26px;
+.sport-modal-stats .sport-exo-ligne-nb {
+    min-width: 24px;
 }
 
-.sport-modal-stats .sport-widget-exercice-nom {
-    font-weight: 500;
+.sport-modal-stats .sport-exo-ligne-nom {
+    font-weight: 600;
+}
+
+/* ── Responsive modale ── */
+@media (max-width: 480px) {
+    .sport-modal-stats .sport-modal-exercices-liste {
+        padding: 2px 12px;
+    }
 }
