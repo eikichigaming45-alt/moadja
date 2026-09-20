@@ -1,5 +1,17 @@
 ## MoaDja
 
+## v1.92.53 — 20 septembre 2026
+- Dans "Mes Routines", chaque routine affiche désormais deux icônes (crayon / corbeille) permettant de la renommer ou de la supprimer directement depuis la liste.
+- Le bouton rouge "Supprimer la routine" a été retiré de l'écran de détail (la suppression se fait désormais depuis la liste).
+- Les boutons "Commencer la routine" et "+ Ajouter un exercice" ont été harmonisés pour avoir la même taille et le même alignement.
+
+---
+
+## v1.92.52 — 20 septembre 2026
+- Désactivation du pinch-to-zoom (zoom par pincement) sur mobile et tablette pour une expérience plus proche d'une application native.
+
+---
+
 ## v1.92.50 — 17 septembre 2026
 - Le dashboard Sport et le widget Sport (colonne droite) sont désormais entièrement cliquables : cliquer sur une carte de récapitulatif de séance ouvre la modale "Statistiques Sport" avec le détail exact de la séance concernée.
 - Ajout d'un effet visuel de survol (léger soulèvement + ombre) sur les cartes cliquables, pour signaler clairement l'interactivité.
