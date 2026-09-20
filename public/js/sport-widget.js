@@ -97,9 +97,7 @@ function _sportFormatDureeLongue(secondes) {
     return `${s}s`;
 }
 
-// ── Détail d'une série individuelle (musculation : "12×20kg" ou "12 reps"
-// au poids du corps ; cardio : combine durée/distance/vitesse/inclinaison,
-// n'affiche que les valeurs réellement renseignées pour cette série). ──
+// ── Détail d'une série individuelle ──
 function _sportFormatDetailSerie(serie, estCardio) {
     if (estCardio) {
         const morceaux = [];
@@ -125,7 +123,7 @@ function _sportSeriesIdentiques(series, estCardio) {
     return series.every(s => cle(s) === premiere);
 }
 
-// Bloc détaillé d'un exercice consolidé — format compact "texte coloré sur une ligne"
+// Bloc détaillé d'un exercice consolidé
 function _sportRenderBlocExerciceDetail(e) {
     const series    = Array.isArray(e.series) ? e.series : [];
     const estCardio = !!e.est_cardio;
@@ -269,9 +267,8 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
     `;
 }
 
-// ── Modale de choix de partage (Étape 1 UI) ──
+// ── Modale de choix de partage (Étape 2 - Backend connecté) ──
 function _sportOuvrirModalPartage(event, sessionId) {
-    // Empêcher l'ouverture de la modale de stats détaillées en arrière-plan
     if (event) event.stopPropagation();
 
     const seance = _sportDashboardSeancesCache.find(s => s.id === sessionId);
@@ -287,23 +284,98 @@ function _sportOuvrirModalPartage(event, sessionId) {
             Comment souhaitez-vous partager <strong>${_sportEchapper(seance.workout_name)}</strong> ?
         </p>
         <div style="display:flex; flex-direction:column; gap:10px;">
-            <button class="sport-cta-btn" onclick="_sportLancerPartage(${sessionId}, 'feed')" style="width:100%; justify-content:center;">
+            <button id="btn-partage-feed" class="sport-cta-btn" onclick="_sportLancerPartage(${sessionId}, 'feed', this, '${_sportEchapper(seance.workout_name)}')" style="width:100%; justify-content:center;">
                 📝 Publier sur le fil social
             </button>
-            <button class="sport-cta-btn" onclick="_sportLancerPartage(${sessionId}, 'tchat')" style="width:100%; justify-content:center; background:rgba(255,255,255,0.8); color:rgb(167,139,250); border:1px solid rgb(167,139,250);">
+            <button id="btn-partage-tchat" class="sport-cta-btn" onclick="_sportLancerPartage(${sessionId}, 'tchat', this, '${_sportEchapper(seance.workout_name)}')" style="width:100%; justify-content:center; background:rgba(255,255,255,0.8); color:rgb(167,139,250); border:1px solid rgb(167,139,250);">
                 💬 Envoyer par Tchat
             </button>
-            <button class="sport-cta-btn" onclick="_sportLancerPartage(${sessionId}, 'externe')" style="width:100%; justify-content:center; background:rgba(0,0,0,0.8); color:#fff; border:none;">
+            <button id="btn-partage-externe" class="sport-cta-btn" onclick="_sportLancerPartage(${sessionId}, 'externe', this, '${_sportEchapper(seance.workout_name)}')" style="width:100%; justify-content:center; background:rgba(0,0,0,0.8); color:#fff; border:none;">
                 🌐 Partager (WhatsApp, etc.)
             </button>
         </div>
+        <p id="msg-erreur-partage" style="color:#ef4444; font-size:13px; text-align:center; margin-top:15px; display:none;"></p>
     `;
 }
 
-function _sportLancerPartage(sessionId, destination) {
-    closeModal();
-    // Stub Étape 1 - Les actions réelles arriveront à l'Étape 2 avec l'image
-    alert(`En cours de développement (Étape 2) : Génération de la carte image pour -> ${destination}`);
+// Appel du backend (sharp) et routage vers l'action choisie
+async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine) {
+    const texteOriginal = boutonDom.innerHTML;
+    boutonDom.innerHTML = 'Génération en cours... ⏳';
+    boutonDom.disabled = true;
+    
+    const msgErreur = document.getElementById('msg-erreur-partage');
+    msgErreur.style.display = 'none';
+
+    try {
+        // Génération de l'image SVG -> JPEG via la nouvelle route (sharp)
+        const rep = await fetch(`/api/sport/sessions/${sessionId}/generate-share`, {
+            method: 'POST',
+            headers: _sportAuthHeaders()
+        });
+        const data = await rep.json();
+
+        if (!data.success) {
+            throw new Error(data.message || 'Erreur lors de la génération de l\'image.');
+        }
+
+        const imageUrl = data.imageUrl;
+        const openGraphUrl = `${window.location.origin}/share/seance/${sessionId}`;
+        const textePartage = `🏋️‍♂️ Ma séance : ${nomRoutine}\nDécouvre mes stats sur MoaDja !`;
+
+        closeModal();
+
+        // Routage selon la destination choisie
+        if (destination === 'feed') {
+            // Ouvre l'éditeur de post (déjà existant dans feedPostEditor.js)
+            switchTab('accueil');
+            openPostEditor();
+            
+            // Pré-remplit le texte
+            const inputTexte = document.getElementById('post-contenu');
+            if (inputTexte) inputTexte.value = textePartage;
+            
+            // Pré-attache l'image (si possible avec le code existant du feed)
+            // Comme le feed attend généralement un File via input type=file, le plus 
+            // sûr/robuste sans réécrire le feed est de placer l'URL dans un champ caché
+            // (Note: nécessite que la route POST /api/feed de votre projet accepte imageUrl en plus de photo_url).
+            // Si le feed existant bloque, on inclut le lien OpenGraph dans le texte pour générer l'aperçu auto.
+            if (inputTexte) inputTexte.value += `\n${openGraphUrl}`;
+
+        } 
+        else if (destination === 'tchat') {
+            // Copie le lien et ouvre le tchat
+            await navigator.clipboard.writeText(`${textePartage}\n${openGraphUrl}`);
+            alert('Lien de la séance copié ! Sélectionnez un contact et collez le message.');
+            if (window.Tchat && Tchat.toggle) {
+                Tchat.toggle(); // Ouvre le panneau latéral du tchat
+                // Si la fonction nouvelle conversation existe :
+                const btnNouvelle = document.querySelector('.tchat-btn-new-conv');
+                if (btnNouvelle) btnNouvelle.click();
+            }
+        } 
+        else if (destination === 'externe') {
+            // Web Share API native du navigateur (téléphones)
+            if (navigator.share) {
+                await navigator.share({
+                    title: `Séance : ${nomRoutine}`,
+                    text: textePartage,
+                    url: openGraphUrl
+                });
+            } else {
+                // Fallback PC
+                await navigator.clipboard.writeText(`${textePartage}\n${openGraphUrl}`);
+                alert('Lien OpenGraph copié dans le presse-papiers ! Vous pouvez le coller sur WhatsApp Web, Facebook, etc.');
+            }
+        }
+
+    } catch (err) {
+        console.error('[SPORT] Erreur _sportLancerPartage :', err.message);
+        boutonDom.innerHTML = texteOriginal;
+        boutonDom.disabled = false;
+        msgErreur.textContent = `❌ ${err.message}`;
+        msgErreur.style.display = 'block';
+    }
 }
 
 
