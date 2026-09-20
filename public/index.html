@@ -269,6 +269,21 @@
                 <div class="im-header">
                     <div class="im-aura-wrap">
                         <img src="/icon-192.png" alt="Avatar" id="im-avatar-img">
+                        <script>
+                        // Anti-flash avatar identity-mirror : applique immédiatement la
+                        // dernière photo de profil connue (mise en cache par profil.js
+                        // dans localStorage.moadja_profil), avant même que profil.js
+                        // (chargé en defer) ne s'exécute. Évite l'affichage transitoire
+                        // du logo /icon-192.png au chargement/rafraîchissement de page.
+                        (function() {
+                            try {
+                                var p = JSON.parse(localStorage.getItem('moadja_profil'));
+                                if (p && p.photo) {
+                                    document.getElementById('im-avatar-img').src = p.photo;
+                                }
+                            } catch (e) {}
+                        })();
+                        </script>
                     </div>
                     <h3 class="im-user-name" id="im-user-name">...</h3>
                 </div>
@@ -286,7 +301,7 @@
                 </div>
             </div>
 
-                        <!-- Navigation Desktop -->
+            <!-- Navigation Desktop -->
             <div class="glass-panel desktop-nav-container">
                 <nav class="desktop-nav" style="display: flex; flex-direction: row; justify-content: space-between; gap: 8px;">
                     <button class="bn-item active" data-tab="accueil" onclick="switchTab('accueil')" style="flex: 1; padding: 10px 4px;">
@@ -377,7 +392,7 @@
 
     </div>
 
-    <!-- Bottom nav (Mobile) -->
+        <!-- Bottom nav (Mobile) -->
     <nav class="bottom-nav" id="bottom-nav">
         <button class="bn-item active" data-tab="accueil"   onclick="switchTab('accueil')">
             <span class="bn-icon">🏠</span>
