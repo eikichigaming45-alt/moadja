@@ -308,7 +308,7 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
     msgErreur.style.display = 'none';
 
     try {
-        // Génération de l'image SVG -> JPEG via la nouvelle route (sharp)
+        // 1. Génération de l'image SVG -> JPEG via la route sharp
         const rep = await fetch(`/api/sport/sessions/${sessionId}/generate-share`, {
             method: 'POST',
             headers: _sportAuthHeaders()
@@ -321,51 +321,74 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
 
         const imageUrl = data.imageUrl;
         const openGraphUrl = `${window.location.origin}/share/seance/${sessionId}`;
-        const textePartage = `🏋️‍♂️ Ma séance : ${nomRoutine}\nDécouvre mes stats sur MoaDja !`;
+        
+        // CORRECTION TCHAT: Texte sur une seule ligne (espace au lieu de \n)
+        const textePartage = `🏋️‍♂️ Ma séance : ${nomRoutine} - Découvre mes stats sur MoaDja !`;
 
         closeModal();
 
-        // Routage selon la destination choisie
+        // 2. Routage selon la destination
         if (destination === 'feed') {
-            // Ouvre l'éditeur de post (déjà existant dans feedPostEditor.js)
+            // Ouvre l'éditeur de post
             switchTab('accueil');
-            openPostEditor();
+            if (typeof openPostEditor === 'function') openPostEditor();
             
             // Pré-remplit le texte
             const inputTexte = document.getElementById('post-contenu');
             if (inputTexte) inputTexte.value = textePartage;
             
-            // Pré-attache l'image (si possible avec le code existant du feed)
-            // Comme le feed attend généralement un File via input type=file, le plus 
-            // sûr/robuste sans réécrire le feed est de placer l'URL dans un champ caché
-            // (Note: nécessite que la route POST /api/feed de votre projet accepte imageUrl en plus de photo_url).
-            // Si le feed existant bloque, on inclut le lien OpenGraph dans le texte pour générer l'aperçu auto.
-            if (inputTexte) inputTexte.value += `\n${openGraphUrl}`;
+            // CORRECTION FEED: Téléchargement de l'image et injection dans l'input file HTML
+            try {
+                const repImg = await fetch(imageUrl);
+                const blob = await repImg.blob();
+                
+                // Création d'un objet File valide pour JavaScript
+                const file = new File([blob], `seance_${sessionId}.jpg`, { type: 'image/jpeg' });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
 
+                // Récupération de l'input hidden ou file du post editor
+                // (le feed MoaDja utilise #post-photo)
+                const fileInput = document.getElementById('post-photo');
+                if (fileInput) {
+                    fileInput.files = dataTransfer.files;
+                    // Déclenche l'événement "change" pour que le script du feed (feedPostEditor.js)
+                    // lance l'aperçu et le cropping automatique.
+                    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+                } else {
+                    console.warn('[SPORT] Input file #post-photo non trouvé.');
+                }
+            } catch (e) {
+                console.error('[SPORT] Impossible d\'attacher l\'image au feed:', e);
+            }
         } 
         else if (destination === 'tchat') {
-            // Copie le lien et ouvre le tchat
-            await navigator.clipboard.writeText(`${textePartage}\n${openGraphUrl}`);
+            // Lien propre sans saut de ligne
+            const texteComplet = `${textePartage} ${openGraphUrl}`;
+            await navigator.clipboard.writeText(texteComplet);
             alert('Lien de la séance copié ! Sélectionnez un contact et collez le message.');
-            if (window.Tchat && Tchat.toggle) {
+            
+            if (window.Tchat && typeof Tchat.toggle === 'function') {
                 Tchat.toggle(); // Ouvre le panneau latéral du tchat
-                // Si la fonction nouvelle conversation existe :
-                const btnNouvelle = document.querySelector('.tchat-btn-new-conv');
-                if (btnNouvelle) btnNouvelle.click();
+                setTimeout(() => {
+                    const btnNouvelle = document.querySelector('.tchat-btn-new-conv');
+                    if (btnNouvelle) btnNouvelle.click();
+                }, 300);
             }
         } 
         else if (destination === 'externe') {
-            // Web Share API native du navigateur (téléphones)
+            // Web Share API native
             if (navigator.share) {
                 await navigator.share({
                     title: `Séance : ${nomRoutine}`,
                     text: textePartage,
                     url: openGraphUrl
-                });
+                }).catch(console.error);
             } else {
                 // Fallback PC
-                await navigator.clipboard.writeText(`${textePartage}\n${openGraphUrl}`);
-                alert('Lien OpenGraph copié dans le presse-papiers ! Vous pouvez le coller sur WhatsApp Web, Facebook, etc.');
+                const texteComplet = `${textePartage} ${openGraphUrl}`;
+                await navigator.clipboard.writeText(texteComplet);
+                alert('Lien copié dans le presse-papiers ! Vous pouvez le coller où vous voulez (WhatsApp Web, Facebook...).');
             }
         }
 
@@ -377,7 +400,6 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
         msgErreur.style.display = 'block';
     }
 }
-
 
 // ── Phrases d'encouragement (si aucune séance) ──
 const SPORT_PHRASES_ENCOURAGEMENT = [
