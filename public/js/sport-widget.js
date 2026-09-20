@@ -181,26 +181,44 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
 
     // Détail des records (uniquement pour la modale)
     let detailsRecordsHtml = '';
-    if (mode === 'modal' && nbRecords > 0 && Array.isArray(s.records)) {
-        detailsRecordsHtml = `
-            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed rgba(167, 139, 250, 0.3);">
-                <div style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; color: #a78bfa;">
-                    ${SPORT_ICONE_TROPHEE} Nouveaux records
+    if (mode === 'modal') {
+        if (nbRecords > 0 && Array.isArray(s.records)) {
+            detailsRecordsHtml = `
+                <div style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed rgba(167, 139, 250, 0.3);">
+                    <div style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; color: #a78bfa;">
+                        ${SPORT_ICONE_TROPHEE} Nouveaux records
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                        ${s.records.map(r => `
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; background: rgba(255, 255, 255, 0.4); padding: 6px 10px; border-radius: 6px;">
+                                <span style="font-weight: 500; color: #1f2937;">${_sportEchapper(r.exercise_name)}</span>
+                                <span style="color: #4b5563;">
+                                    <span style="text-decoration: line-through; opacity: 0.6; margin-right: 4px;">${r.ancien_record}kg</span> 
+                                    <span style="font-weight: 600; color: #10b981;">${r.nouveau_poids}kg</span>
+                                </span>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 6px;">
-                    ${s.records.map(r => `
-                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; background: rgba(255, 255, 255, 0.4); padding: 6px 10px; border-radius: 6px;">
-                            <span style="font-weight: 500; color: #1f2937;">${_sportEchapper(r.exercise_name)}</span>
-                            <span style="color: #4b5563;">
-                                <span style="text-decoration: line-through; opacity: 0.6; margin-right: 4px;">${r.ancien_record}kg</span> 
-                                <span style="font-weight: 600; color: #10b981;">${r.nouveau_poids}kg</span>
-                            </span>
-                        </div>
-                    `).join('')}
+            `;
+        } else {
+            detailsRecordsHtml = `
+                <div style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed rgba(167, 139, 250, 0.3);">
+                    <div style="font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 6px; color: #9ca3af;">
+                        ${SPORT_ICONE_TROPHEE} Aucun nouveau record
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
+        }
     }
+
+    // Le badge est toujours généré, mais grisé si nbRecords === 0
+    const styleGris = 'color: #9ca3af; background: rgba(156, 163, 175, 0.1); border: 1px solid rgba(156, 163, 175, 0.2);';
+    const badgeHtml = `
+        <div class="sport-widget-badge-record" ${nbRecords === 0 ? `style="${styleGris}"` : ''}>
+            ${SPORT_ICONE_TROPHEE} ${nbRecords > 0 ? `${nbRecords} record${nbRecords > 1 ? 's' : ''}` : 'Aucun nouveau record'}
+        </div>
+    `;
 
     return `
         <div class="sport-widget-recap-title-row">
@@ -211,11 +229,7 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
             </span>
         </div>
 
-        ${nbRecords > 0 ? `
-            <div class="sport-widget-badge-record">
-                ${SPORT_ICONE_TROPHEE} ${nbRecords} record${nbRecords > 1 ? 's' : ''}
-            </div>
-        ` : ''}
+        ${badgeHtml}
 
         <div class="sport-widget-stats-row">
             <div class="sport-widget-stat">
