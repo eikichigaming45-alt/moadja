@@ -506,24 +506,30 @@ router.get('/sessions/:id', auth, async (req, res) => {
 router.post('/sessions', auth, async (req, res) => {
     const moi       = req.user.id;
     const workoutId = req.body.workout_id || null;
+
+    // FIX 6.8 : workout_id strictement obligatoire pour créer une session
+    if (!workoutId) {
+        return res.status(400).json({ success: false, message: 'workout_id requis.' });
+    }
+
     try {
+        // FIX 6.8 : On vérifie s'il existe une séance active POUR CETTE ROUTINE spécifiquement
         const { rows: existante } = await pool.query(`
             SELECT id, user_id, workout_id, date_start, date_end, status
             FROM sport_sessions
-            WHERE user_id = \$1 AND status = 'in_progress'
+            WHERE user_id = \$1 AND status = 'in_progress' AND workout_id = \$2
             ORDER BY date_start DESC
             LIMIT 1
-        `, [moi]);
+        `, [moi, workoutId]);
         if (existante.length) {
             return res.json({ success: true, session: existante[0] });
         }
 
-        if (workoutId) {
-            const { rows: owner } = await pool.query(`
-                SELECT id FROM sport_workouts WHERE id = \$1 AND user_id = \$2
-            `, [workoutId, moi]);
-            if (!owner.length) return res.status(403).json({ success: false, message: 'Interdit.' });
-        }
+        const { rows: owner } = await pool.query(`
+            SELECT id FROM sport_workouts WHERE id = \$1 AND user_id = \$2
+        `, [workoutId, moi]);
+        if (!owner.length) return res.status(403).json({ success: false, message: 'Interdit.' });
+        
         const { rows } = await pool.query(`
             INSERT INTO sport_sessions (user_id, workout_id, date_start)
             VALUES (\$1, \$2, NOW())
@@ -1100,7 +1106,7 @@ router.get('/wger/exercises', auth, async (req, res) => {
                 let nom            = nomOriginal;
                 let typeSuivi      = null;
 
-                                const cle = _nettoyerNomBase(nomOriginal);
+                const cle = _nettoyerNomBase(nomOriginal);
                 if (Object.prototype.hasOwnProperty.call(SPORT_TRADUCTION_FR, cle)) {
                     const mapping = SPORT_TRADUCTION_FR[cle];
                     if (mapping === null) continue;
