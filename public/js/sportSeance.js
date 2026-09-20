@@ -1,4 +1,3 @@
-// public/js/sportSeance.js
 // Module Sport — Séance en cours : démarrage/reprise, écran de séance,
 // chronos (global + timers de série), validation des logs, repos entre
 // séries, clôture (terminer/abandonner).
@@ -276,6 +275,7 @@ function _sportJouerAlerteObjectif() {
 }
 
 // Bip court du compte à rebours final de repos (5, 4, 3, 2, 1).
+// Réutilisé également pour le compte à rebours final des timers de série en durée.
 function _sportJouerBipCompteARebours() {
     try {
         if (!_sportAudioCtx) _sportInitAudio();
@@ -324,11 +324,17 @@ function _sportToggleTimerSerie(exIndex, setNumber, targetSeconds) {
             startTime: now,
             targetSeconds: targetSeconds,
             alertPlayed: false,
+            dernierBip: null, // Mémorise la dernière valeur de "remaining" déjà bipée (anti-doublon sur interval 500ms)
             interval: setInterval(() => {
                 const elapsed = Math.floor((Date.now() - _sportSeryTimers[key].startTime) / 1000);
                 const remaining = targetSeconds - elapsed;
 
-                                if (remaining <= 0 && !_sportSeryTimers[key].alertPlayed) {
+                if (remaining <= 5 && remaining > 0 && _sportSeryTimers[key].dernierBip !== remaining) {
+                    _sportJouerBipCompteARebours();
+                    _sportSeryTimers[key].dernierBip = remaining;
+                }
+
+                if (remaining <= 0 && !_sportSeryTimers[key].alertPlayed) {
                     _sportJouerAlerteObjectif();
                     _sportSeryTimers[key].alertPlayed = true;
                 }
@@ -403,7 +409,7 @@ function _sportRenderFormulaireDuree(ex, logsExistants, exIndex) {
         ${estCardio ? `
         <div style="display: flex; gap: 8px; margin-top: 12px;">
             <input type="number" step="0.1" class="sport-seance-input" id="sport-duree-distance-${exIndex}" value="${logsExistants[0]?.distance_km || ''}" placeholder="Dist. (km)">
-            <input type="number" step="0.1" class="sport-seance-input" id="sport-duree-vitesse-${exIndex}" value="${logsExistants[0]?.speed_kmh || ''}" placeholder="Vit. (km/h)">
+                        <input type="number" step="0.1" class="sport-seance-input" id="sport-duree-vitesse-${exIndex}" value="${logsExistants[0]?.speed_kmh || ''}" placeholder="Vit. (km/h)">
             <input type="number" step="0.1" class="sport-seance-input" id="sport-duree-inclinaison-${exIndex}" value="${logsExistants[0]?.incline_percent || ''}" placeholder="Incl. (%)">
         </div>
         ` : ''}
