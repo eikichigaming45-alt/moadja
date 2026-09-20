@@ -56,9 +56,24 @@ function _sportAfficherBandeauReprise(session) {
     });
 }
 
+// Correctif : une séance sans routine liée (workout_id absent) ne peut
+// jamais être reprise. Auparavant, on affichait juste un message d'erreur
+// et la séance restait bloquée en "in_progress" indéfiniment, faisant
+// réapparaître la bannière à chaque chargement (cf. point 6.8 de l'audit).
+// Elle est désormais automatiquement supprimée (comme un abandon), puis
+// le dashboard est rechargé pour faire disparaître la bannière tout de suite.
 async function _sportReprendreSeance(session) {
     if (!session.workout_id) {
-        _sportOuvrirConfirmationInfo('Cette séance n\'est pas liée à une routine, reprise impossible.');
+        try {
+            await fetch(`/api/sport/sessions/${session.id}`, {
+                method: 'DELETE', headers: _sportAuthHeaders()
+            });
+        } catch (err) {
+            console.error('[SPORT] suppression séance orpheline :', err.message);
+        }
+        _sportOuvrirConfirmationInfo('Cette séance n\'était pas liée à une routine : elle a été supprimée automatiquement.');
+        chargerSportDashboard();
+        if (typeof chargerSportStatsWidget === 'function') chargerSportStatsWidget();
         return;
     }
     try {
@@ -313,7 +328,7 @@ function _sportToggleTimerSerie(exIndex, setNumber, targetSeconds) {
                 const elapsed = Math.floor((Date.now() - _sportSeryTimers[key].startTime) / 1000);
                 const remaining = targetSeconds - elapsed;
 
-                if (remaining <= 0 && !_sportSeryTimers[key].alertPlayed) {
+                                if (remaining <= 0 && !_sportSeryTimers[key].alertPlayed) {
                     _sportJouerAlerteObjectif();
                     _sportSeryTimers[key].alertPlayed = true;
                 }
