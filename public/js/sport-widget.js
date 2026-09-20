@@ -138,17 +138,14 @@ function _sportRenderBlocExerciceDetail(e) {
 }
 
 // ── Bloc partagé ISO (Dashboard / Widget droite / Modale) ──
-// Factorise l'affichage Titre, Trophées, Stats (Durée/Volume/Calories), 
-// Warning profil incomplet, Liste d'exercices et Footer MoaDja.
-// Le bouton de suppression (Dashboard uniquement) est transmis en HTML brut
-// via btnSupprHtml pour être intégré DANS la ligne de titre (flexbox),
-// ce qui évite tout chevauchement avec la date (contrairement à un
-// positionnement absolu).
 function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
     const dateTexte   = _sportFormatDateCourte(s.date_end || s.date_start);
     const nbRecords   = Number.isInteger(s.nb_records) ? s.nb_records : 0;
     const exercices   = s.exercices || [];
     
+    // Trophée en jaune (Tailwind yellow-500)
+    const iconeTropheeJaune = `<span style="color: #eab308; display: inline-flex; align-items: center;">${SPORT_ICONE_TROPHEE}</span>`;
+
     // Rendu de la liste
     let listeHtml = '';
     if (mode === 'widget' || mode === 'dashboard') {
@@ -179,44 +176,34 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
         : '';
     const valCalories = s.profil_incomplet ? '—' : `${s.calories} kcal`;
 
-    // Détail des records (uniquement pour la modale)
+    // Détail des records (uniquement pour la modale, et UNIQUEMENT s'il y a des records)
     let detailsRecordsHtml = '';
-    if (mode === 'modal') {
-        if (nbRecords > 0 && Array.isArray(s.records)) {
-            detailsRecordsHtml = `
-                <div style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed rgba(167, 139, 250, 0.3);">
-                    <div style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; color: #a78bfa;">
-                        ${SPORT_ICONE_TROPHEE} Nouveaux records
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 6px;">
-                        ${s.records.map(r => `
-                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; background: rgba(255, 255, 255, 0.4); padding: 6px 10px; border-radius: 6px;">
-                                <span style="font-weight: 500; color: #1f2937;">${_sportEchapper(r.exercise_name)}</span>
-                                <span style="color: #4b5563;">
-                                    <span style="text-decoration: line-through; opacity: 0.6; margin-right: 4px;">${r.ancien_record}kg</span> 
-                                    <span style="font-weight: 600; color: #10b981;">${r.nouveau_poids}kg</span>
-                                </span>
-                            </div>
-                        `).join('')}
-                    </div>
+    if (mode === 'modal' && nbRecords > 0 && Array.isArray(s.records)) {
+        detailsRecordsHtml = `
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed rgba(167, 139, 250, 0.3);">
+                <div style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; color: #a78bfa;">
+                    ${iconeTropheeJaune} Nouveaux records
                 </div>
-            `;
-        } else {
-            detailsRecordsHtml = `
-                <div style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed rgba(167, 139, 250, 0.3);">
-                    <div style="font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 6px; color: #9ca3af;">
-                        ${SPORT_ICONE_TROPHEE} Aucun nouveau record
-                    </div>
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    ${s.records.map(r => `
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; background: rgba(255, 255, 255, 0.4); padding: 6px 10px; border-radius: 6px;">
+                            <span style="font-weight: 500; color: #1f2937;">${_sportEchapper(r.exercise_name)}</span>
+                            <span style="color: #4b5563;">
+                                <span style="text-decoration: line-through; opacity: 0.6; margin-right: 4px;">${r.ancien_record}kg</span> 
+                                <span style="font-weight: 600; color: #10b981;">${r.nouveau_poids}kg</span>
+                            </span>
+                        </div>
+                    `).join('')}
                 </div>
-            `;
-        }
+            </div>
+        `;
     }
 
-    // Le badge est toujours généré, mais grisé si nbRecords === 0
+    // Le badge en haut est toujours généré, mais le texte devient gris si 0 record (l'icône reste jaune)
     const styleGris = 'color: #9ca3af; background: rgba(156, 163, 175, 0.1); border: 1px solid rgba(156, 163, 175, 0.2);';
     const badgeHtml = `
         <div class="sport-widget-badge-record" ${nbRecords === 0 ? `style="${styleGris}"` : ''}>
-            ${SPORT_ICONE_TROPHEE} ${nbRecords > 0 ? `${nbRecords} record${nbRecords > 1 ? 's' : ''}` : 'Aucun nouveau record'}
+            ${iconeTropheeJaune} <span>${nbRecords > 0 ? `${nbRecords} record${nbRecords > 1 ? 's' : ''}` : 'Aucun nouveau record'}</span>
         </div>
     `;
 
