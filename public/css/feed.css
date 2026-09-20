@@ -99,18 +99,34 @@
 }
 
 /* ===================== CARD POST ===================== */
+/* Correctif v1.92.64 : le fond flouté (backdrop-filter) est déplacé sur un
+   pseudo-élément ::before positionné derrière le contenu. Cause : un bug de
+   rasterisation Chromium (Chrome/Edge) dégrade la netteté des images <img>
+   enfants d'un conteneur qui a backdrop-filter appliqué directement dessus.
+   En isolant le flou sur ::before (hors de la couche de composition de la
+   photo), la photo garde sa qualité native. Rendu visuel final inchangé. */
 .feed-card {
+    position: relative;
+    isolation: isolate;
+    border-radius: var(--radius-xl);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+.feed-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
     background: var(--glass-bg);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: var(--glass-border);
     border-radius: var(--radius-xl);
-    padding: 20px;
     box-shadow: var(--glass-shadow);
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    width: 100%;
 }
 
 .feed-card-header {
@@ -258,10 +274,6 @@
     object-fit: cover;
     display: block;
     transition: opacity .2s;
-    /* Correctif v1.92.63 : isole l'image sur sa propre couche de composition
-       GPU pour éviter que le backdrop-filter (blur) du parent .feed-card
-       ne dégrade le rendu/la netteté de l'image affichée dans le fil. */
-    transform: translateZ(0);
 }
 
 .feed-photo:hover {
