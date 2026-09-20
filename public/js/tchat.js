@@ -55,11 +55,11 @@
         return html
             .replace(
                 /(https?:\/\/[^\s<>"']+)/g,
-                '<a href="\\$1" target="_blank" rel="noopener noreferrer" class="tchat-lien">\\$1</a>'
+                '<a href="\$1" target="_blank" rel="noopener noreferrer" class="tchat-lien">\$1</a>'
             )
             .replace(
                 /(?<![/"'=])\b(www\.[^\s<>"']+\.[^\s<>"']+)/g,
-                '<a href="https://\\$1" target="_blank" rel="noopener noreferrer" class="tchat-lien">\\$1</a>'
+                '<a href="https://\$1" target="_blank" rel="noopener noreferrer" class="tchat-lien">\$1</a>'
             );
     }
 
@@ -262,7 +262,7 @@
             document.getElementById('tchat-input-image').click();
         });
 
-               document.getElementById('tchat-input-image').addEventListener('change', async (e) => {
+        document.getElementById('tchat-input-image').addEventListener('change', async (e) => {
             const file = e.target.files[0];
             if (!file || !_interlocuteurActif) return;
             e.target.value = '';
@@ -583,563 +583,252 @@
             }
             _chargerConversations();
             _rafraichirBadgeBulle();
-        });
+                    });
 
-        _socket.on('tchat:lu', ({ par }) => {
-            if (_interlocuteurActif && par === _interlocuteurActif.id) {
-                document.querySelectorAll('.tchat-msg.sortant .tchat-msg-lu').forEach(el => {
-                    el.textContent = '✓✓';
-                    el.classList.remove('envoye');
-                });
-            }
-        });
-
-        _socket.on('tchat:modifie', (msg) => {
-            const wrap = document.querySelector(`[data-msg-id="${msg.id}"]`);
-            if (!wrap) return;
-            const bulle = wrap.querySelector('.tchat-msg-bulle');
-            if (bulle) bulle.innerHTML = _renderLiens(_convertirEmojis(_echapper(msg.content)));
-            let modifTag = wrap.querySelector('.tchat-msg-modifie');
-            if (!modifTag) {
-                modifTag             = document.createElement('span');
-                modifTag.className   = 'tchat-msg-modifie';
-                modifTag.textContent = 'modifié';
-                wrap.querySelector('.tchat-msg-meta')?.prepend(modifTag);
-            }
-        });
-
-        _socket.on('tchat:supprime', ({ id, par }) => {
-            const moi  = _userId();
-            if (par === moi) return;
-            const wrap = document.querySelector(`[data-msg-id="${id}"]`);
-            if (!wrap) return;
-            const bulle = wrap.querySelector('.tchat-msg-bulle');
-            if (bulle) {
-                bulle.innerHTML = '<em>Message supprimé</em>';
-                bulle.classList.add('tchat-msg-bulle-supprime');
-            }
-            wrap.querySelectorAll('.tchat-msg-lu, .tchat-msg-modifie, .tchat-msg-actions').forEach(el => el.remove());
-        });
-
-        _socket.on('disconnect', () => console.log('[TCHAT] Socket déconnecté'));
-    }
-
-    // ── Reconnexion forcée (correctif v1.92.29) ─────────────────
-    // En arrière-plan mobile/PWA, le socket peut se déconnecter
-    // (mise en veille réseau) sans que l'événement 'disconnect' ne
-    // permette une reconnexion automatique immédiate au retour au
-    // premier plan. On force ici une reconnexion explicite.
-    function _reconnecterSocket() {
-        if (!_socket) {
-            _initSocket();
-            return;
-        }
-        if (!_socket.connected) {
-            _socket.connect();
-        }
-    }
-
-    function _rejoindreRoom(userId, interlocuteurId) {
-        if (!_socket) return;
-        _socket.emit('tchat:rejoindre', { room: _roomName(userId, interlocuteurId) });
-    }
-
-    function _quitterRoom(userId, interlocuteurId) {
-        if (!_socket) return;
-        _socket.emit('tchat:quitter', { room: _roomName(userId, interlocuteurId) });
-    }
-
-    // ── GESTION HISTORIQUE & NAVIGATION ──
-
-    function _toggleTchat() {
-        if (_ouvert) {
-            if (_historyDepth > 0) history.go(-_historyDepth); // referme proprement en dépilant
-            else _fermerTchat(true);
-        } else {
-            _ouvrirTchat();
-        }
-    }
-
-    function _ouvrirTchat() {
-        _ouvert = true;
-        document.getElementById('tchat-sheet').classList.add('ouvert');
-        document.getElementById('tchat-overlay').classList.add('visible');
-        const bulle = document.getElementById('tchat-bulle');
-        if (bulle) bulle.style.opacity = '0';
-
-        _afficherVueListe(true); // true = push state avec hash
-        _chargerConversations();
-        _initSocket();
-        _chargerPresence();
-    }
-
-    function _fermerTchat(skipHistory = false) {
-        _ouvert = false;
-        document.getElementById('tchat-sheet').classList.remove('ouvert');
-        document.getElementById('tchat-overlay').classList.remove('visible');
-        const bulle = document.getElementById('tchat-bulle');
-        if (bulle) bulle.style.opacity = '1';
-        if (_interlocuteurActif) {
-            _quitterRoom(_userId(), _interlocuteurActif.id);
-            _interlocuteurActif = null;
-        }
-        _annulerReply();
-        _fermerEmojiPanel();
-
-        _historyDepth = 0;
-    }
-
-    function _afficherVueListe(pushState = false) {
-        _vueActive = 'liste';
-        document.getElementById('tchat-vue-liste').style.display = 'flex';
-        document.getElementById('tchat-vue-conv').classList.remove('active');
-        document.getElementById('tchat-header-titre').textContent = 'Tchat';
-        if (_interlocuteurActif) {
-            _quitterRoom(_userId(), _interlocuteurActif.id);
-            _interlocuteurActif = null;
-        }
-        _annulerReply();
-        _fermerEmojiPanel();
-        _chargerConversations();
-
-        if (pushState) {
-            // Ajout du hash pour forcer Android à reconnaitre la navigation
-            history.pushState({ tchat: 'liste' }, '', '#tchat-liste');
-            _historyDepth++;
-        }
-    }
-
-    function _afficherVueConv(interlocuteur, pushState = true) {
-        _vueActive          = 'conv';
-        _interlocuteurActif = interlocuteur;
-        _plusAncienMsgId    = null;
-
-        document.getElementById('tchat-vue-liste').style.display = 'none';
-        document.getElementById('tchat-vue-conv').classList.add('active');
-        document.getElementById('tchat-header-titre').textContent = '';
-        document.getElementById('tchat-conv-nom-label').textContent =
-            interlocuteur.prenom
-                ? `${interlocuteur.prenom}${interlocuteur.nom ? ' ' + interlocuteur.nom : ''}`
-                : interlocuteur.username;
-
-        const avatarWrap = document.getElementById('tchat-conv-avatar-wrap');
-        avatarWrap.querySelector('#tchat-conv-avatar-img').innerHTML =
-            _avatarHTML(interlocuteur.photo, interlocuteur.prenom, interlocuteur.nom, 36, interlocuteur.id);
-
-        avatarWrap.style.cursor = 'pointer';
-        avatarWrap.onclick = () => {
-            if (typeof ouvrirProfilPublic === 'function') {
-                ouvrirProfilPublic(interlocuteur.id);
-            }
-        };
-
-        const statut = document.getElementById('tchat-conv-statut');
-        const enligne = _usersEnLigne.has(Number(interlocuteur.id));
-        statut.textContent = enligne ? 'En ligne' : '';
-        statut.className   = enligne ? 'tchat-conv-statut-enligne' : '';
-
-        const scroll = document.getElementById('tchat-messages-scroll');
-        scroll.innerHTML = `
-            <button id="tchat-btn-plus-anciens" style="display:none">
-                Charger les messages précédents
-            </button>`;
-        document.getElementById('tchat-btn-plus-anciens').addEventListener('click', _chargerPlusAnciens);
-
-        // Clic image => appel du Modal global (Feed)
-        scroll.addEventListener('click', (e) => {
-            const img = e.target.closest('[data-lightbox-src]');
-            if (img) {
-                if (typeof window.ouvrirPhoto === 'function') {
-                    window.ouvrirPhoto(img.dataset.lightboxSrc);
-                } else {
-                    console.error("Fonction ouvrirPhoto introuvable, impossible d'afficher l'image.");
+            _socket.on('tchat:lu', ({ par }) => {
+                if (_interlocuteurActif && par === _interlocuteurActif.id) {
+                    document.querySelectorAll('.tchat-msg.sortant .tchat-msg-lu').forEach(el => {
+                        el.textContent = '✓✓';
+                        el.classList.remove('envoye');
+                    });
                 }
-            }
-        });
-
-        _annulerReply();
-        _fermerEmojiPanel();
-        _rejoindreRoom(_userId(), interlocuteur.id);
-        _chargerMessages();
-        _marquerLu(interlocuteur.id);
-
-        if (pushState) {
-            // Ajout du hash pour la conversation
-            history.pushState({ tchat: 'conv' }, '', '#tchat-conv');
-            _historyDepth++;
-        }
-    }
-
-    async function _chargerConversations() {
-        const liste = document.getElementById('tchat-liste-scroll');
-        if (!liste) return;
-        try {
-            const r = await fetch('/api/tchat/conversations', { headers: _authHeaders() });
-            const d = await r.json();
-            if (!d.success) return;
-
-            if (!d.conversations.length) {
-                liste.innerHTML = `
-                    <div class="tchat-vide">
-                        <div class="tchat-vide-icone">💬</div>
-                        <div class="tchat-vide-texte">Aucune conversation.<br>Commence à écrire !</div>
-                    </div>`;
-                return;
-            }
-
-            liste.innerHTML = d.conversations.map(c => {
-                const moi    = _userId();
-                const nom    = c.prenom
-                    ? `${c.prenom}${c.nom ? ' ' + c.nom : ''}`
-                    : c.username;
-                const apercu = c.dernier_message
-                    ? (c.dernier_sender_id === moi
-                        ? `Vous : ${c.dernier_message}`
-                        : c.dernier_message)
-                    : c.dernier_image_url ? (c.dernier_sender_id === moi ? 'Vous : 📷 Photo' : '📷 Photo')
-                    : 'Aucun message';
-                const heure = c.dernier_message_at ? _formatHeure(c.dernier_message_at) : '';
-                const nonLu = c.non_lus > 0;
-                return `
-                                        <div class="tchat-conv-item"
-                         data-id="${c.interlocuteur_id}"
-                         data-username="${_echapper(c.username)}"
-                         data-prenom="${_echapper(c.prenom || '')}"
-                         data-nom="${_echapper(c.nom || '')}"
-                         data-photo="${_echapper(c.photo || '')}">
-                        <div class="tchat-conv-avatar">
-                            ${_avatarHTML(c.photo, c.prenom, c.nom, 42, c.interlocuteur_id)}
-                        </div>
-                        <div class="tchat-conv-infos">
-                            <div class="tchat-conv-nom">${_echapper(nom)}</div>
-                            <div class="tchat-conv-apercu${nonLu ? ' non-lu' : ''}">
-                                ${_echapper(apercu.substring(0, 60))}
-                            </div>
-                        </div>
-                        <div class="tchat-conv-meta">
-                            <span class="tchat-conv-heure">${heure}</span>
-                            ${nonLu ? `<span class="tchat-conv-badge">${c.non_lus}</span>` : ''}
-                        </div>
-                        <button class="tchat-conv-suppr" data-id="${c.interlocuteur_id}"
-                                title="Supprimer la conversation"
-                                aria-label="Supprimer la conversation">🗑️</button>
-                    </div>`;
-            }).join('');
-
-            liste.querySelectorAll('.tchat-conv-item').forEach(el => {
-                el.addEventListener('click', (e) => {
-                    if (e.target.closest('.tchat-conv-suppr')) return;
-                    _afficherVueConv({
-                        id      : parseInt(el.dataset.id, 10),
-                        username: el.dataset.username,
-                        prenom  : el.dataset.prenom || null,
-                        nom     : el.dataset.nom    || null,
-                        photo   : el.dataset.photo  || null
-                    }, true);
-                });
             });
 
-            liste.querySelectorAll('.tchat-conv-suppr').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const itemEl = btn.closest('.tchat-conv-item');
-                    _confirmerSuppressionConversation(parseInt(btn.dataset.id, 10), itemEl);
-                });
+            _socket.on('tchat:modifie', (msg) => {
+                const wrap = document.querySelector(`[data-msg-id="${msg.id}"]`);
+                if (!wrap) return;
+                const bulle = wrap.querySelector('.tchat-msg-bulle');
+                if (bulle) bulle.innerHTML = _renderLiens(_convertirEmojis(_echapper(msg.content)));
+                let modifTag = wrap.querySelector('.tchat-msg-modifie');
+                if (!modifTag) {
+                    modifTag             = document.createElement('span');
+                    modifTag.className   = 'tchat-msg-modifie';
+                    modifTag.textContent = 'modifié';
+                    wrap.querySelector('.tchat-msg-meta')?.prepend(modifTag);
+                }
             });
 
-        } catch (err) {
-            console.error('[TCHAT] chargerConversations :', err.message);
+            _socket.on('tchat:supprime', ({ id, par }) => {
+                const moi  = _userId();
+                if (par === moi) return;
+                const wrap = document.querySelector(`[data-msg-id="${id}"]`);
+                if (!wrap) return;
+                const bulle = wrap.querySelector('.tchat-msg-bulle');
+                if (bulle) {
+                    bulle.innerHTML = '<em>Message supprimé</em>';
+                    bulle.classList.add('tchat-msg-bulle-supprime');
+                                }
+                wrap.querySelectorAll('.tchat-msg-lu, .tchat-msg-modifie, .tchat-msg-actions').forEach(el => el.remove());
+            });
+
+            _socket.on('disconnect', () => console.log('[TCHAT] Socket déconnecté'));
         }
-    }
 
-    async function _chargerMessages(avant = null) {
-        if (_chargementEnCours || !_interlocuteurActif) return;
-        _chargementEnCours = true;
-
-        const scroll  = document.getElementById('tchat-messages-scroll');
-        const btnPlus = document.getElementById('tchat-btn-plus-anciens');
-
-        try {
-            let url = `/api/tchat/messages/${_interlocuteurActif.id}`;
-            if (avant) url += `?avant=${avant}`;
-
-            const r = await fetch(url, { headers: _authHeaders() });
-            const d = await r.json();
-            if (!d.success) return;
-
-            const msgs = d.messages;
-
-            if (!msgs.length && !avant) {
-                scroll.innerHTML = `
-                    <button id="tchat-btn-plus-anciens" style="display:none">
-                        Charger les messages précédents
-                    </button>
-                    <div class="tchat-vide">
-                        <div class="tchat-vide-icone">👋</div>
-                        <div class="tchat-vide-texte">Dis bonjour !</div>
-                    </div>`;
-                document.getElementById('tchat-btn-plus-anciens').addEventListener('click', _chargerPlusAnciens);
+        // ── Reconnexion forcée (correctif v1.92.29) ─────────────────
+        // En arrière-plan mobile/PWA, le socket peut se déconnecter
+        // (mise en veille réseau) sans que l'événement 'disconnect' ne
+        // permette une reconnexion automatique immédiate au retour au
+        // premier plan. On force ici une reconnexion explicite.
+        function _reconnecterSocket() {
+            if (!_socket) {
+                _initSocket();
                 return;
             }
+            if (!_socket.connected) {
+                _socket.connect();
+            }
+        }
 
-            if (msgs.length === LIMITE_PAR_PAGE) {
-                _plusAncienMsgId = msgs[0].id;
-                if (btnPlus) btnPlus.style.display = 'flex';
+        function _rejoindreRoom(userId, interlocuteurId) {
+            if (!_socket) return;
+            _socket.emit('tchat:rejoindre', { room: _roomName(userId, interlocuteurId) });
+        }
+
+        function _quitterRoom(userId, interlocuteurId) {
+            if (!_socket) return;
+            _socket.emit('tchat:quitter', { room: _roomName(userId, interlocuteurId) });
+        }
+
+        // ── GESTION HISTORIQUE & NAVIGATION ──
+
+        function _toggleTchat() {
+            if (_ouvert) {
+                if (_historyDepth > 0) history.go(-_historyDepth); // referme proprement en dépilant
+                else _fermerTchat(true);
             } else {
-                if (btnPlus) btnPlus.style.display = 'none';
-            }
-
-            if (avant) {
-                const ancreId  = scroll.querySelector('.tchat-msg')?.dataset.msgId;
-                const fragment = _construireFragment(msgs);
-                const ancre    = ancreId
-                    ? scroll.querySelector(`[data-msg-id="${ancreId}"]`)
-                    : null;
-                if (ancre) scroll.insertBefore(fragment, ancre);
-                else       scroll.appendChild(fragment);
-            } else {
-                const vide = scroll.querySelector('.tchat-vide');
-                if (vide) vide.remove();
-                scroll.appendChild(_construireFragment(msgs));
-                _scrollBasMessages();
-            }
-        } catch (err) {
-            console.error('[TCHAT] chargerMessages :', err.message);
-        } finally {
-            _chargementEnCours = false;
-        }
-    }
-
-    function _chargerPlusAnciens() {
-        if (_plusAncienMsgId) _chargerMessages(_plusAncienMsgId);
-    }
-
-    function _construireFragment(msgs) {
-        const fragment = document.createDocumentFragment();
-        const moi      = _userId();
-        let   dernDate = null;
-
-        msgs.forEach(msg => {
-            const dateMsg = new Date(msg.created_at).toDateString();
-            if (dateMsg !== dernDate) {
-                dernDate = dateMsg;
-                const sep       = document.createElement('div');
-                sep.className   = 'tchat-date-sep';
-                sep.textContent = _formatDateSep(msg.created_at);
-                fragment.appendChild(sep);
-            }
-            fragment.appendChild(_creerBulleDom(msg, moi));
-        });
-
-        return fragment;
-    }
-
-    function _creerBulleDom(msg, moi) {
-        const sortant  = Number(msg.sender_id) === Number(moi);
-        const supprime = Array.isArray(msg.deleted_for) && msg.deleted_for.includes(Number(moi));
-        const wrap     = document.createElement('div');
-        wrap.className     = `tchat-msg ${sortant ? 'sortant' : 'entrant'}`;
-        wrap.dataset.msgId = msg.id;
-
-        const luHTML = sortant
-            ? `<span class="tchat-msg-lu ${msg.seen ? '' : 'envoye'}">${msg.seen ? '✓✓' : '✓'}</span>`
-            : '';
-
-        const modifieHTML = msg.edited_at
-            ? `<span class="tchat-msg-modifie">modifié</span>`
-            : '';
-
-        let replyHTML = '';
-        if (msg.reply_to_id && msg.reply_content) {
-            const replyNom = msg.reply_sender_prenom || msg.reply_sender_username || '';
-            replyHTML = `
-                <div class="tchat-reply-cite">
-                    <span class="tchat-reply-cite-nom">${_echapper(replyNom)}</span>
-                    <span class="tchat-reply-cite-texte">${_echapper((msg.reply_content || '').substring(0, 80))}</span>
-                </div>`;
-        }
-
-        let contenu;
-        if (supprime) {
-            contenu = '<em class="tchat-msg-supprime-texte">Message supprimé</em>';
-        } else if (msg.image_url) {
-            // Clic droit désactivé sur les images du tchat, et cursor pointer car cliquable
-            contenu = `<img src="${_echapper(msg.image_url)}"
-                class="tchat-msg-image"
-                alt="image"
-                style="cursor:pointer;"
-                data-lightbox-src="${_echapper(msg.image_url)}"
-                oncontextmenu="return false;"
-                onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span style=\\'font-size:12px;color:#9ca3af;font-style:italic\\'>Image indisponible</span>')">`;
-        } else {
-            contenu = _renderLiens(_convertirEmojis(_echapper(msg.content || '')));
-        }
-
-        const actionsHTML = !supprime ? `
-            <div class="tchat-msg-actions">
-                <button class="tchat-msg-btn-reply" title="Répondre">↩</button>
-                ${sortant && !msg.image_url ? `<button class="tchat-msg-btn-edit" title="Modifier">✏️</button>` : ''}
-                <button class="tchat-msg-btn-del" title="Supprimer">🗑️</button>
-            </div>` : '';
-
-        wrap.innerHTML = `
-            ${actionsHTML}
-            <div class="tchat-msg-bulle">
-                ${replyHTML}
-                ${contenu}
-            </div>
-            <div class="tchat-msg-meta">
-                ${modifieHTML}
-                <span class="tchat-msg-heure">${_formatHeure(msg.created_at)}</span>
-                ${luHTML}
-            </div>`;
-
-        if (!supprime) {
-            wrap.querySelector('.tchat-msg-btn-reply')?.addEventListener('click', (e) => {
-                e.stopPropagation();
-                _activerReply(msg);
-            });
-
-            wrap.querySelector('.tchat-msg-btn-edit')?.addEventListener('click', (e) => {
-                e.stopPropagation();
-                _editerMessage(wrap, msg);
-            });
-
-            wrap.querySelector('.tchat-msg-btn-del')?.addEventListener('click', (e) => {
-                e.stopPropagation();
-                _supprimerMessageConfirm(wrap, msg.id);
-            });
-        }
-
-        return wrap;
-    }
-
-    function _appendMessage(msg) {
-        const scroll = document.getElementById('tchat-messages-scroll');
-        if (!scroll) return;
-
-        const vide = scroll.querySelector('.tchat-vide');
-        if (vide) vide.remove();
-
-        const moi       = _userId();
-        const dernBulle = scroll.querySelectorAll('.tchat-msg');
-        if (dernBulle.length) {
-            const dernEl   = dernBulle[dernBulle.length - 1];
-            const dernDate = new Date(parseInt(dernEl.dataset.msgId || 0));
-            const nouvDate = new Date(msg.created_at);
-            if (dernDate.toDateString() !== nouvDate.toDateString()) {
-                const sep       = document.createElement('div');
-                sep.className   = 'tchat-date-sep';
-                sep.textContent = _formatDateSep(msg.created_at);
-                scroll.appendChild(sep);
+                _ouvrirTchat();
             }
         }
 
-        scroll.appendChild(_creerBulleDom(msg, moi));
-    }
+        function _ouvrirTchat() {
+            _ouvert = true;
+            document.getElementById('tchat-sheet').classList.add('ouvert');
+            document.getElementById('tchat-overlay').classList.add('visible');
+            const bulle = document.getElementById('tchat-bulle');
+            if (bulle) bulle.style.opacity = '0';
 
-    function _scrollBasMessages() {
-        const scroll = document.getElementById('tchat-messages-scroll');
-        if (scroll) scroll.scrollTop = scroll.scrollHeight;
-    }
+            _afficherVueListe(true); // true = push state avec hash
+            _chargerConversations();
+            _initSocket();
+            _chargerPresence();
+        }
 
-    async function _envoyerMessage() {
-        const input  = document.getElementById('tchat-input');
-        const btnEnv = document.getElementById('tchat-btn-envoyer');
-        const texte  = input.value.trim();
-        if (!texte || !_interlocuteurActif) return;
-
-        input.value        = '';
-        input.style.height = 'auto';
-        btnEnv.disabled    = true;
-        _fermerEmojiPanel();
-
-        try {
-            const body = { receiver_id: _interlocuteurActif.id, content: texte };
-            if (_replyTo) body.reply_to_id = _replyTo.id;
-
-            const r = await fetch('/api/tchat/messages', {
-                method : 'POST',
-                headers: _authHeaders(),
-                body   : JSON.stringify(body)
-            });
-            const d = await r.json();
-            if (!d.success) {
-                input.value     = texte;
-                btnEnv.disabled = false;
-                return;
+                function _fermerTchat(skipHistory = false) {
+            _ouvert = false;
+            document.getElementById('tchat-sheet').classList.remove('ouvert');
+            document.getElementById('tchat-overlay').classList.remove('visible');
+            const bulle = document.getElementById('tchat-bulle');
+            if (bulle) bulle.style.opacity = '1';
+            if (_interlocuteurActif) {
+                _quitterRoom(_userId(), _interlocuteurActif.id);
+                _interlocuteurActif = null;
             }
             _annulerReply();
-            if (!_socket?.connected) {
-                _appendMessage(d.message);
-                _scrollBasMessages();
+            _fermerEmojiPanel();
+
+            _historyDepth = 0;
+        }
+
+        function _afficherVueListe(pushState = false) {
+            _vueActive = 'liste';
+            document.getElementById('tchat-vue-liste').style.display = 'flex';
+            document.getElementById('tchat-vue-conv').classList.remove('active');
+            document.getElementById('tchat-header-titre').textContent = 'Tchat';
+            if (_interlocuteurActif) {
+                _quitterRoom(_userId(), _interlocuteurActif.id);
+                _interlocuteurActif = null;
             }
-            _rafraichirBadgeBulle();
-        } catch (err) {
-            console.error('[TCHAT] envoyerMessage :', err.message);
-            input.value     = texte;
-            btnEnv.disabled = false;
-        }
-    }
+            _annulerReply();
+            _fermerEmojiPanel();
+            _chargerConversations();
 
-    async function _marquerLu(interlocuteurId) {
-        try {
-            await fetch('/api/tchat/messages/lus', {
-                method : 'POST',
-                headers: _authHeaders(),
-                body   : JSON.stringify({ interlocuteur_id: interlocuteurId })
+            if (pushState) {
+                // Ajout du hash pour forcer Android à reconnaitre la navigation
+                history.pushState({ tchat: 'liste' }, '', '#tchat-liste');
+                _historyDepth++;
+            }
+        }
+
+        function _afficherVueConv(interlocuteur, pushState = true) {
+            _vueActive          = 'conv';
+            _interlocuteurActif = interlocuteur;
+            _plusAncienMsgId    = null;
+
+            document.getElementById('tchat-vue-liste').style.display = 'none';
+            document.getElementById('tchat-vue-conv').classList.add('active');
+            document.getElementById('tchat-header-titre').textContent = '';
+            document.getElementById('tchat-conv-nom-label').textContent =
+                interlocuteur.prenom
+                    ? `${interlocuteur.prenom}${interlocuteur.nom ? ' ' + interlocuteur.nom : ''}`
+                    : interlocuteur.username;
+
+            const avatarWrap = document.getElementById('tchat-conv-avatar-wrap');
+            avatarWrap.querySelector('#tchat-conv-avatar-img').innerHTML =
+                _avatarHTML(interlocuteur.photo, interlocuteur.prenom, interlocuteur.nom, 36, interlocuteur.id);
+
+            avatarWrap.style.cursor = 'pointer';
+            avatarWrap.onclick = () => {
+                if (typeof ouvrirProfilPublic === 'function') {
+                    ouvrirProfilPublic(interlocuteur.id);
+                }
+            };
+
+            const statut = document.getElementById('tchat-conv-statut');
+            const enligne = _usersEnLigne.has(Number(interlocuteur.id));
+            statut.textContent = enligne ? 'En ligne' : '';
+            statut.className   = enligne ? 'tchat-conv-statut-enligne' : '';
+
+            const scroll = document.getElementById('tchat-messages-scroll');
+            scroll.innerHTML = `
+                <button id="tchat-btn-plus-anciens" style="display:none">
+                    Charger les messages précédents
+                </button>`;
+            document.getElementById('tchat-btn-plus-anciens').addEventListener('click', _chargerPlusAnciens);
+
+            // Clic image => appel du Modal global (Feed)
+            scroll.addEventListener('click', (e) => {
+                const img = e.target.closest('[data-lightbox-src]');
+                if (img) {
+                    if (typeof window.ouvrirPhoto === 'function') {
+                        window.ouvrirPhoto(img.dataset.lightboxSrc);
+                    } else {
+                        console.error("Fonction ouvrirPhoto introuvable, impossible d'afficher l'image.");
+                    }
+                }
             });
-            _rafraichirBadgeBulle();
-        } catch (err) {
-            console.error('[TCHAT] marquerLu :', err.message);
+
+            _annulerReply();
+            _fermerEmojiPanel();
+            _rejoindreRoom(_userId(), interlocuteur.id);
+            _chargerMessages();
+            _marquerLu(interlocuteur.id);
+
+            if (pushState) {
+                // Ajout du hash pour la conversation
+                history.pushState({ tchat: 'conv' }, '', '#tchat-conv');
+                _historyDepth++;
+            }
         }
-    }
 
-    async function _ouvrirSelectUser() {
-        try {
-            // [NOUVEAU] On pousse un état pour la vue "recherche utilisateur"
-            history.pushState({ tchat: 'select' }, '', '#tchat-select');
-            _historyDepth++;
-
-            const r = await fetch('/api/tchat/users', { headers: _authHeaders() });
-            const d = await r.json();
-            if (!d.success) return;
-
-            const users = d.users;
+        async function _chargerConversations() {
             const liste = document.getElementById('tchat-liste-scroll');
+            if (!liste) return;
+            try {
+                const r = await fetch('/api/tchat/conversations', { headers: _authHeaders() });
+                const d = await r.json();
+                if (!d.success) return;
 
-            const _renderUsers = (liste_filtree) => {
-                const zone = document.getElementById('tchat-select-user-liste');
-                if (!zone) return;
-                if (!liste_filtree.length) {
-                    zone.innerHTML = `<div class="tchat-vide" style="padding:20px 0">
-                        <div class="tchat-vide-texte">Aucun résultat</div>
-                    </div>`;
+                if (!d.conversations.length) {
+                    liste.innerHTML = `
+                        <div class="tchat-vide">
+                            <div class="tchat-vide-icone">💬</div>
+                            <div class="tchat-vide-texte">Aucune conversation.<br>Commence à écrire !</div>
+                        </div>`;
                     return;
                 }
-                zone.innerHTML = liste_filtree.map(u => {
-                    const affichage = u.prenom
-                        ? `${u.prenom}${u.nom ? ' ' + u.nom : ''}`
-                        : u.username;
+
+                liste.innerHTML = d.conversations.map(c => {
+                    const moi    = _userId();
+                    const nom    = c.prenom
+                        ? `${c.prenom}${c.nom ? ' ' + c.nom : ''}`
+                        : c.username;
+                    const apercu = c.dernier_message
+                        ? (c.dernier_sender_id === moi
+                            ? `Vous : ${c.dernier_message}`
+                            : c.dernier_message)
+                        : c.dernier_image_url ? (c.dernier_sender_id === moi ? 'Vous : 📷 Photo' : '📷 Photo')
+                        : 'Aucun message';
+                    const heure = c.dernier_message_at ? _formatHeure(c.dernier_message_at) : '';
+                    const nonLu = c.non_lus > 0;
                     return `
                         <div class="tchat-conv-item"
-                             data-id="${u.id}"
-                             data-username="${_echapper(u.username)}"
-                             data-prenom="${_echapper(u.prenom || '')}"
-                             data-nom="${_echapper(u.nom || '')}"
-                             data-photo="${_echapper(u.photo || '')}">
+                             data-id="${c.interlocuteur_id}"
+                             data-username="${_echapper(c.username)}"
+                             data-prenom="${_echapper(c.prenom || '')}"
+                             data-nom="${_echapper(c.nom || '')}"
+                             data-photo="${_echapper(c.photo || '')}">
                             <div class="tchat-conv-avatar">
-                                ${_avatarHTML(u.photo, u.prenom, u.nom, 42, u.id)}
+                                ${_avatarHTML(c.photo, c.prenom, c.nom, 42, c.interlocuteur_id)}
                             </div>
                             <div class="tchat-conv-infos">
-                                <div class="tchat-conv-nom">${_echapper(affichage)}</div>
-                                <div class="tchat-conv-apercu">@${_echapper(u.username)}</div>
+                                <div class="tchat-conv-nom">${_echapper(nom)}</div>
+                                <div class="tchat-conv-apercu${nonLu ? ' non-lu' : ''}">
+                                    ${_echapper(apercu.substring(0, 60))}
+                                </div>
                             </div>
+                            <div class="tchat-conv-meta">
+                                <span class="tchat-conv-heure">${heure}</span>
+                                ${nonLu ? `<span class="tchat-conv-badge">${c.non_lus}</span>` : ''}
+                            </div>
+                            <button class="tchat-conv-suppr" data-id="${c.interlocuteur_id}"
+                                    title="Supprimer la conversation"
+                                    aria-label="Supprimer la conversation">🗑️</button>
                         </div>`;
                 }).join('');
 
-                zone.querySelectorAll('.tchat-conv-item').forEach(el => {
-                    el.addEventListener('click', () => {
+                liste.querySelectorAll('.tchat-conv-item').forEach(el => {
+                    el.addEventListener('click', (e) => {
+                        if (e.target.closest('.tchat-conv-suppr')) return;
                         _afficherVueConv({
                             id      : parseInt(el.dataset.id, 10),
                             username: el.dataset.username,
@@ -1149,117 +838,428 @@
                         }, true);
                     });
                 });
-            };
 
-            liste.innerHTML = `
-                <div class="tchat-select-user-header">
-                    <button id="tchat-retour-select">‹ Retour</button>
-                    <div class="tchat-select-user-titre">Nouvelle conversation</div>
-                    <div class="tchat-select-user-search-wrap">
-                        <input type="text"
-                               id="tchat-select-user-search"
-                               class="tchat-select-user-search"
-                               placeholder="Rechercher un membre…"
-                               autocomplete="off">
-                    </div>
-                </div>
-                <div id="tchat-select-user-liste">
-                    <div class="tchat-vide" style="padding:20px 0">
-                        <div class="tchat-vide-texte">Tape un prénom ou un pseudo…</div>
-                    </div>
-                </div>`;
+                liste.querySelectorAll('.tchat-conv-suppr').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const itemEl = btn.closest('.tchat-conv-item');
+                        _confirmerSuppressionConversation(parseInt(btn.dataset.id, 10), itemEl);
+                    });
+                });
 
-            document.getElementById('tchat-retour-select').addEventListener('click', () => {
-                history.back(); // Utilisation de l'historique au lieu de forcer l'affichage
-            });
+            } catch (err) {
+                console.error('[TCHAT] chargerConversations :', err.message);
+            }
+        }
 
-            document.getElementById('tchat-select-user-search').addEventListener('input', (e) => {
-                const q = e.target.value.trim().toLowerCase();
-                if (!q) {
-                    const zone = document.getElementById('tchat-select-user-liste');
-                    if (zone) zone.innerHTML = `<div class="tchat-vide" style="padding:20px 0">
-                        <div class="tchat-vide-texte">Tape un prénom ou un pseudo…</div>
-                    </div>`;
+        async function _chargerMessages(avant = null) {
+            if (_chargementEnCours || !_interlocuteurActif) return;
+            _chargementEnCours = true;
+
+            const scroll  = document.getElementById('tchat-messages-scroll');
+            const btnPlus = document.getElementById('tchat-btn-plus-anciens');
+
+            try {
+                let url = `/api/tchat/messages/${_interlocuteurActif.id}`;
+                if (avant) url += `?avant=${avant}`;
+
+                const r = await fetch(url, { headers: _authHeaders() });
+                const d = await r.json();
+                if (!d.success) return;
+
+                const msgs = d.messages;
+
+                if (!msgs.length && !avant) {
+                    scroll.innerHTML = `
+                        <button id="tchat-btn-plus-anciens" style="display:none">
+                            Charger les messages précédents
+                        </button>
+                        <div class="tchat-vide">
+                            <div class="tchat-vide-icone">👋</div>
+                            <div class="tchat-vide-texte">Dis bonjour !</div>
+                        </div>`;
+                    document.getElementById('tchat-btn-plus-anciens').addEventListener('click', _chargerPlusAnciens);
                     return;
                 }
-                const filtres = users.filter(u => {
-                    const nom_complet = `${u.prenom || ''} ${u.nom || ''}`.toLowerCase();
-                    return nom_complet.includes(q) || u.username.toLowerCase().includes(q);
-                });
-                _renderUsers(filtres);
+
+                if (msgs.length === LIMITE_PAR_PAGE) {
+                    _plusAncienMsgId = msgs[0].id;
+                    if (btnPlus) btnPlus.style.display = 'flex';
+                } else {
+                    if (btnPlus) btnPlus.style.display = 'none';
+                }
+
+                if (avant) {
+                    const ancreId  = scroll.querySelector('.tchat-msg')?.dataset.msgId;
+                    const fragment = _construireFragment(msgs);
+                    const ancre    = ancreId
+                        ? scroll.querySelector(`[data-msg-id="${ancreId}"]`)
+                        : null;
+                    if (ancre) scroll.insertBefore(fragment, ancre);
+                    else       scroll.appendChild(fragment);
+                } else {
+                    const vide = scroll.querySelector('.tchat-vide');
+                    if (vide) vide.remove();
+                    scroll.appendChild(_construireFragment(msgs));
+                    _scrollBasMessages();
+                }
+            } catch (err) {
+                console.error('[TCHAT] chargerMessages :', err.message);
+            } finally {
+                _chargementEnCours = false;
+            }
+        }
+
+        function _chargerPlusAnciens() {
+            if (_plusAncienMsgId) _chargerMessages(_plusAncienMsgId);
+        }
+
+        function _construireFragment(msgs) {
+            const fragment = document.createDocumentFragment();
+            const moi      = _userId();
+            let   dernDate = null;
+
+            msgs.forEach(msg => {
+                const dateMsg = new Date(msg.created_at).toDateString();
+                if (dateMsg !== dernDate) {
+                    dernDate = dateMsg;
+                    const sep       = document.createElement('div');
+                    sep.className   = 'tchat-date-sep';
+                    sep.textContent = _formatDateSep(msg.created_at);
+                    fragment.appendChild(sep);
+                }
+                fragment.appendChild(_creerBulleDom(msg, moi));
             });
 
-        } catch (err) {
-            console.error('[TCHAT] ouvrirSelectUser :', err.message);
+            return fragment;
         }
-    }
 
-    async function _rafraichirBadgeBulle() {
-        try {
-            const r = await fetch('/api/tchat/non-lus', { headers: _authHeaders() });
-            const d = await r.json();
-            if (!d.success) return;
+        function _creerBulleDom(msg, moi) {
+            const sortant  = Number(msg.sender_id) === Number(moi);
+            const supprime = Array.isArray(msg.deleted_for) && msg.deleted_for.includes(Number(moi));
+            const wrap     = document.createElement('div');
+            wrap.className     = `tchat-msg ${sortant ? 'sortant' : 'entrant'}`;
+            wrap.dataset.msgId = msg.id;
 
-            const badge = document.getElementById('tchat-bulle-badge');
-            if (badge) {
-                if (d.total > 0) {
-                    badge.textContent = d.total > 99 ? '99+' : d.total;
-                    badge.classList.add('visible');
-                } else {
-                    badge.classList.remove('visible');
+            const luHTML = sortant
+                ? `<span class="tchat-msg-lu ${msg.seen ? '' : 'envoye'}">${msg.seen ? '✓✓' : '✓'}</span>`
+                : '';
+
+            const modifieHTML = msg.edited_at
+                ? `<span class="tchat-msg-modifie">modifié</span>`
+                : '';
+
+            let replyHTML = '';
+            if (msg.reply_to_id && msg.reply_content) {
+                const replyNom = msg.reply_sender_prenom || msg.reply_sender_username || '';
+                replyHTML = `
+                    <div class="tchat-reply-cite">
+                        <span class="tchat-reply-cite-nom">${_echapper(replyNom)}</span>
+                        <span class="tchat-reply-cite-texte">${_echapper((msg.reply_content || '').substring(0, 80))}</span>
+                    </div>`;
+            }
+
+            let contenu;
+            if (supprime) {
+                contenu = '<em class="tchat-msg-supprime-texte">Message supprimé</em>';
+            } else if (msg.image_url) {
+                // Clic droit désactivé sur les images du tchat, et cursor pointer car cliquable
+                contenu = `<img src="${_echapper(msg.image_url)}"
+                    class="tchat-msg-image"
+                    alt="image"
+                    style="cursor:pointer;"
+                    data-lightbox-src="${_echapper(msg.image_url)}"
+                    oncontextmenu="return false;"
+                    onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span style=\\'font-size:12px;color:#9ca3af;font-style:italic\\'>Image indisponible</span>')">`;
+            } else {
+                contenu = _renderLiens(_convertirEmojis(_echapper(msg.content || '')));
+            }
+
+            const actionsHTML = !supprime ? `
+                <div class="tchat-msg-actions">
+                    <button class="tchat-msg-btn-reply" title="Répondre">↩</button>
+                    ${sortant && !msg.image_url ? `<button class="tchat-msg-btn-edit" title="Modifier">✏️</button>` : ''}
+                    <button class="tchat-msg-btn-del" title="Supprimer">🗑️</button>
+                </div>` : '';
+
+            wrap.innerHTML = `
+                ${actionsHTML}
+                <div class="tchat-msg-bulle">
+                    ${replyHTML}
+                    ${contenu}
+                </div>
+                <div class="tchat-msg-meta">
+                    ${modifieHTML}
+                    <span class="tchat-msg-heure">${_formatHeure(msg.created_at)}</span>
+                    ${luHTML}
+                </div>`;
+
+            if (!supprime) {
+                wrap.querySelector('.tchat-msg-btn-reply')?.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    _activerReply(msg);
+                });
+
+                wrap.querySelector('.tchat-msg-btn-edit')?.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    _editerMessage(wrap, msg);
+                });
+
+                wrap.querySelector('.tchat-msg-btn-del')?.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    _supprimerMessageConfirm(wrap, msg.id);
+                });
+            }
+
+            return wrap;
+        }
+
+        function _appendMessage(msg) {
+            const scroll = document.getElementById('tchat-messages-scroll');
+            if (!scroll) return;
+
+            const vide = scroll.querySelector('.tchat-vide');
+            if (vide) vide.remove();
+
+            const moi       = _userId();
+            const dernBulle = scroll.querySelectorAll('.tchat-msg');
+            if (dernBulle.length) {
+                const dernEl   = dernBulle[dernBulle.length - 1];
+                const dernDate = new Date(parseInt(dernEl.dataset.msgId || 0));
+                const nouvDate = new Date(msg.created_at);
+                if (dernDate.toDateString() !== nouvDate.toDateString()) {
+                    const sep       = document.createElement('div');
+                    sep.className   = 'tchat-date-sep';
+                    sep.textContent = _formatDateSep(msg.created_at);
+                    scroll.appendChild(sep);
                 }
             }
 
-            const badgeTopbar = document.getElementById('tchat-topbar-badge');
-            if (badgeTopbar) {
-                if (d.total > 0) {
-                    badgeTopbar.textContent   = d.total > 99 ? '99+' : d.total;
-                    badgeTopbar.style.display = 'flex';
-                } else {
-                    badgeTopbar.style.display = 'none';
+            scroll.appendChild(_creerBulleDom(msg, moi));
+        }
+
+        function _scrollBasMessages() {
+            const scroll = document.getElementById('tchat-messages-scroll');
+            if (scroll) scroll.scrollTop = scroll.scrollHeight;
+        }
+
+        async function _envoyerMessage() {
+            const input  = document.getElementById('tchat-input');
+            const btnEnv = document.getElementById('tchat-btn-envoyer');
+            const texte  = input.value.trim();
+            if (!texte || !_interlocuteurActif) return;
+
+            input.value        = '';
+            input.style.height = 'auto';
+            btnEnv.disabled    = true;
+            _fermerEmojiPanel();
+
+            try {
+                const body = { receiver_id: _interlocuteurActif.id, content: texte };
+                if (_replyTo) body.reply_to_id = _replyTo.id;
+
+                const r = await fetch('/api/tchat/messages', {
+                    method : 'POST',
+                    headers: _authHeaders(),
+                    body   : JSON.stringify(body)
+                });
+                const d = await r.json();
+                if (!d.success) {
+                    input.value     = texte;
+                    btnEnv.disabled = false;
+                    return;
+                }
+                _annulerReply();
+                if (!_socket?.connected) {
+                    _appendMessage(d.message);
+                    _scrollBasMessages();
+                }
+                _rafraichirBadgeBulle();
+            } catch (err) {
+                console.error('[TCHAT] envoyerMessage :', err.message);
+                input.value     = texte;
+                btnEnv.disabled = false;
+            }
+        }
+
+        async function _marquerLu(interlocuteurId) {
+            try {
+                await fetch('/api/tchat/messages/lus', {
+                    method : 'POST',
+                    headers: _authHeaders(),
+                    body   : JSON.stringify({ interlocuteur_id: interlocuteurId })
+                });
+                _rafraichirBadgeBulle();
+            } catch (err) {
+                console.error('[TCHAT] marquerLu :', err.message);
+            }
+        }
+
+        async function _ouvrirSelectUser() {
+            try {
+                // [NOUVEAU] On pousse un état pour la vue "recherche utilisateur"
+                history.pushState({ tchat: 'select' }, '', '#tchat-select');
+                _historyDepth++;
+
+                const r = await fetch('/api/tchat/users', { headers: _authHeaders() });
+                const d = await r.json();
+                if (!d.success) return;
+
+                const users = d.users;
+                const liste = document.getElementById('tchat-liste-scroll');
+
+                const _renderUsers = (liste_filtree) => {
+                    const zone = document.getElementById('tchat-select-user-liste');
+                    if (!zone) return;
+                    if (!liste_filtree.length) {
+                        zone.innerHTML = `<div class="tchat-vide" style="padding:20px 0">
+                            <div class="tchat-vide-texte">Aucun résultat</div>
+                        </div>`;
+                        return;
+                    }
+                    zone.innerHTML = liste_filtree.map(u => {
+                        const affichage = u.prenom
+                            ? `${u.prenom}${u.nom ? ' ' + u.nom : ''}`
+                            : u.username;
+                        return `
+                            <div class="tchat-conv-item"
+                                 data-id="${u.id}"
+                                 data-username="${_echapper(u.username)}"
+                                 data-prenom="${_echapper(u.prenom || '')}"
+                                 data-nom="${_echapper(u.nom || '')}"
+                                 data-photo="${_echapper(u.photo || '')}">
+                                <div class="tchat-conv-avatar">
+                                    ${_avatarHTML(u.photo, u.prenom, u.nom, 42, u.id)}
+                                </div>
+                                <div class="tchat-conv-infos">
+                                    <div class="tchat-conv-nom">${_echapper(affichage)}</div>
+                                    <div class="tchat-conv-apercu">@${_echapper(u.username)}</div>
+                                </div>
+                            </div>`;
+                    }).join('');
+
+                    zone.querySelectorAll('.tchat-conv-item').forEach(el => {
+                        el.addEventListener('click', () => {
+                            _afficherVueConv({
+                                id      : parseInt(el.dataset.id, 10),
+                                username: el.dataset.username,
+                                prenom  : el.dataset.prenom || null,
+                                nom     : el.dataset.nom    || null,
+                                photo   : el.dataset.photo  || null
+                            }, true);
+                        });
+                    });
+                };
+
+                liste.innerHTML = `
+                    <div class="tchat-select-user-header">
+                        <button id="tchat-retour-select">‹ Retour</button>
+                        <div class="tchat-select-user-titre">Nouvelle conversation</div>
+                        <div class="tchat-select-user-search-wrap">
+                            <input type="text"
+                                   id="tchat-select-user-search"
+                                   class="tchat-select-user-search"
+                                   placeholder="Rechercher un membre…"
+                                   autocomplete="off">
+                        </div>
+                    </div>
+                    <div id="tchat-select-user-liste">
+                        <div class="tchat-vide" style="padding:20px 0">
+                            <div class="tchat-vide-texte">Tape un prénom ou un pseudo…</div>
+                        </div>
+                    </div>`;
+
+                document.getElementById('tchat-retour-select').addEventListener('click', () => {
+                    history.back(); // Utilisation de l'historique au lieu de forcer l'affichage
+                });
+
+                document.getElementById('tchat-select-user-search').addEventListener('input', (e) => {
+                    const q = e.target.value.trim().toLowerCase();
+                    if (!q) {
+                        const zone = document.getElementById('tchat-select-user-liste');
+                        if (zone) zone.innerHTML = `<div class="tchat-vide" style="padding:20px 0">
+                            <div class="tchat-vide-texte">Tape un prénom ou un pseudo…</div>
+                        </div>`;
+                        return;
+                    }
+                    const filtres = users.filter(u => {
+                        const nom_complet = `${u.prenom || ''} ${u.nom || ''}`.toLowerCase();
+                        return nom_complet.includes(q) || u.username.toLowerCase().includes(q);
+                    });
+                    _renderUsers(filtres);
+                });
+
+            } catch (err) {
+                console.error('[TCHAT] ouvrirSelectUser :', err.message);
+            }
+        }
+
+        async function _rafraichirBadgeBulle() {
+            try {
+                const r = await fetch('/api/tchat/non-lus', { headers: _authHeaders() });
+                const d = await r.json();
+                if (!d.success) return;
+
+                const badge = document.getElementById('tchat-bulle-badge');
+                if (badge) {
+                    if (d.total > 0) {
+                        badge.textContent = d.total > 99 ? '99+' : d.total;
+                        badge.classList.add('visible');
+                    } else {
+                        badge.classList.remove('visible');
+                    }
+                }
+
+                const badgeTopbar = document.getElementById('tchat-topbar-badge');
+                if (badgeTopbar) {
+                    if (d.total > 0) {
+                        badgeTopbar.textContent   = d.total > 99 ? '99+' : d.total;
+                        badgeTopbar.style.display = 'flex';
+                    } else {
+                        badgeTopbar.style.display = 'none';
+                    }
+                }
+            } catch { /* silencieux */ }
+        }
+
+        // ── INTERCEPTION DU BOUTON RETOUR (POPSTATE) ──
+        window.addEventListener('popstate', (e) => {
+            if (_ouvert) {
+                if (e.state && e.state.tchat === 'liste') {
+                    // On a fait "retour" depuis une conversation ou une recherche vers la liste
+                    _afficherVueListe(false);
+                    _historyDepth--;
+                } else if (!e.state || !e.state.tchat) {
+                    // On a fait "retour" depuis la liste vers la fermeture du tchat
+                    _fermerTchat(true);
                 }
             }
-        } catch { /* silencieux */ }
-    }
+        });
 
-    // ── INTERCEPTION DU BOUTON RETOUR (POPSTATE) ──
-    window.addEventListener('popstate', (e) => {
-        if (_ouvert) {
-            if (e.state && e.state.tchat === 'liste') {
-                // On a fait "retour" depuis une conversation ou une recherche vers la liste
-                _afficherVueListe(false);
-                _historyDepth--;
-            } else if (!e.state || !e.state.tchat) {
-                // On a fait "retour" depuis la liste vers la fermeture du tchat
-                _fermerTchat(true);
+        // ── Reconnexion + rafraîchissement au retour au premier plan (v1.92.29) ──
+        // En arrière-plan mobile/PWA, le socket peut se déconnecter (mise en
+        // veille réseau/CPU) sans notification claire. On force ici une
+        // reconnexion et un refetch du badge dès que l'app redevient visible.
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                _reconnecterSocket();
+                _rafraichirBadgeBulle();
             }
-        }
-    });
+        });
 
-    // ── Reconnexion + rafraîchissement au retour au premier plan (v1.92.29) ──
-    // En arrière-plan mobile/PWA, le socket peut se déconnecter (mise en
-    // veille réseau/CPU) sans notification claire. On force ici une
-    // reconnexion et un refetch du badge dès que l'app redevient visible.
-    document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') {
-            _reconnecterSocket();
-            _rafraichirBadgeBulle();
-        }
-    });
+        window.Tchat = {
+            ouvrirConversation(interlocuteur) {
+                if (!_ouvert) _ouvrirTchat();
+                _afficherVueConv(interlocuteur, true);
+            },
+            toggle  : _toggleTchat,
+            init() {
+                _construireDom();
+                _rafraichirBadgeBulle();
+                setInterval(_rafraichirBadgeBulle, 30000);
+            },
+            rafraichirBadge: _rafraichirBadgeBulle,
+            reconnecter     : _reconnecterSocket
+        };
 
-    window.Tchat = {
-        ouvrirConversation(interlocuteur) {
-            if (!_ouvert) _ouvrirTchat();
-            _afficherVueConv(interlocuteur, true);
-        },
-        toggle  : _toggleTchat,
-        init() {
-            _construireDom();
-            _rafraichirBadgeBulle();
-            setInterval(_rafraichirBadgeBulle, 30000);
-        },
-        rafraichirBadge: _rafraichirBadgeBulle,
-        reconnecter     : _reconnecterSocket
-    };
-
-})();
+    })();

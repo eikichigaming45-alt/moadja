@@ -95,52 +95,159 @@ app.use('/api/tchat',            tchatSocialLimiter, tchatRouter);
 
 // ── Route publique Open Graph (Partage de séance) ─────────────
 // Cette route n'est PAS protégée par /api/auth. Elle est lue par
-// les robots de WhatsApp, Facebook, etc., pour générer l'aperçu.
+// les robots de WhatsApp, Facebook, etc., pour générer l'aperçu,
+// et affiche l'image statique joliment pour un humain.
 app.get('/share/seance/:id', async (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).send('ID invalide');
 
     try {
         const { rows } = await pool.query(`
-            SELECT s.id, w.name AS workout_name
+            SELECT s.id, w.name AS workout_name, 
+                   u.username, pr.prenom, pr.nom
             FROM sport_sessions s
             LEFT JOIN sport_workouts w ON w.id = s.workout_id
-            WHERE s.id = \$1
+            JOIN users u ON u.id = s.user_id
+            LEFT JOIN profiles pr ON pr.user_id = s.user_id
+            WHERE s.id = \\$1
         `, [id]);
 
         if (!rows.length) return res.status(404).send('Séance introuvable');
         
         const session = rows[0];
+        const nomAuteur = [session.prenom, session.nom].filter(Boolean).join(' ') || session.username;
+        const initiale = (session.prenom ? session.prenom[0] : session.username[0]).toUpperCase();
+        
         const baseUrl = req.protocol + '://' + req.get('host');
         const imageUrl = `${baseUrl}/uploads/sport_shares/share_seance_${id}.jpg`;
         const title = session.workout_name ? `Séance : ${session.workout_name}` : 'Séance Sport MoaDja';
         const desc = `Découvrez les statistiques de cette séance sur MoaDja !`;
 
-        const html = `
-        <!DOCTYPE html>
-        <html lang="fr">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>${title}</title>
-            <meta property="og:title" content="${title}" />
-            <meta property="og:description" content="${desc}" />
-            <meta property="og:image" content="${imageUrl}" />
-            <meta property="og:type" content="article" />
-            <meta name="twitter:card" content="summary_large_image">
-            <meta name="twitter:title" content="${title}">
-            <meta name="twitter:description" content="${desc}">
-            <meta name="twitter:image" content="${imageUrl}">
-            <script>
-                // Redirection automatique vers l'app pour un visiteur humain
-                window.location.href = "/?onglet=sport";
-            </script>
-        </head>
-        <body>
-            <p>Redirection vers MoaDja...</p>
-        </body>
-        </html>
-        `;
+        const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title}</title>
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="${baseUrl}/share/seance/${id}" />
+    <meta property="og:title" content="${title}" />
+    <meta property="og:description" content="${desc}" />
+    <meta property="og:image" content="${imageUrl}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="MoaDja" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${title}" />
+    <meta name="twitter:description" content="${desc}" />
+    <meta name="twitter:image" content="${imageUrl}" />
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: 900;
+            color: #7c3aed;
+            margin-bottom: 30px;
+            margin-top: 20px;
+            letter-spacing: -0.5px;
+        }
+        .post-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255,255,255,0.8);
+            border-radius: 24px;
+            padding: 24px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+            box-sizing: border-box;
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(124,58,237,0.3);
+        }
+        .author-name {
+            font-weight: 800;
+            color: #1f2937;
+            font-size: 16px;
+        }
+        .author-handle {
+            color: #6b7280;
+            font-size: 13px;
+            margin-top: 2px;
+        }
+        .post-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            object-fit: contain;
+            border: 1px solid rgba(0,0,0,0.05);
+            display: block;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .cta-button {
+            display: block;
+            width: 100%;
+            text-align: center;
+            padding: 14px;
+            background: rgba(167,139,250,0.85);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 700;
+            transition: all 0.2s;
+            box-shadow: 0 8px 24px rgba(167,139,250,0.25);
+            box-sizing: border-box;
+        }
+        .cta-button:hover {
+            transform: translateY(-2px);
+            background: rgba(167,139,250,1);
+        }
+    </style>
+</head>
+<body>
+    <div class="logo">MoaDja</div>
+    <div class="post-card">
+        <div class="header">
+            <div class="avatar">${initiale}</div>
+            <div>
+                <div class="author-name">${nomAuteur}</div>
+                <div class="author-handle">@${session.username}</div>
+            </div>
+        </div>
+        <img src="${imageUrl}" class="post-image" alt="Statistiques de la séance">
+        <a href="https://moadja.fr" class="cta-button">Rejoindre MoaDja</a>
+    </div>
+</body>
+</html>`;
         
         res.send(html);
     } catch (err) {

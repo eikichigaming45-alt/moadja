@@ -313,7 +313,7 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
         const imageUrl = data.imageUrl;
         const openGraphUrl = `${window.location.origin}/share/seance/${sessionId}`;
         
-        // CORRECTION TCHAT: Double saut de ligne pour forcer le Tchat à isoler l'URL
+        // Double saut de ligne pour forcer le Tchat à isoler l'URL
         const textePartage = `🏋️‍♂️ Ma séance : ${nomRoutine}\nDécouvre mes stats sur MoaDja !`;
         const texteTchat = `${textePartage}\n\n${openGraphUrl}`;
 
@@ -323,9 +323,9 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
         if (destination === 'feed') {
             // Ouvre l'éditeur de post
             switchTab('accueil');
-            if (typeof openPostEditor === 'function') openPostEditor();
+            if (typeof ouvrirModalPost === 'function') ouvrirModalPost();
             
-            // CORRECTION FEED: Le setTimeout garantit que l'input du feed existe bien dans le DOM
+            // Le setTimeout garantit que l'input du feed existe bien dans le DOM (augmenté à 400ms)
             setTimeout(async () => {
                 const inputTexte = document.getElementById('post-contenu');
                 if (inputTexte) inputTexte.value = textePartage;
@@ -348,7 +348,7 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
                 } catch (e) {
                     console.error('[SPORT] Impossible d\'attacher l\'image au feed:', e);
                 }
-            }, 300); // 300ms de délai pour laisser la modale s'ouvrir
+            }, 400);
         } 
         else if (destination === 'tchat') {
             // Lien isolé avec double saut de ligne
@@ -358,9 +358,9 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
             if (window.Tchat && typeof Tchat.toggle === 'function') {
                 Tchat.toggle(); 
                 setTimeout(() => {
-                    const btnNouvelle = document.querySelector('.tchat-btn-new-conv');
+                    const btnNouvelle = document.querySelector('#tchat-btn-nouvelle-conv');
                     if (btnNouvelle) btnNouvelle.click();
-                }, 300);
+                }, 400);
             }
         } 
         else if (destination === 'externe') {
@@ -486,7 +486,7 @@ async function _ouvrirModaleSportStats() {
 
         _sportRenderModaleStatsDepuisSeance(zone, d.derniere_seance);
     } catch (err) {
-                console.error('[SPORT] _ouvrirModaleSportStats :', err.message);
+        console.error('[SPORT] _ouvrirModaleSportStats :', err.message);
         zone.innerHTML = '<p style="color:#ef4444;text-align:center;padding:20px">Erreur de chargement des statistiques.</p>';
     }
 }
