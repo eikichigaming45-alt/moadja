@@ -183,26 +183,42 @@ function _sportConfirmerSuppressionSeanceDashboard(sessionId) {
     });
 }
 
+// ── Rendu du Dashboard ──
+// Correctif v1.92.61 : dès qu'au moins une séance existe, la carte "Prêt
+// pour une nouvelle séance ?" bascule sur un layout horizontal compact
+// (.sport-ready-state, icône à gauche / titre+CTA à droite, verticalement
+// centrés) au lieu de l'ancien format en colonne (icône seule au milieu,
+// bouton tout en bas), qui créait un grand vide visuel déséquilibré.
+// Le cas "aucune séance" (état vide complet, avec texte d'accroche) garde
+// son ancien format en colonne (.sport-empty-state), inchangé.
 function _sportRenderDashboard(dernieresSeances) {
     const aDesSeances = dernieresSeances && dernieresSeances.length > 0;
 
     return `
         <div class="sport-card">
-            <div class="sport-empty-state">
-                <div class="sport-empty-icon">${SPORT_ICONE_DUMBBELL}</div>
-                ${aDesSeances ? `
-                    <div class="sport-empty-title">Prêt pour une nouvelle séance ?</div>
-                ` : `
+            ${aDesSeances ? `
+                <div class="sport-ready-state">
+                    <div class="sport-ready-icon">${SPORT_ICONE_DUMBBELL}</div>
+                    <div class="sport-ready-info">
+                        <div class="sport-ready-title">Prêt pour une nouvelle séance ?</div>
+                        <button class="sport-cta-btn" onclick="_sportSwitchSection('routines')">
+                            ${SPORT_ICONE_DUMBBELL} Commencer une séance
+                        </button>
+                    </div>
+                </div>
+            ` : `
+                <div class="sport-empty-state">
+                    <div class="sport-empty-icon">${SPORT_ICONE_DUMBBELL}</div>
                     <div class="sport-empty-title">Aucune séance cette semaine</div>
                     <div class="sport-empty-text">
                         Prêt à commencer ? Créez votre première routine pour suivre vos entraînements
                         et voir votre progression au fil du temps.
                     </div>
-                `}
-                <button class="sport-cta-btn" onclick="_sportSwitchSection('routines')">
-                    ${SPORT_ICONE_DUMBBELL} Commencer une séance
-                </button>
-            </div>
+                    <button class="sport-cta-btn" onclick="_sportSwitchSection('routines')">
+                        ${SPORT_ICONE_DUMBBELL} Commencer une séance
+                    </button>
+                </div>
+            `}
         </div>
 
         <div class="sport-section-title" style="padding:0 4px">Dernières séances</div>

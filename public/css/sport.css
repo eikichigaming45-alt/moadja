@@ -94,6 +94,57 @@
     margin-bottom: 20px;
 }
 
+/* ── État "prêt pour une nouvelle séance" (au moins 1 séance déjà enregistrée) ──
+   Layout horizontal compact : icône à gauche, titre + CTA alignés à droite,
+   verticalement centrés ensemble — évite le grand vide vertical de l'ancien
+   format en colonne (icône seule en haut, titre au milieu, bouton tout en bas). */
+.sport-ready-state {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 4px 0;
+}
+.sport-ready-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(167, 139, 250, 0.12);
+    color: rgb(167, 139, 250);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.sport-ready-icon svg { width: 26px; height: 26px; }
+.sport-ready-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.sport-ready-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+.sport-ready-info .sport-cta-btn {
+    align-self: flex-start;
+}
+@media (max-width: 500px) {
+    .sport-ready-state {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+    }
+    .sport-ready-info {
+        align-items: center;
+    }
+    .sport-ready-info .sport-cta-btn {
+        align-self: center;
+    }
+}
+
 .sport-cta-btn {
     padding: 12px 18px;
     background: rgba(167, 139, 250, 0.85);
@@ -630,7 +681,6 @@
     margin-top: 2px;
 }
 
-/* Conteneur d'un exercice dans l'écran de séance (Marche, Pompes, etc.) */
 .sport-seance-exercice-bloc {
     width: 100%;
 }
@@ -642,7 +692,6 @@
     margin-bottom: 10px;
 }
 
-/* Bandeau de repos intégré dynamiquement */
 .sport-seance-repos-ligne {
     display: flex;
     align-items: center;
@@ -707,21 +756,17 @@
     letter-spacing: 0.3px;
     text-align: center;
 }
-/* Aucune règle text-align: left ici. Tout est centré ! */
 
 .sport-seance-table-row {
     display: grid;
     gap: 8px;
     align-items: center;
-        background: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.5);
     border: 1px solid rgba(255, 255, 255, 0.7);
     border-radius: 14px;
     padding: 8px;
     transition: background 0.2s ease, border-color 0.2s ease;
 }
-/* Sécurité : force l'alignement vertical de tous les éléments de la ligne
-   (numéro, inputs, boutons) sur le même axe central, quel que soit leur
-   mode de centrage interne. */
 .sport-seance-table-row > * {
     align-self: center;
 }
@@ -825,7 +870,6 @@
 }
 .sport-seance-btn-play svg { width: 14px; height: 14px; }
 
-/* Bouton play/stop du chrono d'un exercice en durée (▶️/⏹️) */
 .sport-duree-playstop-btn {
     width: 30px;
     height: 30px;
@@ -853,7 +897,6 @@
     cursor: not-allowed;
 }
 
-/* Texte du chrono en cours d'un exercice en durée (remplace les inputs min/sec pendant le décompte) */
 .sport-duree-chrono-texte {
     font-size: 14px;
     font-weight: 800;
@@ -888,7 +931,6 @@
 }
 .sport-seance-btn-valider svg { width: 14px; height: 14px; }
 
-/* Bouton de validation (✓) utilisé dans les tableaux séries et durée */
 .sport-seance-check-btn {
     width: 30px;
     height: 30px;
@@ -1084,6 +1126,9 @@
    pill. Utilisé à la fois dans la carte dashboard (sport.js), la
    modale de stats détaillées et le widget colonne droite
    (sport-widget.js complète le style modale/widget).
+   Correctif v1.92.61 : seul le NOM de l'exercice (.sport-exo-ligne-nom)
+   perd son gras (700 → 500) pour distinguer visuellement les Titres/
+   Durée/Volume/Calories (qui restent en 700/800) des exercices listés.
    ══════════════════════════════════════════════════════════════ */
 
 .sport-exo-ligne {
@@ -1101,7 +1146,7 @@
 }
 .sport-exo-ligne-nom {
     color: var(--text-main);
-    font-weight: 700;
+    font-weight: 500;
 }
 .sport-exo-ligne-sep {
     color: #c7c7d1;
@@ -1118,6 +1163,44 @@
     color: #9ca3af;
     font-style: italic;
     margin-top: 2px;
+}
+
+/* ── État "prêt pour une nouvelle séance" (au moins 1 séance déjà enregistrée) ──
+   Layout horizontal compact : icône à gauche, titre + CTA alignés à droite,
+   verticalement centrés ensemble — évite le grand vide vertical de l'ancien
+   format en colonne (icône seule en haut, titre au milieu, bouton tout en bas). */
+.sport-ready-state {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 4px 0;
+}
+.sport-ready-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(167, 139, 250, 0.12);
+    color: rgb(167, 139, 250);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.sport-ready-icon svg { width: 26px; height: 26px; }
+.sport-ready-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.sport-ready-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+.sport-ready-info .sport-cta-btn {
+    align-self: flex-start;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -1150,5 +1233,19 @@
     }
     .sport-exo-ligne {
         font-size: 13px;
+    }
+}
+
+@media (max-width: 500px) {
+    .sport-ready-state {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+    }
+    .sport-ready-info {
+        align-items: center;
+    }
+    .sport-ready-info .sport-cta-btn {
+        align-self: center;
     }
 }
