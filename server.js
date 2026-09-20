@@ -109,7 +109,7 @@ app.get('/share/seance/:id', async (req, res) => {
             LEFT JOIN sport_workouts w ON w.id = s.workout_id
             JOIN users u ON u.id = s.user_id
             LEFT JOIN profiles pr ON pr.user_id = s.user_id
-            WHERE s.id = \\$1
+            WHERE s.id = \$1
         `, [id]);
 
         if (!rows.length) return res.status(404).send('Séance introuvable');
