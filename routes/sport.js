@@ -10,6 +10,9 @@ const router  = express.Router();
 const { pool } = require('../db/pool');
 const { authenticateToken: auth } = require('../middleware/auth');
 const { SPORT_TRADUCTION_FR } = require('./sport-traduction-fr');
+const sharp = require('sharp');
+const fs = require('fs');
+const path = require('path');
 
 const WGER_BASE_URL = 'https://wger.de/api/v2';
 
@@ -582,15 +585,15 @@ router.delete('/sessions/:id', auth, async (req, res) => {
         await client.query(`DELETE FROM sport_session_logs WHERE session_id = \$1`, [id]);
         await client.query(`DELETE FROM sport_sessions WHERE id = \$1`, [id]);
 
-        await client.query('COMMIT');
-        res.json({ success: true });
-    } catch (err) {
-        await client.query('ROLLBACK');
-        console.error('[SPORT] DELETE /sessions/:id :', err.message);
-        res.status(500).json({ success: false, message: err.message });
-    } finally {
-        client.release();
-    }
+                    await client.query('COMMIT');
+            res.json({ success: true });
+        } catch (err) {
+            await client.query('ROLLBACK');
+            console.error('[SPORT] DELETE /sessions/:id :', err.message);
+            res.status(500).json({ success: false, message: err.message });
+        } finally {
+            client.release();
+        }
 });
 
 // ── DASHBOARD & WIDGET : stats agrégées + Mifflin-St Jeor ──
@@ -1152,6 +1155,154 @@ router.get('/wger/exercises', auth, async (req, res) => {
         });
     } catch (err) {
         console.error('[SPORT] GET /wger/exercises :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// ── PARTAGE DE SÉANCE : GÉNÉRATION IMAGE (PHASE 1) ──
+
+function _formatDurationShort(secondes) {
+    if (!secondes) return '0min';
+    const h = Math.floor(secondes / 3600);
+    const m = Math.floor((secondes % 3600) / 60);
+    if (h > 0) return `${h}h${m > 0 ? m.toString().padStart(2, '0') + 'min' : ''}`;
+    return `${m}min`;
+}
+
+router.post('/sessions/:id/generate-share', auth, async (req, res) => {
+    const moi = req.user.id;
+    const id = parseInt(req.params.id, 10);
+
+    try {
+        // 1. Récupération de la séance
+        const { rows: sessions } = await pool.query(`
+            SELECT s.id, s.date_start, s.date_end, w.name AS workout_name
+            FROM sport_sessions s
+            LEFT JOIN sport_workouts w ON w.id = s.workout_id
+            WHERE s.id = \$1 AND s.user_id = \$2
+        `, [id, moi]);
+
+        if (!sessions.length) {
+            return res.status(404).json({ success: false, message: 'Séance introuvable.' });
+        }
+        const session = sessions[0];
+
+        // 2. Récupération logs & profil
+        const { rows: logs } = await pool.query(`SELECT * FROM sport_session_logs WHERE session_id = \$1 ORDER BY id ASC`, [id]);
+        const { rows: profilRows } = await pool.query(`SELECT poids, taille, sexe, date_naissance FROM profiles WHERE user_id = \$1`, [moi]);
+        const profil = profilRows[0] || {};
+
+        // 3. Calculs
+        const stats = _sportCalculerStatsSession(session, logs, profil);
+        const exercicesConsolides = _sportConsoliderExercicesSession(logs);
+        const records = await _sportDetecterRecords(moi, id, logs);
+        
+        // 4. Formatage textes pour l'image
+        const routineName = session.workout_name || 'Séance MoaDja';
+        const dateStr = session.date_end 
+            ? new Date(session.date_end).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+            : 'En cours';
+            
+        const dureeStr = _formatDurationShort(stats.dureeSecondes);
+        const volumeStr = `${stats.volumeKg} kg`;
+        const caloriesStr = stats.calories ? `${stats.calories} kcal` : '--';
+        const nbRecords = records.length;
+
+        // 5. Génération du SVG
+        // Couleurs : fond dégradé violet (MoaDja), carte blanche (façon Hevy)
+        let svg = `
+        <svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#9333ea" />
+                    <stop offset="100%" stop-color="#4c1d95" />
+                </linearGradient>
+                <filter id="dropShadow" x="-10%" y="-10%" width="120%" height="120%">
+                    <feDropShadow dx="0" dy="15" stdDeviation="20" flood-opacity="0.15" />
+                </filter>
+            </defs>
+
+            <!-- Fond de l'image -->
+            <rect width="1200" height="630" fill="url(#bgGradient)" />
+
+            <!-- Carte centrale blanche -->
+            <rect x="80" y="60" width="1040" height="510" rx="40" fill="#ffffff" filter="url(#dropShadow)" />
+
+            <!-- Titre et Date -->
+            <text x="140" y="140" font-family="system-ui, -apple-system, sans-serif" font-size="46" font-weight="bold" fill="#111827">${routineName}</text>
+            <text x="140" y="185" font-family="system-ui, -apple-system, sans-serif" font-size="28" fill="#6b7280">${dateStr}</text>
+        `;
+
+        // Badge records (en haut à droite)
+        if (nbRecords > 0) {
+            svg += `
+            <rect x="910" y="100" width="150" height="50" rx="25" fill="#fef08a" />
+            <text x="985" y="133" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="bold" fill="#854d0e" text-anchor="middle">🏆 ${nbRecords} Record${nbRecords > 1 ? 's' : ''}</text>
+            `;
+        }
+
+        // Ligne de Stats (Durée, Volume, Calories)
+        svg += `
+            <!-- Labels -->
+            <text x="140" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="#6b7280">Durée</text>
+            <text x="360" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="#6b7280">Volume</text>
+            <text x="580" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="24" fill="#6b7280">Calories</text>
+
+            <!-- Valeurs -->
+            <text x="140" y="305" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="bold" fill="#111827">${dureeStr}</text>
+            <text x="360" y="305" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="bold" fill="#111827">${volumeStr}</text>
+            <text x="580" y="305" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="bold" fill="#ef4444">${caloriesStr}</text>
+            
+            <!-- Ligne séparatrice -->
+            <line x1="140" y1="340" x2="1060" y2="340" stroke="#f3f4f6" stroke-width="2" />
+        `;
+
+        // Liste des exercices (max 5)
+        let yEx = 390;
+        const maxEx = 5;
+        const nbAffiches = Math.min(exercicesConsolides.length, maxEx);
+
+        for (let i = 0; i < nbAffiches; i++) {
+            const ex = exercicesConsolides[i];
+            svg += `
+            <text x="140" y="${yEx}" font-family="system-ui, -apple-system, sans-serif" font-size="26" font-weight="bold" fill="#7c3aed">${ex.nb_series}x</text>
+            <text x="200" y="${yEx}" font-family="system-ui, -apple-system, sans-serif" font-size="26" fill="#1f2937">${ex.exercise_name}</text>
+            `;
+            yEx += 45;
+        }
+
+        if (exercicesConsolides.length > maxEx) {
+            const restants = exercicesConsolides.length - maxEx;
+            svg += `<text x="140" y="${yEx}" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-style="italic" fill="#9ca3af">...et ${restants} autre${restants > 1 ? 's' : ''} exercice${restants > 1 ? 's' : ''}</text>`;
+        }
+
+        // Pied de page (Logo MoaDja)
+        svg += `
+            <text x="140" y="525" font-family="system-ui, -apple-system, sans-serif" font-size="28" font-weight="bold" fill="#7c3aed">MoaDja</text>
+            <text x="140" y="545" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#9ca3af">Sport &amp; Bien-être</text>
+        </svg>
+        `;
+
+        // 6. Conversion via sharp et sauvegarde
+        const uploadsDir = path.join(__dirname, '..', 'public', 'uploads', 'sport_shares');
+        if (!fs.existsSync(uploadsDir)) {
+            fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+
+        const fileName = `share_seance_${id}.jpg`;
+        const filePath = path.join(uploadsDir, fileName);
+
+        await sharp(Buffer.from(svg))
+            .jpeg({ quality: 90 })
+            .toFile(filePath);
+
+        res.json({ 
+            success: true, 
+            imageUrl: `/uploads/sport_shares/${fileName}` 
+        });
+
+    } catch (err) {
+        console.error('[SPORT] POST /sessions/:id/generate-share :', err.message);
         res.status(500).json({ success: false, message: err.message });
     }
 });
