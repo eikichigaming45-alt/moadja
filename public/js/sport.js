@@ -217,16 +217,21 @@ function _sportRenderDashboard(dernieresSeances) {
 }
 
 // ── Carte de récapitulatif de séance (Dashboard) ──
-// Strictement ISO avec le widget colonne droite (utilisation de _sportRenderSeanceIso),
-// mais avec ajout du bouton supprimer en position absolue haut/droite.
+// Strictement ISO avec le widget colonne droite (utilisation de _sportRenderSeanceIso).
+// Le bouton supprimer est transmis en 3e paramètre pour être intégré DANS la
+// ligne de titre (flexbox, à côté de la date), et non plus en position
+// absolue (ce qui provoquait un chevauchement visuel avec la date).
 function _sportRenderCarteSeanceRecap(s) {
-    const isoHtml = _sportRenderSeanceIso(s, 'dashboard');
-    
+    const btnSupprHtml = `
+        <button class="sport-seance-recap-btn-suppr" data-session-id="${s.id}" title="Supprimer la séance">
+            ${SPORT_ICONE_POUBELLE}
+        </button>
+    `;
+
+    const isoHtml = _sportRenderSeanceIso(s, 'dashboard', btnSupprHtml);
+
     return `
         <div class="sport-card sport-seance-carte-recap sport-seance-carte-recap-clickable" id="sport-seance-carte-${s.id}" onclick="_sportOuvrirStatsSeance(${s.id})" role="button" tabindex="0">
-            <button class="sport-seance-recap-btn-suppr" data-session-id="${s.id}" title="Supprimer la séance" style="position: absolute; top: 16px; right: 16px; z-index: 10;">
-                ${SPORT_ICONE_POUBELLE}
-            </button>
             ${isoHtml}
         </div>
     `;

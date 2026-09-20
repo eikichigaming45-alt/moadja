@@ -140,7 +140,11 @@ function _sportRenderBlocExerciceDetail(e) {
 // ── Bloc partagé ISO (Dashboard / Widget droite / Modale) ──
 // Factorise l'affichage Titre, Trophées, Stats (Durée/Volume/Calories), 
 // Warning profil incomplet, Liste d'exercices et Footer MoaDja.
-function _sportRenderSeanceIso(s, mode = 'modal') {
+// Le bouton de suppression (Dashboard uniquement) est transmis en HTML brut
+// via btnSupprHtml pour être intégré DANS la ligne de titre (flexbox),
+// ce qui évite tout chevauchement avec la date (contrairement à un
+// positionnement absolu).
+function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
     const dateTexte   = _sportFormatDateCourte(s.date_end || s.date_start);
     const nbRecords   = Number.isInteger(s.nb_records) ? s.nb_records : 0;
     const exercices   = s.exercices || [];
@@ -178,7 +182,10 @@ function _sportRenderSeanceIso(s, mode = 'modal') {
     return `
         <div class="sport-widget-recap-title-row">
             <span class="sport-widget-recap-name">${_sportEchapper(s.workout_name)}</span>
-            <span class="sport-widget-recap-date">${dateTexte}</span>
+            <span style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                <span class="sport-widget-recap-date">${dateTexte}</span>
+                ${btnSupprHtml}
+            </span>
         </div>
 
         ${nbRecords > 0 ? `
@@ -198,7 +205,7 @@ function _sportRenderSeanceIso(s, mode = 'modal') {
             </div>
             <div class="sport-widget-stat">
                 <span class="sport-widget-stat-label">Calories</span>
-                <span class="sport-widget-stat-val" ${s.profil_incomplet ? 'style="color:#ef4444"' : ''}>${valCalories}</span>
+                <span class="sport-widget-stat-val" style="color:#ef4444">${valCalories}</span>
             </div>
             ${warningCalories}
         </div>
