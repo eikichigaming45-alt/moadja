@@ -183,10 +183,18 @@
 /* ── Pied de carte "MoaDja" (équivalent du logo Hevy) ── */
 .sport-widget-footer {
     display: flex;
-    justify-content: flex-end;
+    align-items: center;
+    justify-content: flex-end; /* Par défaut, aligné à droite (Widget) */
     padding-top: 6px;
     border-top: 1px solid rgba(255, 255, 255, 0.6);
+    position: relative; /* Pour positionner le bouton en absolu si centrage */
 }
+
+/* Surcharge spécifique pour le Dashboard : on centre le logo, et le bouton va à droite */
+.sport-widget-footer-dashboard {
+    justify-content: center;
+}
+
 .sport-widget-footer-logo {
     display: inline-flex;
     align-items: center;
@@ -200,6 +208,32 @@
     width: 14px;
     height: 14px;
     flex-shrink: 0;
+}
+
+/* Bouton de partage (uniquement dans le Dashboard) */
+.sport-widget-btn-partage {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: rgb(167, 139, 250);
+    padding: 6px;
+    cursor: pointer;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease;
+    margin-top: 3px; /* Compense le padding-top du footer */
+}
+.sport-widget-btn-partage:hover {
+    background: rgba(167, 139, 250, 0.15);
+}
+.sport-widget-btn-partage svg {
+    width: 16px;
+    height: 16px;
 }
 
 /* ── Responsive : colonne droite réduite sur petits écrans ── */

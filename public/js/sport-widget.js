@@ -32,6 +32,16 @@ const SPORT_ICONE_TROPHEE = `
     </svg>
 `;
 
+const SPORT_ICONE_PARTAGE = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="18" cy="5" r="3"></circle>
+        <circle cx="6" cy="12" r="3"></circle>
+        <circle cx="18" cy="19" r="3"></circle>
+        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+    </svg>
+`;
+
 // Petit logo dumbbell (14x14) dédié à la marque "MoaDja" en pied de carte —
 // distinct de SPORT_ICONE_DUMBBELL (28x28, utilisé ailleurs dans sport.js)
 // pour ne pas dépendre d'une résolution CSS forcée sur un SVG déjà dimensionné.
@@ -207,6 +217,25 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
         </div>
     `;
 
+    // ── FOOTER : Modifié pour inclure le bouton de partage en mode Dashboard ──
+    let footerHtml = '';
+    if (mode === 'dashboard') {
+        footerHtml = `
+            <div class="sport-widget-footer sport-widget-footer-dashboard">
+                <span class="sport-widget-footer-logo">${SPORT_ICONE_LOGO_MINI} MoaDja</span>
+                <button class="sport-widget-btn-partage" onclick="_sportOuvrirModalPartage(event, ${s.id})" title="Partager la séance">
+                    ${SPORT_ICONE_PARTAGE}
+                </button>
+            </div>
+        `;
+    } else if (mode === 'widget') {
+        footerHtml = `
+            <div class="sport-widget-footer">
+                <span class="sport-widget-footer-logo">${SPORT_ICONE_LOGO_MINI} MoaDja</span>
+            </div>
+        `;
+    }
+
     return `
         <div class="sport-widget-recap-title-row">
             <span class="sport-widget-recap-name">${_sportEchapper(s.workout_name)}</span>
@@ -236,14 +265,47 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
 
         ${listeHtml}
         ${detailsRecordsHtml}
-
-        ${(mode === 'widget' || mode === 'dashboard') ? `
-            <div class="sport-widget-footer">
-                <span class="sport-widget-footer-logo">${SPORT_ICONE_LOGO_MINI} MoaDja</span>
-            </div>
-        ` : ''}
+        ${footerHtml}
     `;
 }
+
+// ── Modale de choix de partage (Étape 1 UI) ──
+function _sportOuvrirModalPartage(event, sessionId) {
+    // Empêcher l'ouverture de la modale de stats détaillées en arrière-plan
+    if (event) event.stopPropagation();
+
+    const seance = _sportDashboardSeancesCache.find(s => s.id === sessionId);
+    if (!seance) return;
+
+    document.getElementById('overlay').classList.add('on');
+    document.body.classList.add('modal-open');
+    history.pushState({ modalOpen: true }, '', '');
+
+    document.getElementById('modal-title').textContent = 'Partager la séance';
+    document.getElementById('modal-body').innerHTML = `
+        <p style="color:#6b7280; font-size:14px; margin-bottom:20px; text-align:center">
+            Comment souhaitez-vous partager <strong>${_sportEchapper(seance.workout_name)}</strong> ?
+        </p>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <button class="sport-cta-btn" onclick="_sportLancerPartage(${sessionId}, 'feed')" style="width:100%; justify-content:center;">
+                📝 Publier sur le fil social
+            </button>
+            <button class="sport-cta-btn" onclick="_sportLancerPartage(${sessionId}, 'tchat')" style="width:100%; justify-content:center; background:rgba(255,255,255,0.8); color:rgb(167,139,250); border:1px solid rgb(167,139,250);">
+                💬 Envoyer par Tchat
+            </button>
+            <button class="sport-cta-btn" onclick="_sportLancerPartage(${sessionId}, 'externe')" style="width:100%; justify-content:center; background:rgba(0,0,0,0.8); color:#fff; border:none;">
+                🌐 Partager (WhatsApp, etc.)
+            </button>
+        </div>
+    `;
+}
+
+function _sportLancerPartage(sessionId, destination) {
+    closeModal();
+    // Stub Étape 1 - Les actions réelles arriveront à l'Étape 2 avec l'image
+    alert(`En cours de développement (Étape 2) : Génération de la carte image pour -> ${destination}`);
+}
+
 
 // ── Phrases d'encouragement (si aucune séance) ──
 const SPORT_PHRASES_ENCOURAGEMENT = [
@@ -344,7 +406,7 @@ async function _ouvrirModaleSportStats() {
 
         _sportRenderModaleStatsDepuisSeance(zone, d.derniere_seance);
     } catch (err) {
-        console.error('[SPORT] _ouvrirModaleSportStats :', err.message);
+                console.error('[SPORT] _ouvrirModaleSportStats :', err.message);
         zone.innerHTML = '<p style="color:#ef4444;text-align:center;padding:20px">Erreur de chargement des statistiques.</p>';
     }
 }
