@@ -441,7 +441,7 @@ router.get('/sessions/:id', auth, async (req, res) => {
         `, [id, moi]);
         if (!sessions.length) return res.status(404).json({ success: false, message: 'Séance introuvable.' });
 
-                const { rows: logs } = await pool.query(`
+        const { rows: logs } = await pool.query(`
             SELECT *
             FROM sport_session_logs
             WHERE session_id = \$1
@@ -591,17 +591,42 @@ function _sportCalculerStatsSession(session, logs, poidsUtilisateurKg) {
 // consécutive (ex: routine avec "Marche" en position 1 ET 6), il forme un
 // second bloc distinct au lieu d'être fusionné avec le premier — fidèle à
 // l'ordre de la routine et à ce qui a été réellement effectué.
-// Format retourné : [{ exercise_name, nb_series }], dans l'ordre d'exécution.
+// Chaque bloc porte désormais aussi le détail réel de chaque série
+// (reps/poids en musculation, distance/durée/vitesse/inclinaison en cardio),
+// utilisé par le frontend (point #3 : détail par série dans widget/dashboard/
+// modal). exercise_name et nb_series restent inchangés pour compatibilité.
+// Format retourné : [{ exercise_name, wger_exercise_id, est_cardio, nb_series, series: [...] }].
 function _sportConsoliderExercicesSession(logs) {
     const logsValides = logs.filter(l => l.completed);
     const blocs = [];
 
     logsValides.forEach(l => {
+        const estCardio = l.distance_km != null || l.duration_seconds != null;
+
+        const detailSerie = estCardio
+            ? {
+                distance_km     : l.distance_km != null ? parseFloat(l.distance_km) : null,
+                duration_seconds: l.duration_seconds,
+                speed_kmh       : l.speed_kmh != null ? parseFloat(l.speed_kmh) : null,
+                incline_percent : l.incline_percent != null ? parseFloat(l.incline_percent) : null
+            }
+            : {
+                reps     : l.reps,
+                weight_kg: l.weight_kg != null ? parseFloat(l.weight_kg) : null
+            };
+
         const dernierBloc = blocs[blocs.length - 1];
         if (dernierBloc && dernierBloc.exercise_name === l.exercise_name) {
             dernierBloc.nb_series++;
+            dernierBloc.series.push(detailSerie);
         } else {
-            blocs.push({ exercise_name: l.exercise_name, nb_series: 1 });
+            blocs.push({
+                exercise_name   : l.exercise_name,
+                wger_exercise_id: l.wger_exercise_id,
+                est_cardio      : estCardio,
+                nb_series       : 1,
+                series          : [detailSerie]
+            });
         }
     });
 
@@ -787,7 +812,7 @@ router.put('/logs/:logId', auth, async (req, res) => {
                 AND s.user_id = \$10
             RETURNING l.*
         `, [
-            Number.isInteger(reps) ? reps : null,
+                        Number.isInteger(reps) ? reps : null,
             weight_kg != null ? weight_kg : null,
             typeof completed === 'boolean' ? completed : null,
             Number.isInteger(rest_seconds) ? rest_seconds : null,

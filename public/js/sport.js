@@ -3,7 +3,7 @@
 // sous-modules, Dashboard, Wake Lock, cartes de récapitulatif de séance,
 // changement de section, modales génériques (confirmation/choix/info).
 // Dépend de sport-widget.js chargé AVANT (auth, échappement, formatage,
-// icônes communes).
+// icônes communes, détail par série).
 // Les sous-modules Mes Routines / Sélecteur d'exercice / Séance en cours
 // ont été extraits respectivement dans sportRoutines.js, sportSelecteur.js
 // et sportSeance.js (chargés APRÈS ce fichier, voir index.html).
@@ -221,6 +221,9 @@ function _sportRenderDashboard(dernieresSeances) {
 // ── Carte de récapitulatif de séance ──
 // Cliquable (hors bouton suppr) : ouvre la modale de stats détaillées pour
 // CETTE séance précise, identifiée par son id (cf. _sportOuvrirStatsSeance).
+// Point #3 : chaque exercice affiche désormais son détail réel par série
+// (via _sportRenderBlocExerciceDetail, défini dans sport-widget.js), et non
+// plus une simple ligne "Nx Nom".
 function _sportRenderCarteSeanceRecap(s) {
     const dateTexte    = _sportFormatDateCourte(s.date_end || s.date_start);
     const exercices    = s.exercices || [];
@@ -258,12 +261,7 @@ function _sportRenderCarteSeanceRecap(s) {
 
             ${apercu.length ? `
                 <div class="sport-seance-recap-liste">
-                    ${apercu.map(e => `
-                        <div class="sport-seance-recap-ligne">
-                            <span class="sport-seance-recap-ligne-nb">${e.nb_series}x</span>
-                            <span class="sport-seance-recap-ligne-nom">${_sportEchapper(e.exercise_name)}</span>
-                        </div>
-                    `).join('')}
+                    ${apercu.map(e => _sportRenderBlocExerciceDetail(e)).join('')}
                     ${reste > 0 ? `<div class="sport-seance-recap-reste">…et ${reste} autre${reste > 1 ? 's' : ''} exercice${reste > 1 ? 's' : ''}</div>` : ''}
                 </div>
             ` : ''}

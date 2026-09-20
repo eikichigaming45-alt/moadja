@@ -1073,7 +1073,7 @@
 .sport-seance-recap-liste {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 14px;
 }
 .sport-seance-recap-ligne {
     display: flex;
@@ -1095,6 +1095,51 @@
     color: #9ca3af;
     font-style: italic;
     margin-top: 2px;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ── DÉTAIL PAR SÉRIE (point #3) ──
+   Bloc par exercice consolidé, avec pastille "Nx" + une pill par
+   série réellement effectuée (reps×poids en musculation, ou
+   durée/distance/vitesse/inclinaison en cardio). Utilisé à la
+   fois dans la carte dashboard (sport.js) et dans la modale de
+   stats détaillées (sport-widget.css complète le style modale).
+   ══════════════════════════════════════════════════════════════ */
+
+.sport-exo-bloc {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.sport-exo-bloc-nom {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    font-size: 13.5px;
+}
+.sport-exo-bloc-nb {
+    color: rgb(167, 139, 250);
+    font-weight: 800;
+    flex-shrink: 0;
+}
+.sport-exo-bloc-nom span:last-child {
+    color: var(--text-main);
+    font-weight: 700;
+}
+.sport-exo-bloc-series {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.sport-exo-pill {
+    background: rgba(167, 139, 250, 0.1);
+    border: 1px solid rgba(167, 139, 250, 0.22);
+    color: rgb(167, 139, 250);
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 50px;
+    white-space: nowrap;
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -1124,5 +1169,9 @@
     }
     .sport-seance-recap-stat-val {
         font-size: 13px;
+    }
+    .sport-exo-pill {
+        font-size: 11px;
+        padding: 3px 8px;
     }
 }

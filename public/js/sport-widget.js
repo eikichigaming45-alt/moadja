@@ -85,6 +85,46 @@ function _sportFormatDureeLongue(secondes) {
     return `${s}s`;
 }
 
+// ── Détail d'une série individuelle (point #3 : affichage réel par série) ──
+// Musculation avec charge : "12×20kg". Musculation au poids du corps
+// (aucun poids enregistré) : "12 reps". Cardio : combine durée/distance/
+// vitesse/inclinaison, n'affiche que les valeurs réellement renseignées
+// pour cette série précise (toutes ne sont pas toujours saisies).
+function _sportFormatDetailSerie(serie, estCardio) {
+    if (estCardio) {
+        const morceaux = [];
+        if (Number.isInteger(serie.duration_seconds)) morceaux.push(_sportFormatDureeLongue(serie.duration_seconds));
+        if (serie.distance_km != null) morceaux.push(`${serie.distance_km.toString().replace('.', ',')} km`);
+        if (serie.speed_kmh != null) morceaux.push(`${serie.speed_kmh} km/h`);
+        if (serie.incline_percent != null) morceaux.push(`${serie.incline_percent}%`);
+        return morceaux.length ? morceaux.join(' · ') : '—';
+    }
+    if (serie.weight_kg != null) {
+        return `${serie.reps ?? '?'}×${serie.weight_kg}kg`;
+    }
+    return serie.reps != null ? `${serie.reps} reps` : '—';
+}
+
+// Bloc détaillé d'un exercice consolidé (nom + pastille "Nx" + une pill
+// par série réellement effectuée). Fonction partagée : utilisée par la
+// modale de stats (ci-dessous) et par la carte dashboard (sport.js).
+function _sportRenderBlocExerciceDetail(e) {
+    const series = Array.isArray(e.series) ? e.series : [];
+    return `
+        <div class="sport-exo-bloc">
+            <div class="sport-exo-bloc-nom">
+                <span class="sport-exo-bloc-nb">${e.nb_series}×</span>
+                <span>${_sportEchapper(e.exercise_name)}</span>
+            </div>
+            ${series.length ? `
+                <div class="sport-exo-bloc-series">
+                    ${series.map(s => `<span class="sport-exo-pill">${_sportFormatDetailSerie(s, e.est_cardio)}</span>`).join('')}
+                </div>
+            ` : ''}
+        </div>
+    `;
+}
+
 // ── Phrases d'encouragement (si aucune séance) ──
 const SPORT_PHRASES_ENCOURAGEMENT = [
     "Chaque séance compte, même la plus courte. Lancez-vous !",
@@ -167,7 +207,7 @@ function _sportRenderWidgetDerniereSeance(zone, seance) {
     const reste      = exercices.length - apercu.length;
     const totalSeries = exercices.reduce((acc, e) => acc + (Number(e.nb_series) || 0), 0);
 
-    zone.innerHTML = `
+        zone.innerHTML = `
         <div class="sport-widget-top">
             <h3 class="sport-widget-top-title">${SPORT_ICONE_DUMBBELL} Sport</h3>
             <button class="sport-widget-top-arrow" onclick="switchTab('sport')" title="Aller au module Sport">
@@ -261,6 +301,8 @@ async function _ouvrirModaleSportStats() {
 // Construction du HTML de la modale à partir d'un objet séance donné
 // (factorisé pour être utilisé aussi bien avec une séance transmise par clic
 // qu'avec la dernière séance récupérée par défaut via l'API).
+// Point #3 : chaque exercice affiche désormais son détail réel par série
+// (via _sportRenderBlocExerciceDetail), et non plus une simple ligne "Nx Nom".
 function _sportRenderModaleStatsDepuisSeance(zone, s) {
     const dateTexte   = _sportFormatDateCourte(s.date_end || s.date_start);
     const exercices   = s.exercices || [];
@@ -295,13 +337,8 @@ function _sportRenderModaleStatsDepuisSeance(zone, s) {
                 </div>
             </div>
 
-            <div class="sport-widget-exercices-liste">
-                ${exercices.map(e => `
-                    <div class="sport-widget-exercice-ligne">
-                        <span class="sport-widget-exercice-nb">${e.nb_series}x</span>
-                        <span class="sport-widget-exercice-nom">${_sportEchapper(e.exercise_name)}</span>
-                    </div>
-                `).join('')}
+            <div class="sport-modal-exercices-liste">
+                ${exercices.map(e => _sportRenderBlocExerciceDetail(e)).join('')}
             </div>
         </div>
     `;
