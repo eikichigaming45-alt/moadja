@@ -95,10 +95,9 @@ async function openModal(type) {
                         ? `<div style="font-size:13px;font-weight:700;color:#78350f;line-height:1.4">📖 ${priere.titre}</div>`
                         : '<div></div>'}
                     <button onclick="lirePriereModal(event)" id="btn-speaker-modal"
-                        style="background:rgba(167,139,250,0.85);border:1px solid rgba(255,255,255,0.5);border-radius:50px;
-                               width:40px;height:40px;cursor:pointer;font-size:16px;color:#fff;
+                        style="background:transparent;border:1.5px solid #d97706;border-radius:50px;
+                               width:40px;height:40px;cursor:pointer;font-size:16px;color:#78350f;
                                display:flex;align-items:center;justify-content:center;
-                               box-shadow:0 8px 24px rgba(167,139,250,0.25);backdrop-filter:blur(8px);
                                flex-shrink:0;margin-left:10px;transition:all 0.2s">
                         🔊
                     </button>
@@ -335,7 +334,7 @@ async function openModal(type) {
                                     style="width:100%;padding:10px 12px;border:1.5px solid rgba(229,231,235,0.7);border-radius:12px;font-size:14px;box-sizing:border-box;outline:none;background:rgba(255,255,255,0.8)">
                             </div>
                         </div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+                                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
                             <div>
                                 <label style="font-size:11px;color:#6b7280;font-weight:600;display:block;margin-bottom:4px;text-transform:uppercase">Date de naissance</label>
                                 <input id="p-naissance" type="date" value="${p.date_naissance ? p.date_naissance.split('T')[0] : ''}"
@@ -567,7 +566,7 @@ async function openModal(type) {
                         <button class="btn-save" onclick="sauvegarderWidgetsVisibles()" style="width:100%; margin-top:16px;">
                             💾 Sauvegarder mes widgets
                         </button>
-                        <div id="widgets-msg" style="text-align:center;margin-top:10px;font-size:13px;min-height:18px"></div>
+                                                <div id="widgets-msg" style="text-align:center;margin-top:10px;font-size:13px;min-height:18px"></div>
                     </div>
                 </div>
 

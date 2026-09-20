@@ -1,7 +1,29 @@
 ## MoaDja
 
+## v1.92.65 — 20 septembre 2026
+- Correction d'un petit défaut visuel : le logo affichait un flash au chargement de la page ou en rafraîchissant (F5). C'est maintenant corrigé.
+
+---
+
+## v1.92.64 — 20 septembre 2026
+- Nouvel essai pour corriger le flou sur les photos du fil social (sur ordinateur). Sans effet visible, le problème reste à l'étude.
+
+---
+
+## v1.92.63 — 20 septembre 2026
+- Premier essai pour corriger le flou sur les photos du fil social (sur ordinateur). Sans effet visible, le problème reste à l'étude.
+
+---
+
+## v1.92.62 — 20 septembre 2026
+- Suppression de deux boutons inutilisés ("Mini" et "Sport") qui n'avaient plus aucune fonction.
+
+---
+
 ## v1.92.61 — 20 septembre 2026
 - La carte « Prêt pour une nouvelle séance ? » a été réorganisée pour un affichage plus compact et harmonieux.
+
+---
 
 ## v1.92.60 — 20 septembre 2026
 - Le nombre de calories brûlées est désormais affiché sur vos séances, dans le tableau de bord comme dans le widget Sport.
