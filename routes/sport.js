@@ -17,14 +17,16 @@ const SPORT_MET_CARDIO      = 6;
 
 // ── ROUTINES : sport_workouts ──
 
+// Tri par workout_order (réorganisation manuelle par glisser-déposer),
+// NULLS LAST + created_at ASC en repli si une ligne n'a jamais reçu d'ordre.
 router.get('/workouts', auth, async (req, res) => {
     const moi = req.user.id;
     try {
         const { rows } = await pool.query(`
-            SELECT id, user_id, name, created_at
+            SELECT id, user_id, name, created_at, workout_order
             FROM sport_workouts
             WHERE user_id = \$1
-            ORDER BY created_at DESC
+            ORDER BY workout_order ASC NULLS LAST, created_at ASC
         `, [moi]);
         res.json({ success: true, workouts: rows });
     } catch (err) {
@@ -33,20 +35,71 @@ router.get('/workouts', auth, async (req, res) => {
     }
 });
 
+// Nouvelle routine placée en dernière position (MAX(workout_order) + 1).
 router.post('/workouts', auth, async (req, res) => {
     const moi  = req.user.id;
     const name = req.body.name?.trim();
     if (!name) return res.status(400).json({ success: false, message: 'Nom requis.' });
     try {
+        const { rows: maxOrderRows } = await pool.query(`
+            SELECT COALESCE(MAX(workout_order), 0) AS max_order
+            FROM sport_workouts
+            WHERE user_id = \$1
+        `, [moi]);
+        const prochainOrdre = maxOrderRows[0].max_order + 1;
+
         const { rows } = await pool.query(`
-            INSERT INTO sport_workouts (user_id, name)
-            VALUES (\$1, \$2)
+            INSERT INTO sport_workouts (user_id, name, workout_order)
+            VALUES (\$1, \$2, \$3)
             RETURNING *
-        `, [moi, name]);
+        `, [moi, name, prochainOrdre]);
         res.json({ success: true, workout: rows[0] });
     } catch (err) {
         console.error('[SPORT] POST /workouts :', err.message);
         res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// Réordonnancement en masse des routines d'un utilisateur (drag-and-drop).
+router.put('/workouts/reorder', auth, async (req, res) => {
+    const moi   = req.user.id;
+    const ordre = req.body.ordre;
+
+    if (!Array.isArray(ordre) || !ordre.length) {
+        return res.status(400).json({ success: false, message: 'Ordre invalide.' });
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const { rows: existantes } = await client.query(`
+            SELECT id FROM sport_workouts WHERE user_id = \$1
+        `, [moi]);
+        const idsValides  = new Set(existantes.map(w => w.id));
+        const idsRecus    = ordre.map(id => parseInt(id, 10));
+        const tousValides = idsRecus.length === idsValides.size
+            && idsRecus.every(id => idsValides.has(id));
+
+        if (!tousValides) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ success: false, message: 'Liste de routines incohérente.' });
+        }
+
+        for (let i = 0; i < idsRecus.length; i++) {
+            await client.query(`
+                UPDATE sport_workouts SET workout_order = \$1 WHERE id = \$2 AND user_id = \$3
+            `, [i + 1, idsRecus[i], moi]);
+        }
+
+        await client.query('COMMIT');
+        res.json({ success: true });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('[SPORT] PUT /workouts/reorder :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    } finally {
+        client.release();
     }
 });
 
@@ -56,7 +109,7 @@ router.get('/workouts/:id', auth, async (req, res) => {
     const id  = parseInt(req.params.id, 10);
     try {
         const { rows: workoutRows } = await pool.query(`
-            SELECT id, user_id, name, created_at
+            SELECT id, user_id, name, created_at, workout_order
             FROM sport_workouts
             WHERE id = \$1 AND user_id = \$2
         `, [id, moi]);
@@ -206,8 +259,6 @@ router.delete('/days/:dayId', auth, async (req, res) => {
 
 // ── EXERCICES D'UN JOUR : sport_day_exercises ──
 
-// Accepte désormais target_weight_kg / target_rest_seconds (repos par défaut 60).
-// order_in_day est désormais calculé côté serveur (MAX + 1), jamais fourni par le client.
 router.post('/days/:dayId/exercises', auth, async (req, res) => {
     const moi   = req.user.id;
     const dayId = parseInt(req.params.dayId, 10);
@@ -262,10 +313,6 @@ router.post('/days/:dayId/exercises', auth, async (req, res) => {
     }
 });
 
-// Réordonnancement en masse des exercices d'un jour (drag-and-drop).
-// Reçoit un tableau ordonné d'IDs d'exercices ({ ordre: [id1, id2, ...] })
-// et réassigne order_in_day = position + 1. Transaction + vérification
-// stricte que les IDs reçus correspondent exactement aux exercices du jour.
 router.put('/days/:dayId/exercises/reorder', auth, async (req, res) => {
     const moi   = req.user.id;
     const dayId = parseInt(req.params.dayId, 10);
@@ -320,7 +367,6 @@ router.put('/days/:dayId/exercises/reorder', auth, async (req, res) => {
     }
 });
 
-// Accepte désormais target_weight_kg / target_rest_seconds en mise à jour.
 router.put('/exercises/:exerciseId', auth, async (req, res) => {
     const moi        = req.user.id;
     const exerciseId = parseInt(req.params.exerciseId, 10);
@@ -403,7 +449,6 @@ router.get('/sessions', auth, async (req, res) => {
     }
 });
 
-// Séance en cours (status = in_progress) + ses logs, pour reprendre/abandonner.
 router.get('/sessions/active', auth, async (req, res) => {
     const moi = req.user.id;
     try {
@@ -455,9 +500,6 @@ router.get('/sessions/:id', auth, async (req, res) => {
     }
 });
 
-// Empêche la création d'une séance en double : si une séance 'in_progress'
-// existe déjà pour l'utilisateur, elle est renvoyée telle quelle au lieu
-// d'en créer une nouvelle (évite les séances orphelines jamais clôturées).
 router.post('/sessions', auth, async (req, res) => {
     const moi       = req.user.id;
     const workoutId = req.body.workout_id || null;
@@ -491,7 +533,6 @@ router.post('/sessions', auth, async (req, res) => {
     }
 });
 
-// Clôture d'une séance : status doit être 'completed' ou 'abandoned'.
 router.put('/sessions/:id', auth, async (req, res) => {
     const moi    = req.user.id;
     const id     = parseInt(req.params.id, 10);
@@ -514,8 +555,6 @@ router.put('/sessions/:id', auth, async (req, res) => {
     }
 });
 
-// Suppression d'une séance + tous ses logs (transaction : ownership vérifié,
-// logs purgés puis session supprimée, rollback si un des deux échoue).
 router.delete('/sessions/:id', auth, async (req, res) => {
     const moi = req.user.id;
     const id  = parseInt(req.params.id, 10);
@@ -546,7 +585,6 @@ router.delete('/sessions/:id', auth, async (req, res) => {
 });
 
 // ── DASHBOARD & WIDGET : stats agrégées ──
-// Durée, volume, séries, calories (MET pondéré muscu/cardio).
 function _sportCalculerStatsSession(session, logs, poidsUtilisateurKg) {
     const logsValides = logs.filter(l => l.completed);
 
@@ -584,18 +622,6 @@ function _sportCalculerStatsSession(session, logs, poidsUtilisateurKg) {
     };
 }
 
-// Liste consolidée des exercices d'une séance, DANS L'ORDRE CHRONOLOGIQUE
-// réel d'exécution (les logs doivent arriver triés par id/logged_at ASC).
-// Regroupe uniquement les séries CONSÉCUTIVES du même exercice (ex: "3x
-// Pompes inclinées"). Si le même exercice réapparaît plus tard de façon non
-// consécutive (ex: routine avec "Marche" en position 1 ET 6), il forme un
-// second bloc distinct au lieu d'être fusionné avec le premier — fidèle à
-// l'ordre de la routine et à ce qui a été réellement effectué.
-// Chaque bloc porte désormais aussi le détail réel de chaque série
-// (reps/poids en musculation, distance/durée/vitesse/inclinaison en cardio),
-// utilisé par le frontend (point #3 : détail par série dans widget/dashboard/
-// modal). exercise_name et nb_series restent inchangés pour compatibilité.
-// Format retourné : [{ exercise_name, wger_exercise_id, est_cardio, nb_series, series: [...] }].
 function _sportConsoliderExercicesSession(logs) {
     const logsValides = logs.filter(l => l.completed);
     const blocs = [];
@@ -633,8 +659,6 @@ function _sportConsoliderExercicesSession(logs) {
     return blocs;
 }
 
-// Détecte, pour la séance la plus récente, les exercices dont le meilleur
-// poids dépasse le record historique (hors séance courante). Cardio exclu.
 async function _sportDetecterRecords(moi, sessionId, logsSession) {
     const logsMusculationValides = logsSession.filter(l =>
         l.completed && l.weight_kg != null && l.distance_km == null && l.duration_seconds == null
@@ -673,10 +697,6 @@ async function _sportDetecterRecords(moi, sessionId, logsSession) {
     return records;
 }
 
-// GET /api/sport/dashboard-stats
-// 5 dernières séances terminées, avec stats agrégées + liste consolidée
-// d'exercices (chaque séance, dans l'ordre réel d'exécution) + records
-// détaillés (dernière séance uniquement).
 router.get('/dashboard-stats', auth, async (req, res) => {
     const moi = req.user.id;
     try {
@@ -699,9 +719,6 @@ router.get('/dashboard-stats', auth, async (req, res) => {
         }
 
         const sessionIds = sessions.map(s => s.id);
-        // ORDER BY id ASC ajouté : garantit que chaque groupe de logs par
-        // séance est bien trié dans l'ordre chronologique réel d'exécution
-        // avant d'être passé à _sportConsoliderExercicesSession().
         const { rows: tousLogs } = await pool.query(`
             SELECT * FROM sport_session_logs WHERE session_id = ANY(\$1::int[]) ORDER BY id ASC
         `, [sessionIds]);
@@ -741,7 +758,6 @@ router.get('/dashboard-stats', auth, async (req, res) => {
 });
 
 // ── LOGS DE SÉANCE : sport_session_logs ──
-// logged_at posé côté serveur (NOW()), jamais envoyé par le client.
 
 router.post('/sessions/:sessionId/logs', auth, async (req, res) => {
     const moi       = req.user.id;
@@ -786,7 +802,6 @@ router.post('/sessions/:sessionId/logs', auth, async (req, res) => {
     }
 });
 
-// Correction d'un log déjà enregistré.
 router.put('/logs/:logId', auth, async (req, res) => {
     const moi   = req.user.id;
     const logId = parseInt(req.params.logId, 10);
@@ -812,7 +827,7 @@ router.put('/logs/:logId', auth, async (req, res) => {
                 AND s.user_id = \$10
             RETURNING l.*
         `, [
-                        Number.isInteger(reps) ? reps : null,
+            Number.isInteger(reps) ? reps : null,
             weight_kg != null ? weight_kg : null,
             typeof completed === 'boolean' ? completed : null,
             Number.isInteger(rest_seconds) ? rest_seconds : null,
@@ -850,7 +865,6 @@ router.delete('/logs/:logId', auth, async (req, res) => {
     }
 });
 
-// Dernier log réel pour un exercice donné (préremplissage esprit "Précédent").
 router.get('/exercises/:wgerExerciseId/dernier-log', auth, async (req, res) => {
     const moi = req.user.id;
     const wgerExerciseId = parseInt(req.params.wgerExerciseId, 10);
@@ -925,11 +939,6 @@ router.delete('/measurements/:id', auth, async (req, res) => {
 });
 
 // ── CATALOGUE WGER (lecture seule) ──
-// Noms "Anglais (Français)". Traduction FR complète via SPORT_TRADUCTION_FR
-// (toutes catégories, mapping = null -> exercice masqué). Nettoyage de tout
-// texte non-latin résiduel entre parenthèses (ex. cyrillique WGER). Recherche
-// insensible accents/casse, portant sur le nom affiché ET le nom original
-// (pour retrouver un exercice traduit en cherchant son nom anglais d'origine).
 
 const SPORT_WGER_CATEGORIES_FR = {
     'Abs'      : 'Abdominaux',
@@ -973,9 +982,6 @@ function _nettoyerNomBase(nom) {
     return nom.split('(')[0].trim();
 }
 
-// Supprime tout groupe entre parenthèses ne contenant aucune lettre latine
-// (ex. cyrillique WGER type "Squats (Приседания)"). Un contenu FR légitime
-// entre parenthèses (alphabet latin) reste affiché tel quel.
 function _nettoyerParenthesesNonLatines(nom) {
     return nom.replace(/\s*$([^()]*)$/g, (match, interieur) => {
         return /[a-zA-Z]/.test(interieur) ? match : '';

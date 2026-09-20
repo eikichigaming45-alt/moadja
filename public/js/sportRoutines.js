@@ -47,7 +47,8 @@ function _sportRenderListeRoutines(routines) {
         ` : `
             <div class="sport-routine-liste">
                 ${routines.map(w => `
-                    <div class="sport-routine-carte" id="sport-routine-carte-${w.id}" onclick="_sportOuvrirDetailRoutine(${w.id})">
+                    <div class="sport-routine-carte" id="sport-routine-carte-${w.id}" data-workout-id="${w.id}" draggable="true" onclick="_sportOuvrirDetailRoutine(${w.id})">
+                        <span class="sport-routine-drag-handle" style="cursor:grab; color:#9ca3af; display:flex; align-items:center; margin-right:4px;" title="Glisser pour réordonner" onclick="event.stopPropagation()">${SPORT_ICONE_POIGNEE}</span>
                         <div class="sport-routine-carte-icone">${SPORT_ICONE_DUMBBELL}</div>
                         <div class="sport-routine-carte-info">
                             <div class="sport-routine-carte-nom">${_sportEchapper(w.name)}</div>
@@ -79,6 +80,93 @@ function _sportRenderListeRoutines(routines) {
             _sportConfirmerSuppressionRoutine(parseInt(btn.dataset.workoutId, 10));
         });
     });
+
+    _sportInitDragAndDropRoutines(zone);
+}
+
+// ── Drag & Drop des routines ──
+function _sportInitDragAndDropRoutines(zone) {
+    const liste = zone.querySelector('.sport-routine-liste');
+    if (!liste) return;
+
+    let elementGlisse = null;
+
+    liste.querySelectorAll('.sport-routine-carte').forEach(item => {
+        item.addEventListener('dragstart', () => {
+            elementGlisse = item;
+            item.style.opacity = '0.4';
+        });
+
+        item.addEventListener('dragend', () => {
+            item.style.opacity = '1';
+            elementGlisse = null;
+            _sportSauvegarderOrdreRoutines(liste);
+        });
+
+        item.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (!elementGlisse || elementGlisse === item) return;
+
+            const rect = item.getBoundingClientRect();
+            const apresMilieu = e.clientY > rect.top + rect.height / 2;
+
+            if (apresMilieu) {
+                item.after(elementGlisse);
+            } else {
+                item.before(elementGlisse);
+            }
+        });
+
+        const poignee = item.querySelector('.sport-routine-drag-handle');
+        if (poignee) {
+            poignee.addEventListener('touchstart', (e) => {
+                elementGlisse = item;
+                item.style.opacity = '0.4';
+                // On ne preventDefault pas ici pour laisser le touchmove natif s'initialiser
+            }, { passive: true });
+        }
+    });
+
+    liste.addEventListener('touchmove', (e) => {
+        if (!elementGlisse) return;
+        e.preventDefault();
+        const touch  = e.touches[0];
+        const cible  = document.elementFromPoint(touch.clientX, touch.clientY);
+        const item   = cible?.closest('.sport-routine-carte');
+        if (!item || item === elementGlisse) return;
+
+        const rect = item.getBoundingClientRect();
+        const apresMilieu = touch.clientY > rect.top + rect.height / 2;
+
+        if (apresMilieu) {
+            item.after(elementGlisse);
+        } else {
+            item.before(elementGlisse);
+        }
+    }, { passive: false });
+
+    liste.addEventListener('touchend', () => {
+        if (!elementGlisse) return;
+        elementGlisse.style.opacity = '1';
+        _sportSauvegarderOrdreRoutines(liste);
+        elementGlisse = null;
+    });
+}
+
+async function _sportSauvegarderOrdreRoutines(liste) {
+    const ordre = Array.from(liste.querySelectorAll('.sport-routine-carte'))
+        .map(item => parseInt(item.dataset.workoutId, 10));
+
+    try {
+        await fetch('/api/sport/workouts/reorder', {
+            method : 'PUT',
+            headers: _sportAuthHeaders(),
+            body   : JSON.stringify({ ordre })
+        });
+    } catch (err) {
+        console.error('[SPORT] sauvegarderOrdreRoutines :', err.message);
+        _sportChargerListeRoutines();
+    }
 }
 
 // ── Renommage inline d'une routine depuis la liste ──
@@ -87,6 +175,7 @@ function _sportRenommerRoutineCarte(workoutId, nomActuel) {
     if (!carte) return;
 
     carte.onclick = null;
+    carte.draggable = false; // Désactiver le drag pendant l'édition
     carte.innerHTML = `
         <div class="sport-routine-carte-icone">${SPORT_ICONE_DUMBBELL}</div>
         <div class="sport-routine-carte-info" style="display:flex;flex-direction:column;gap:8px">
