@@ -93,6 +93,62 @@ app.use('/api/eclats',           require('./routes/eclats'));
 app.use('/api/sport',            require('./routes/sport'));
 app.use('/api/tchat',            tchatSocialLimiter, tchatRouter);
 
+// ── Route publique Open Graph (Partage de séance) ─────────────
+// Cette route n'est PAS protégée par /api/auth. Elle est lue par
+// les robots de WhatsApp, Facebook, etc., pour générer l'aperçu.
+app.get('/share/seance/:id', async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).send('ID invalide');
+
+    try {
+        const { rows } = await pool.query(`
+            SELECT s.id, w.name AS workout_name
+            FROM sport_sessions s
+            LEFT JOIN sport_workouts w ON w.id = s.workout_id
+            WHERE s.id = \$1
+        `, [id]);
+
+        if (!rows.length) return res.status(404).send('Séance introuvable');
+        
+        const session = rows[0];
+        const baseUrl = req.protocol + '://' + req.get('host');
+        const imageUrl = `${baseUrl}/uploads/sport_shares/share_seance_${id}.jpg`;
+        const title = session.workout_name ? `Séance : ${session.workout_name}` : 'Séance Sport MoaDja';
+        const desc = `Découvrez les statistiques de cette séance sur MoaDja !`;
+
+        const html = `
+        <!DOCTYPE html>
+        <html lang="fr">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>${title}</title>
+            <meta property="og:title" content="${title}" />
+            <meta property="og:description" content="${desc}" />
+            <meta property="og:image" content="${imageUrl}" />
+            <meta property="og:type" content="article" />
+            <meta name="twitter:card" content="summary_large_image">
+            <meta name="twitter:title" content="${title}">
+            <meta name="twitter:description" content="${desc}">
+            <meta name="twitter:image" content="${imageUrl}">
+            <script>
+                // Redirection automatique vers l'app pour un visiteur humain
+                window.location.href = "/?onglet=sport";
+            </script>
+        </head>
+        <body>
+            <p>Redirection vers MoaDja...</p>
+        </body>
+        </html>
+        `;
+        
+        res.send(html);
+    } catch (err) {
+        console.error('[SPORT] Erreur Open Graph GET /share/seance/:id :', err.message);
+        res.status(500).send('Erreur serveur');
+    }
+});
+
 // ── Socket.io — authentification middleware ───────────────────
 io.use((socket, next) => {
     const token = socket.handshake.auth?.token;
