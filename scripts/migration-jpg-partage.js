@@ -1,10 +1,7 @@
 // ============================================================
 // scripts/migration-jpg-partage.js
-// Script ponctuel : régénère un .jpg jumeau pour chaque .webp
-// existant dans public/uploads/posts qui n'en a pas encore.
-// Nécessaire suite au fix v1.92.67 (og:image partage social),
-// qui ne s'applique automatiquement qu'aux nouveaux posts.
-// À exécuter une seule fois sur le VPS : node scripts/migration-jpg-partage.js
+// Script ponctuel : régénère un .jpg jumeau (1200x630) pour chaque
+// .webp existant dans public/uploads/posts.
 // ============================================================
 
 const path  = require('path');
@@ -37,9 +34,12 @@ async function migrer() {
         }
 
         try {
-            await sharp(cheminWebp).jpeg({ quality: 85 }).toFile(cheminJpg);
+            await sharp(cheminWebp)
+                .resize(1200, 630, { fit: 'cover', position: 'center' })
+                .jpeg({ quality: 80 })
+                .toFile(cheminJpg);
             crees++;
-            console.log(`✓ ${nomJpg} créé`);
+            console.log(`✓ ${nomJpg} créé (1200x630)`);
         } catch (e) {
             echecs++;
             console.error(`✗ Échec pour ${fichier} :`, e.message);

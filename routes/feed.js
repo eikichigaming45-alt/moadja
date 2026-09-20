@@ -22,10 +22,9 @@ const upload  = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
 const RESONANCES_VALIDES = ['douceur', 'energie', 'calme', 'inspiration'];
 
 // ── Utilitaire : sauvegarder une image sur disque ────────────
-// Génère deux fichiers : le .webp (affichage interne du fil, format léger)
-// et un .jpg jumeau (dédié à og:image / twitter:image pour le partage
-// externe WhatsApp/Facebook, dont les crawlers gèrent le WebP de façon
-// peu fiable — voir route /share/:id).
+// Génère deux fichiers : le .webp (affichage interne du fil, qualité/poids optimisés)
+// et un .jpg formaté spécifiquement pour l'Open Graph (1200x630, obligatoire pour
+// un aperçu fiable sur WhatsApp/Facebook).
 async function sauvegarderImage(buffer, userId) {
     const base     = `${userId}_${Date.now()}`;
     const filename = `${base}.webp`;
@@ -34,13 +33,16 @@ async function sauvegarderImage(buffer, userId) {
 
     const filenameJpg = `${base}.jpg`;
     const filepathJpg = path.join(UPLOADS_DIR, filenameJpg);
-    await sharp(buffer).jpeg({ quality: 85 }).toFile(filepathJpg);
+    // Redimensionnement stricte pour l'Open Graph (WhatsApp bloque souvent sans dimensions claires ou si > 300ko)
+    await sharp(buffer)
+        .resize(1200, 630, { fit: 'cover', position: 'center' })
+        .jpeg({ quality: 80 })
+        .toFile(filepathJpg);
 
     return `/uploads/posts/${filename}`;
 }
 
 // ── Utilitaire : supprimer une image du disque ───────────────
-// Supprime le .webp et son .jpg jumeau (même base de nom de fichier).
 function supprimerImage(photo_url) {
     if (!photo_url) return;
     const filename = path.basename(photo_url);
@@ -540,7 +542,7 @@ router.put('/:id', authenticateToken, upload.single('photo'), async (req, res) =
         ? JSON.parse(req.body.personnes_taguees)
         : undefined;
     try {
-        const { rows } = await pool.query(
+                const { rows } = await pool.query(
             `SELECT user_id, photo_url FROM posts WHERE id = \$1`, [postId]
         );
         if (!rows.length) return res.status(404).json({ success: false, message: 'Post introuvable.' });
@@ -562,7 +564,7 @@ router.put('/:id', authenticateToken, upload.single('photo'), async (req, res) =
         const setClauses = [
             `contenu = \$1`, `photo_url = \$2`, `mentions = \$3`
         ];
-                const params = [contenu || null, photo_url, mentionIds];
+        const params = [contenu || null, photo_url, mentionIds];
         if (lieu !== undefined)              { params.push(lieu);               setClauses.push(`lieu = $${params.length}`); }
         if (lieu_lat !== undefined)          { params.push(lieu_lat);           setClauses.push(`lieu_lat = $${params.length}`); }
         if (lieu_lon !== undefined)          { params.push(lieu_lon);           setClauses.push(`lieu_lon = $${params.length}`); }
@@ -626,10 +628,9 @@ router.get('/share/:id', async (req, res) => {
         const contenuBrut = post.contenu ? post.contenu.replace(/<[^>]*>?/gm, '').trim() : '';
         const extrait = contenuBrut ? (contenuBrut.substring(0, 120) + '...') : `Voir la publication de ${nomAuteur}`;
         const titre = `Post de ${nomAuteur} sur MoaDja`;
-        // Utilise la variante .jpg (générée par sauvegarderImage) pour og:image/twitter:image :
+        // Utilise la variante .jpg formatée (générée par sauvegarderImage) pour og:image/twitter:image :
         // le format WebP utilisé pour l'affichage interne du fil est géré de façon peu fiable
-        // par les crawlers WhatsApp/Facebook (aperçu intermittent). Le .webp du fil n'est pas
-        // modifié, seule cette route de partage pointe vers le .jpg jumeau.
+        // par les crawlers WhatsApp/Facebook. L'image est explicitement redimensionnée à 1200x630.
         const imageUrlJpg = post.photo_url
             ? `https://moadja.fr${post.photo_url.replace(/\.webp$/i, '.jpg')}`
             : null;
@@ -645,6 +646,8 @@ router.get('/share/:id', async (req, res) => {
     <meta property="og:title" content="${titre}" />
     <meta property="og:description" content="${extrait}" />
     <meta property="og:image" content="${imageUrl}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta property="og:site_name" content="MoaDja" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${titre}" />
@@ -721,12 +724,14 @@ router.get('/share/:id', async (req, res) => {
             word-break: break-word;
         }
         .post-image {
-            width: 100%;
+            max-width: 100%;
+            height: auto;
             border-radius: 16px;
             margin-bottom: 20px;
-            object-fit: cover;
+            object-fit: contain;
             max-height: 500px;
             border: 1px solid rgba(0,0,0,0.05);
+            display: block;
         }
         .cta-button {
             display: block;
