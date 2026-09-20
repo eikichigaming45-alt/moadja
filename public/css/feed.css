@@ -258,6 +258,10 @@
     object-fit: cover;
     display: block;
     transition: opacity .2s;
+    /* Correctif v1.92.63 : isole l'image sur sa propre couche de composition
+       GPU pour éviter que le backdrop-filter (blur) du parent .feed-card
+       ne dégrade le rendu/la netteté de l'image affichée dans le fil. */
+    transform: translateZ(0);
 }
 
 .feed-photo:hover {
