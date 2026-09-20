@@ -1,160 +1,160 @@
 ## MoaDja
 
-## v1.92.75 — 20 septembre 2026
+## v1.92.75 - 20 septembre 2026
 - Amélioration invisible : nettoyage d'anciens codes d'affichage obsolètes dans le module Sport.
 
 ---
 
-## v1.92.74 — 20 septembre 2026
+## v1.92.74 - 20 septembre 2026
 - Retouche visuelle dans la modale Sport : correction d'un texte "Aucun nouveau record" qui s'affichait en double, et l'icône du trophée reste désormais toujours joliment dorée.
 
 ---
 
-## v1.92.73 — 20 septembre 2026
+## v1.92.73 - 20 septembre 2026
 - Amélioration des statistiques Sport : lorsqu'une séance ne comporte aucun record battu, un indicateur clair "Aucun nouveau record" s'affiche désormais, plutôt que de ne rien afficher du tout.
 
 ---
 
-## v1.92.72 — 20 septembre 2026
+## v1.92.72 - 20 septembre 2026
 - Nouveauté dans les statistiques Sport : lorsque vous battez un record, la fenêtre de détail affiche maintenant précisément quel exercice est concerné, avec l'ancien et le nouveau poids soulevé.
 
 ---
 
-## v1.92.71 — 20 septembre 2026
+## v1.92.71 - 20 septembre 2026
 - Amélioration du mode hors-ligne : le widget récapitulatif du Sport (sur la colonne de droite) conserve désormais sa belle mise en forme visuelle même si vous ouvrez l'application sans connexion internet.
 
 ---
 
-## v1.92.70 — 20 septembre 2026
+## v1.92.70 - 20 septembre 2026
 - Correction d'un bug majeur (Sport) : il n'est plus possible qu'une séance "fantôme" (non reliée à une routine) se crée par erreur et reste bloquée indéfiniment en statut "Séance en cours".
 
 ---
 
-## v1.92.69 — 20 septembre 2026
+## v1.92.69 - 20 septembre 2026
 - Amélioration sonore pendant la séance : lors des exercices basés sur un chronomètre (ex: gainage), un bip court retentit désormais à chaque seconde lors des 5 dernières secondes pour vous annoncer la fin de l'effort.
 
 ---
 
 
-## v1.92.68 — 20 septembre 2026
+## v1.92.68 - 20 septembre 2026
 - Amélioration du partage des posts sur les réseaux sociaux : l'image s'affiche désormais correctement sans être étirée sur la page web, et l'aperçu pour WhatsApp/Facebook a été optimisé (format et dimensions).
 
 ---
 
-## v1.92.67 — 20 septembre 2026
+## v1.92.67 - 20 septembre 2026
 - Amélioration technique invisible : création automatique d'une seconde image (format JPEG) lors de la publication d'un post, spécifiquement pour garantir l'affichage de l'aperçu lors des partages.
 
 ---
 
-## v1.92.66 — 20 septembre 2026
+## v1.92.66 - 20 septembre 2026
 - Retouche visuelle du bouton audio dans la Prière du jour : le bouton a maintenant un fond transparent avec un contour ambre pour mieux s'intégrer au design.
 
 ---
 
-## v1.92.65 — 20 septembre 2026
+## v1.92.65 - 20 septembre 2026
 - Correction d'un petit défaut visuel : le logo affichait un flash au chargement de la page ou en rafraîchissant (F5). C'est maintenant corrigé.
 
 ---
 
-## v1.92.64 — 20 septembre 2026
+## v1.92.64 - 20 septembre 2026
 - Nouvel essai pour corriger le flou sur les photos du fil social (sur ordinateur). Sans effet visible, le problème reste à l'étude.
 
 ---
 
-## v1.92.63 — 20 septembre 2026
+## v1.92.63 - 20 septembre 2026
 - Premier essai pour corriger le flou sur les photos du fil social (sur ordinateur). Sans effet visible, le problème reste à l'étude.
 
 ---
 
-## v1.92.62 — 20 septembre 2026
+## v1.92.62 - 20 septembre 2026
 - Suppression de deux boutons inutilisés ("Mini" et "Sport") qui n'avaient plus aucune fonction.
 
 ---
 
-## v1.92.61 — 20 septembre 2026
+## v1.92.61 - 20 septembre 2026
 - La carte « Prêt pour une nouvelle séance ? » a été réorganisée pour un affichage plus compact et harmonieux.
 
 ---
 
-## v1.92.60 — 20 septembre 2026
+## v1.92.60 - 20 septembre 2026
 - Le nombre de calories brûlées est désormais affiché sur vos séances, dans le tableau de bord comme dans le widget Sport.
 - Correction d'un bug qui pouvait bloquer indéfiniment une reprise de séance dans certains cas particuliers.
 - Le bouton de suppression d'une séance ne chevauche plus la date affichée sur la carte.
 
-## v1.92.59 — 20 septembre 2026
+## v1.92.59 - 20 septembre 2026
 - Vous pouvez maintenant changer l'ordre de vos routines dans la liste en les faisant glisser de haut en bas (glisser-déposer). L'ordre est sauvegardé sur tous vos appareils.
 
 ---
 
 
-## v1.92.58 — 20 septembre 2026
+## v1.92.58 - 20 septembre 2026
 - Amélioration visuelle de la fenêtre des statistiques de sport (qui s'ouvre au clic sur une séance) : la liste des exercices est plus aérée, mieux espacée et mise en valeur dans un encadré.
 
 ---
 
-## v1.92.57 — 20 septembre 2026
+## v1.92.57 - 20 septembre 2026
 - Nouveau design pour le détail des exercices terminés : affichage sur une ligne de texte plus compacte et colorée, plus agréable à lire.
 - Le petit encadré Sport sur le côté droit de l'écran (sur ordinateur) a été modifié pour être visuellement identique à la carte principale au centre.
 
 ---
 
-## v1.92.56 — 20 septembre 2026
+## v1.92.56 - 20 septembre 2026
 - Simplification de l'affichage : si toutes vos séries pour un même exercice sont strictement identiques (par exemple, 3 séries de 10 répétitions), elles sont maintenant regroupées en un seul texte pour ne pas surcharger l'écran.
 
 ---
 
-## v1.92.55 — 20 septembre 2026
+## v1.92.55 - 20 septembre 2026
 - Le résumé de vos séances terminées affiche désormais le vrai détail pour chaque série effectuée (le temps, les répétitions, le poids, etc.), et non plus un simple aperçu global.
 
 ---
 
-## v1.92.54 — 20 septembre 2026
+## v1.92.54 - 20 septembre 2026
 - Correction de l'ordre d'affichage des exercices dans le résumé d'une séance terminée (ils s'affichent bien dans l'ordre où ils ont été faits).
 
 ---
 
-## v1.92.53 — 20 septembre 2026
+## v1.92.53 - 20 septembre 2026
 - Dans "Mes Routines", chaque routine affiche désormais deux icônes (crayon / corbeille) permettant de la renommer ou de la supprimer directement depuis la liste.
 - Le bouton rouge "Supprimer la routine" a été retiré de l'écran de détail (la suppression se fait désormais depuis la liste).
 - Les boutons "Commencer la routine" et "+ Ajouter un exercice" ont été harmonisés pour avoir la même taille et le même alignement.
 
 ---
 
-## v1.92.52 — 20 septembre 2026
+## v1.92.52 - 20 septembre 2026
 - Désactivation du pinch-to-zoom (zoom par pincement) sur mobile et tablette pour une expérience plus proche d'une application native.
 
 ---
 
-## v1.92.50 — 17 septembre 2026
+## v1.92.50 - 17 septembre 2026
 - Le dashboard Sport et le widget Sport (colonne droite) sont désormais entièrement cliquables : cliquer sur une carte de récapitulatif de séance ouvre la modale "Statistiques Sport" avec le détail exact de la séance concernée.
 - Ajout d'un effet visuel de survol (léger soulèvement + ombre) sur les cartes cliquables, pour signaler clairement l'interactivité.
 - Le bouton de suppression (icône corbeille) reste indépendant du clic sur la carte.
 
 ---
 
-## v1.92.49 — 17 septembre 2026
+## v1.92.49 - 17 septembre 2026
 - Correction d'un bug CSS critique sur la modale "Statistiques Sport" : une accolade de media query mal fermée neutralisait l'affichage des styles sur desktop.
 - Refonte visuelle complète de la modale de statistiques : titre et pastille de date bien alignés, blocs Durée/Volume/Séries en grille, liste d'exercices clairement présentée.
 
 ---
 
-## v1.92.46 — 17 septembre 2026
+## v1.92.46 - 17 septembre 2026
 - Le widget Sport (colonne droite, visible sur tous les onglets) affiche désormais la dernière séance enregistrée sous forme de carte : durée, volume, séries, badge records, aperçu des exercices et pied de carte "MoaDja".
 
 ---
 
-## v1.92.45 — 17 septembre 2026
+## v1.92.45 - 17 septembre 2026
 - Résolution du bug de chargement de l'onglet "Mes Routines" (erreur "Erreur lors du chargement des routines" rencontrée en v1.92.44).
 - Ajout du champ de création de routine et de la liste des routines existantes, chacune cliquable pour accéder au détail des exercices.
 
 ---
 
-## v1.92.44 — 17 septembre 2026
+## v1.92.44 - 17 septembre 2026
 - Diagnostic d'un bug bloquant l'affichage de la liste des routines dans l'onglet "Mes Routines" (message d'erreur affiché à la place du contenu).
 
 ---
 
-## v1.92.43 — 17 septembre 2026
+## v1.92.43 - 17 septembre 2026
 - Amélioration de l'écran de séance : le chronomètre global et le bouton "Terminer" restent désormais fixes en haut de l'écran, tandis que la liste des exercices défile de manière fluide et indépendante en dessous.
 - Déblocage de l'audio sur iOS (iPhone/Safari) : les bips de compte à rebours et les alertes sonores fonctionnent maintenant correctement, même si le navigateur est en arrière-plan.
 - Finitions visuelles : harmonisation des bordures arrondies sur le bloc des exercices pour respecter le design global de l'application.
@@ -162,7 +162,7 @@
 ---
 
 
-## v1.92.42 — 17 septembre 2026
+## v1.92.42 - 17 septembre 2026
 - Amélioration visuelle des tableaux pendant la séance : les colonnes, les boutons et le texte dans les cases de saisie sont désormais parfaitement alignés.
 - Le bandeau du temps de repos ne reste plus bloqué en haut de l'écran ; il s'affiche maintenant au bon endroit, juste au-dessus de l'exercice concerné.
 - Ajout des indications "MIN" (minutes) et "SEC" (secondes) au-dessus des cases pour les exercices basés sur le temps (marche, gainage, etc.), afin de faciliter la lecture.
@@ -170,7 +170,7 @@
 
 ---
 
-## v1.92.33 — 16 septembre 2026
+## v1.92.33 - 16 septembre 2026
 - Pendant une séance de sport, l'écran du téléphone reste désormais allumé automatiquement, sans s'éteindre tout seul.
 - Ajout d'un chronomètre pour les exercices basés sur une durée, avec un signal sonore et une vibration lorsque l'objectif est atteint.
 - Le bandeau indiquant le temps de repos reste maintenant visible en permanence à l'écran pendant la séance.
@@ -180,29 +180,29 @@
 
 ---
 
-## v1.92.29 — 16 septembre 2026
+## v1.92.29 - 16 septembre 2026
 - Correction du rafraîchissement des notifications (cloche) et du tchat en mode application mobile installée (PWA) : les compteurs se mettent désormais à jour immédiatement au retour au premier plan, sans nécessiter de rechargement manuel.
 
 ---
 
-## v1.92.27 — 16 septembre 2026
+## v1.92.27 - 16 septembre 2026
 - Amélioration de la fiabilité de la géolocalisation lors de l'ajout d'un lieu à une publication : en cas d'instabilité du service de suggestions de lieux à proximité, votre position exacte s'affiche désormais immédiatement, au lieu d'un message d'erreur bloquant.
 
 ---
 
-## v1.92.23 — 15 septembre 2026
+## v1.92.23 - 15 septembre 2026
 - Correction d'un bug d'affichage (texte violet inattendu) au niveau des mots-clés (#hashtags) du fil d'actualité, tout en conservant la protection contre les contenus malveillants.
 - Dans la liste des personnes ayant réagi à une publication, il est désormais possible de cliquer sur un nom pour accéder directement à son profil.
 
 ---
 
-## v1.92.22 — 15 septembre 2026
+## v1.92.22 - 15 septembre 2026
 - Ajout d'une vérification sur les liens du profil (site web) pour plus de sécurité.
 - Renforcement de la protection des posts et des lieux contre les contenus malveillants.
 
 ---
 
-## v1.92.16 — 15 septembre 2026
+## v1.92.16 - 15 septembre 2026
 - Correction du bug empêchant l'affichage de "Mes Routines" et le démarrage d'une séance de sport.
 - Le chronomètre d'une séance en cours s'affiche à nouveau correctement.
 - Il est désormais possible de réorganiser l'ordre des exercices d'une routine simplement en les faisant glisser.
@@ -210,34 +210,34 @@
 
 ---
 
-## v1.92.15 — 15 septembre 2026
+## v1.92.15 - 15 septembre 2026
 - Amélioration du module Sport pour les exercices au temps (comme le gainage ou le cardio) : il est désormais possible d'indiquer un nombre de séries, et de régler la durée très précisément en minutes et secondes.
 - Les champs de saisie des exercices sont désormais vides par défaut lors de l'ajout, pour faciliter votre propre personnalisation.
 - Nettoyage du catalogue d'exercices : suppression de nombreux doublons pour rendre la liste plus claire.
 
 ---
 
-## v1.92.14 — 14 septembre 2026
+## v1.92.14 - 14 septembre 2026
 - Correction de l'espacement dans le module Sport : le titre "Dernières séances" était collé au bloc au-dessus, un espace a été ajouté pour plus de clarté.
 
 ---
 
-## v1.92.13 — 14 septembre 2026
+## v1.92.13 - 14 septembre 2026
 - Ajustement du plan alimentaire généré automatiquement : petit-déjeuner plus réaliste (pain complet, biscottes, œufs, yaourt, fruit...) sans légumes cuits, et meilleure rotation des protéines et ingrédients pour éviter les répétitions sur deux jours consécutifs.
 
 ---
 
-## v1.92.12 — 14 septembre 2026
+## v1.92.12 - 14 septembre 2026
 - Correction du profil, onglet Santé : les champs Allergies, Aliments exclus, Traitements en cours, Diabète et Cholestérol peuvent désormais être réellement modifiés ou vidés (ils revenaient automatiquement à leur ancienne valeur auparavant).
 
 ---
 
-## v1.92.10 — 14 septembre 2026
+## v1.92.10 - 14 septembre 2026
 - Nettoyage interne du code du module Sport (aucun changement visible pour vous).
 
 ---
 
-## v1.92.9 — 14 septembre 2026
+## v1.92.9 - 14 septembre 2026
 - Réduction de la taille des gros boutons d'action (Commencer une séance, Commencer la routine) pour qu'ils aient la même taille que les petits boutons (+ Ajouter un exercice, + Créer une routine).
 - Correction de l'espacement entre le message "Une séance est en cours" et le bouton pour la reprendre, qui étaient trop collés.
 - Centrage du texte et des boutons Confirmer/Annuler dans la fenêtre de confirmation de suppression.
@@ -245,41 +245,41 @@
 
 ---
 
-## v1.92.7 — 14 septembre 2026
+## v1.92.7 - 14 septembre 2026
 - Ajout de la suppression d'une séance directement depuis le tableau de bord, avec une demande de confirmation avant toute suppression.
 - Nouveau design des cartes de séance sur le tableau de bord et dans le widget de droite : affichage clair de la durée, du volume total, du nombre de records, et de la liste des exercices effectués.
 - Possibilité de définir un poids et un temps de repos cibles pour chaque exercice d'une routine, modifiables directement pendant l'entraînement.
 
 ---
 
-## v1.92.4 — 14 septembre 2026
+## v1.92.4 - 14 septembre 2026
 - Découpage de `sport.js` en deux fichiers (`sport.js` + `sport-widget.js`) pour éviter le grossissement excessif du fichier et les erreurs de copier-coller lors des futures évolutions.
 - Aucun changement fonctionnel visible : dashboard, widget droit, séance en cours et sélecteur d'exercices continuent de fonctionner à l'identique.
 
 ---
 
-## v1.91.15 — 13 septembre 2026
+## v1.91.15 - 13 septembre 2026
 - Remplacement de la confirmation de suppression intégrée (encart rouge en ligne) par la fenêtre modale globale de l'application, pour une expérience identique aux autres modules (Tâches, Administration).
 
 ---
 
-## v1.91.12 — 13 septembre 2026
+## v1.91.12 - 13 septembre 2026
 - Correction définitive de l'alignement vertical des champs "séries × répétitions" et "durée (min)" en mode édition, quel que soit le navigateur.
 - Remplacement du symbole de multiplication par une icône vectorielle pour éviter les décalages liés aux polices.
 
 ---
 
-## v1.91.9 — 13 septembre 2026
+## v1.91.9 - 13 septembre 2026
 - Ajout d'une confirmation avant la suppression d'un exercice ou d'une routine.
 
 ---
 
-## v1.91.8 — 13 septembre 2026
+## v1.91.8 - 13 septembre 2026
 - Correction d'un bug d'affichage : l'unité "min" des exercices à durée n'était pas toujours visible.
 
 ---
 
-## v1.91.7 — 13 septembre 2026
+## v1.91.7 - 13 septembre 2026
 - Ajout d'un suivi par durée pour les exercices cardio (vélo, rameur, course...), en complément du suivi par séries/répétitions.
 - Traduction en français de tous les exercices cardio du catalogue.
 - Correction d'un bug de recherche : les mots avec ou sans accents donnent maintenant les mêmes résultats (ex. "vélo" et "velo").
@@ -287,14 +287,14 @@
 
 ---
 
-## v1.89 — 12 septembre 2026
+## v1.89 - 12 septembre 2026
 - Correction de la recherche dans le Catalogue Sport : les résultats affichent maintenant plusieurs exercices par page au lieu d'un seul (ex. recherche "leg").
 - Les catégories musculaires et les équipements sont maintenant affichés en français.
 - Correction d'un problème d'affichage où le texte du filtre "Toutes catégories" était tronqué.
 
 ---
 
-## v1.88 — 12 septembre 2026
+## v1.88 - 12 septembre 2026
 - Ajout d'un vrai moteur de recherche dans le Catalogue du module Sport : vous pouvez maintenant chercher un exercice par nom, par catégorie musculaire ou par équipement disponible, avec des résultats affichés par pages.
 
 ---
