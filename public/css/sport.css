@@ -487,20 +487,6 @@
     cursor: pointer;
     padding: 4px 0;
 }
-.sport-routine-btn-suppr-routine {
-    background: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.2);
-    color: #ef4444;
-    font-size: 12px;
-    font-weight: 600;
-    border-radius: 50px;
-    padding: 8px 14px;
-    cursor: pointer;
-    transition: background 0.2s ease;
-}
-.sport-routine-btn-suppr-routine:hover {
-    background: rgba(239, 68, 68, 0.18);
-}
 .sport-routine-detail-nom {
     font-size: 18px;
     font-weight: 800;
