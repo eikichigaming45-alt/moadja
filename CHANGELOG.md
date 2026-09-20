@@ -1,5 +1,41 @@
 ## MoaDja
 
+## v1.92.75 — 20 septembre 2026
+- Amélioration invisible : nettoyage d'anciens codes d'affichage obsolètes dans le module Sport.
+
+---
+
+## v1.92.74 — 20 septembre 2026
+- Retouche visuelle dans la modale Sport : correction d'un texte "Aucun nouveau record" qui s'affichait en double, et l'icône du trophée reste désormais toujours joliment dorée.
+
+---
+
+## v1.92.73 — 20 septembre 2026
+- Amélioration des statistiques Sport : lorsqu'une séance ne comporte aucun record battu, un indicateur clair "Aucun nouveau record" s'affiche désormais, plutôt que de ne rien afficher du tout.
+
+---
+
+## v1.92.72 — 20 septembre 2026
+- Nouveauté dans les statistiques Sport : lorsque vous battez un record, la fenêtre de détail affiche maintenant précisément quel exercice est concerné, avec l'ancien et le nouveau poids soulevé.
+
+---
+
+## v1.92.71 — 20 septembre 2026
+- Amélioration du mode hors-ligne : le widget récapitulatif du Sport (sur la colonne de droite) conserve désormais sa belle mise en forme visuelle même si vous ouvrez l'application sans connexion internet.
+
+---
+
+## v1.92.70 — 20 septembre 2026
+- Correction d'un bug majeur (Sport) : il n'est plus possible qu'une séance "fantôme" (non reliée à une routine) se crée par erreur et reste bloquée indéfiniment en statut "Séance en cours".
+
+---
+
+## v1.92.69 — 20 septembre 2026
+- Amélioration sonore pendant la séance : lors des exercices basés sur un chronomètre (ex: gainage), un bip court retentit désormais à chaque seconde lors des 5 dernières secondes pour vous annoncer la fin de l'effort.
+
+---
+
+
 ## v1.92.68 — 20 septembre 2026
 - Amélioration du partage des posts sur les réseaux sociaux : l'image s'affiche désormais correctement sans être étirée sur la page web, et l'aperçu pour WhatsApp/Facebook a été optimisé (format et dimensions).
 
