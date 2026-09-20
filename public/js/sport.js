@@ -57,7 +57,7 @@ const SPORT_ICONE_POIGNEE = `
 const SPORT_MAX_EXERCICES_APERCU = 5;
 
 // Exercices "duree" pour lesquels les champs Distance/Vitesse/Inclinaison
-// ont un sens (vrai cardio). Doit correspondre aux entrées \`cardio: true\`
+// ont un sens (vrai cardio). Doit correspondre aux entrées cardio: true
 // de routes/sport-traduction-fr.js (noms FR traduits, tels que stockés en base).
 const SPORT_NOMS_EXERCICES_CARDIO = new Set([
     'Cyclisme', 'Jogging', 'Course à pied', 'Course fractionnée', 'Course sur tapis',
@@ -174,7 +174,7 @@ function _sportOuvrirStatsSeance(sessionId) {
 function _sportConfirmerSuppressionSeanceDashboard(sessionId) {
     _sportOuvrirConfirmationSuppression(async () => {
         try {
-            await fetch(\`/api/sport/sessions/\${sessionId}\`, { method: 'DELETE', headers: _sportAuthHeaders() });
+            await fetch(`/api/sport/sessions/${sessionId}`, { method: 'DELETE', headers: _sportAuthHeaders() });
             _sportChargerDashboardStats();
             if (typeof chargerSportStatsWidget === 'function') chargerSportStatsWidget();
         } catch (err) {
@@ -241,7 +241,7 @@ function _sportSwitchSection(section) {
     });
     document.querySelectorAll('.sport-section').forEach(s => { s.style.display = 'none'; });
 
-    const cible = document.getElementById(\`sport-section-\${section}\`);
+    const cible = document.getElementById(`sport-section-${section}`);
     if (cible) cible.style.display = 'block';
 
     if (section === 'routines') _sportChargerListeRoutines();
