@@ -179,6 +179,29 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
         : '';
     const valCalories = s.profil_incomplet ? '—' : `${s.calories} kcal`;
 
+    // Détail des records (uniquement pour la modale)
+    let detailsRecordsHtml = '';
+    if (mode === 'modal' && nbRecords > 0 && Array.isArray(s.records)) {
+        detailsRecordsHtml = `
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed rgba(167, 139, 250, 0.3);">
+                <div style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; color: #a78bfa;">
+                    ${SPORT_ICONE_TROPHEE} Nouveaux records
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    ${s.records.map(r => `
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; background: rgba(255, 255, 255, 0.4); padding: 6px 10px; border-radius: 6px;">
+                            <span style="font-weight: 500; color: #1f2937;">${_sportEchapper(r.exercise_name)}</span>
+                            <span style="color: #4b5563;">
+                                <span style="text-decoration: line-through; opacity: 0.6; margin-right: 4px;">${r.ancien_record}kg</span> 
+                                <span style="font-weight: 600; color: #10b981;">${r.nouveau_poids}kg</span>
+                            </span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
     return `
         <div class="sport-widget-recap-title-row">
             <span class="sport-widget-recap-name">${_sportEchapper(s.workout_name)}</span>
@@ -211,6 +234,7 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
         </div>
 
         ${listeHtml}
+        ${detailsRecordsHtml}
 
         ${(mode === 'widget' || mode === 'dashboard') ? `
             <div class="sport-widget-footer">
