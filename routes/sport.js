@@ -441,7 +441,7 @@ router.get('/sessions/:id', auth, async (req, res) => {
         `, [id, moi]);
         if (!sessions.length) return res.status(404).json({ success: false, message: 'Séance introuvable.' });
 
-        const { rows: logs } = await pool.query(`
+                const { rows: logs } = await pool.query(`
             SELECT *
             FROM sport_session_logs
             WHERE session_id = \$1
@@ -526,7 +526,7 @@ router.delete('/sessions/:id', auth, async (req, res) => {
         const { rows: owner } = await client.query(`
             SELECT id FROM sport_sessions WHERE id = \$1 AND user_id = \$2
         `, [id, moi]);
-                if (!owner.length) {
+        if (!owner.length) {
             await client.query('ROLLBACK');
             return res.status(403).json({ success: false, message: 'Interdit.' });
         }
@@ -584,21 +584,28 @@ function _sportCalculerStatsSession(session, logs, poidsUtilisateurKg) {
     };
 }
 
-// Liste consolidée des exercices distincts d'une séance, triée par nb de
-// séries décroissant, format { exercise_name, nb_series }. Utilisée pour
-// l'affichage type "6x Presse à Cuisses Horizontale" (dashboard + widget).
+// Liste consolidée des exercices d'une séance, DANS L'ORDRE CHRONOLOGIQUE
+// réel d'exécution (les logs doivent arriver triés par id/logged_at ASC).
+// Regroupe uniquement les séries CONSÉCUTIVES du même exercice (ex: "3x
+// Pompes inclinées"). Si le même exercice réapparaît plus tard de façon non
+// consécutive (ex: routine avec "Marche" en position 1 ET 6), il forme un
+// second bloc distinct au lieu d'être fusionné avec le premier — fidèle à
+// l'ordre de la routine et à ce qui a été réellement effectué.
+// Format retourné : [{ exercise_name, nb_series }], dans l'ordre d'exécution.
 function _sportConsoliderExercicesSession(logs) {
     const logsValides = logs.filter(l => l.completed);
-    const compteur = {};
+    const blocs = [];
 
     logsValides.forEach(l => {
-        if (!compteur[l.exercise_name]) compteur[l.exercise_name] = 0;
-        compteur[l.exercise_name]++;
+        const dernierBloc = blocs[blocs.length - 1];
+        if (dernierBloc && dernierBloc.exercise_name === l.exercise_name) {
+            dernierBloc.nb_series++;
+        } else {
+            blocs.push({ exercise_name: l.exercise_name, nb_series: 1 });
+        }
     });
 
-    return Object.entries(compteur)
-        .map(([exercise_name, nb_series]) => ({ exercise_name, nb_series }))
-        .sort((a, b) => b.nb_series - a.nb_series);
+    return blocs;
 }
 
 // Détecte, pour la séance la plus récente, les exercices dont le meilleur
@@ -643,7 +650,8 @@ async function _sportDetecterRecords(moi, sessionId, logsSession) {
 
 // GET /api/sport/dashboard-stats
 // 5 dernières séances terminées, avec stats agrégées + liste consolidée
-// d'exercices (chaque séance) + records détaillés (dernière séance uniquement).
+// d'exercices (chaque séance, dans l'ordre réel d'exécution) + records
+// détaillés (dernière séance uniquement).
 router.get('/dashboard-stats', auth, async (req, res) => {
     const moi = req.user.id;
     try {
@@ -666,8 +674,11 @@ router.get('/dashboard-stats', auth, async (req, res) => {
         }
 
         const sessionIds = sessions.map(s => s.id);
+        // ORDER BY id ASC ajouté : garantit que chaque groupe de logs par
+        // séance est bien trié dans l'ordre chronologique réel d'exécution
+        // avant d'être passé à _sportConsoliderExercicesSession().
         const { rows: tousLogs } = await pool.query(`
-            SELECT * FROM sport_session_logs WHERE session_id = ANY(\$1::int[])
+            SELECT * FROM sport_session_logs WHERE session_id = ANY(\$1::int[]) ORDER BY id ASC
         `, [sessionIds]);
 
         const dernieresSeances = sessions.map(s => {
@@ -1019,7 +1030,7 @@ router.get('/wger/exercises', auth, async (req, res) => {
                 break;
             }
 
-                        for (const ex of data.results) {
+            for (const ex of data.results) {
                 const translations = ex.translations || [];
                 const nomOriginal  = _nettoyerParenthesesNonLatines(_construireNomBilingue(translations));
                 let nom            = nomOriginal;
@@ -1035,7 +1046,7 @@ router.get('/wger/exercises', auth, async (req, res) => {
 
                 const image = ex.images?.[0]?.image || null;
 
-                                if (search) {
+                if (search) {
                     const texteRecherchable = _sansAccents(`${nom} ${nomOriginal}`.toLowerCase());
                     if (!texteRecherchable.includes(search)) continue;
                 }
