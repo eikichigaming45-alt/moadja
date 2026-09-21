@@ -422,7 +422,7 @@ router.delete('/exercises/:exerciseId', auth, async (req, res) => {
     try {
         const { rows } = await pool.query(`
             DELETE FROM sport_day_exercises AS e
-            USING sport_workout_days AS d, sport_workouts AS w
+            USING sport_workout_days AS d, sport_workouts w
             WHERE e.id = \$1
                 AND e.day_id = d.id
                 AND d.workout_id = w.id
@@ -572,7 +572,7 @@ router.delete('/sessions/:id', auth, async (req, res) => {
     try {
         await client.query('BEGIN');
 
-                const { rows: owner } = await client.query(`
+        const { rows: owner } = await client.query(`
             SELECT id FROM sport_sessions WHERE id = \$1 AND user_id = \$2
         `, [id, moi]);
         if (!owner.length) {
@@ -596,7 +596,6 @@ router.delete('/sessions/:id', auth, async (req, res) => {
 
 // ── DASHBOARD & WIDGET : stats agrégées + Mifflin-St Jeor ──
 
-// Calcule l'âge à partir d'une date de naissance
 function _calculerAge(dateNaissance) {
     if (!dateNaissance) return null;
     const n = new Date(dateNaissance);
@@ -818,7 +817,7 @@ router.post('/sessions/:sessionId/logs', auth, async (req, res) => {
         `, [sessionId, moi]);
         if (!owner.length) return res.status(403).json({ success: false, message: 'Interdit.' });
 
-        const { rows } = await pool.query(`
+                const { rows } = await pool.query(`
             INSERT INTO sport_session_logs
                 (session_id, wger_exercise_id, exercise_name, set_number, reps, weight_kg,
                  completed, logged_at, rest_seconds, distance_km, speed_kmh, incline_percent, duration_seconds)
@@ -1127,7 +1126,7 @@ router.get('/wger/exercises', auth, async (req, res) => {
                     continue;
                 }
 
-                                resultats.push({
+                resultats.push({
                     wger_exercise_id: ex.id,
                     name            : nom,
                     category        : ex.category?.id ?? ex.category,
@@ -1159,7 +1158,6 @@ router.get('/wger/exercises', auth, async (req, res) => {
 
 // ── PARTAGE DE SÉANCE : GÉNÉRATION IMAGE (PHASE 1) ──
 
-// Nouvelle fonction de formatage pour reproduire fidèlement "13min16"
 function _formatDurationLongSVG(secondes) {
     if (!secondes) return '0s';
     const h = Math.floor(secondes / 3600);
@@ -1170,7 +1168,6 @@ function _formatDurationLongSVG(secondes) {
     return `${s}s`;
 }
 
-// Formatage du détail de la série (reps ou durée) pour le SVG
 function _formatDetailSerieSVG(serie, estCardio) {
     if (estCardio) {
         if (serie.duration_seconds != null) return _formatDurationLongSVG(serie.duration_seconds);
@@ -1180,7 +1177,6 @@ function _formatDetailSerieSVG(serie, estCardio) {
     return serie.reps != null ? `${serie.reps} reps` : '';
 }
 
-// Échappement basique pour le XML/SVG
 function _echapperXML(str) {
     return (str || '').toString()
         .replace(/&/g, '&amp;')
@@ -1225,6 +1221,7 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
         const caloriesStr = stats.calories ? `${stats.calories} kcal` : '—';
         const nbRecords = records.length;
 
+        // Hauteurs recalculées pour éviter le crop en bas
         let svg = `
         <svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
             <defs>
@@ -1233,53 +1230,52 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
                     <stop offset="50%" stop-color="#fdfbfb" />
                     <stop offset="100%" stop-color="#f3e8ff" />
                 </linearGradient>
-                
                 <filter id="shadowCard" x="-5%" y="-5%" width="110%" height="110%">
                     <feDropShadow dx="0" dy="8" stdDeviation="20" flood-color="#7c3aed" flood-opacity="0.08" />
                 </filter>
-                
                 <filter id="shadowStat" x="-5%" y="-5%" width="110%" height="110%">
                     <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="0.04" />
                 </filter>
             </defs>
 
             <rect width="1200" height="630" fill="url(#bgGradient)" />
-
             <rect x="60" y="50" width="1080" height="530" rx="32" fill="#ffffff" fill-opacity="0.85" filter="url(#shadowCard)" stroke="#ffffff" stroke-width="2" />
 
-            <text x="120" y="130" font-family="system-ui, -apple-system, sans-serif" font-size="38" font-weight="900" fill="#1f2937">${routineName}</text>
-            <text x="1080" y="130" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="600" fill="#9ca3af" text-anchor="end">${dateStr}</text>
+            <!-- En-tête remonté -->
+            <text x="120" y="110" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="900" fill="#1f2937">${routineName}</text>
+            <text x="1080" y="110" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="600" fill="#9ca3af" text-anchor="end">${dateStr}</text>
         `;
 
         if (nbRecords === 0) {
             svg += `
-            <rect x="120" y="155" width="260" height="40" rx="20" fill="#f3f4f6" stroke="#e5e7eb" stroke-width="1" />
-            <text x="140" y="182" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="#eab308">🏆</text>
-            <text x="175" y="182" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="bold" fill="#9ca3af">Aucun nouveau record</text>
+            <rect x="120" y="135" width="240" height="34" rx="17" fill="#f3f4f6" stroke="#e5e7eb" stroke-width="1" />
+            <text x="140" y="158" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#eab308">🏆</text>
+            <text x="170" y="158" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="bold" fill="#9ca3af">Aucun nouveau record</text>
             `;
         } else {
             svg += `
-            <rect x="120" y="155" width="200" height="40" rx="20" fill="#f3e8ff" stroke="#d8b4fe" stroke-width="1" />
-            <text x="140" y="182" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="#eab308">🏆</text>
-            <text x="175" y="182" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="bold" fill="#7c3aed">${nbRecords} Record${nbRecords > 1 ? 's' : ''}</text>
+            <rect x="120" y="135" width="180" height="34" rx="17" fill="#f3e8ff" stroke="#d8b4fe" stroke-width="1" />
+            <text x="140" y="158" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#eab308">🏆</text>
+            <text x="170" y="158" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="bold" fill="#7c3aed">${nbRecords} Record${nbRecords > 1 ? 's' : ''}</text>
             `;
         }
 
+        // Stats compactées et remontées
         svg += `
-            <rect x="120" y="230" width="300" height="110" rx="16" fill="#ffffff" filter="url(#shadowStat)" stroke="#f3f4f6" stroke-width="1" />
-            <text x="270" y="265" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="800" fill="#9ca3af" letter-spacing="1" text-anchor="middle">DURÉE</text>
-            <text x="270" y="315" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="900" fill="#1f2937" text-anchor="middle">${dureeStr}</text>
+            <rect x="120" y="190" width="300" height="90" rx="16" fill="#ffffff" filter="url(#shadowStat)" stroke="#f3f4f6" stroke-width="1" />
+            <text x="270" y="220" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#9ca3af" letter-spacing="1" text-anchor="middle">DURÉE</text>
+            <text x="270" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="900" fill="#1f2937" text-anchor="middle">${dureeStr}</text>
 
-            <rect x="450" y="230" width="300" height="110" rx="16" fill="#ffffff" filter="url(#shadowStat)" stroke="#f3f4f6" stroke-width="1" />
-            <text x="600" y="265" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="800" fill="#9ca3af" letter-spacing="1" text-anchor="middle">VOLUME</text>
-            <text x="600" y="315" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="900" fill="#1f2937" text-anchor="middle">${volumeStr}</text>
+            <rect x="450" y="190" width="300" height="90" rx="16" fill="#ffffff" filter="url(#shadowStat)" stroke="#f3f4f6" stroke-width="1" />
+            <text x="600" y="220" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#9ca3af" letter-spacing="1" text-anchor="middle">VOLUME</text>
+            <text x="600" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="900" fill="#1f2937" text-anchor="middle">${volumeStr}</text>
 
-            <rect x="780" y="230" width="300" height="110" rx="16" fill="#ffffff" filter="url(#shadowStat)" stroke="#f3f4f6" stroke-width="1" />
-            <text x="930" y="265" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="800" fill="#9ca3af" letter-spacing="1" text-anchor="middle">CALORIES</text>
-            <text x="930" y="315" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="900" fill="#ef4444" text-anchor="middle">${caloriesStr}</text>
+            <rect x="780" y="190" width="300" height="90" rx="16" fill="#ffffff" filter="url(#shadowStat)" stroke="#f3f4f6" stroke-width="1" />
+            <text x="930" y="220" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#9ca3af" letter-spacing="1" text-anchor="middle">CALORIES</text>
+            <text x="930" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="900" fill="#ef4444" text-anchor="middle">${caloriesStr}</text>
         `;
 
-        let yEx = 400;
+        let yEx = 340;
         const maxEx = 5;
         const nbAffiches = Math.min(exercicesConsolides.length, maxEx);
 
@@ -1303,7 +1299,7 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
                 ` : ''}
             </text>
             `;
-            yEx += 45;
+            yEx += 42;
         }
 
         if (exercicesConsolides.length > maxEx) {
@@ -1311,8 +1307,9 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
             svg += `<text x="120" y="${yEx}" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-style="italic" fill="#9ca3af">...et ${restants} autre${restants > 1 ? 's' : ''}</text>`;
         }
 
+        // Logo MoaDja aligné en bas à droite (ajusté pour ne pas déborder)
         svg += `
-            <g transform="translate(560, 545)">
+            <g transform="translate(980, 540)">
                 <path d="M-15,-6 L-15,6 M-9,-2 L-9,2 M9,-2 L9,2 M15,-6 L15,6 M-9,0 L9,0" stroke="#8b5cf6" stroke-width="2.5" stroke-linecap="round" fill="none"/>
                 <text x="25" y="6" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="900" fill="#8b5cf6">MoaDja</text>
             </g>
@@ -1343,3 +1340,4 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
 });
 
 module.exports = router;
+

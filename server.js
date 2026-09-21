@@ -94,30 +94,21 @@ app.use('/api/sport',            require('./routes/sport'));
 app.use('/api/tchat',            tchatSocialLimiter, tchatRouter);
 
 // ── Route publique Open Graph (Partage de séance) ─────────────
-// Cette route n'est PAS protégée par /api/auth. Elle est lue par
-// les robots de WhatsApp, Facebook, etc., pour générer l'aperçu,
-// et affiche l'image statique joliment pour un humain.
 app.get('/share/seance/:id', async (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).send('ID invalide');
 
     try {
         const { rows } = await pool.query(`
-            SELECT s.id, w.name AS workout_name, 
-                   u.username, pr.prenom, pr.nom
+            SELECT s.id, w.name AS workout_name
             FROM sport_sessions s
             LEFT JOIN sport_workouts w ON w.id = s.workout_id
-            JOIN users u ON u.id = s.user_id
-            LEFT JOIN profiles pr ON pr.user_id = s.user_id
             WHERE s.id = \$1
         `, [id]);
 
         if (!rows.length) return res.status(404).send('Séance introuvable');
         
         const session = rows[0];
-        const nomAuteur = [session.prenom, session.nom].filter(Boolean).join(' ') || session.username;
-        const initiale = (session.prenom ? session.prenom[0] : session.username[0]).toUpperCase();
-        
         const baseUrl = req.protocol + '://' + req.get('host');
         const imageUrl = `${baseUrl}/uploads/sport_shares/share_seance_${id}.jpg`;
         const title = session.workout_name ? `Séance : ${session.workout_name}` : 'Séance Sport MoaDja';
@@ -152,7 +143,6 @@ app.get('/share/seance/:id', async (req, res) => {
             align-items: center;
             min-height: 100vh;
             box-sizing: border-box;
-            color: #1f2937;
         }
         .container {
             max-width: 520px;
@@ -169,36 +159,6 @@ app.get('/share/seance/:id', async (req, res) => {
             box-shadow: 0 8px 32px rgba(124, 58, 237, 0.08);
             box-sizing: border-box;
         }
-        .header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .avatar {
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #7c3aed, #6d28d9);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 18px;
-            box-shadow: 0 4px 12px rgba(124,58,237,0.3);
-            flex-shrink: 0;
-        }
-        .author-name {
-            font-weight: 800;
-            font-size: 16px;
-            color: #1f2937;
-        }
-        .author-handle {
-            color: #6b7280;
-            font-size: 14px;
-            margin-top: 2px;
-            font-weight: 500;
-        }
         .post-image {
             width: 100%;
             max-width: 100%;
@@ -207,7 +167,7 @@ app.get('/share/seance/:id', async (req, res) => {
             border-radius: 16px;
             display: block;
             box-shadow: 0 4px 16px rgba(0,0,0,0.06);
-            background: #fff; /* Fond blanc au cas où l'image aurait une transparence inattendue */
+            background: #fff;
         }
         .cta-button {
             display: block;
@@ -234,16 +194,18 @@ app.get('/share/seance/:id', async (req, res) => {
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <div class="avatar">${initiale}</div>
-            <div>
-                <div class="author-name">${nomAuteur}</div>
-                <div class="author-handle">@${session.username}</div>
-            </div>
-        </div>
         <img src="${imageUrl}" class="post-image" alt="Statistiques de la séance">
-        <a href="https://moadja.fr" class="cta-button">Découvrir MoaDja</a>
+        <a href="https://moadja.fr" class="cta-button" id="cta-btn">Découvrir MoaDja</a>
     </div>
+
+    <script>
+        // Masque le bouton si l'utilisateur est déjà connecté à l'app MoaDja sur ce navigateur
+        try {
+            if (localStorage.getItem('moadja_user')) {
+                document.getElementById('cta-btn').style.display = 'none';
+            }
+        } catch(e) {}
+    </script>
 </body>
 </html>`;
         
@@ -274,7 +236,6 @@ io.on('connection', (socket) => {
     tchatConnectedUsers.add(userId);
     console.log(`[SOCKET] User ${userId} connecté — socket ${socket.id}`);
 
-    // Notifier tous les autres de la connexion
     socket.broadcast.emit('tchat:presence', { userId, enligne: true });
 
     socket.on('tchat:rejoindre', ({ room }) => {
@@ -290,7 +251,6 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         tchatConnectedUsers.delete(userId);
-        // Notifier tous les autres de la déconnexion
         socket.broadcast.emit('tchat:presence', { userId, enligne: false });
         console.log(`[SOCKET] User ${userId} déconnecté`);
     });
@@ -308,7 +268,7 @@ function _roomValide(room, userId) {
 // ── Cron purge messages > 90j — toutes les 24h ───────────────
 function _lancerCronPurge() {
     const VINGT_QUATRE_HEURES = 24 * 60 * 60 * 1000;
-    purgerMessages(); // premier passage au démarrage
+    purgerMessages(); 
     setInterval(purgerMessages, VINGT_QUATRE_HEURES);
     console.log('[TCHAT] Cron purge 90j activé');
 }
