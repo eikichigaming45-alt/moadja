@@ -100,7 +100,7 @@ app.get('/share/seance/:id', async (req, res) => {
 
     try {
         const { rows } = await pool.query(`
-            SELECT s.id, w.name AS workout_name, u.username, pr.prenom
+            SELECT s.id, w.name AS workout_name, u.username, pr.prenom, pr.nom, pr.avatar_url
             FROM sport_sessions s
             LEFT JOIN sport_workouts w ON w.id = s.workout_id
             JOIN users u ON u.id = s.user_id
@@ -111,13 +111,17 @@ app.get('/share/seance/:id', async (req, res) => {
         if (!rows.length) return res.status(404).send('Séance introuvable');
         
         const session = rows[0];
-        const nomAuteur = session.prenom || session.username;
+        const prenomNom = [session.prenom, session.nom].filter(Boolean).join(' ') || session.username;
+        const initiales = prenomNom.charAt(0).toUpperCase();
+        const avatarHtml = session.avatar_url 
+            ? `<img src="${session.avatar_url}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;">`
+            : `<div style="width:48px;height:48px;border-radius:50%;background:#7c3aed;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;">${initiales}</div>`;
+
         const baseUrl = req.protocol + '://' + req.get('host');
         const imageUrl = `${baseUrl}/uploads/sport_shares/share_seance_${id}.jpg`;
-        const title = `Séance Sport MoaDja de ${nomAuteur}`;
-        const desc = `Découvrez les performances de ${nomAuteur} et rejoignez la communauté MoaDja !`;
+        const title = `Séance Sport MoaDja de ${prenomNom}`;
+        const desc = `Découvrez les performances de ${prenomNom} et rejoignez la communauté MoaDja !`;
 
-        // Design "Landing Page de conversion"
         const html = `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -136,164 +140,112 @@ app.get('/share/seance/:id', async (req, res) => {
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: linear-gradient(135deg, #fff0e6 0%, #fdfbfb 50%, #f3e8ff 100%);
+            background: linear-gradient(135deg, #ffc3a0 0%, #fdfbfb 40%, #e6d8fb 70%, #d8b4fe 100%);
             margin: 0;
-            padding: 0;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             min-height: 100vh;
+            box-sizing: border-box;
             color: #1f2937;
         }
-        .navbar {
-            width: 100%;
-            padding: 16px 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.8);
-            box-sizing: border-box;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        .nav-logo {
-            font-size: 20px;
+        .brand-header {
+            font-size: 22px;
             font-weight: 900;
             color: #7c3aed;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            margin-bottom: 20px;
+            letter-spacing: -0.5px;
         }
-        .nav-login {
-            font-size: 14px;
-            font-weight: 600;
-            color: #4b5563;
-            text-decoration: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            background: rgba(255, 255, 255, 0.8);
-            border: 1px solid #e5e7eb;
-            transition: all 0.2s;
-        }
-        .nav-login:hover {
-            background: #f3f4f6;
-        }
-        .hero {
-            max-width: 600px;
+        .share-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+            border-radius: 24px;
+            box-shadow: 0 16px 40px rgba(124, 58, 237, 0.15);
+            max-width: 540px;
             width: 100%;
-            padding: 40px 20px;
-            text-align: center;
+            padding: 24px;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
             gap: 16px;
-            flex: 1;
         }
-        h1 {
-            margin: 0;
-            font-size: 28px;
-            font-weight: 800;
-            line-height: 1.2;
+        .user-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .user-name {
+            font-size: 16px;
+            font-weight: 700;
             color: #111827;
         }
-        h1 span {
-            color: #7c3aed;
+        .user-handle {
+            font-size: 13px;
+            color: #9ca3af;
         }
-        p.subtitle {
-            margin: 0;
-            font-size: 16px;
-            color: #6b7280;
+        .post-text {
+            font-size: 14.5px;
+            color: #374151;
             line-height: 1.5;
+            margin: 0;
         }
         .post-image {
             width: 100%;
             height: auto;
-            border-radius: 20px;
+            border-radius: 16px;
             display: block;
-            box-shadow: 0 12px 40px rgba(124, 58, 237, 0.15);
-            background: #fff;
-            margin-top: 10px;
-        }
-        .cta-container {
-            margin-top: 24px;
-            padding: 24px;
-            background: #ffffff;
-            border-radius: 20px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-            border: 1px solid #f3f4f6;
-        }
-        .cta-title {
-            font-weight: 700;
-            font-size: 18px;
-            margin-bottom: 16px;
+            border: 1px solid rgba(229, 231, 235, 0.8);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
         }
         .cta-button {
-            display: block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             width: 100%;
-            padding: 16px;
-            background: #7c3aed;
+            padding: 14px;
+            background: #a78bfa;
             color: #ffffff;
             text-decoration: none;
-            border-radius: 16px;
+            border-radius: 50px;
             font-weight: 700;
-            font-size: 16px;
-            transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
-            border: none;
+            font-size: 15px;
+            transition: all 0.2s ease;
+            box-shadow: 0 8px 20px rgba(167, 139, 250, 0.3);
+            box-sizing: border-box;
+            border: 1px solid rgba(255,255,255,0.5);
         }
         .cta-button:hover {
-            background: #6d28d9;
+            background: #7c3aed;
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(124, 58, 237, 0.35);
+            box-shadow: 0 12px 24px rgba(124, 58, 237, 0.4);
         }
-        
-        /* Cacher la page de promo si l'utilisateur est déjà connecté sur cet appareil */
-        html.auth-ok .promo-content { display: none !important; }
-        html.auth-ok .hero { padding-top: 20px; }
-        html.auth-ok h1 { display: none; }
-        html.auth-ok p.subtitle { display: none; }
     </style>
-    <script>
-        // Mini script anti-flash : si connecté, on masque le blabla promo
-        (function() {
-            try {
-                if (localStorage.getItem('moadja_user')) {
-                    document.documentElement.classList.add('auth-ok');
-                }
-            } catch(e) {}
-        })();
-    </script>
 </head>
 <body>
-    <nav class="navbar promo-content">
-        <a href="https://moadja.fr" class="nav-logo">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="2.5" y1="7" x2="2.5" y2="17"></line>
-                <line x1="5.5" y1="9" x2="5.5" y2="15"></line>
-                <line x1="18.5" y1="9" x2="18.5" y2="15"></line>
-                <line x1="21.5" y1="7" x2="21.5" y2="17"></line>
-                <line x1="5.5" y1="12" x2="18.5" y2="12"></line>
-            </svg>
-            MoaDja
-        </a>
-        <a href="https://moadja.fr" class="nav-login">Se connecter</a>
-    </nav>
+    <div class="brand-header">MoaDja</div>
+    
+    <div class="share-card">
+        <div class="user-row">
+            ${avatarHtml}
+            <div class="user-info">
+                <span class="user-name">${escapeHtml(prenomNom)}</span>
+                <span class="user-handle">@${escapeHtml(session.username)}</span>
+            </div>
+        </div>
 
-    <div class="hero">
-        <h1><span>${nomAuteur}</span> a terminé une séance !</h1>
-        <p class="subtitle">Découvrez ses statistiques ci-dessous.</p>
+        <p class="post-text">🏋️‍♂️ Séance terminée : ${escapeHtml(session.workout_name)}</p>
         
         <img src="${imageUrl}" class="post-image" alt="Statistiques de la séance">
         
-        <div class="cta-container promo-content">
-            <div class="cta-title">Envie de suivre vos propres entraînements ?</div>
-            <a href="https://moadja.fr" class="cta-button">Créer mon espace gratuit</a>
-        </div>
+        <a href="https://moadja.fr" class="cta-button">Rejoindre MoaDja</a>
     </div>
 </body>
 </html>`;
@@ -304,6 +256,10 @@ app.get('/share/seance/:id', async (req, res) => {
         res.status(500).send('Erreur serveur');
     }
 });
+
+function escapeHtml(str) {
+    return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 
 // ── Socket.io — authentification middleware ───────────────────
 io.use((socket, next) => {
