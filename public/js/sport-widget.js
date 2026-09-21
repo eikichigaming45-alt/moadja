@@ -148,14 +148,14 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
     const nbRecords   = Number.isInteger(s.nb_records) ? s.nb_records : 0;
     const exercices   = s.exercices || [];
     
-    // NOUVEAU : Détection du mode GPS pour changer l'affichage
+    // Détection du mode GPS
     const isGps = s.isGps || s.activity_type === 'marche' || s.activity_type === 'course';
     
     const iconeTropheeJaune = `<span style="color: #eab308; display: inline-flex; align-items: center;">${SPORT_ICONE_TROPHEE}</span>`;
 
     let listeHtml = '';
     if (isGps) {
-        // Affichage spécifique GPS au lieu de la liste d'exercices
+        // Affichage spécifique GPS
         const vitMoy = s.vitesseKmh ? s.vitesseKmh.toFixed(1) : '0.0';
         listeHtml = `
             <div style="margin-top: 12px; display: flex; align-items: center; gap: 8px;">
@@ -164,6 +164,15 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
                 <span style="font-size: 14px; font-weight: 600; color: var(--text-main);">${vitMoy} km/h</span>
             </div>
         `;
+        
+        // Ajout de l'emplacement de la carte uniquement dans la modale
+        if (mode === 'modal') {
+            listeHtml += `
+                <div id="sport-map-${s.id}" style="width: 100%; height: 220px; margin-top: 16px; border-radius: 12px; background: #f3f4f6; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #9ca3af; z-index: 1;">
+                    Chargement de la carte... ⏳
+                </div>
+            `;
+        }
     } else {
         // Affichage musculation standard (liste d'exercices)
         if (mode === 'widget' || mode === 'dashboard') {
@@ -219,7 +228,6 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
     const styleGris = 'color: #9ca3af; background: rgba(156, 163, 175, 0.1); border: 1px solid rgba(156, 163, 175, 0.2);';
     let badgeHtml = '';
     
-    // Pas de badge record pour la marche/course pour l'instant
     if (!isGps) {
         badgeHtml = `
             <div class="sport-widget-badge-record" ${nbRecords === 0 ? `style="${styleGris}"` : ''}>
@@ -246,7 +254,6 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
         `;
     }
 
-    // Bloc central (Durée / Volume ou Distance / Calories)
     const labelBloc2 = isGps ? 'Distance' : 'Volume';
     const valeurBloc2 = isGps 
         ? `${s.distanceKm ? s.distanceKm.toFixed(2) : '0.00'} km` 
@@ -313,7 +320,6 @@ function _sportOuvrirModalPartage(event, sessionId) {
     `;
 }
 
-// Appel du backend (sharp) et routage vers l'action choisie
 async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine) {
     const texteOriginal = boutonDom.innerHTML;
     boutonDom.innerHTML = 'Génération en cours... ⏳';
@@ -323,7 +329,6 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
     msgErreur.style.display = 'none';
 
     try {
-        // 1. Génération de l'image SVG -> JPEG via la route sharp
         const rep = await fetch(`/api/sport/sessions/${sessionId}/generate-share`, {
             method: 'POST',
             headers: _sportAuthHeaders()
@@ -337,13 +342,11 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
         const imageUrl = data.imageUrl;
         const openGraphUrl = `${window.location.origin}/share/seance/${sessionId}`;
         
-        // Textes adaptés selon la destination.
         const texteInterne = `🏋️‍♂️ Séance terminée : ${nomRoutine}`;
         const texteExterne = `🏋️‍♂️ Séance : ${nomRoutine}\nDécouvre les statistiques de cette séance sur MoaDja !`;
 
         closeModal();
 
-        // 2. Routage selon la destination
         if (destination === 'feed') {
             switchTab('accueil');
             if (typeof ouvrirModalPost === 'function') ouvrirModalPost();
@@ -364,8 +367,6 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
                     if (fileInput) {
                         fileInput.files = dataTransfer.files;
                         fileInput.dispatchEvent(new Event('change', { bubbles: true }));
-                    } else {
-                        console.warn('[SPORT] Input file #post-photo non trouvé.');
                     }
                 } catch (e) {
                     console.error('[SPORT] Impossible d\'attacher l\'image au feed:', e);
@@ -381,7 +382,7 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
                 }).catch(console.error);
             } else {
                 await navigator.clipboard.writeText(`${texteExterne}\n\n${openGraphUrl}`);
-                alert('Lien et message copiés dans le presse-papiers ! Vous pouvez les coller où vous voulez (WhatsApp Web, Facebook...).');
+                alert('Lien et message copiés dans le presse-papiers !');
             }
         }
 
@@ -394,7 +395,6 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
     }
 }
 
-// ── Phrases d'encouragement (si aucune séance) ──
 const SPORT_PHRASES_ENCOURAGEMENT = [
     "Chaque séance compte, même la plus courte. Lancez-vous !",
     "Votre progression commence par un premier pas.",
@@ -405,7 +405,6 @@ const SPORT_PHRASES_ENCOURAGEMENT = [
 
 let _sportWidgetDerniereSeanceCache = null;
 
-// ── Widget Sport Stats (colonne droite, global) ──
 async function chargerSportStatsWidget() {
     const zone = document.getElementById('sport-stats-widget');
     if (!zone) return;
@@ -450,7 +449,6 @@ function _sportWidgetOuvrirStats() {
     openModal('sport-stats');
 }
 
-// Rendu du widget colonne droite
 function _sportRenderWidgetDerniereSeance(zone, seance) {
     _sportWidgetDerniereSeanceCache = seance;
 
@@ -468,7 +466,6 @@ function _sportRenderWidgetDerniereSeance(zone, seance) {
     `;
 }
 
-// ── Modale Statistiques Sport (détail complet) ──
 async function _ouvrirModaleSportStats() {
     const zone = document.getElementById('modal-body');
     if (!zone) return;
@@ -503,4 +500,116 @@ function _sportRenderModaleStatsDepuisSeance(zone, s) {
             ${_sportRenderSeanceIso(s, 'modal')}
         </div>
     `;
+    
+    // Si c'est une séance GPS, on initialise la carte (chargement dynamique Leaflet)
+    const isGps = s.isGps || s.activity_type === 'marche' || s.activity_type === 'course';
+    if (isGps) {
+        _sportInitMap(s.id);
+    }
+}
+
+// ── CARTOGRAPHIE GPS (LEAFLET DYNAMIQUE) ──
+
+function _loadLeafletDynamically() {
+    return new Promise((resolve) => {
+        if (document.getElementById('leaflet-css')) {
+            resolve();
+            return;
+        }
+        
+        // CSS
+        const link = document.createElement('link');
+        link.id = 'leaflet-css';
+        link.rel = 'stylesheet';
+        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        document.head.appendChild(link);
+
+        // JS
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+        script.onload = resolve;
+        document.head.appendChild(script);
+    });
+}
+
+async function _sportInitMap(sessionId) {
+    const mapDivId = `sport-map-${sessionId}`;
+    const mapDiv = document.getElementById(mapDivId);
+    
+    if (!mapDiv) return;
+
+    try {
+        // 1. On attend que Leaflet (CSS + JS) soit bien chargé
+        await _loadLeafletDynamically();
+
+        // 2. On récupère les points GPS de cette séance via notre nouvelle API
+        const response = await fetch(`/api/sport-gps/sessions/${sessionId}/points`, {
+            headers: _sportAuthHeaders()
+        });
+        const data = await response.json();
+
+        if (!data.success || !data.points || data.points.length === 0) {
+            mapDiv.innerHTML = '<span style="color: #9ca3af;">Aucun tracé GPS enregistré pour cette séance.</span>';
+            return;
+        }
+
+        // On vide le texte "Chargement..."
+        mapDiv.innerHTML = '';
+
+        // 3. Initialisation de la carte Leaflet
+        // On désactive le zoomControl pour garder l'UI épurée dans la modale
+        const map = L.map(mapDivId, {
+            zoomControl: false,
+            dragging: true,
+            scrollWheelZoom: true
+        });
+
+        // 4. Ajout d'un fond de carte très clair et esthétique (CartoDB Voyager)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+        }).addTo(map);
+
+        // 5. Préparation des coordonnées
+        const latlngs = data.points.map(p => [p.lat, p.lng]);
+
+        // 6. Dessin du tracé (Ligne violette typique MoaDja)
+        const polyline = L.polyline(latlngs, {
+            color: '#a78bfa',
+            weight: 5,
+            opacity: 0.9,
+            lineJoin: 'round'
+        }).addTo(map);
+
+        // 7. Marqueurs de Début (Vert) et Fin (Rouge)
+        const startPoint = latlngs[0];
+        const endPoint = latlngs[latlngs.length - 1];
+
+        // Petite fonction pour créer des points de couleur propres (sans utiliser d'images externes)
+        const createDotIcon = (color) => L.divIcon({
+            className: 'custom-map-dot',
+            html: `<div style="background-color: ${color}; width: 14px; height: 14px; border-radius: 50%; border: 2.5px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.4);"></div>`,
+            iconSize: [14, 14],
+            iconAnchor: [7, 7] // Centre l'icône sur la coordonnée
+        });
+
+        L.marker(startPoint, { icon: createDotIcon('#10b981') }).addTo(map); // Point Vert
+        
+        // Si on a bougé et qu'on a plus d'un point, on met le point rouge à la fin
+        if (latlngs.length > 1) {
+            L.marker(endPoint, { icon: createDotIcon('#ef4444') }).addTo(map); // Point Rouge
+        }
+
+        // 8. Ajuster la caméra pour que tout le parcours soit visible d'un coup
+        map.fitBounds(polyline.getBounds(), { padding: [20, 20] });
+
+        // IMPORTANT : Leaflet a souvent un bug de rendu quand il est chargé dans une modale
+        // (qui passe de display:none à block). On force un recalcul de la taille après 300ms.
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 300);
+
+    } catch (error) {
+        console.error('[SPORT] Erreur initialisation carte Leaflet :', error);
+        mapDiv.innerHTML = '<span style="color: #ef4444; font-size: 13px;">Impossible de charger la carte.</span>';
+    }
 }
