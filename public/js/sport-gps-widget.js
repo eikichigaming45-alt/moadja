@@ -46,8 +46,12 @@ function _loadLeafletDynamically() {
  * Initialise la carte Leaflet
  */
 async function _sportInitMap(sessionId, mapDivId) {
-    const mapDiv = document.getElementById(mapDivId);
-    if (!mapDiv) return;
+    const wrapperDiv = document.getElementById(mapDivId);
+    if (!wrapperDiv) return;
+
+    // Verrou pour empêcher les appels concurrents (race condition)
+    if (wrapperDiv.dataset.mapLoading === "true") return;
+    wrapperDiv.dataset.mapLoading = "true";
 
     try {
         await _loadLeafletDynamically();
@@ -57,24 +61,28 @@ async function _sportInitMap(sessionId, mapDivId) {
         });
         const data = await response.json();
 
-        // FIX RACE CONDITION : on revérifie l'état de la div APRÈS le fetch asynchrone
-        if (mapDiv._leaflet_id) {
-            if (window._moadjaLeafletMaps[mapDivId]) {
-                window._moadjaLeafletMaps[mapDivId].remove();
-                delete window._moadjaLeafletMaps[mapDivId];
-            }
-            mapDiv._leaflet_id = null;
-        }
-
         if (!data.success || !data.points || data.points.length === 0) {
-            mapDiv.innerHTML = '<span style="color: #9ca3af; font-size: 13px;">Aucun tracé GPS enregistré pour cette séance.</span>';
+            wrapperDiv.innerHTML = '<span style="color: #9ca3af; font-size: 13px;">Aucun tracé GPS enregistré pour cette séance.</span>';
+            wrapperDiv.dataset.mapLoading = "false";
             return;
         }
 
-        mapDiv.innerHTML = '';
+        // Nettoyage absolu du registre
+        if (window._moadjaLeafletMaps[mapDivId]) {
+            window._moadjaLeafletMaps[mapDivId].remove();
+            delete window._moadjaLeafletMaps[mapDivId];
+        }
+
+        wrapperDiv.innerHTML = ''; 
+        const innerDiv = document.createElement('div');
+        innerDiv.style.width = '100%';
+        innerDiv.style.height = '100%';
+        wrapperDiv.appendChild(innerDiv);
 
         const isWidget = mapDivId.includes('widget') || mapDivId.includes('dashboard');
-        const map = L.map(mapDivId, {
+        
+        // FIX : on passe directement le noeud DOM à Leaflet au lieu de l'ID texte
+        const map = L.map(innerDiv, {
             zoomControl: !isWidget,
             dragging: !isWidget,
             scrollWheelZoom: !isWidget,
@@ -113,8 +121,13 @@ async function _sportInitMap(sessionId, mapDivId) {
             }
         }, 300);
 
+        wrapperDiv.dataset.mapLoading = "false";
+
     } catch (error) {
         console.error('[SPORT] Erreur initialisation carte Leaflet :', error);
-        if (mapDiv) mapDiv.innerHTML = '<span style="color: #ef4444; font-size: 13px;">Impossible de charger la carte.</span>';
+        if (wrapperDiv) {
+            wrapperDiv.innerHTML = '<span style="color: #ef4444; font-size: 13px;">Impossible de charger la carte.</span>';
+            wrapperDiv.dataset.mapLoading = "false";
+        }
     }
 }
