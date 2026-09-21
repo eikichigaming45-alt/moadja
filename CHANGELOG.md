@@ -1,5 +1,13 @@
 ## MoaDja
 
+## v1.93 - 21 septembre 2026
+- Module Sport & Partage : suppression définitive du partage par Tchat pour simplifier l'interface.
+- Harmonisation du partage externe (WhatsApp, etc.) : envoi direct d'un message complet et soigné incluant l'image haute qualité de la séance et le lien direct.
+- Refonte de la page web publique de partage de séance (`/share/seance/:id`) : adoption d'un design élégant en verre translucide (glassmorphism) avec l'avatar de l'auteur, le récapitulatif visuel et un bouton d'appel à l'action "Rejoindre MoaDja" pour les utilisateurs externes.
+- Nettoyage et architecture : isolation complète de la logique de la page publique de partage dans un fichier dédié (`routes/sport-partage.js`) pour alléger le serveur principal.
+
+---
+
 ## v1.92.75 - 20 septembre 2026
 - Amélioration invisible : nettoyage d'anciens codes d'affichage obsolètes dans le module Sport.
 
