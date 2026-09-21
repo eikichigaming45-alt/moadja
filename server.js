@@ -95,6 +95,7 @@ app.use('/api/feed',             require('./routes/feed'));
 app.use('/api/social',           tchatSocialLimiter, require('./routes/social'));
 app.use('/api/eclats',           require('./routes/eclats'));
 app.use('/api/sport',            require('./routes/sport'));
+app.use('/api/sport-gps',        require('./routes/sport-gps'));
 app.use('/api/tchat',            tchatSocialLimiter, tchatRouter);
 
 // ── Socket.io — authentification middleware ───────────────────
