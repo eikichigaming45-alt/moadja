@@ -218,21 +218,6 @@ function _sportAjouterSerieALaVolee(exIndex) {
     _sportRenderTousLesExercices();
 }
 
-// Vérifie si TOUTES les séries de TOUS les exercices ont été validées
-function _sportVerifierFinSeanceGlobale() {
-    for (let i = 0; i < _sportSeanceExercices.length; i++) {
-        const ex = _sportSeanceExercices[i];
-        const expectedSets = _sportGetNbSets(ex, i);
-        const logsEx = (_sportSeanceActive.logs || []).filter(l => 
-            l.exIndex !== undefined ? l.exIndex === i : l.wger_exercise_id === ex.wger_exercise_id
-        );
-        if (logsEx.length < expectedSets) {
-            return false; // Il reste au moins une série non validée
-        }
-    }
-    return true; // Tout est terminé
-}
-
 function _sportRenderTousLesExercices() {
     const zone = document.getElementById('sport-seance-contenu');
     if (!zone) return;
@@ -288,8 +273,8 @@ function _sportRenderFormulaireSeries(ex, logsExistants, exIndex) {
                 </div>
             `).join('')}
         </div>
-        <div style="display:flex; justify-content:center; margin-top:12px;">
-            <button class="sport-cta-btn" style="padding: 4px 12px; font-size: 13px;" onclick="_sportAjouterSerieALaVolee(${exIndex})">+ 1 série</button>
+        <div style="margin-top: 8px; display: flex; padding-left: 8px;">
+            <button style="background: rgba(124, 58, 237, 0.1); border: 1px solid rgba(124, 58, 237, 0.2); color: #7c3aed; border-radius: 6px; padding: 4px 10px; font-size: 13px; font-weight: 500; cursor: pointer; transition: 0.2s;" onclick="_sportAjouterSerieALaVolee(${exIndex})">+ Ajouter une série</button>
         </div>
     `;
 }
@@ -406,7 +391,7 @@ function _sportRenderFormulaireDuree(ex, logsExistants, exIndex) {
 
     const estCardio = SPORT_NOMS_EXERCICES_CARDIO.has(ex.exercise_name);
 
-    return `
+    let html = `
         <div class="sport-seance-table">
             <div class="sport-seance-table-header" style="grid-template-columns: 40px 1fr 1fr 40px 40px">
                 <span>Série</span>
@@ -444,18 +429,22 @@ function _sportRenderFormulaireDuree(ex, logsExistants, exIndex) {
                 `;
             }).join('')}
         </div>
+        <div style="margin-top: 8px; display: flex; padding-left: 8px;">
+            <button style="background: rgba(124, 58, 237, 0.1); border: 1px solid rgba(124, 58, 237, 0.2); color: #7c3aed; border-radius: 6px; padding: 4px 10px; font-size: 13px; font-weight: 500; cursor: pointer; transition: 0.2s;" onclick="_sportAjouterSerieALaVolee(${exIndex})">+ Ajouter une série</button>
+        </div>
+    `;
 
-        ${estCardio ? `
+    if (estCardio) {
+        html += `
         <div style="display: flex; gap: 8px; margin-top: 12px;">
             <input type="number" step="0.1" class="sport-seance-input" id="sport-duree-distance-${exIndex}" value="${logsExistants[0]?.distance_km || ''}" placeholder="Dist. (km)">
             <input type="number" step="0.1" class="sport-seance-input" id="sport-duree-vitesse-${exIndex}" value="${logsExistants[0]?.speed_kmh || ''}" placeholder="Vit. (km/h)">
             <input type="number" step="0.1" class="sport-seance-input" id="sport-duree-inclinaison-${exIndex}" value="${logsExistants[0]?.incline_percent || ''}" placeholder="Incl. (%)">
         </div>
-        ` : ''}
-        <div style="display:flex; justify-content:center; margin-top:12px;">
-            <button class="sport-cta-btn" style="padding: 4px 12px; font-size: 13px;" onclick="_sportAjouterSerieALaVolee(${exIndex})">+ 1 série</button>
-        </div>
-    `;
+        `;
+    }
+
+    return html;
 }
 
 function _sportBrancherValidationTousExercices() {
@@ -496,7 +485,12 @@ async function _sportValiderLogSerie(ex, setNumber, exIndex) {
             d.log.exIndex = exIndex;
             _sportSeanceActive.logs.push(d.log);
             
-            if (_sportVerifierFinSeanceGlobale()) {
+            // NOUVELLE LOGIQUE : on ne force plus à tout cocher. 
+            // Si on vient de valider la DERNIÈRE série du DERNIER exercice de la liste, on propose de terminer.
+            const isLastEx = exIndex === _sportSeanceExercices.length - 1;
+            const isLastSet = setNumber === _sportGetNbSets(ex, exIndex);
+
+            if (isLastEx && isLastSet) {
                 _sportConfirmerFinSeance();
             } else {
                 _sportLancerReposEntreSeries(ex.target_rest_seconds || 60, exIndex);
@@ -539,7 +533,11 @@ async function _sportValiderLogDuree(ex, setNumber, exIndex) {
             d.log.exIndex = exIndex;
             _sportSeanceActive.logs.push(d.log);
 
-            if (_sportVerifierFinSeanceGlobale()) {
+            // NOUVELLE LOGIQUE
+            const isLastEx = exIndex === _sportSeanceExercices.length - 1;
+            const isLastSet = setNumber === _sportGetNbSets(ex, exIndex);
+
+            if (isLastEx && isLastSet) {
                 _sportConfirmerFinSeance();
             } else {
                 _sportLancerReposEntreSeries(ex.target_rest_seconds || 60, exIndex);
@@ -633,7 +631,7 @@ async function _sportCloturerSeance(status) {
     _sportSeanceActive       = null;
     _sportSeanceExercices    = [];
 
-        if (typeof _sportRelacherWakeLock === 'function') _sportRelacherWakeLock();
+    if (typeof _sportRelacherWakeLock === 'function') _sportRelacherWakeLock();
 
     chargerSportDashboard();
     if (typeof chargerSportStatsWidget === 'function') chargerSportStatsWidget();
