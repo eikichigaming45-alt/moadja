@@ -94,8 +94,8 @@ function _sportAfficherModePoche(type) {
         </div>
 
         <div style="display:flex; flex-direction:column; align-items:center; margin-top: auto; margin-bottom: auto;">
-            <!-- L'horloge est maintenant bien au centre, au-dessus du chrono -->
-            <div class="sport-poche-horloge" id="gps-horloge" style="font-size: 4.5rem; font-weight: 800; text-align: center; color: #ffffff; letter-spacing: 2px; line-height: 1; margin-bottom: 8px;">--:--</div>
+            <!-- L'horloge est réduite à 3.2rem au lieu de 4.5rem -->
+            <div class="sport-poche-horloge" id="gps-horloge" style="font-size: 3.2rem; font-weight: 800; text-align: center; color: #ffffff; letter-spacing: 2px; line-height: 1; margin-bottom: 16px;">--:--</div>
             
             <div class="sport-poche-chrono" id="gps-chrono">00:00</div>
             
