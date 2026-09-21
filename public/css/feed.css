@@ -1,7 +1,7 @@
-// ============================================================
-// public/css/feed.css
-// Styles du fil social — onglet Accueil
-// ============================================================ */
+/* ============================================================
+   public/css/feed.css
+   Styles du fil social — onglet Accueil
+   ============================================================ */
 
 /* ===================== ZONE MÉTÉO FIGÉE ===================== */
 .accueil-meteo-fixed {
@@ -247,18 +247,14 @@
     word-break: break-word;
 }
 
-/* ===================== PHOTO POST (Correction Crop) ===================== */
-/* Modification v1.92.94 : Pour éviter le crop affreux des images de partage Sport (1200x630),
-   on passe object-fit en contain et on adapte le conteneur.
-   L'image reste centrée, ne déborde plus et s'affiche EN ENTIER sans être découpée. */
+/* ===================== PHOTO POST ===================== */
 .feed-photo-wrap {
     width: 100%;
-    /* On retire la hauteur fixe (420px) pour laisser l'image dicter son ratio naturel */
     height: auto;
-    max-height: 500px;
+    max-height: 550px;
     border-radius: var(--radius-lg);
     overflow: hidden;
-    background: transparent;
+    background: rgba(0,0,0,0.02);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -270,9 +266,8 @@
 .feed-photo {
     width: 100%;
     height: auto;
-    max-height: 500px;
-    /* On passe de cover (qui crop) à contain (qui garde toute l'image visible) */
-    object-fit: contain;
+    max-height: 550px;
+    object-fit: cover;
     display: block;
     transition: opacity .2s;
 }
