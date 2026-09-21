@@ -2,10 +2,28 @@
    public/css/sport-activite-libre.css
    Styles dédiés au bouton "Activité libre" (Dashboard Sport) et à
    la mise en ligne des 2 boutons côte à côte (Démarrer une séance /
-   Activité libre). Fichier indépendant de sport.css — ne redéfinit
-   aucune classe existante, n'ajoute que ce qui est nouveau.
+   Activité libre). Fichier indépendant de sport.css — ne modifie pas
+   ce fichier, le surcharge uniquement par ordre de cascade (chargé
+   après sport.css dans index.html).
    Réutilise les couleurs déjà en place (violet #7c3aed / rgb(167,139,250)).
    ============================================================ */
+
+/* Surcharge : force le layout centré en colonne (icône / titre / boutons)
+   sur TOUTES les tailles d'écran, y compris desktop — la version d'origine
+   de sport.css affichait l'icône à gauche et le texte à droite en desktop,
+   ce qui rendait mal avec 2 boutons côte à côte. */
+.sport-ready-state {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+}
+.sport-ready-icon {
+    margin: 0 auto;
+}
+.sport-ready-info {
+    align-items: center;
+}
 
 /* Conteneur des 2 boutons, côte à côte, centrés. Se replie en colonne
    uniquement sur très petit écran. */
@@ -15,6 +33,13 @@
     justify-content: center;
     gap: 12px;
     flex-wrap: wrap;
+}
+
+/* Neutralise l'ancien alignement à gauche hérité de sport.css
+   (.sport-ready-info .sport-cta-btn { align-self: flex-start; }) */
+.sport-ready-info .sport-cta-btn,
+.sport-ready-info .sport-cta-btn-secondary {
+    align-self: center;
 }
 
 /* Bouton "Activité libre" — style ghost/secondaire : contour violet,
