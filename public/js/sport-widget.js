@@ -310,9 +310,11 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
         const imageUrl = data.imageUrl;
         const openGraphUrl = `${window.location.origin}/share/seance/${sessionId}`;
         
-        // Textes adaptés selon la destination (interne vs externe avec lien harmonisé)
+        // Textes adaptés selon la destination.
+        // Le lien externe n'est plus dupliqué dans le texte : il est porté uniquement
+        // par le champ "url" de navigator.share (ou ajouté une seule fois au fallback presse-papiers).
         const texteInterne = `🏋️‍♂️ Séance terminée : ${nomRoutine}`;
-        const texteExterne = `🏋️‍♂️ Séance : ${nomRoutine}\nDécouvre les statistiques de cette séance sur MoaDja !\n\n${openGraphUrl}`;
+        const texteExterne = `🏋️‍♂️ Séance : ${nomRoutine}\nDécouvre les statistiques de cette séance sur MoaDja !`;
 
         closeModal();
 
@@ -348,7 +350,9 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
             }, 400);
         } 
         else if (destination === 'externe') {
-            // Web Share API native ou fallback presse-papiers avec le même design/texte harmonisé
+            // Web Share API native ou fallback presse-papiers.
+            // Le lien n'est présent qu'une seule fois (champ url pour navigator.share,
+            // concaténé une seule fois au texte pour le fallback presse-papiers).
             if (navigator.share) {
                 await navigator.share({
                     title: `Séance : ${nomRoutine}`,
@@ -356,7 +360,7 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
                     url: openGraphUrl
                 }).catch(console.error);
             } else {
-                await navigator.clipboard.writeText(texteExterne);
+                await navigator.clipboard.writeText(`${texteExterne}\n\n${openGraphUrl}`);
                 alert('Lien et message copiés dans le presse-papiers ! Vous pouvez les coller où vous voulez (WhatsApp Web, Facebook...).');
             }
         }
@@ -397,7 +401,7 @@ async function chargerSportStatsWidget() {
             return;
         }
 
-        _sportRenderWidgetDerniereSeance(zone, d.derniere_seance);
+                _sportRenderWidgetDerniereSeance(zone, d.derniere_seance);
     } catch (err) {
         console.error('[SPORT] chargerSportStatsWidget :', err.message);
         _sportWidgetDerniereSeanceCache = null;
