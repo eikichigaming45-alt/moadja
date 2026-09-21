@@ -88,17 +88,18 @@ function _sportAfficherModePoche(type) {
     div.id = 'sport-poche-ui';
     div.className = 'sport-poche-overlay';
     div.innerHTML = `
-        <div class="sport-poche-horloge" id="gps-horloge" style="font-size: 5rem; font-weight: 800; text-align: center; margin-bottom: 20px; color: #ffffff; letter-spacing: 2px;">--:--</div>
-        
         <div class="sport-poche-header">
             <div class="sport-poche-type">${libelleType}</div>
             <div class="sport-poche-status" id="gps-status">🟡 Recherche signal GPS...</div>
         </div>
 
-        <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="display:flex; flex-direction:column; align-items:center; margin-top: auto; margin-bottom: auto;">
+            <!-- L'horloge est maintenant bien au centre, au-dessus du chrono -->
+            <div class="sport-poche-horloge" id="gps-horloge" style="font-size: 4.5rem; font-weight: 800; text-align: center; color: #ffffff; letter-spacing: 2px; line-height: 1; margin-bottom: 8px;">--:--</div>
+            
             <div class="sport-poche-chrono" id="gps-chrono">00:00</div>
             
-            <div class="sport-poche-stats-row">
+            <div class="sport-poche-stats-row" style="margin-top: 24px;">
                 <div class="sport-poche-stat">
                     <div class="sport-poche-stat-val" id="gps-dist">0.00</div>
                     <div class="sport-poche-stat-lbl">KM</div>
@@ -196,7 +197,6 @@ function _sportUpdateChronoGPS() {
     } else {
         el.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     }
-    // La mise à jour de la vitesse se fait désormais au rythme des points GPS (vitesse instantanée)
 }
 
 // ── 4. CAPTEUR GPS & CALCULS ──
@@ -224,7 +224,6 @@ function _sportLancerBoucleGPS() {
             const nouveauPoint = { lat, lng, recorded_at: new Date(ts).toISOString() };
             let vitesseInstantanee = 0;
 
-            // 1. Priorité absolue : la vitesse matérielle (m/s) remontée par le smartphone (très précis en voiture/vélo)
             if (position.coords.speed !== null && position.coords.speed >= 0) {
                 vitesseInstantanee = position.coords.speed * 3.6;
             }
@@ -235,7 +234,6 @@ function _sportLancerBoucleGPS() {
                 const distEl = document.getElementById('gps-dist');
                 if (distEl) distEl.textContent = _gpsDistanceKm.toFixed(2);
 
-                // 2. Fallback de vitesse si le téléphone ne fournit pas `coords.speed`
                 if (vitesseInstantanee === 0) {
                     const timeDiffSec = (ts - new Date(_gpsDernierPoint.recorded_at).getTime()) / 1000;
                     if (timeDiffSec > 0) {
@@ -244,7 +242,6 @@ function _sportLancerBoucleGPS() {
                 }
             }
 
-            // Mise à jour de l'UI avec la vitesse instantanée
             const vitEl = document.getElementById('gps-vit');
             if (vitEl) vitEl.textContent = vitesseInstantanee.toFixed(1);
 
@@ -313,7 +310,6 @@ async function _sportTerminerGPS() {
 
     await _sportSauvegarderPointsBatch();
 
-    // La vitesse globale sauvegardée en base reste la vitesse MOYENNE de toute la séance
     let vitMoyenneFinale = null;
     const diffSec = Math.floor((Date.now() - _gpsStartTime) / 1000);
     if (_gpsDistanceKm > 0 && diffSec > 0) {
