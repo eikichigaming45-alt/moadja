@@ -1,0 +1,62 @@
+/* ============================================================
+   public/css/sport-activite-libre.css
+   Styles dédiés au bouton "Activité libre" (Dashboard Sport) et à
+   la mise en ligne des 2 boutons côte à côte (Démarrer une séance /
+   Activité libre). Fichier indépendant de sport.css — ne redéfinit
+   aucune classe existante, n'ajoute que ce qui est nouveau.
+   Réutilise les couleurs déjà en place (violet #7c3aed / rgb(167,139,250)).
+   ============================================================ */
+
+/* Conteneur des 2 boutons, côte à côte, centrés. Se replie en colonne
+   uniquement sur très petit écran. */
+.sport-ready-btns {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* Bouton "Activité libre" — style ghost/secondaire : contour violet,
+   fond transparent, même gabarit que .sport-cta-btn (sport.css). */
+.sport-cta-btn-secondary {
+    padding: 12px 18px;
+    background: transparent;
+    border: 1.5px solid rgba(167, 139, 250, 0.6);
+    color: rgb(167, 139, 250);
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.sport-cta-btn-secondary:hover {
+    background: rgba(167, 139, 250, 0.1);
+    border-color: rgba(167, 139, 250, 1);
+}
+.sport-cta-btn-secondary:disabled,
+.sport-cta-btn-secondary.disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+.sport-cta-btn-secondary svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+/* Sur écran très étroit, les 2 boutons passent en colonne pleine largeur */
+@media (max-width: 380px) {
+    .sport-ready-btns {
+        flex-direction: column;
+        width: 100%;
+    }
+    .sport-ready-btns .sport-cta-btn,
+    .sport-ready-btns .sport-cta-btn-secondary {
+        width: 100%;
+        justify-content: center;
+    }
+}

@@ -9,6 +9,8 @@
 // Les sous-modules Mes Routines / Sélecteur d'exercice / Séance en cours
 // ont été extraits respectivement dans sportRoutines.js, sportSelecteur.js
 // et sportSeance.js (chargés APRÈS ce fichier, voir index.html).
+// Le bouton "Activité libre" (icône + comportement) est géré dans le
+// fichier dédié sport-activite-libre.js, chargé APRÈS ce fichier.
 
 const SPORT_ICONE_PAS_IMAGE = `
     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -51,6 +53,14 @@ const SPORT_ICONE_POIGNEE = `
         <circle cx="15" cy="12" r="1.5"></circle>
         <circle cx="9" cy="18" r="1.5"></circle>
         <circle cx="15" cy="18" r="1.5"></circle>
+    </svg>
+`;
+
+// Icône géolocalisation (bouton "Activité libre" — voir sport-activite-libre.js).
+const SPORT_ICONE_GPS = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+        <circle cx="12" cy="10" r="3"></circle>
     </svg>
 `;
 
@@ -191,8 +201,22 @@ function _sportConfirmerSuppressionSeanceDashboard(sessionId) {
 // bouton tout en bas), qui créait un grand vide visuel déséquilibré.
 // Le cas "aucune séance" (état vide complet, avec texte d'accroche) garde
 // son ancien format en colonne (.sport-empty-state), inchangé.
+// Correctif v1.97 : ajout du 2e bouton "Activité libre" (icône GPS,
+// style ghost — voir sport-activite-libre.css/js) à côté du bouton
+// "Démarrer une séance", dans les deux états (prêt / aucune séance).
 function _sportRenderDashboard(dernieresSeances) {
     const aDesSeances = dernieresSeances && dernieresSeances.length > 0;
+
+    const boutonsHtml = `
+        <div class="sport-ready-btns">
+            <button class="sport-cta-btn" onclick="_sportSwitchSection('routines')">
+                ${SPORT_ICONE_DUMBBELL} Démarrer une séance
+            </button>
+            <button class="sport-cta-btn-secondary" onclick="_sportActiviteLibreOuvrir()">
+                ${SPORT_ICONE_GPS} Activité libre
+            </button>
+        </div>
+    `;
 
     return `
         <div class="sport-card">
@@ -200,10 +224,8 @@ function _sportRenderDashboard(dernieresSeances) {
                 <div class="sport-ready-state">
                     <div class="sport-ready-icon">${SPORT_ICONE_DUMBBELL}</div>
                     <div class="sport-ready-info">
-                        <div class="sport-ready-title">Prêt pour une nouvelle séance ?</div>
-                        <button class="sport-cta-btn" onclick="_sportSwitchSection('routines')">
-                            ${SPORT_ICONE_DUMBBELL} Commencer une séance
-                        </button>
+                        <div class="sport-ready-title">Prêt pour une nouvelle activité ?</div>
+                        ${boutonsHtml}
                     </div>
                 </div>
             ` : `
@@ -214,9 +236,7 @@ function _sportRenderDashboard(dernieresSeances) {
                         Prêt à commencer ? Créez votre première routine pour suivre vos entraînements
                         et voir votre progression au fil du temps.
                     </div>
-                    <button class="sport-cta-btn" onclick="_sportSwitchSection('routines')">
-                        ${SPORT_ICONE_DUMBBELL} Commencer une séance
-                    </button>
+                    ${boutonsHtml}
                 </div>
             `}
         </div>
