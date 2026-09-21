@@ -572,7 +572,7 @@ router.delete('/sessions/:id', auth, async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        const { rows: owner } = await client.query(`
+                const { rows: owner } = await client.query(`
             SELECT id FROM sport_sessions WHERE id = \$1 AND user_id = \$2
         `, [id, moi]);
         if (!owner.length) {
@@ -621,7 +621,7 @@ function _sportCalculerStatsSession(session, logs, profil) {
     let nbCardio = 0, nbMusculation = 0;
 
     logsValides.forEach(l => {
-                const estCardio = l.distance_km != null || l.duration_seconds != null;
+        const estCardio = l.distance_km != null || l.duration_seconds != null;
         if (estCardio) {
             nbCardio++;
         } else {
@@ -1127,7 +1127,7 @@ router.get('/wger/exercises', auth, async (req, res) => {
                     continue;
                 }
 
-                resultats.push({
+                                resultats.push({
                     wger_exercise_id: ex.id,
                     name            : nom,
                     category        : ex.category?.id ?? ex.category,
@@ -1195,7 +1195,6 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
     const id = parseInt(req.params.id, 10);
 
     try {
-        // 1. Récupération de la séance
         const { rows: sessions } = await pool.query(`
             SELECT s.id, s.date_start, s.date_end, w.name AS workout_name
             FROM sport_sessions s
@@ -1208,17 +1207,14 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
         }
         const session = sessions[0];
 
-                // 2. Récupération logs & profil
         const { rows: logs } = await pool.query(`SELECT * FROM sport_session_logs WHERE session_id = \$1 ORDER BY id ASC`, [id]);
         const { rows: profilRows } = await pool.query(`SELECT poids, taille, sexe, date_naissance FROM profiles WHERE user_id = \$1`, [moi]);
         const profil = profilRows[0] || {};
 
-        // 3. Calculs
         const stats = _sportCalculerStatsSession(session, logs, profil);
         const exercicesConsolides = _sportConsoliderExercicesSession(logs);
         const records = await _sportDetecterRecords(moi, id, logs);
         
-        // 4. Formatage
         const routineName = _echapperXML(session.workout_name || 'Séance MoaDja');
         const dateStr = session.date_end 
             ? new Date(session.date_end).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }).replace('.', '')
@@ -1226,43 +1222,35 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
             
         const dureeStr = _formatDurationLongSVG(stats.dureeSecondes);
         const volumeStr = `${stats.volumeKg} kg`;
-        const caloriesStr = stats.calories ? `${stats.calories} kcal` : '--';
+        const caloriesStr = stats.calories ? `${stats.calories} kcal` : '—';
         const nbRecords = records.length;
 
-        // 5. Génération du SVG - Design Clair (Fidèle au Widget natif)
         let svg = `
         <svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
             <defs>
-                <!-- Dégradé de fond global (rappel --app-bg-gradient) -->
                 <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#fff0e6" />   <!-- Pêche très clair -->
-                    <stop offset="50%" stop-color="#fdfbfb" />  <!-- Blanc cassé -->
-                    <stop offset="100%" stop-color="#f3e8ff" /> <!-- Lavande très clair -->
+                    <stop offset="0%" stop-color="#fff0e6" />
+                    <stop offset="50%" stop-color="#fdfbfb" />
+                    <stop offset="100%" stop-color="#f3e8ff" />
                 </linearGradient>
                 
-                <!-- Ombre douce de la carte principale -->
                 <filter id="shadowCard" x="-5%" y="-5%" width="110%" height="110%">
                     <feDropShadow dx="0" dy="8" stdDeviation="20" flood-color="#7c3aed" flood-opacity="0.08" />
                 </filter>
                 
-                <!-- Ombre des mini-cartes de stats -->
                 <filter id="shadowStat" x="-5%" y="-5%" width="110%" height="110%">
                     <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="0.04" />
                 </filter>
             </defs>
 
-            <!-- Fond -->
             <rect width="1200" height="630" fill="url(#bgGradient)" />
 
-            <!-- Carte principale translucide -->
             <rect x="60" y="50" width="1080" height="530" rx="32" fill="#ffffff" fill-opacity="0.85" filter="url(#shadowCard)" stroke="#ffffff" stroke-width="2" />
 
-            <!-- En-tête : Titre et Date -->
             <text x="120" y="130" font-family="system-ui, -apple-system, sans-serif" font-size="38" font-weight="900" fill="#1f2937">${routineName}</text>
             <text x="1080" y="130" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="600" fill="#9ca3af" text-anchor="end">${dateStr}</text>
         `;
 
-        // Badge Record
         if (nbRecords === 0) {
             svg += `
             <rect x="120" y="155" width="260" height="40" rx="20" fill="#f3f4f6" stroke="#e5e7eb" stroke-width="1" />
@@ -1277,25 +1265,20 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
             `;
         }
 
-        // 3 Mini-cartes de Statistiques
         svg += `
-            <!-- Encadrement Durée -->
             <rect x="120" y="230" width="300" height="110" rx="16" fill="#ffffff" filter="url(#shadowStat)" stroke="#f3f4f6" stroke-width="1" />
             <text x="270" y="265" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="800" fill="#9ca3af" letter-spacing="1" text-anchor="middle">DURÉE</text>
             <text x="270" y="315" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="900" fill="#1f2937" text-anchor="middle">${dureeStr}</text>
 
-            <!-- Encadrement Volume -->
             <rect x="450" y="230" width="300" height="110" rx="16" fill="#ffffff" filter="url(#shadowStat)" stroke="#f3f4f6" stroke-width="1" />
             <text x="600" y="265" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="800" fill="#9ca3af" letter-spacing="1" text-anchor="middle">VOLUME</text>
             <text x="600" y="315" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="900" fill="#1f2937" text-anchor="middle">${volumeStr}</text>
 
-            <!-- Encadrement Calories -->
             <rect x="780" y="230" width="300" height="110" rx="16" fill="#ffffff" filter="url(#shadowStat)" stroke="#f3f4f6" stroke-width="1" />
             <text x="930" y="265" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="800" fill="#9ca3af" letter-spacing="1" text-anchor="middle">CALORIES</text>
             <text x="930" y="315" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="900" fill="#ef4444" text-anchor="middle">${caloriesStr}</text>
         `;
 
-        // Liste des exercices (max 5 lignes pour la lisibilité)
         let yEx = 400;
         const maxEx = 5;
         const nbAffiches = Math.min(exercicesConsolides.length, maxEx);
@@ -1304,7 +1287,6 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
             const ex = exercicesConsolides[i];
             const nom = _echapperXML(ex.exercise_name);
             
-            // Formatage du détail de la première série
             let detail = '';
             if (ex.series && ex.series.length > 0) {
                 detail = _formatDetailSerieSVG(ex.series[0], ex.est_cardio);
@@ -1321,26 +1303,22 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
                 ` : ''}
             </text>
             `;
-            yEx += 45; // Espacement interligne
+            yEx += 45;
         }
 
-        // Mention "...et X autres"
         if (exercicesConsolides.length > maxEx) {
             const restants = exercicesConsolides.length - maxEx;
             svg += `<text x="120" y="${yEx}" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-style="italic" fill="#9ca3af">...et ${restants} autre${restants > 1 ? 's' : ''}</text>`;
         }
 
-        // Footer centré (Logo MoaDja violet)
         svg += `
             <g transform="translate(560, 545)">
-                <!-- Icône haltère SVG stylisée -->
                 <path d="M-15,-6 L-15,6 M-9,-2 L-9,2 M9,-2 L9,2 M15,-6 L15,6 M-9,0 L9,0" stroke="#8b5cf6" stroke-width="2.5" stroke-linecap="round" fill="none"/>
                 <text x="25" y="6" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="900" fill="#8b5cf6">MoaDja</text>
             </g>
         </svg>
         `;
 
-        // 6. Conversion et sauvegarde
         const uploadsDir = path.join(__dirname, '..', 'public', 'uploads', 'sport_shares');
         if (!fs.existsSync(uploadsDir)) {
             fs.mkdirSync(uploadsDir, { recursive: true });
@@ -1350,7 +1328,7 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
         const filePath = path.join(uploadsDir, fileName);
 
         await sharp(Buffer.from(svg))
-            .jpeg({ quality: 95 }) // Qualité maximale pour textes nets
+            .jpeg({ quality: 95 })
             .toFile(filePath);
 
         res.json({ 
