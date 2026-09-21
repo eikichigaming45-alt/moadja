@@ -142,33 +142,49 @@ function _sportRenderBlocExerciceDetail(e) {
     `;
 }
 
-// ── Bloc partagé ISO ──
+// ── Bloc partagé ISO (Tableau de bord & Widget) ──
 function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
     const dateTexte   = _sportFormatDateCourte(s.date_end || s.date_start);
     const nbRecords   = Number.isInteger(s.nb_records) ? s.nb_records : 0;
     const exercices   = s.exercices || [];
     
+    // NOUVEAU : Détection du mode GPS pour changer l'affichage
+    const isGps = s.isGps || s.activity_type === 'marche' || s.activity_type === 'course';
+    
     const iconeTropheeJaune = `<span style="color: #eab308; display: inline-flex; align-items: center;">${SPORT_ICONE_TROPHEE}</span>`;
 
     let listeHtml = '';
-    if (mode === 'widget' || mode === 'dashboard') {
-        const limit = mode === 'dashboard' ? 5 : SPORT_WIDGET_MAX_EXERCICES_APERCU;
-        const apercu = exercices.slice(0, limit);
-        const reste  = exercices.length - apercu.length;
-        if (apercu.length) {
+    if (isGps) {
+        // Affichage spécifique GPS au lieu de la liste d'exercices
+        const vitMoy = s.vitesseKmh ? s.vitesseKmh.toFixed(1) : '0.0';
+        listeHtml = `
+            <div style="margin-top: 12px; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 14px; font-weight: 700; color: #a78bfa;">📍 Vitesse moyenne</span>
+                <span style="color: #c7c7d1; font-weight: 600;">·</span>
+                <span style="font-size: 14px; font-weight: 600; color: var(--text-main);">${vitMoy} km/h</span>
+            </div>
+        `;
+    } else {
+        // Affichage musculation standard (liste d'exercices)
+        if (mode === 'widget' || mode === 'dashboard') {
+            const limit = mode === 'dashboard' ? 5 : SPORT_WIDGET_MAX_EXERCICES_APERCU;
+            const apercu = exercices.slice(0, limit);
+            const reste  = exercices.length - apercu.length;
+            if (apercu.length) {
+                listeHtml = `
+                    <div class="${mode === 'dashboard' ? 'sport-seance-recap-liste' : 'sport-widget-exercices-liste'}">
+                        ${apercu.map(e => _sportRenderBlocExerciceDetail(e)).join('')}
+                        ${reste > 0 ? `<div class="${mode === 'dashboard' ? 'sport-seance-recap-reste' : 'sport-widget-exercice-reste'}">…et ${reste} autre${reste > 1 ? 's' : ''}</div>` : ''}
+                    </div>
+                `;
+            }
+        } else {
             listeHtml = `
-                <div class="${mode === 'dashboard' ? 'sport-seance-recap-liste' : 'sport-widget-exercices-liste'}">
-                    ${apercu.map(e => _sportRenderBlocExerciceDetail(e)).join('')}
-                    ${reste > 0 ? `<div class="${mode === 'dashboard' ? 'sport-seance-recap-reste' : 'sport-widget-exercice-reste'}">…et ${reste} autre${reste > 1 ? 's' : ''}</div>` : ''}
+                <div class="sport-modal-exercices-liste">
+                    ${exercices.map(e => _sportRenderBlocExerciceDetail(e)).join('')}
                 </div>
             `;
         }
-    } else {
-        listeHtml = `
-            <div class="sport-modal-exercices-liste">
-                ${exercices.map(e => _sportRenderBlocExerciceDetail(e)).join('')}
-            </div>
-        `;
     }
 
     const warningCalories = s.profil_incomplet
@@ -176,10 +192,10 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
             Complétez votre profil (poids, taille, sexe, date de naissance) pour voir vos calories brûlées.
            </div>`
         : '';
-    const valCalories = s.profil_incomplet ? '—' : `${s.calories} kcal`;
+    const valCalories = s.profil_incomplet ? '—' : `${s.calories || 0} kcal`;
 
     let detailsRecordsHtml = '';
-    if (mode === 'modal' && nbRecords > 0 && Array.isArray(s.records)) {
+    if (!isGps && mode === 'modal' && nbRecords > 0 && Array.isArray(s.records)) {
         detailsRecordsHtml = `
             <div style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed rgba(167, 139, 250, 0.3);">
                 <div style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; color: #a78bfa;">
@@ -201,11 +217,16 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
     }
 
     const styleGris = 'color: #9ca3af; background: rgba(156, 163, 175, 0.1); border: 1px solid rgba(156, 163, 175, 0.2);';
-    const badgeHtml = `
-        <div class="sport-widget-badge-record" ${nbRecords === 0 ? `style="${styleGris}"` : ''}>
-            ${iconeTropheeJaune} <span>${nbRecords > 0 ? `${nbRecords} record${nbRecords > 1 ? 's' : ''}` : 'Aucun nouveau record'}</span>
-        </div>
-    `;
+    let badgeHtml = '';
+    
+    // Pas de badge record pour la marche/course pour l'instant
+    if (!isGps) {
+        badgeHtml = `
+            <div class="sport-widget-badge-record" ${nbRecords === 0 ? `style="${styleGris}"` : ''}>
+                ${iconeTropheeJaune} <span>${nbRecords > 0 ? `${nbRecords} record${nbRecords > 1 ? 's' : ''}` : 'Aucun nouveau record'}</span>
+            </div>
+        `;
+    }
 
     let footerHtml = '';
     if (mode === 'dashboard') {
@@ -225,6 +246,12 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
         `;
     }
 
+    // Bloc central (Durée / Volume ou Distance / Calories)
+    const labelBloc2 = isGps ? 'Distance' : 'Volume';
+    const valeurBloc2 = isGps 
+        ? `${s.distanceKm ? s.distanceKm.toFixed(2) : '0.00'} km` 
+        : `${s.volumeKg || 0} kg`;
+
     return `
         <div class="sport-widget-recap-title-row">
             <span class="sport-widget-recap-name">${_sportEchapper(s.workout_name)}</span>
@@ -242,8 +269,8 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
                 <span class="sport-widget-stat-val">${_sportFormatDureeLongue(s.dureeSecondes)}</span>
             </div>
             <div class="sport-widget-stat">
-                <span class="sport-widget-stat-label">Volume</span>
-                <span class="sport-widget-stat-val">${s.volumeKg} kg</span>
+                <span class="sport-widget-stat-label">${labelBloc2}</span>
+                <span class="sport-widget-stat-val">${valeurBloc2}</span>
             </div>
             <div class="sport-widget-stat">
                 <span class="sport-widget-stat-label">Calories</span>
@@ -311,8 +338,6 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
         const openGraphUrl = `${window.location.origin}/share/seance/${sessionId}`;
         
         // Textes adaptés selon la destination.
-        // Le lien externe n'est plus dupliqué dans le texte : il est porté uniquement
-        // par le champ "url" de navigator.share (ou ajouté une seule fois au fallback presse-papiers).
         const texteInterne = `🏋️‍♂️ Séance terminée : ${nomRoutine}`;
         const texteExterne = `🏋️‍♂️ Séance : ${nomRoutine}\nDécouvre les statistiques de cette séance sur MoaDja !`;
 
@@ -320,11 +345,9 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
 
         // 2. Routage selon la destination
         if (destination === 'feed') {
-            // Ouvre l'éditeur de post
             switchTab('accueil');
             if (typeof ouvrirModalPost === 'function') ouvrirModalPost();
             
-            // Le setTimeout garantit que l'input du feed existe bien dans le DOM
             setTimeout(async () => {
                 const inputTexte = document.getElementById('post-contenu');
                 if (inputTexte) inputTexte.value = texteInterne;
@@ -350,9 +373,6 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
             }, 400);
         } 
         else if (destination === 'externe') {
-            // Web Share API native ou fallback presse-papiers.
-            // Le lien n'est présent qu'une seule fois (champ url pour navigator.share,
-            // concaténé une seule fois au texte pour le fallback presse-papiers).
             if (navigator.share) {
                 await navigator.share({
                     title: `Séance : ${nomRoutine}`,
@@ -383,7 +403,6 @@ const SPORT_PHRASES_ENCOURAGEMENT = [
     "Votre corps vous remerciera pour chaque effort, même petit."
 ];
 
-// Cache de la séance actuellement affichée dans le widget colonne droite.
 let _sportWidgetDerniereSeanceCache = null;
 
 // ── Widget Sport Stats (colonne droite, global) ──
@@ -401,7 +420,7 @@ async function chargerSportStatsWidget() {
             return;
         }
 
-                _sportRenderWidgetDerniereSeance(zone, d.derniere_seance);
+        _sportRenderWidgetDerniereSeance(zone, d.derniere_seance);
     } catch (err) {
         console.error('[SPORT] chargerSportStatsWidget :', err.message);
         _sportWidgetDerniereSeanceCache = null;
@@ -431,7 +450,7 @@ function _sportWidgetOuvrirStats() {
     openModal('sport-stats');
 }
 
-// Rendu du widget colonne droite en utilisant la fonction ISO
+// Rendu du widget colonne droite
 function _sportRenderWidgetDerniereSeance(zone, seance) {
     _sportWidgetDerniereSeanceCache = seance;
 
@@ -478,7 +497,6 @@ async function _ouvrirModaleSportStats() {
     }
 }
 
-// Rendu de la modale en utilisant la fonction ISO
 function _sportRenderModaleStatsDepuisSeance(zone, s) {
     zone.innerHTML = `
         <div class="sport-modal-stats">
