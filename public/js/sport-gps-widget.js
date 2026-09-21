@@ -6,6 +6,12 @@
 
 const CARTO_API_KEY = 'cb1_3sfj_1_e7e2e040a3d271817c743aa0';
 
+// Registre global pour stocker les instances de cartes et éviter 
+// l'erreur "Map container is already initialized" lors des rafraîchissements
+if (!window._moadjaLeafletMaps) {
+    window._moadjaLeafletMaps = {};
+}
+
 /**
  * Détecte si une séance est de type GPS (Marche, Course, Vélo)
  */
@@ -66,6 +72,16 @@ async function _sportInitMap(sessionId, mapDivId) {
         // On vide le texte "Chargement..."
         mapDiv.innerHTML = '';
 
+        // FIX LEAFLET : On supprime l'ancienne carte si elle existe déjà sur ce conteneur
+        if (window._moadjaLeafletMaps[mapDivId]) {
+            window._moadjaLeafletMaps[mapDivId].remove();
+            delete window._moadjaLeafletMaps[mapDivId];
+        }
+        // Sécurité supplémentaire si le DOM a gardé la trace sans l'instance
+        if (mapDiv._leaflet_id) {
+            mapDiv._leaflet_id = null;
+        }
+
         // 3. Initialisation de la carte Leaflet (UI épurée, sans zoom si widget)
         const isWidget = mapDivId.includes('widget');
         const map = L.map(mapDivId, {
@@ -75,6 +91,9 @@ async function _sportInitMap(sessionId, mapDivId) {
             doubleClickZoom: !isWidget,
             touchZoom: !isWidget
         });
+
+        // On sauvegarde l'instance pour pouvoir la détruire au prochain rafraîchissement
+        window._moadjaLeafletMaps[mapDivId] = map;
 
         // 4. Ajout du fond de carte CartoDB Voyager avec la clé d'API
         L.tileLayer(`https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=${CARTO_API_KEY}`, {
@@ -114,7 +133,9 @@ async function _sportInitMap(sessionId, mapDivId) {
 
         // 9. Force un recalcul de la taille après l'affichage pour éviter le bug de tuiles grises
         setTimeout(() => {
-            map.invalidateSize();
+            if (window._moadjaLeafletMaps[mapDivId]) {
+                window._moadjaLeafletMaps[mapDivId].invalidateSize();
+            }
         }, 300);
 
     } catch (error) {
