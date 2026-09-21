@@ -258,7 +258,7 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
     `;
 }
 
-// ── Modale de choix de partage ──
+// ── Modale de choix de partage (2 boutons : Fil social & Partage externe) ──
 function _sportOuvrirModalPartage(event, sessionId) {
     if (event) event.stopPropagation();
 
@@ -277,9 +277,6 @@ function _sportOuvrirModalPartage(event, sessionId) {
         <div style="display:flex; flex-direction:column; gap:10px;">
             <button id="btn-partage-feed" class="sport-cta-btn" onclick="_sportLancerPartage(${sessionId}, 'feed', this, '${_sportEchapper(seance.workout_name)}')" style="width:100%; justify-content:center;">
                 📝 Publier sur le fil social
-            </button>
-            <button id="btn-partage-tchat" class="sport-cta-btn" onclick="_sportLancerPartage(${sessionId}, 'tchat', this, '${_sportEchapper(seance.workout_name)}')" style="width:100%; justify-content:center; background:rgba(255,255,255,0.8); color:rgb(167,139,250); border:1px solid rgb(167,139,250);">
-                💬 Envoyer par Tchat
             </button>
             <button id="btn-partage-externe" class="sport-cta-btn" onclick="_sportLancerPartage(${sessionId}, 'externe', this, '${_sportEchapper(seance.workout_name)}')" style="width:100%; justify-content:center; background:rgba(0,0,0,0.8); color:#fff; border:none;">
                 🌐 Partager (WhatsApp, etc.)
@@ -313,11 +310,9 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
         const imageUrl = data.imageUrl;
         const openGraphUrl = `${window.location.origin}/share/seance/${sessionId}`;
         
-        // Textes adaptés selon la destination (interne vs externe)
+        // Textes adaptés selon la destination (interne vs externe avec lien harmonisé)
         const texteInterne = `🏋️‍♂️ Séance terminée : ${nomRoutine}`;
-        const texteExterne = `🏋️‍♂️ Ma séance : ${nomRoutine}\nDécouvre mes stats sur MoaDja !`;
-        
-        const texteTchat = `${texteInterne}\n\n${openGraphUrl}`;
+        const texteExterne = `🏋️‍♂️ Séance : ${nomRoutine}\nDécouvre les statistiques de cette séance sur MoaDja !\n\n${openGraphUrl}`;
 
         closeModal();
 
@@ -330,7 +325,7 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
             // Le setTimeout garantit que l'input du feed existe bien dans le DOM
             setTimeout(async () => {
                 const inputTexte = document.getElementById('post-contenu');
-                if (inputTexte) inputTexte.value = texteInterne; // Texte épuré pour le feed
+                if (inputTexte) inputTexte.value = texteInterne;
                 
                 try {
                     const repImg = await fetch(imageUrl);
@@ -352,21 +347,8 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
                 }
             }, 400);
         } 
-        else if (destination === 'tchat') {
-            // Lien isolé avec double saut de ligne, sans pub externe
-            await navigator.clipboard.writeText(texteTchat);
-            alert('Lien de la séance copié ! Sélectionnez un contact et collez le message.');
-            
-            if (window.Tchat && typeof Tchat.toggle === 'function') {
-                Tchat.toggle(); 
-                setTimeout(() => {
-                    const btnNouvelle = document.querySelector('#tchat-btn-nouvelle-conv');
-                    if (btnNouvelle) btnNouvelle.click();
-                }, 400);
-            }
-        } 
         else if (destination === 'externe') {
-            // Web Share API native : message complet avec "Découvre mes stats"
+            // Web Share API native ou fallback presse-papiers avec le même design/texte harmonisé
             if (navigator.share) {
                 await navigator.share({
                     title: `Séance : ${nomRoutine}`,
@@ -374,10 +356,8 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
                     url: openGraphUrl
                 }).catch(console.error);
             } else {
-                // Fallback PC
-                const texteFallback = `${texteExterne}\n\n${openGraphUrl}`;
-                await navigator.clipboard.writeText(texteFallback);
-                alert('Lien copié dans le presse-papiers ! Vous pouvez le coller où vous voulez (WhatsApp Web, Facebook...).');
+                await navigator.clipboard.writeText(texteExterne);
+                alert('Lien et message copiés dans le presse-papiers ! Vous pouvez les coller où vous voulez (WhatsApp Web, Facebook...).');
             }
         }
 
