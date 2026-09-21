@@ -35,16 +35,13 @@
     flex-wrap: wrap;
 }
 
-/* Neutralise l'ancien alignement à gauche hérité de sport.css
-   (.sport-ready-info .sport-cta-btn { align-self: flex-start; }) */
+/* Neutralise l'ancien alignement à gauche hérité de sport.css */
 .sport-ready-info .sport-cta-btn,
 .sport-ready-info .sport-cta-btn-secondary {
     align-self: center;
 }
 
-/* Réduction de taille des 2 boutons UNIQUEMENT dans cette carte
-   (sport-ready-btns) — ne touche pas .sport-cta-btn utilisé ailleurs
-   dans le reste du module Sport. */
+/* Réduction de taille des 2 boutons UNIQUEMENT dans cette carte */
 .sport-ready-btns .sport-cta-btn,
 .sport-ready-btns .sport-cta-btn-secondary {
     padding: 8px 14px;
@@ -56,8 +53,7 @@
     height: 15px;
 }
 
-/* Bouton "Activité libre" — style ghost/secondaire : contour violet,
-   fond transparent, même gabarit que .sport-cta-btn (sport.css). */
+/* Bouton "Activité libre" — style ghost/secondaire */
 .sport-cta-btn-secondary {
     padding: 12px 18px;
     background: transparent;
@@ -98,4 +94,170 @@
         width: 100%;
         justify-content: center;
     }
+}
+
+/* ============================================================
+   MODE POCHE (Écran de tracking GPS 100% noir)
+   ============================================================ */
+
+.sport-poche-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background-color: #000000; /* Noir pur OLED */
+    color: #ffffff;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 60px 20px 40px;
+    box-sizing: border-box;
+}
+
+.sport-poche-header {
+    text-align: center;
+}
+
+.sport-poche-type {
+    font-size: 16px;
+    color: rgb(167, 139, 250);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+}
+
+.sport-poche-chrono {
+    font-size: 72px;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    margin-bottom: 12px;
+}
+
+.sport-poche-stats-row {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+}
+
+.sport-poche-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.sport-poche-stat-val {
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.sport-poche-stat-lbl {
+    font-size: 12px;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.sport-poche-status {
+    font-size: 14px;
+    color: #10b981; /* Vert quand GPS OK */
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 30px;
+}
+.sport-poche-status.recherche {
+    color: #eab308; /* Jaune quand recherche GPS */
+}
+
+/* Slider de déverrouillage "Glisser pour déverrouiller" */
+.sport-poche-slider-container {
+    width: 100%;
+    max-width: 320px;
+    position: relative;
+    height: 56px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50px;
+    overflow: hidden;
+}
+
+.sport-poche-slider-text {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.5);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.sport-poche-slider-input {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 100%;
+    background: transparent;
+    outline: none;
+    position: relative;
+    z-index: 2;
+    margin: 0;
+}
+
+.sport-poche-slider-input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgb(167, 139, 250);
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    margin-left: 4px;
+}
+
+.sport-poche-slider-input::-moz-range-thumb {
+    width: 48px;
+    height: 48px;
+    border: none;
+    border-radius: 50%;
+    background: rgb(167, 139, 250);
+    cursor: pointer;
+}
+
+/* Boutons de fin de séance (visibles après déverrouillage) */
+.sport-poche-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    max-width: 320px;
+}
+
+.sport-poche-btn-terminer {
+    width: 100%;
+    padding: 16px;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.sport-poche-btn-reprendre {
+    width: 100%;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
 }
