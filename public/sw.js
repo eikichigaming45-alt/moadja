@@ -1,4 +1,4 @@
-const CACHE_NAME = 'moadja-cache-v1.96.11';
+const CACHE_NAME = 'moadja-cache-v1.96.12';
 
 const ASSETS_TO_CACHE = [
     '/css/style.css',
@@ -17,6 +17,7 @@ const ASSETS_TO_CACHE = [
     '/css/tchat.css',
     '/css/sport.css',
     '/css/sport-widget.css',
+    '/css/sport-activite-libre.css',
     '/js/app.js',
     '/js/widgets.js',
     '/js/modal.js',
@@ -43,8 +44,10 @@ const ASSETS_TO_CACHE = [
     '/js/animal-totem.js',
     '/js/eclats.js',
     '/js/tchat.js',
+    '/js/sport-gps-widget.js',
     '/js/sport-widget.js',
     '/js/sport.js',
+    '/js/sport-activite-libre.js',
     '/js/sportRoutines.js',
     '/js/sportSelecteur.js',
     '/js/sportSeance.js',

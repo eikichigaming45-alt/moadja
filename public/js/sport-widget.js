@@ -148,14 +148,15 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
     const nbRecords   = Number.isInteger(s.nb_records) ? s.nb_records : 0;
     const exercices   = s.exercices || [];
     
-    // Détection du mode GPS
-    const isGps = s.isGps || s.activity_type === 'marche' || s.activity_type === 'course';
+    // Détection du mode GPS (fallback robuste si le script gps n'est pas encore chargé)
+    const isGps = typeof _sportIsGpsActivity === 'function' 
+        ? _sportIsGpsActivity(s.activity_type, s.isGps) 
+        : (s.isGps || s.activity_type === 'marche' || s.activity_type === 'course' || s.activity_type === 'vélo');
     
     const iconeTropheeJaune = `<span style="color: #eab308; display: inline-flex; align-items: center;">${SPORT_ICONE_TROPHEE}</span>`;
 
     let listeHtml = '';
     if (isGps) {
-        // Affichage spécifique GPS
         const vitMoy = s.vitesseKmh ? s.vitesseKmh.toFixed(1) : '0.0';
         listeHtml = `
             <div style="margin-top: 12px; display: flex; align-items: center; gap: 8px;">
@@ -165,14 +166,15 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
             </div>
         `;
         
-        // Ajout de l'emplacement de la carte uniquement dans la modale
-        if (mode === 'modal') {
-            listeHtml += `
-                <div id="sport-map-${s.id}" style="width: 100%; height: 220px; margin-top: 16px; border-radius: 12px; background: #f3f4f6; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #9ca3af; z-index: 1;">
-                    Chargement de la carte... ⏳
-                </div>
-            `;
-        }
+        // La carte s'affiche désormais partout (widget, dashboard, modal)
+        // On utilise un ID unique basé sur le mode pour éviter les conflits si affiché à plusieurs endroits
+        const mapHeight = mode === 'widget' ? '180px' : '220px';
+        listeHtml += `
+            <div id="sport-map-${mode}-${s.id}" style="width: 100%; height: ${mapHeight}; margin-top: 16px; border-radius: 12px; background: #f3f4f6; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #9ca3af; z-index: 1; position: relative;">
+                Chargement de la carte... ⏳
+            </div>
+        `;
+        
     } else {
         // Affichage musculation standard (liste d'exercices)
         if (mode === 'widget' || mode === 'dashboard') {
@@ -292,7 +294,7 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
     `;
 }
 
-// ── Modale de choix de partage (2 boutons : Fil social & Partage externe) ──
+// ── Modale de choix de partage ──
 function _sportOuvrirModalPartage(event, sessionId) {
     if (event) event.stopPropagation();
 
@@ -451,6 +453,14 @@ function _sportWidgetOuvrirStats() {
 
 function _sportRenderWidgetDerniereSeance(zone, seance) {
     _sportWidgetDerniereSeanceCache = seance;
+    
+    const isGps = typeof _sportIsGpsActivity === 'function' 
+        ? _sportIsGpsActivity(seance.activity_type, seance.isGps) 
+        : (seance.isGps || seance.activity_type === 'marche' || seance.activity_type === 'course' || seance.activity_type === 'vélo');
+
+    // On désactive le clic pour les séances GPS car la carte est déjà affichée
+    const clickAttr = isGps ? '' : 'onclick="_sportWidgetOuvrirStats()" role="button" tabindex="0" class="sport-widget-clickable"';
+    const cursorStyle = isGps ? 'style="cursor: default;"' : '';
 
     zone.innerHTML = `
         <div class="sport-widget-top">
@@ -460,10 +470,15 @@ function _sportRenderWidgetDerniereSeance(zone, seance) {
             </button>
         </div>
 
-        <div class="sport-widget-clickable" onclick="_sportWidgetOuvrirStats()" role="button" tabindex="0">
+        <div ${clickAttr} ${cursorStyle}>
             ${_sportRenderSeanceIso(seance, 'widget')}
         </div>
     `;
+
+    // Lancer le chargement de la carte dans le widget si c'est une séance GPS
+    if (isGps && typeof _sportInitMap === 'function') {
+        _sportInitMap(seance.id, `sport-map-widget-${seance.id}`);
+    }
 }
 
 async function _ouvrirModaleSportStats() {
@@ -501,115 +516,12 @@ function _sportRenderModaleStatsDepuisSeance(zone, s) {
         </div>
     `;
     
-    // Si c'est une séance GPS, on initialise la carte (chargement dynamique Leaflet)
-    const isGps = s.isGps || s.activity_type === 'marche' || s.activity_type === 'course';
-    if (isGps) {
-        _sportInitMap(s.id);
-    }
-}
-
-// ── CARTOGRAPHIE GPS (LEAFLET DYNAMIQUE) ──
-
-function _loadLeafletDynamically() {
-    return new Promise((resolve) => {
-        if (document.getElementById('leaflet-css')) {
-            resolve();
-            return;
-        }
+    // Si c'est une séance GPS, on initialise la carte dans la modale
+    const isGps = typeof _sportIsGpsActivity === 'function' 
+        ? _sportIsGpsActivity(s.activity_type, s.isGps) 
+        : (s.isGps || s.activity_type === 'marche' || s.activity_type === 'course' || s.activity_type === 'vélo');
         
-        // CSS
-        const link = document.createElement('link');
-        link.id = 'leaflet-css';
-        link.rel = 'stylesheet';
-        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-        document.head.appendChild(link);
-
-        // JS
-        const script = document.createElement('script');
-        script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-        script.onload = resolve;
-        document.head.appendChild(script);
-    });
-}
-
-async function _sportInitMap(sessionId) {
-    const mapDivId = `sport-map-${sessionId}`;
-    const mapDiv = document.getElementById(mapDivId);
-    
-    if (!mapDiv) return;
-
-    try {
-        // 1. On attend que Leaflet (CSS + JS) soit bien chargé
-        await _loadLeafletDynamically();
-
-        // 2. On récupère les points GPS de cette séance via notre nouvelle API
-        const response = await fetch(`/api/sport-gps/sessions/${sessionId}/points`, {
-            headers: _sportAuthHeaders()
-        });
-        const data = await response.json();
-
-        if (!data.success || !data.points || data.points.length === 0) {
-            mapDiv.innerHTML = '<span style="color: #9ca3af;">Aucun tracé GPS enregistré pour cette séance.</span>';
-            return;
-        }
-
-        // On vide le texte "Chargement..."
-        mapDiv.innerHTML = '';
-
-        // 3. Initialisation de la carte Leaflet
-        // On désactive le zoomControl pour garder l'UI épurée dans la modale
-        const map = L.map(mapDivId, {
-            zoomControl: false,
-            dragging: true,
-            scrollWheelZoom: true
-        });
-
-        // 4. Ajout d'un fond de carte très clair et esthétique (CartoDB Voyager)
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
-        }).addTo(map);
-
-        // 5. Préparation des coordonnées
-        const latlngs = data.points.map(p => [p.lat, p.lng]);
-
-        // 6. Dessin du tracé (Ligne violette typique MoaDja)
-        const polyline = L.polyline(latlngs, {
-            color: '#a78bfa',
-            weight: 5,
-            opacity: 0.9,
-            lineJoin: 'round'
-        }).addTo(map);
-
-        // 7. Marqueurs de Début (Vert) et Fin (Rouge)
-        const startPoint = latlngs[0];
-        const endPoint = latlngs[latlngs.length - 1];
-
-        // Petite fonction pour créer des points de couleur propres (sans utiliser d'images externes)
-        const createDotIcon = (color) => L.divIcon({
-            className: 'custom-map-dot',
-            html: `<div style="background-color: ${color}; width: 14px; height: 14px; border-radius: 50%; border: 2.5px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.4);"></div>`,
-            iconSize: [14, 14],
-            iconAnchor: [7, 7] // Centre l'icône sur la coordonnée
-        });
-
-        L.marker(startPoint, { icon: createDotIcon('#10b981') }).addTo(map); // Point Vert
-        
-        // Si on a bougé et qu'on a plus d'un point, on met le point rouge à la fin
-        if (latlngs.length > 1) {
-            L.marker(endPoint, { icon: createDotIcon('#ef4444') }).addTo(map); // Point Rouge
-        }
-
-        // 8. Ajuster la caméra pour que tout le parcours soit visible d'un coup
-        map.fitBounds(polyline.getBounds(), { padding: [20, 20] });
-
-        // IMPORTANT : Leaflet a souvent un bug de rendu quand il est chargé dans une modale
-        // (qui passe de display:none à block). On force un recalcul de la taille après 300ms.
-        setTimeout(() => {
-            map.invalidateSize();
-        }, 300);
-
-    } catch (error) {
-        console.error('[SPORT] Erreur initialisation carte Leaflet :', error);
-        mapDiv.innerHTML = '<span style="color: #ef4444; font-size: 13px;">Impossible de charger la carte.</span>';
+    if (isGps && typeof _sportInitMap === 'function') {
+        _sportInitMap(s.id, `sport-map-modal-${s.id}`);
     }
 }
