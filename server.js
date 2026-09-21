@@ -99,23 +99,15 @@ app.get('/share/seance/:id', async (req, res) => {
     if (isNaN(id)) return res.status(400).send('ID invalide');
 
     try {
-        const { rows } = await pool.query(`
-            SELECT s.id, w.name AS workout_name, u.username, pr.prenom, pr.nom, pr.avatar_url
-            FROM sport_sessions s
-            LEFT JOIN sport_workouts w ON w.id = s.workout_id
-            JOIN users u ON u.id = s.user_id
-            LEFT JOIN profiles pr ON pr.user_id = s.user_id
-            WHERE s.id = \\$1
-        `, [id]);
+        const queryText = 'SELECT s.id, w.name AS workout_name, u.username, pr.prenom FROM sport_sessions s LEFT JOIN sport_workouts w ON w.id = s.workout_id JOIN users u ON u.id = s.user_id LEFT JOIN profiles pr ON pr.user_id = s.user_id WHERE s.id = \$1';
+        const { rows } = await pool.query(queryText, [id]);
 
         if (!rows.length) return res.status(404).send('Séance introuvable');
         
         const session = rows[0];
-        const prenomNom = [session.prenom, session.nom].filter(Boolean).join(' ') || session.username;
+        const prenomNom = session.prenom || session.username;
         const initiales = prenomNom.charAt(0).toUpperCase();
-        const avatarHtml = session.avatar_url 
-            ? `<img src="${session.avatar_url}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;">`
-            : `<div style="width:48px;height:48px;border-radius:50%;background:#7c3aed;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;">${initiales}</div>`;
+        const avatarHtml = `<div style="width:48px;height:48px;border-radius:50%;background:#7c3aed;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;flex-shrink:0;">${initiales}</div>`;
 
         const baseUrl = req.protocol + '://' + req.get('host');
         const imageUrl = `${baseUrl}/uploads/sport_shares/share_seance_${id}.jpg`;
