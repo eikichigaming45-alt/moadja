@@ -81,7 +81,6 @@ function _sportAfficherModePoche(type) {
     if (type === 'course') libelleType = '🏃 COURSE EN COURS';
     if (type === 'vélo' || type === 'velo') libelleType = '🚴 VÉLO EN COURS';
     
-    // Supprimer une éventuelle ancienne bannière
     const oldBanner = document.getElementById('sport-gps-banner');
     if (oldBanner) oldBanner.remove();
 
@@ -89,7 +88,7 @@ function _sportAfficherModePoche(type) {
     div.id = 'sport-poche-ui';
     div.className = 'sport-poche-overlay';
     div.innerHTML = `
-        <div class="sport-poche-horloge" id="gps-horloge">--:--</div>
+        <div class="sport-poche-horloge" id="gps-horloge" style="font-size: 5rem; font-weight: 800; text-align: center; margin-bottom: 20px; color: #ffffff; letter-spacing: 2px;">--:--</div>
         
         <div class="sport-poche-header">
             <div class="sport-poche-type">${libelleType}</div>
@@ -106,7 +105,7 @@ function _sportAfficherModePoche(type) {
                 </div>
                 <div class="sport-poche-stat">
                     <div class="sport-poche-stat-val" id="gps-vit">0.0</div>
-                    <div class="sport-poche-stat-lbl">KM/H</div>
+                    <div class="sport-poche-stat-lbl">KM/H <span style="font-size:10px; opacity:0.6; display:block;">(Instantanée)</span></div>
                 </div>
             </div>
         </div>
@@ -155,12 +154,10 @@ function _sportVerrouillerPoche() {
     document.getElementById('gps-slider-box').style.display = 'block';
 }
 
-// ── MASQUER L'ÉCRAN NOIR ──
 function _sportReduirePoche() {
     const ui = document.getElementById('sport-poche-ui');
     if (ui) ui.style.display = 'none';
     
-    // Créer la pilule flottante
     const banner = document.createElement('div');
     banner.id = 'sport-gps-banner';
     banner.className = 'sport-gps-floating-banner';
@@ -174,7 +171,6 @@ function _sportReduirePoche() {
     document.body.appendChild(banner);
 }
 
-// ── RÉAFFICHER L'ÉCRAN NOIR ──
 function _sportAgrandirPoche() {
     const banner = document.getElementById('sport-gps-banner');
     if (banner) banner.remove();
@@ -182,7 +178,7 @@ function _sportAgrandirPoche() {
     const ui = document.getElementById('sport-poche-ui');
     if (ui) {
         ui.style.display = 'flex';
-        _sportVerrouillerPoche(); // On force le reverrouillage par sécurité
+        _sportVerrouillerPoche();
     }
 }
 
@@ -200,11 +196,7 @@ function _sportUpdateChronoGPS() {
     } else {
         el.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     }
-
-    if (_gpsDistanceKm > 0 && diffSec > 0) {
-        const vitMoyenne = _gpsDistanceKm / (diffSec / 3600);
-        document.getElementById('gps-vit').textContent = vitMoyenne.toFixed(1);
-    }
+    // La mise à jour de la vitesse se fait désormais au rythme des points GPS (vitesse instantanée)
 }
 
 // ── 4. CAPTEUR GPS & CALCULS ──
@@ -227,17 +219,34 @@ function _sportLancerBoucleGPS() {
                 statusEl.className = 'sport-poche-status';
             }
 
-            // On garde le seuil de 100m décidé précédemment si c'était celui en prod.
             if (accuracy > 100) return;
 
             const nouveauPoint = { lat, lng, recorded_at: new Date(ts).toISOString() };
+            let vitesseInstantanee = 0;
+
+            // 1. Priorité absolue : la vitesse matérielle (m/s) remontée par le smartphone (très précis en voiture/vélo)
+            if (position.coords.speed !== null && position.coords.speed >= 0) {
+                vitesseInstantanee = position.coords.speed * 3.6;
+            }
 
             if (_gpsDernierPoint) {
                 const dist = _haversineDistance(_gpsDernierPoint.lat, _gpsDernierPoint.lng, lat, lng);
                 _gpsDistanceKm += dist;
                 const distEl = document.getElementById('gps-dist');
                 if (distEl) distEl.textContent = _gpsDistanceKm.toFixed(2);
+
+                // 2. Fallback de vitesse si le téléphone ne fournit pas `coords.speed`
+                if (vitesseInstantanee === 0) {
+                    const timeDiffSec = (ts - new Date(_gpsDernierPoint.recorded_at).getTime()) / 1000;
+                    if (timeDiffSec > 0) {
+                        vitesseInstantanee = dist / (timeDiffSec / 3600);
+                    }
+                }
             }
+
+            // Mise à jour de l'UI avec la vitesse instantanée
+            const vitEl = document.getElementById('gps-vit');
+            if (vitEl) vitEl.textContent = vitesseInstantanee.toFixed(1);
 
             _gpsDernierPoint = nouveauPoint;
             _gpsPoints.push(nouveauPoint);
@@ -304,6 +313,7 @@ async function _sportTerminerGPS() {
 
     await _sportSauvegarderPointsBatch();
 
+    // La vitesse globale sauvegardée en base reste la vitesse MOYENNE de toute la séance
     let vitMoyenneFinale = null;
     const diffSec = Math.floor((Date.now() - _gpsStartTime) / 1000);
     if (_gpsDistanceKm > 0 && diffSec > 0) {
