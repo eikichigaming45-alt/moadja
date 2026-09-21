@@ -1,5 +1,31 @@
 ## MoaDja
 
+## v1.96.2 - 21 septembre 2026
+- Correction technique : le Tchat ne provoque plus d'erreur de connexion ("Back-Forward Cache") dans la console lorsque l'on quitte l'application et qu'on y revient.
+
+---
+
+## v1.96.1 - 21 septembre 2026
+- Module Sport : correction du partage externe vers WhatsApp. Le lien vers la séance n'apparaît plus en double dans le message.
+
+---
+
+## v1.96 - 21 septembre 2026
+- Module Sport : mise à jour des textes et des traductions sur l'ensemble de l'interface sportive.
+
+---
+
+## v1.95 - 21 septembre 2026
+- Module Sport : amélioration du bouton "Ajouter une série" pendant une séance. Son design est désormais allégé et transparent (style "ghost") pour être moins envahissant.
+- Module Sport : la séance se termine automatiquement dès que la dernière série du dernier exercice est cochée. Il n'est plus obligatoire de cocher 100% des cases précédentes pour voir le bouton de fin.
+
+---
+
+## v1.94 - 21 septembre 2026
+- Module Sport : il est maintenant possible d'ajouter dynamiquement de nouvelles séries (lignes) pendant l'exécution d'un exercice.
+
+---
+
 ## v1.93 - 21 septembre 2026
 - Module Sport & Partage : suppression définitive du partage par Tchat pour simplifier l'interface.
 - Harmonisation du partage externe (WhatsApp, etc.) : envoi direct d'un message complet et soigné incluant l'image haute qualité de la séance et le lien direct.
@@ -12,6 +38,7 @@
 - Amélioration invisible : nettoyage d'anciens codes d'affichage obsolètes dans le module Sport.
 
 ---
+
 
 ## v1.92.74 - 20 septembre 2026
 - Retouche visuelle dans la modale Sport : correction d'un texte "Aucun nouveau record" qui s'affichait en double, et l'icône du trophée reste désormais toujours joliment dorée.
