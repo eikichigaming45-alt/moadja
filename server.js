@@ -100,20 +100,24 @@ app.get('/share/seance/:id', async (req, res) => {
 
     try {
         const { rows } = await pool.query(`
-            SELECT s.id, w.name AS workout_name
+            SELECT s.id, w.name AS workout_name, u.username, pr.prenom
             FROM sport_sessions s
             LEFT JOIN sport_workouts w ON w.id = s.workout_id
+            JOIN users u ON u.id = s.user_id
+            LEFT JOIN profiles pr ON pr.user_id = s.user_id
             WHERE s.id = \$1
         `, [id]);
 
         if (!rows.length) return res.status(404).send('Séance introuvable');
         
         const session = rows[0];
+        const nomAuteur = session.prenom || session.username;
         const baseUrl = req.protocol + '://' + req.get('host');
         const imageUrl = `${baseUrl}/uploads/sport_shares/share_seance_${id}.jpg`;
-        const title = session.workout_name ? `Séance : ${session.workout_name}` : 'Séance Sport MoaDja';
-        const desc = `Découvrez les statistiques de cette séance sur MoaDja !`;
+        const title = `Séance Sport MoaDja de ${nomAuteur}`;
+        const desc = `Découvrez les performances de ${nomAuteur} et rejoignez la communauté MoaDja !`;
 
+        // Design "Landing Page de conversion"
         const html = `<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -129,50 +133,108 @@ app.get('/share/seance/:id', async (req, res) => {
     <meta property="og:image:height" content="630" />
     <meta property="og:site_name" content="MoaDja" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="${title}" />
-    <meta name="twitter:description" content="${desc}" />
-    <meta name="twitter:image" content="${imageUrl}" />
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background: linear-gradient(135deg, #fff0e6 0%, #fdfbfb 50%, #f3e8ff 100%);
             margin: 0;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            box-sizing: border-box;
-        }
-        .container {
-            max-width: 520px;
-            width: 100%;
+            padding: 0;
             display: flex;
             flex-direction: column;
-            gap: 20px;
-            background: rgba(255, 255, 255, 0.7);
+            align-items: center;
+            min-height: 100vh;
+            color: #1f2937;
+        }
+        .navbar {
+            width: 100%;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.6);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            border-radius: 24px;
-            padding: 24px;
-            box-shadow: 0 8px 32px rgba(124, 58, 237, 0.08);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.8);
             box-sizing: border-box;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .nav-logo {
+            font-size: 20px;
+            font-weight: 900;
+            color: #7c3aed;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .nav-login {
+            font-size: 14px;
+            font-weight: 600;
+            color: #4b5563;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s;
+        }
+        .nav-login:hover {
+            background: #f3f4f6;
+        }
+        .hero {
+            max-width: 600px;
+            width: 100%;
+            padding: 40px 20px;
+            text-align: center;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            flex: 1;
+        }
+        h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 800;
+            line-height: 1.2;
+            color: #111827;
+        }
+        h1 span {
+            color: #7c3aed;
+        }
+        p.subtitle {
+            margin: 0;
+            font-size: 16px;
+            color: #6b7280;
+            line-height: 1.5;
         }
         .post-image {
             width: 100%;
-            max-width: 100%;
             height: auto;
-            object-fit: contain;
-            border-radius: 16px;
+            border-radius: 20px;
             display: block;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+            box-shadow: 0 12px 40px rgba(124, 58, 237, 0.15);
             background: #fff;
+            margin-top: 10px;
+        }
+        .cta-container {
+            margin-top: 24px;
+            padding: 24px;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+            border: 1px solid #f3f4f6;
+        }
+        .cta-title {
+            font-weight: 700;
+            font-size: 18px;
+            margin-bottom: 16px;
         }
         .cta-button {
             display: block;
             width: 100%;
-            text-align: center;
             padding: 16px;
             background: #7c3aed;
             color: #ffffff;
@@ -180,8 +242,7 @@ app.get('/share/seance/:id', async (req, res) => {
             border-radius: 16px;
             font-weight: 700;
             font-size: 16px;
-            transition: all 0.2s;
-            box-sizing: border-box;
+            transition: transform 0.2s, box-shadow 0.2s;
             box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
             border: none;
         }
@@ -190,22 +251,50 @@ app.get('/share/seance/:id', async (req, res) => {
             transform: translateY(-2px);
             box-shadow: 0 6px 16px rgba(124, 58, 237, 0.35);
         }
+        
+        /* Cacher la page de promo si l'utilisateur est déjà connecté sur cet appareil */
+        html.auth-ok .promo-content { display: none !important; }
+        html.auth-ok .hero { padding-top: 20px; }
+        html.auth-ok h1 { display: none; }
+        html.auth-ok p.subtitle { display: none; }
     </style>
+    <script>
+        // Mini script anti-flash : si connecté, on masque le blabla promo
+        (function() {
+            try {
+                if (localStorage.getItem('moadja_user')) {
+                    document.documentElement.classList.add('auth-ok');
+                }
+            } catch(e) {}
+        })();
+    </script>
 </head>
 <body>
-    <div class="container">
-        <img src="${imageUrl}" class="post-image" alt="Statistiques de la séance">
-        <a href="https://moadja.fr" class="cta-button" id="cta-btn">Découvrir MoaDja</a>
-    </div>
+    <nav class="navbar promo-content">
+        <a href="https://moadja.fr" class="nav-logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="2.5" y1="7" x2="2.5" y2="17"></line>
+                <line x1="5.5" y1="9" x2="5.5" y2="15"></line>
+                <line x1="18.5" y1="9" x2="18.5" y2="15"></line>
+                <line x1="21.5" y1="7" x2="21.5" y2="17"></line>
+                <line x1="5.5" y1="12" x2="18.5" y2="12"></line>
+            </svg>
+            MoaDja
+        </a>
+        <a href="https://moadja.fr" class="nav-login">Se connecter</a>
+    </nav>
 
-    <script>
-        // Masque le bouton si l'utilisateur est déjà connecté à l'app MoaDja sur ce navigateur
-        try {
-            if (localStorage.getItem('moadja_user')) {
-                document.getElementById('cta-btn').style.display = 'none';
-            }
-        } catch(e) {}
-    </script>
+    <div class="hero">
+        <h1><span>${nomAuteur}</span> a terminé une séance !</h1>
+        <p class="subtitle">Découvrez ses statistiques ci-dessous.</p>
+        
+        <img src="${imageUrl}" class="post-image" alt="Statistiques de la séance">
+        
+        <div class="cta-container promo-content">
+            <div class="cta-title">Envie de suivre vos propres entraînements ?</div>
+            <a href="https://moadja.fr" class="cta-button">Créer mon espace gratuit</a>
+        </div>
+    </div>
 </body>
 </html>`;
         
