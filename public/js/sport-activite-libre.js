@@ -14,7 +14,7 @@ let _gpsDistanceKm = 0;
 let _gpsDernierPoint = null;
 let _gpsActivityType = '';
 
-// ── 1. MODALE DE CHOIX (Marche / Course) ──
+// ── 1. MODALE DE CHOIX (Marche / Course / Vélo) ──
 function _sportActiviteLibreOuvrir() {
     document.getElementById('overlay').classList.add('on');
     document.body.classList.add('modal-open');
@@ -32,6 +32,9 @@ function _sportActiviteLibreOuvrir() {
             </button>
             <button class="sport-seance-btn-ajouter-exercice" style="width:100%; max-width:280px; margin:0; background:rgba(167, 139, 250, 0.15); color:rgb(167, 139, 250); border: 2px solid rgba(167, 139, 250, 0.5); box-shadow:none;" onclick="_sportDemarrerGPS('course')">
                 🏃 Course GPS
+            </button>
+            <button class="sport-seance-btn-ajouter-exercice" style="width:100%; max-width:280px; margin:0; background:rgba(16, 185, 129, 0.15); color:rgb(16, 185, 129); border: 2px solid rgba(16, 185, 129, 0.5); box-shadow:none;" onclick="_sportDemarrerGPS('vélo')">
+                🚴 Vélo GPS
             </button>
         </div>
     `;
@@ -74,7 +77,9 @@ async function _sportDemarrerGPS(type) {
 
 // ── 3. INTERFACE "MODE POCHE" ──
 function _sportAfficherModePoche(type) {
-    const libelleType = type === 'course' ? '🏃 COURSE EN COURS' : '🚶 MARCHE EN COURS';
+    let libelleType = '🚶 MARCHE EN COURS';
+    if (type === 'course') libelleType = '🏃 COURSE EN COURS';
+    if (type === 'vélo' || type === 'velo') libelleType = '🚴 VÉLO EN COURS';
     
     // Supprimer une éventuelle ancienne bannière
     const oldBanner = document.getElementById('sport-gps-banner');
@@ -159,7 +164,11 @@ function _sportReduirePoche() {
     const banner = document.createElement('div');
     banner.id = 'sport-gps-banner';
     banner.className = 'sport-gps-floating-banner';
-    const icone = _gpsActivityType === 'course' ? '🏃' : '🚶';
+    
+    let icone = '🚶';
+    if (_gpsActivityType === 'course') icone = '🏃';
+    if (_gpsActivityType === 'vélo' || _gpsActivityType === 'velo') icone = '🚴';
+    
     banner.innerHTML = `<div class="sport-gps-floating-pulse"></div> ${icone} Activité en cours...`;
     banner.onclick = _sportAgrandirPoche;
     document.body.appendChild(banner);
@@ -218,7 +227,8 @@ function _sportLancerBoucleGPS() {
                 statusEl.className = 'sport-poche-status';
             }
 
-            if (accuracy > 30) return;
+            // On garde le seuil de 100m décidé précédemment si c'était celui en prod.
+            if (accuracy > 100) return;
 
             const nouveauPoint = { lat, lng, recorded_at: new Date(ts).toISOString() };
 

@@ -148,7 +148,7 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
     const nbRecords   = Number.isInteger(s.nb_records) ? s.nb_records : 0;
     const exercices   = s.exercices || [];
     
-    // Détection du mode GPS (fallback robuste si le script gps n'est pas encore chargé)
+    // Détection du mode GPS
     const isGps = typeof _sportIsGpsActivity === 'function' 
         ? _sportIsGpsActivity(s.activity_type, s.isGps) 
         : (s.isGps || s.activity_type === 'marche' || s.activity_type === 'course' || s.activity_type === 'vélo');
@@ -166,14 +166,21 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
             </div>
         `;
         
-        // La carte s'affiche désormais partout (widget, dashboard, modal)
-        // On utilise un ID unique basé sur le mode pour éviter les conflits si affiché à plusieurs endroits
-        const mapHeight = mode === 'widget' ? '180px' : '220px';
-        listeHtml += `
-            <div id="sport-map-${mode}-${s.id}" style="width: 100%; height: ${mapHeight}; margin-top: 16px; border-radius: 12px; background: #f3f4f6; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #9ca3af; z-index: 1; position: relative;">
-                Chargement de la carte... ⏳
-            </div>
-        `;
+        if (mode === 'modal') {
+            // Affichage de la carte UNIQUEMENT dans la modale
+            listeHtml += `
+                <div id="sport-map-modal-${s.id}" style="width: 100%; height: 220px; margin-top: 16px; border-radius: 12px; background: #f3f4f6; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #9ca3af; z-index: 1; position: relative;">
+                    Chargement de la carte... ⏳
+                </div>
+            `;
+        } else {
+            // Dans le widget/dashboard, on met un message incitatif
+            listeHtml += `
+                <div style="margin-top: 12px; padding: 10px; text-align: center; background: rgba(167, 139, 250, 0.1); border-radius: 8px; color: #8b5cf6; font-size: 13px; font-weight: 600;">
+                    🗺️ Cliquez pour voir la carte et le tracé
+                </div>
+            `;
+        }
         
     } else {
         // Affichage musculation standard (liste d'exercices)
@@ -454,14 +461,7 @@ function _sportWidgetOuvrirStats() {
 function _sportRenderWidgetDerniereSeance(zone, seance) {
     _sportWidgetDerniereSeanceCache = seance;
     
-    const isGps = typeof _sportIsGpsActivity === 'function' 
-        ? _sportIsGpsActivity(seance.activity_type, seance.isGps) 
-        : (seance.isGps || seance.activity_type === 'marche' || seance.activity_type === 'course' || seance.activity_type === 'vélo');
-
-    // On désactive le clic pour les séances GPS car la carte est déjà affichée
-    const clickAttr = isGps ? '' : 'onclick="_sportWidgetOuvrirStats()" role="button" tabindex="0" class="sport-widget-clickable"';
-    const cursorStyle = isGps ? 'style="cursor: default;"' : '';
-
+    // Le widget de la colonne de droite redevient cliquable pour tout le monde
     zone.innerHTML = `
         <div class="sport-widget-top">
             <h3 class="sport-widget-top-title">${SPORT_ICONE_DUMBBELL} Sport</h3>
@@ -470,15 +470,10 @@ function _sportRenderWidgetDerniereSeance(zone, seance) {
             </button>
         </div>
 
-        <div ${clickAttr} ${cursorStyle}>
+        <div onclick="_sportWidgetOuvrirStats()" role="button" tabindex="0" class="sport-widget-clickable">
             ${_sportRenderSeanceIso(seance, 'widget')}
         </div>
     `;
-
-    // Lancer le chargement de la carte dans le widget si c'est une séance GPS
-    if (isGps && typeof _sportInitMap === 'function') {
-        _sportInitMap(seance.id, `sport-map-widget-${seance.id}`);
-    }
 }
 
 async function _ouvrirModaleSportStats() {

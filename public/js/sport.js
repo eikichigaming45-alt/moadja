@@ -155,20 +155,6 @@ async function _sportChargerDashboardStats() {
         _sportDashboardSeancesCache = seances;
 
         zone.innerHTML = _sportRenderDashboard(seances);
-        
-        // FIX CARTE GPS : On lance l'initialisation des cartes GPS après l'injection HTML
-        seances.forEach(s => {
-            const isGps = typeof _sportIsGpsActivity === 'function' 
-                ? _sportIsGpsActivity(s.activity_type, s.isGps) 
-                : (s.isGps || s.activity_type === 'marche' || s.activity_type === 'course' || s.activity_type === 'vélo');
-                
-            if (isGps && typeof _sportInitMap === 'function') {
-                setTimeout(() => {
-                    _sportInitMap(s.id, `sport-map-dashboard-${s.id}`);
-                }, 50); // Léger délai pour s'assurer que le DOM est bien dessiné
-            }
-        });
-
     } catch (err) {
         console.error('[SPORT] chargerDashboardStats :', err.message);
         _sportDashboardSeancesCache = [];
@@ -280,19 +266,7 @@ function _sportRenderCarteSeanceRecap(s) {
 
     const isoHtml = _sportRenderSeanceIso(s, 'dashboard', btnSupprHtml);
     
-    // Désactivation du clic si c'est une activité GPS
-    const isGps = typeof _sportIsGpsActivity === 'function' 
-        ? _sportIsGpsActivity(s.activity_type, s.isGps) 
-        : (s.isGps || s.activity_type === 'marche' || s.activity_type === 'course' || s.activity_type === 'vélo');
-
-    if (isGps) {
-        return `
-            <div class="sport-card sport-seance-carte-recap" id="sport-seance-carte-${s.id}" style="cursor: default;">
-                ${isoHtml}
-            </div>
-        `;
-    }
-
+    // Le clic est de nouveau actif pour TOUTES les séances
     return `
         <div class="sport-card sport-seance-carte-recap sport-seance-carte-recap-clickable" id="sport-seance-carte-${s.id}" onclick="_sportOuvrirStatsSeance(${s.id})" role="button" tabindex="0">
             ${isoHtml}
