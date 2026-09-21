@@ -20,6 +20,8 @@ const WGER_BASE_URL = 'https://wger.de/api/v2';
 // Indicatif uniquement, ne remplace pas une mesure médicale.
 const SPORT_MET_MUSCULATION = 5;
 const SPORT_MET_CARDIO      = 6;
+const SPORT_MET_MARCHE      = 4.0;
+const SPORT_MET_COURSE      = 8.0;
 
 // ── ROUTINES : sport_workouts ──
 
@@ -362,7 +364,7 @@ router.put('/days/:dayId/exercises/reorder', auth, async (req, res) => {
             `, [i + 1, idsRecus[i]]);
         }
 
-        await client.query('COMMIT');
+                await client.query('COMMIT');
         res.json({ success: true });
     } catch (err) {
         await client.query('ROLLBACK');
@@ -443,7 +445,7 @@ router.get('/sessions', auth, async (req, res) => {
     const moi = req.user.id;
     try {
         const { rows } = await pool.query(`
-            SELECT id, user_id, workout_id, date_start, date_end, status
+            SELECT id, user_id, workout_id, activity_type, distance_km, vitesse_moyenne_kmh, date_start, date_end, status
             FROM sport_sessions
             WHERE user_id = \$1
             ORDER BY date_start DESC
@@ -459,7 +461,7 @@ router.get('/sessions/active', auth, async (req, res) => {
     const moi = req.user.id;
     try {
         const { rows: sessions } = await pool.query(`
-            SELECT id, user_id, workout_id, date_start, date_end, status
+            SELECT id, user_id, workout_id, activity_type, distance_km, vitesse_moyenne_kmh, date_start, date_end, status
             FROM sport_sessions
             WHERE user_id = \$1 AND status = 'in_progress'
             ORDER BY date_start DESC
@@ -486,7 +488,7 @@ router.get('/sessions/:id', auth, async (req, res) => {
     const id  = parseInt(req.params.id, 10);
     try {
         const { rows: sessions } = await pool.query(`
-            SELECT id, user_id, workout_id, date_start, date_end, status
+            SELECT id, user_id, workout_id, activity_type, distance_km, vitesse_moyenne_kmh, date_start, date_end, status
             FROM sport_sessions
             WHERE id = \$1 AND user_id = \$2
         `, [id, moi]);
@@ -516,7 +518,7 @@ router.post('/sessions', auth, async (req, res) => {
 
     try {
         const { rows: existante } = await pool.query(`
-            SELECT id, user_id, workout_id, date_start, date_end, status
+            SELECT id, user_id, workout_id, activity_type, date_start, date_end, status
             FROM sport_sessions
             WHERE user_id = \$1 AND status = 'in_progress' AND workout_id = \$2
             ORDER BY date_start DESC
@@ -532,8 +534,8 @@ router.post('/sessions', auth, async (req, res) => {
         if (!owner.length) return res.status(403).json({ success: false, message: 'Interdit.' });
         
         const { rows } = await pool.query(`
-            INSERT INTO sport_sessions (user_id, workout_id, date_start)
-            VALUES (\$1, \$2, NOW())
+            INSERT INTO sport_sessions (user_id, workout_id, activity_type, date_start)
+            VALUES (\$1, \$2, 'musculation', NOW())
             RETURNING *
         `, [moi, workoutId]);
         res.json({ success: true, session: rows[0] });
@@ -610,55 +612,82 @@ function _calculerAge(dateNaissance) {
 }
 
 function _sportCalculerStatsSession(session, logs, profil) {
-    const logsValides = logs.filter(l => l.completed);
-
     const dureeSecondes = session.date_end
         ? Math.max(0, Math.round((new Date(session.date_end) - new Date(session.date_start)) / 1000))
         : 0;
 
-    let volumeKg = 0;
-    let nbCardio = 0, nbMusculation = 0;
-
-    logsValides.forEach(l => {
-        const estCardio = l.distance_km != null || l.duration_seconds != null;
-        if (estCardio) {
-            nbCardio++;
-        } else {
-            nbMusculation++;
-            if (l.weight_kg != null && l.reps != null) {
-                volumeKg += parseFloat(l.weight_kg) * l.reps;
-            }
-        }
-    });
-
-    const totalSeries = nbCardio + nbMusculation;
     let calories = null;
     let profil_incomplet = false;
+    const isGps = session.activity_type === 'marche' || session.activity_type === 'course';
 
-    if (totalSeries > 0 && dureeSecondes > 0) {
-        const poids = profil?.poids != null ? parseFloat(profil.poids) : null;
-        const taille = profil?.taille != null ? parseFloat(profil.taille) : null;
-        const age = _calculerAge(profil?.date_naissance);
-        const sexe = profil?.sexe ? profil.sexe.toLowerCase() : null;
+    if (isGps) {
+        if (dureeSecondes > 0) {
+            const poids = profil?.poids != null ? parseFloat(profil.poids) : null;
+            const taille = profil?.taille != null ? parseFloat(profil.taille) : null;
+            const age = _calculerAge(profil?.date_naissance);
+            const sexe = profil?.sexe ? profil.sexe.toLowerCase() : null;
 
-        if (poids && taille && age && (sexe === 'homme' || sexe === 'femme')) {
-            const s = (sexe === 'homme') ? 5 : -161;
-            const bmr = (10 * poids) + (6.25 * taille) - (5 * age) + s;
-            const metPondere = ((nbMusculation * SPORT_MET_MUSCULATION) + (nbCardio * SPORT_MET_CARDIO)) / totalSeries;
-            
-            calories = Math.round(metPondere * (bmr / 24) * (dureeSecondes / 3600));
-        } else {
-            profil_incomplet = true;
+            if (poids && taille && age && (sexe === 'homme' || sexe === 'femme')) {
+                const s = (sexe === 'homme') ? 5 : -161;
+                const bmr = (10 * poids) + (6.25 * taille) - (5 * age) + s;
+                const met = session.activity_type === 'course' ? SPORT_MET_COURSE : SPORT_MET_MARCHE;
+                calories = Math.round(met * (bmr / 24) * (dureeSecondes / 3600));
+            } else {
+                profil_incomplet = true;
+            }
         }
-    }
+        return {
+            dureeSecondes,
+            distanceKm: session.distance_km != null ? parseFloat(session.distance_km) : 0,
+            vitesseKmh: session.vitesse_moyenne_kmh != null ? parseFloat(session.vitesse_moyenne_kmh) : 0,
+            calories,
+            profil_incomplet,
+            isGps: true
+        };
+    } else {
+        const logsValides = logs.filter(l => l.completed);
+        let volumeKg = 0;
+        let nbCardio = 0, nbMusculation = 0;
 
-    return {
-        dureeSecondes,
-        volumeKg: Math.round(volumeKg * 10) / 10,
-        nbSeries: logsValides.length,
-        calories,
-        profil_incomplet
-    };
+        logsValides.forEach(l => {
+            const estCardio = l.distance_km != null || l.duration_seconds != null;
+            if (estCardio) {
+                nbCardio++;
+            } else {
+                nbMusculation++;
+                if (l.weight_kg != null && l.reps != null) {
+                    volumeKg += parseFloat(l.weight_kg) * l.reps;
+                }
+            }
+        });
+
+        const totalSeries = nbCardio + nbMusculation;
+
+        if (totalSeries > 0 && dureeSecondes > 0) {
+            const poids = profil?.poids != null ? parseFloat(profil.poids) : null;
+            const taille = profil?.taille != null ? parseFloat(profil.taille) : null;
+            const age = _calculerAge(profil?.date_naissance);
+            const sexe = profil?.sexe ? profil.sexe.toLowerCase() : null;
+
+            if (poids && taille && age && (sexe === 'homme' || sexe === 'femme')) {
+                const s = (sexe === 'homme') ? 5 : -161;
+                const bmr = (10 * poids) + (6.25 * taille) - (5 * age) + s;
+                const metPondere = ((nbMusculation * SPORT_MET_MUSCULATION) + (nbCardio * SPORT_MET_CARDIO)) / totalSeries;
+                calories = Math.round(metPondere * (bmr / 24) * (dureeSecondes / 3600));
+            } else {
+                profil_incomplet = true;
+            }
+        }
+
+        return {
+            dureeSecondes,
+            volumeKg: Math.round(volumeKg * 10) / 10,
+            nbSeries: logsValides.length,
+            calories,
+            profil_incomplet,
+            isGps: false
+        };
+    }
 }
 
 function _sportConsoliderExercicesSession(logs) {
@@ -745,7 +774,7 @@ router.get('/dashboard-stats', auth, async (req, res) => {
         const profil = profilRows[0] || {};
 
         const { rows: sessions } = await pool.query(`
-            SELECT s.id, s.workout_id, s.date_start, s.date_end, w.name AS workout_name
+            SELECT s.id, s.workout_id, s.activity_type, s.distance_km, s.vitesse_moyenne_kmh, s.date_start, s.date_end, w.name AS workout_name
             FROM sport_sessions s
             LEFT JOIN sport_workouts w ON w.id = s.workout_id
             WHERE s.user_id = \$1 AND s.status = 'completed'
@@ -766,9 +795,18 @@ router.get('/dashboard-stats', auth, async (req, res) => {
             const logsSession = tousLogs.filter(l => l.session_id === s.id);
             const stats = _sportCalculerStatsSession(s, logsSession, profil);
             const exercicesConsolides = _sportConsoliderExercicesSession(logsSession);
+            
+            let nomAffiche = s.workout_name;
+            if (!nomAffiche) {
+                if (s.activity_type === 'course') nomAffiche = 'Course à pied';
+                else if (s.activity_type === 'marche') nomAffiche = 'Marche';
+                else nomAffiche = 'Séance';
+            }
+
             return {
                 id: s.id,
-                workout_name: s.workout_name || 'Séance',
+                activity_type: s.activity_type,
+                workout_name: nomAffiche,
                 date_start: s.date_start,
                 date_end: s.date_end,
                 ...stats,
@@ -817,7 +855,7 @@ router.post('/sessions/:sessionId/logs', auth, async (req, res) => {
         `, [sessionId, moi]);
         if (!owner.length) return res.status(403).json({ success: false, message: 'Interdit.' });
 
-                const { rows } = await pool.query(`
+        const { rows } = await pool.query(`
             INSERT INTO sport_session_logs
                 (session_id, wger_exercise_id, exercise_name, set_number, reps, weight_kg,
                  completed, logged_at, rest_seconds, distance_km, speed_kmh, incline_percent, duration_seconds)
@@ -1022,7 +1060,7 @@ function _nettoyerNomBase(nom) {
 }
 
 function _nettoyerParenthesesNonLatines(nom) {
-    return nom.replace(/\s*$([^()]*)$/g, (match, interieur) => {
+    return nom.replace(/\s*$([^]*)$/g, (match, interieur) => {
         return /[a-zA-Z]/.test(interieur) ? match : '';
     }).trim();
 }
@@ -1192,7 +1230,7 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
 
     try {
         const { rows: sessions } = await pool.query(`
-            SELECT s.id, s.date_start, s.date_end, w.name AS workout_name
+            SELECT s.id, s.workout_id, s.activity_type, s.distance_km, s.vitesse_moyenne_kmh, s.date_start, s.date_end, w.name AS workout_name
             FROM sport_sessions s
             LEFT JOIN sport_workouts w ON w.id = s.workout_id
             WHERE s.id = \$1 AND s.user_id = \$2
@@ -1211,13 +1249,24 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
         const exercicesConsolides = _sportConsoliderExercicesSession(logs);
         const records = await _sportDetecterRecords(moi, id, logs);
         
-        const routineName = _echapperXML(session.workout_name || 'Séance MoaDja');
+        let routineName = session.workout_name;
+        if (!routineName) {
+            if (session.activity_type === 'course') routineName = 'Course à pied';
+            else if (session.activity_type === 'marche') routineName = 'Marche';
+            else routineName = 'Séance MoaDja';
+        }
+        routineName = _echapperXML(routineName);
+
         const dateStr = session.date_end 
             ? new Date(session.date_end).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }).replace('.', '')
             : 'En cours';
             
         const dureeStr = _formatDurationLongSVG(stats.dureeSecondes);
-        const volumeStr = `${stats.volumeKg} kg`;
+        
+        const isGps = stats.isGps;
+        const bloc2Label = isGps ? 'DISTANCE' : 'VOLUME';
+        const bloc2Value = isGps ? `${stats.distanceKm.toFixed(2)} km` : `${stats.volumeKg} kg`;
+
         const caloriesStr = stats.calories ? `${stats.calories} kcal` : '—';
         const nbRecords = records.length;
 
@@ -1267,8 +1316,8 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
             <text x="270" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="900" fill="#1f2937" text-anchor="middle">${dureeStr}</text>
 
             <rect x="450" y="190" width="300" height="90" rx="16" fill="#ffffff" filter="url(#shadowStat)" stroke="#f3f4f6" stroke-width="1" />
-            <text x="600" y="220" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#9ca3af" letter-spacing="1" text-anchor="middle">VOLUME</text>
-            <text x="600" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="900" fill="#1f2937" text-anchor="middle">${volumeStr}</text>
+            <text x="600" y="220" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#9ca3af" letter-spacing="1" text-anchor="middle">${bloc2Label}</text>
+            <text x="600" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="900" fill="#1f2937" text-anchor="middle">${bloc2Value}</text>
 
             <rect x="780" y="190" width="300" height="90" rx="16" fill="#ffffff" filter="url(#shadowStat)" stroke="#f3f4f6" stroke-width="1" />
             <text x="930" y="220" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#9ca3af" letter-spacing="1" text-anchor="middle">CALORIES</text>
@@ -1276,38 +1325,52 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
         `;
 
         let yEx = 340;
-        const maxEx = 5;
-        const nbAffiches = Math.min(exercicesConsolides.length, maxEx);
-
-        for (let i = 0; i < nbAffiches; i++) {
-            const ex = exercicesConsolides[i];
-            const nom = _echapperXML(ex.exercise_name);
-            
-            let detail = '';
-            if (ex.series && ex.series.length > 0) {
-                detail = _formatDetailSerieSVG(ex.series[0], ex.est_cardio);
-            }
-            detail = _echapperXML(detail);
-
+        
+        if (isGps) {
+            // Affichage spécifique GPS
             svg += `
             <text x="120" y="${yEx}" font-family="system-ui, -apple-system, sans-serif" font-size="22">
-                <tspan font-weight="800" fill="#8b5cf6">${ex.nb_series}x</tspan>
-                <tspan font-weight="600" fill="#374151" dx="15">${nom}</tspan>
-                ${detail ? `
+                <tspan font-weight="800" fill="#8b5cf6">📍 Vitesse moyenne</tspan>
                 <tspan fill="#9ca3af" dx="15">·</tspan>
-                <tspan font-weight="600" fill="#a78bfa" dx="15">${detail}</tspan>
-                ` : ''}
+                <tspan font-weight="600" fill="#374151" dx="15">${stats.vitesseKmh.toFixed(1)} km/h</tspan>
             </text>
             `;
-            yEx += 42;
+            // Note: On pourrait ajouter une carte ou un graphique ici plus tard (Etape 3).
+        } else {
+            // Affichage musculation standard
+            const maxEx = 5;
+            const nbAffiches = Math.min(exercicesConsolides.length, maxEx);
+
+            for (let i = 0; i < nbAffiches; i++) {
+                const ex = exercicesConsolides[i];
+                const nom = _echapperXML(ex.exercise_name);
+                
+                let detail = '';
+                if (ex.series && ex.series.length > 0) {
+                    detail = _formatDetailSerieSVG(ex.series[0], ex.est_cardio);
+                }
+                detail = _echapperXML(detail);
+
+                svg += `
+                <text x="120" y="${yEx}" font-family="system-ui, -apple-system, sans-serif" font-size="22">
+                    <tspan font-weight="800" fill="#8b5cf6">${ex.nb_series}x</tspan>
+                    <tspan font-weight="600" fill="#374151" dx="15">${nom}</tspan>
+                    ${detail ? `
+                    <tspan fill="#9ca3af" dx="15">·</tspan>
+                    <tspan font-weight="600" fill="#a78bfa" dx="15">${detail}</tspan>
+                    ` : ''}
+                </text>
+                `;
+                yEx += 42;
+            }
+
+            if (exercicesConsolides.length > maxEx) {
+                const restants = exercicesConsolides.length - maxEx;
+                svg += `<text x="120" y="${yEx}" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-style="italic" fill="#9ca3af">...et ${restants} autre${restants > 1 ? 's' : ''}</text>`;
+            }
         }
 
-        if (exercicesConsolides.length > maxEx) {
-            const restants = exercicesConsolides.length - maxEx;
-            svg += `<text x="120" y="${yEx}" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-style="italic" fill="#9ca3af">...et ${restants} autre${restants > 1 ? 's' : ''}</text>`;
-        }
-
-        // Logo MoaDja aligné en bas à droite (ajusté pour ne pas déborder)
+        // Logo MoaDja aligné en bas à droite
         svg += `
             <g transform="translate(980, 540)">
                 <path d="M-15,-6 L-15,6 M-9,-2 L-9,2 M9,-2 L9,2 M15,-6 L15,6 M-9,0 L9,0" stroke="#8b5cf6" stroke-width="2.5" stroke-linecap="round" fill="none"/>
@@ -1340,4 +1403,3 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
 });
 
 module.exports = router;
-
