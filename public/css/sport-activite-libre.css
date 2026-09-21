@@ -31,7 +31,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: 10px;
     flex-wrap: wrap;
 }
 
@@ -40,6 +40,20 @@
 .sport-ready-info .sport-cta-btn,
 .sport-ready-info .sport-cta-btn-secondary {
     align-self: center;
+}
+
+/* Réduction de taille des 2 boutons UNIQUEMENT dans cette carte
+   (sport-ready-btns) — ne touche pas .sport-cta-btn utilisé ailleurs
+   dans le reste du module Sport. */
+.sport-ready-btns .sport-cta-btn,
+.sport-ready-btns .sport-cta-btn-secondary {
+    padding: 8px 14px;
+    font-size: 12.5px;
+}
+.sport-ready-btns .sport-cta-btn svg,
+.sport-ready-btns .sport-cta-btn-secondary svg {
+    width: 15px;
+    height: 15px;
 }
 
 /* Bouton "Activité libre" — style ghost/secondaire : contour violet,
