@@ -258,7 +258,7 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
     `;
 }
 
-// ── Modale de choix de partage (Étape 2 - Backend connecté) ──
+// ── Modale de choix de partage ──
 function _sportOuvrirModalPartage(event, sessionId) {
     if (event) event.stopPropagation();
 
@@ -313,9 +313,11 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
         const imageUrl = data.imageUrl;
         const openGraphUrl = `${window.location.origin}/share/seance/${sessionId}`;
         
-        // Double saut de ligne pour forcer le Tchat à isoler l'URL
-        const textePartage = `🏋️‍♂️ Ma séance : ${nomRoutine}\nDécouvre mes stats sur MoaDja !`;
-        const texteTchat = `${textePartage}\n\n${openGraphUrl}`;
+        // Textes adaptés selon la destination (interne vs externe)
+        const texteInterne = `🏋️‍♂️ Séance terminée : ${nomRoutine}`;
+        const texteExterne = `🏋️‍♂️ Ma séance : ${nomRoutine}\nDécouvre mes stats sur MoaDja !`;
+        
+        const texteTchat = `${texteInterne}\n\n${openGraphUrl}`;
 
         closeModal();
 
@@ -325,10 +327,10 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
             switchTab('accueil');
             if (typeof ouvrirModalPost === 'function') ouvrirModalPost();
             
-            // Le setTimeout garantit que l'input du feed existe bien dans le DOM (augmenté à 400ms)
+            // Le setTimeout garantit que l'input du feed existe bien dans le DOM
             setTimeout(async () => {
                 const inputTexte = document.getElementById('post-contenu');
-                if (inputTexte) inputTexte.value = textePartage;
+                if (inputTexte) inputTexte.value = texteInterne; // Texte épuré pour le feed
                 
                 try {
                     const repImg = await fetch(imageUrl);
@@ -351,7 +353,7 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
             }, 400);
         } 
         else if (destination === 'tchat') {
-            // Lien isolé avec double saut de ligne
+            // Lien isolé avec double saut de ligne, sans pub externe
             await navigator.clipboard.writeText(texteTchat);
             alert('Lien de la séance copié ! Sélectionnez un contact et collez le message.');
             
@@ -364,16 +366,17 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
             }
         } 
         else if (destination === 'externe') {
-            // Web Share API native
+            // Web Share API native : message complet avec "Découvre mes stats"
             if (navigator.share) {
                 await navigator.share({
                     title: `Séance : ${nomRoutine}`,
-                    text: textePartage,
+                    text: texteExterne, 
                     url: openGraphUrl
                 }).catch(console.error);
             } else {
-                // Fallback PC (double saut de ligne aussi pour être propre)
-                await navigator.clipboard.writeText(texteTchat);
+                // Fallback PC
+                const texteFallback = `${texteExterne}\n\n${openGraphUrl}`;
+                await navigator.clipboard.writeText(texteFallback);
                 alert('Lien copié dans le presse-papiers ! Vous pouvez le coller où vous voulez (WhatsApp Web, Facebook...).');
             }
         }
