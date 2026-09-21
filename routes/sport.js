@@ -510,13 +510,11 @@ router.post('/sessions', auth, async (req, res) => {
     const moi       = req.user.id;
     const workoutId = req.body.workout_id || null;
 
-    // FIX 6.8 : workout_id strictement obligatoire pour créer une session
     if (!workoutId) {
         return res.status(400).json({ success: false, message: 'workout_id requis.' });
     }
 
     try {
-        // FIX 6.8 : On vérifie s'il existe une séance active POUR CETTE ROUTINE spécifiquement
         const { rows: existante } = await pool.query(`
             SELECT id, user_id, workout_id, date_start, date_end, status
             FROM sport_sessions
@@ -623,7 +621,7 @@ function _sportCalculerStatsSession(session, logs, profil) {
     let nbCardio = 0, nbMusculation = 0;
 
     logsValides.forEach(l => {
-        const estCardio = l.distance_km != null || l.duration_seconds != null;
+                const estCardio = l.distance_km != null || l.duration_seconds != null;
         if (estCardio) {
             nbCardio++;
         } else {
@@ -1161,12 +1159,35 @@ router.get('/wger/exercises', auth, async (req, res) => {
 
 // ── PARTAGE DE SÉANCE : GÉNÉRATION IMAGE (PHASE 1) ──
 
-function _formatDurationShort(secondes) {
-    if (!secondes) return '0min';
+// Nouvelle fonction de formatage pour reproduire fidèlement "13min16"
+function _formatDurationLongSVG(secondes) {
+    if (!secondes) return '0s';
     const h = Math.floor(secondes / 3600);
     const m = Math.floor((secondes % 3600) / 60);
-    if (h > 0) return `${h}h${m > 0 ? m.toString().padStart(2, '0') + 'min' : ''}`;
-    return `${m}min`;
+    const s = secondes % 60;
+    if (h > 0) return `${h}h${String(m).padStart(2, '0')}`;
+    if (m > 0) return `${m}min${String(s).padStart(2, '0')}`;
+    return `${s}s`;
+}
+
+// Formatage du détail de la série (reps ou durée) pour le SVG
+function _formatDetailSerieSVG(serie, estCardio) {
+    if (estCardio) {
+        if (serie.duration_seconds != null) return _formatDurationLongSVG(serie.duration_seconds);
+        if (serie.distance_km != null) return `${serie.distance_km} km`;
+        return '';
+    }
+    return serie.reps != null ? `${serie.reps} reps` : '';
+}
+
+// Échappement basique pour le XML/SVG
+function _echapperXML(str) {
+    return (str || '').toString()
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
 }
 
 router.post('/sessions/:id/generate-share', auth, async (req, res) => {
@@ -1187,7 +1208,7 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
         }
         const session = sessions[0];
 
-        // 2. Récupération logs & profil
+                // 2. Récupération logs & profil
         const { rows: logs } = await pool.query(`SELECT * FROM sport_session_logs WHERE session_id = \$1 ORDER BY id ASC`, [id]);
         const { rows: profilRows } = await pool.query(`SELECT poids, taille, sexe, date_naissance FROM profiles WHERE user_id = \$1`, [moi]);
         const profil = profilRows[0] || {};
@@ -1198,89 +1219,124 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
         const records = await _sportDetecterRecords(moi, id, logs);
         
         // 4. Formatage
-        const routineName = session.workout_name || 'Séance MoaDja';
+        const routineName = _echapperXML(session.workout_name || 'Séance MoaDja');
         const dateStr = session.date_end 
-            ? new Date(session.date_end).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
+            ? new Date(session.date_end).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }).replace('.', '')
             : 'En cours';
             
-        const dureeStr = _formatDurationShort(stats.dureeSecondes);
+        const dureeStr = _formatDurationLongSVG(stats.dureeSecondes);
         const volumeStr = `${stats.volumeKg} kg`;
         const caloriesStr = stats.calories ? `${stats.calories} kcal` : '--';
         const nbRecords = records.length;
 
-        // 5. Génération du SVG - Design Premium Dark Mode
+        // 5. Génération du SVG - Design Clair (Fidèle au Widget natif)
         let svg = `
         <svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
             <defs>
-                <!-- Dégradé de fond -->
+                <!-- Dégradé de fond global (rappel --app-bg-gradient) -->
                 <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#0f172a" /> <!-- Slate 900 -->
-                    <stop offset="100%" stop-color="#2e1065" /> <!-- Violet foncé -->
+                    <stop offset="0%" stop-color="#fff0e6" />   <!-- Pêche très clair -->
+                    <stop offset="50%" stop-color="#fdfbfb" />  <!-- Blanc cassé -->
+                    <stop offset="100%" stop-color="#f3e8ff" /> <!-- Lavande très clair -->
                 </linearGradient>
-                <!-- Ombre de la carte -->
-                <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
-                    <feDropShadow dx="0" dy="12" stdDeviation="15" flood-color="#000000" flood-opacity="0.4" />
+                
+                <!-- Ombre douce de la carte principale -->
+                <filter id="shadowCard" x="-5%" y="-5%" width="110%" height="110%">
+                    <feDropShadow dx="0" dy="8" stdDeviation="20" flood-color="#7c3aed" flood-opacity="0.08" />
+                </filter>
+                
+                <!-- Ombre des mini-cartes de stats -->
+                <filter id="shadowStat" x="-5%" y="-5%" width="110%" height="110%">
+                    <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="0.04" />
                 </filter>
             </defs>
 
-            <!-- Fond global -->
+            <!-- Fond -->
             <rect width="1200" height="630" fill="url(#bgGradient)" />
 
-            <!-- Carte principale -->
-            <rect x="80" y="60" width="1040" height="510" rx="32" fill="#1e293b" filter="url(#shadow)" stroke="#4c1d95" stroke-width="2" />
+            <!-- Carte principale translucide -->
+            <rect x="60" y="50" width="1080" height="530" rx="32" fill="#ffffff" fill-opacity="0.85" filter="url(#shadowCard)" stroke="#ffffff" stroke-width="2" />
 
-            <!-- Titre et Date -->
-            <text x="140" y="150" font-family="system-ui, -apple-system, sans-serif" font-size="44" font-weight="900" fill="#ffffff">${routineName}</text>
-            <text x="140" y="195" font-family="system-ui, -apple-system, sans-serif" font-size="26" fill="#94a3b8">${dateStr}</text>
+            <!-- En-tête : Titre et Date -->
+            <text x="120" y="130" font-family="system-ui, -apple-system, sans-serif" font-size="38" font-weight="900" fill="#1f2937">${routineName}</text>
+            <text x="1080" y="130" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="600" fill="#9ca3af" text-anchor="end">${dateStr}</text>
         `;
 
-        // Badge Records (aligné à droite de l'en-tête)
-        if (nbRecords > 0) {
+        // Badge Record
+        if (nbRecords === 0) {
             svg += `
-            <rect x="890" y="110" width="170" height="50" rx="25" fill="#a855f7" fill-opacity="0.15" stroke="#a855f7" stroke-width="1.5" />
-            <text x="975" y="142" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="bold" fill="#d8b4fe" text-anchor="middle">🏆 ${nbRecords} Record${nbRecords > 1 ? 's' : ''}</text>
+            <rect x="120" y="155" width="260" height="40" rx="20" fill="#f3f4f6" stroke="#e5e7eb" stroke-width="1" />
+            <text x="140" y="182" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="#eab308">🏆</text>
+            <text x="175" y="182" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="bold" fill="#9ca3af">Aucun nouveau record</text>
+            `;
+        } else {
+            svg += `
+            <rect x="120" y="155" width="200" height="40" rx="20" fill="#f3e8ff" stroke="#d8b4fe" stroke-width="1" />
+            <text x="140" y="182" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="#eab308">🏆</text>
+            <text x="175" y="182" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="bold" fill="#7c3aed">${nbRecords} Record${nbRecords > 1 ? 's' : ''}</text>
             `;
         }
 
-        // Ligne de Statistiques (Labels en petites majuscules espacées)
+        // 3 Mini-cartes de Statistiques
         svg += `
-            <!-- Labels -->
-            <text x="140" y="270" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#64748b" letter-spacing="2">DURÉE</text>
-            <text x="420" y="270" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#64748b" letter-spacing="2">VOLUME</text>
-            <text x="700" y="270" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="700" fill="#64748b" letter-spacing="2">CALORIES</text>
+            <!-- Encadrement Durée -->
+            <rect x="120" y="230" width="300" height="110" rx="16" fill="#ffffff" filter="url(#shadowStat)" stroke="#f3f4f6" stroke-width="1" />
+            <text x="270" y="265" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="800" fill="#9ca3af" letter-spacing="1" text-anchor="middle">DURÉE</text>
+            <text x="270" y="315" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="900" fill="#1f2937" text-anchor="middle">${dureeStr}</text>
 
-            <!-- Valeurs -->
-            <text x="140" y="320" font-family="system-ui, -apple-system, sans-serif" font-size="42" font-weight="bold" fill="#f8fafc">${dureeStr}</text>
-            <text x="420" y="320" font-family="system-ui, -apple-system, sans-serif" font-size="42" font-weight="bold" fill="#f8fafc">${volumeStr}</text>
-            <text x="700" y="320" font-family="system-ui, -apple-system, sans-serif" font-size="42" font-weight="bold" fill="#fb7185">${caloriesStr}</text>
-            
-            <!-- Ligne séparatrice discrète -->
-            <line x1="140" y1="365" x2="1060" y2="365" stroke="#334155" stroke-width="2" />
+            <!-- Encadrement Volume -->
+            <rect x="450" y="230" width="300" height="110" rx="16" fill="#ffffff" filter="url(#shadowStat)" stroke="#f3f4f6" stroke-width="1" />
+            <text x="600" y="265" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="800" fill="#9ca3af" letter-spacing="1" text-anchor="middle">VOLUME</text>
+            <text x="600" y="315" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="900" fill="#1f2937" text-anchor="middle">${volumeStr}</text>
+
+            <!-- Encadrement Calories -->
+            <rect x="780" y="230" width="300" height="110" rx="16" fill="#ffffff" filter="url(#shadowStat)" stroke="#f3f4f6" stroke-width="1" />
+            <text x="930" y="265" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="800" fill="#9ca3af" letter-spacing="1" text-anchor="middle">CALORIES</text>
+            <text x="930" y="315" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="900" fill="#ef4444" text-anchor="middle">${caloriesStr}</text>
         `;
 
-        // Liste des exercices (max 4 pour garder un rendu ultra aéré)
-        let yEx = 425;
-        const maxEx = 4;
+        // Liste des exercices (max 5 lignes pour la lisibilité)
+        let yEx = 400;
+        const maxEx = 5;
         const nbAffiches = Math.min(exercicesConsolides.length, maxEx);
 
         for (let i = 0; i < nbAffiches; i++) {
             const ex = exercicesConsolides[i];
+            const nom = _echapperXML(ex.exercise_name);
+            
+            // Formatage du détail de la première série
+            let detail = '';
+            if (ex.series && ex.series.length > 0) {
+                detail = _formatDetailSerieSVG(ex.series[0], ex.est_cardio);
+            }
+            detail = _echapperXML(detail);
+
             svg += `
-            <text x="140" y="${yEx}" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="bold" fill="#a855f7">${ex.nb_series}x</text>
-            <text x="195" y="${yEx}" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="500" fill="#e2e8f0">${ex.exercise_name}</text>
+            <text x="120" y="${yEx}" font-family="system-ui, -apple-system, sans-serif" font-size="22">
+                <tspan font-weight="800" fill="#8b5cf6">${ex.nb_series}x</tspan>
+                <tspan font-weight="600" fill="#374151" dx="15">${nom}</tspan>
+                ${detail ? `
+                <tspan fill="#9ca3af" dx="15">·</tspan>
+                <tspan font-weight="600" fill="#a78bfa" dx="15">${detail}</tspan>
+                ` : ''}
+            </text>
             `;
-            yEx += 40;
+            yEx += 45; // Espacement interligne
         }
 
+        // Mention "...et X autres"
         if (exercicesConsolides.length > maxEx) {
             const restants = exercicesConsolides.length - maxEx;
-            svg += `<text x="140" y="${yEx}" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-style="italic" fill="#64748b">...et ${restants} autre${restants > 1 ? 's' : ''} exercice${restants > 1 ? 's' : ''}</text>`;
+            svg += `<text x="120" y="${yEx}" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-style="italic" fill="#9ca3af">...et ${restants} autre${restants > 1 ? 's' : ''}</text>`;
         }
 
-        // Marque MoaDja (Alignée à droite, isolée dans le coin inférieur)
+        // Footer centré (Logo MoaDja violet)
         svg += `
-            <text x="1060" y="500" font-family="system-ui, -apple-system, sans-serif" font-size="34" font-weight="900" fill="#a855f7" text-anchor="end">MoaDja</text>
-            <text x="1060" y="525" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="500" fill="#94a3b8" text-anchor="end">Sport &amp; Bien-être</text>
+            <g transform="translate(560, 545)">
+                <!-- Icône haltère SVG stylisée -->
+                <path d="M-15,-6 L-15,6 M-9,-2 L-9,2 M9,-2 L9,2 M15,-6 L15,6 M-9,0 L9,0" stroke="#8b5cf6" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+                <text x="25" y="6" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="900" fill="#8b5cf6">MoaDja</text>
+            </g>
         </svg>
         `;
 
@@ -1294,7 +1350,7 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
         const filePath = path.join(uploadsDir, fileName);
 
         await sharp(Buffer.from(svg))
-            .jpeg({ quality: 95 }) // Qualité augmentée pour éviter la pixellisation des textes
+            .jpeg({ quality: 95 }) // Qualité maximale pour textes nets
             .toFile(filePath);
 
         res.json({ 

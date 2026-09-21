@@ -144,7 +144,7 @@ app.get('/share/seance/:id', async (req, res) => {
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background: #0f172a;
+            background: linear-gradient(135deg, #fff0e6 0%, #fdfbfb 50%, #f3e8ff 100%);
             margin: 0;
             padding: 20px;
             display: flex;
@@ -152,14 +152,22 @@ app.get('/share/seance/:id', async (req, res) => {
             align-items: center;
             min-height: 100vh;
             box-sizing: border-box;
-            color: #f8fafc;
+            color: #1f2937;
         }
         .container {
-            max-width: 480px;
+            max-width: 520px;
             width: 100%;
             display: flex;
             flex-direction: column;
             gap: 20px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(124, 58, 237, 0.08);
+            box-sizing: border-box;
         }
         .header {
             display: flex;
@@ -167,8 +175,8 @@ app.get('/share/seance/:id', async (req, res) => {
             gap: 12px;
         }
         .avatar {
-            width: 44px;
-            height: 44px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
             background: linear-gradient(135deg, #7c3aed, #6d28d9);
             color: white;
@@ -176,43 +184,51 @@ app.get('/share/seance/:id', async (req, res) => {
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 16px;
+            font-size: 18px;
             box-shadow: 0 4px 12px rgba(124,58,237,0.3);
+            flex-shrink: 0;
         }
         .author-name {
-            font-weight: 700;
-            font-size: 15px;
-            color: #f1f5f9;
+            font-weight: 800;
+            font-size: 16px;
+            color: #1f2937;
         }
         .author-handle {
-            color: #94a3b8;
-            font-size: 13px;
+            color: #6b7280;
+            font-size: 14px;
             margin-top: 2px;
+            font-weight: 500;
         }
         .post-image {
             width: 100%;
+            max-width: 100%;
             height: auto;
+            object-fit: contain;
             border-radius: 16px;
             display: block;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+            background: #fff; /* Fond blanc au cas où l'image aurait une transparence inattendue */
         }
         .cta-button {
             display: block;
             width: 100%;
             text-align: center;
             padding: 16px;
-            background: rgba(124, 58, 237, 0.15);
-            color: #a78bfa;
-            border: 1px solid rgba(124, 58, 237, 0.3);
+            background: #7c3aed;
+            color: #ffffff;
             text-decoration: none;
             border-radius: 16px;
-            font-weight: 600;
+            font-weight: 700;
+            font-size: 16px;
             transition: all 0.2s;
             box-sizing: border-box;
+            box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
+            border: none;
         }
         .cta-button:hover {
-            background: rgba(124, 58, 237, 0.25);
-            color: #fff;
+            background: #6d28d9;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(124, 58, 237, 0.35);
         }
     </style>
 </head>
