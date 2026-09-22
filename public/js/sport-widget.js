@@ -1,6 +1,9 @@
 // ============================================================
 // public/js/sport-widget.js
 // ============================================================
+// Widget Sport global (colonne droite, visible sur tous les onglets) +
+// utilitaires partagés avec sport.js (auth, formatage, échappement HTML,
+// icônes communes). DOIT être chargé AVANT sport.js dans index.html.
 
 const SPORT_ICONE_DUMBBELL = `
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -9,6 +12,13 @@ const SPORT_ICONE_DUMBBELL = `
         <line x1="18.5" y1="9" x2="18.5" y2="15"></line>
         <line x1="21.5" y1="7" x2="21.5" y2="17"></line>
         <line x1="5.5" y1="12" x2="18.5" y2="12"></line>
+    </svg>
+`;
+
+const SPORT_ICONE_FLECHE = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14"></path>
+        <path d="M12 5l7 7-7 7"></path>
     </svg>
 `;
 
@@ -44,6 +54,8 @@ const SPORT_ICONE_LOGO_MINI = `
 
 const SPORT_WIDGET_MAX_EXERCICES_APERCU = 3;
 
+// ── AUTH ──
+
 function _sportToken() {
     try { return JSON.parse(localStorage.getItem('moadja_user'))?.token || ''; }
     catch { return ''; }
@@ -56,6 +68,7 @@ function _sportAuthHeaders() {
     };
 }
 
+// ── Échappement HTML (anti-XSS) ──
 function _sportEchapper(str) {
     return (str || '')
         .replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -63,6 +76,7 @@ function _sportEchapper(str) {
         .replace(/'/g, '&#39;');
 }
 
+// ── Formatage date courte ──
 function _sportFormatDateCourte(dateIso) {
     const MOIS_ABREGES = ['janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
     const d = new Date(dateIso);
@@ -70,6 +84,7 @@ function _sportFormatDateCourte(dateIso) {
     return `${d.getDate()} ${MOIS_ABREGES[d.getMonth()]}`;
 }
 
+// ── Formatage durée longue ──
 function _sportFormatDureeLongue(secondes) {
     const h = Math.floor(secondes / 3600);
     const m = Math.floor((secondes % 3600) / 60);
@@ -79,126 +94,181 @@ function _sportFormatDureeLongue(secondes) {
     return `${s}s`;
 }
 
+// ── Détail d'une série individuelle ──
 function _sportFormatDetailSerie(serie, estCardio) {
     if (estCardio) {
         const morceaux = [];
         if (Number.isInteger(serie.duration_seconds)) morceaux.push(_sportFormatDureeLongue(serie.duration_seconds));
         if (serie.distance_km != null) morceaux.push(`${serie.distance_km.toString().replace('.', ',')} km`);
-        if (serie.speed_kmh != null) morceaux.push(`${serie.speed_kmh.toString().replace('.', ',')} km/h`);
-        return morceaux.join(' - ');
+        if (serie.speed_kmh != null) morceaux.push(`${serie.speed_kmh} km/h`);
+        if (serie.incline_percent != null) morceaux.push(`${serie.incline_percent}%`);
+        return morceaux.length ? morceaux.join(' · ') : '—';
     }
-    const m = [];
-    if (serie.weight_kg != null && serie.weight_kg > 0) m.push(`${serie.weight_kg} kg`);
-    if (serie.reps != null) m.push(`${serie.reps} reps`);
-    if (serie.duration_seconds != null && serie.duration_seconds > 0) m.push(_sportFormatDureeLongue(serie.duration_seconds));
-    return m.join(' - ');
+    if (serie.weight_kg != null) {
+        return `${serie.reps ?? '?'}×${serie.weight_kg}kg`;
+    }
+    return serie.reps != null ? `${serie.reps} reps` : '—';
 }
 
-function _sportRenderSeanceIso(s) {
-    const estGPS = s.activity_type === 'marche' || s.activity_type === 'course' || s.activity_type === 'vélo';
-    const dateTexte = _sportFormatDateCourte(s.date_end || s.date_start);
-    
-    let labelBloc2 = estGPS ? 'DISTANCE' : 'VOLUME';
-    let valeurBloc2 = estGPS 
-        ? (s.distanceKm ? `${s.distanceKm.toFixed(2)} km` : '0 km')
-        : (s.volumeKg ? `${s.volumeKg} kg` : '0 kg');
-        
-    let valCalories = s.calories ? `${s.calories} kcal` : '—';
-    let warningCalories = (!s.calories && estGPS) 
-        ? `<div style="font-size:11px;color:#ef4444;margin-top:4px;">⚠️ Poids introuvable, calories non calculées</div>` 
-        : '';
+// ── Détecte si toutes les séries d'un exercice consolidé sont identiques ──
+function _sportSeriesIdentiques(series, estCardio) {
+    if (series.length <= 1) return true;
+    const cle = s => estCardio
+        ? [s.duration_seconds, s.distance_km, s.speed_kmh, s.incline_percent].join('|')
+        : [s.reps, s.weight_kg].join('|');
+    const premiere = cle(series[0]);
+    return series.every(s => cle(s) === premiere);
+}
 
-    let badgeHtml = '';
-    if (s.records_battus && s.records_battus > 0) {
-        badgeHtml = `<div class="sport-widget-record-badge">🏆 ${s.records_battus} record${s.records_battus > 1 ? 's' : ''} battu${s.records_battus > 1 ? 's' : ''} !</div>`;
-    } else if (!estGPS) {
-        badgeHtml = `<div class="sport-widget-norecord-badge">🏆 Aucun nouveau record</div>`;
+// Bloc détaillé d'un exercice consolidé
+function _sportRenderBlocExerciceDetail(e) {
+    const series    = Array.isArray(e.series) ? e.series : [];
+    const estCardio = !!e.est_cardio;
+    const nom       = _sportEchapper(e.exercise_name);
+
+    let detailTexte = '';
+    if (series.length) {
+        const aAfficher = _sportSeriesIdentiques(series, estCardio) ? [series[0]] : series;
+        detailTexte = aAfficher.map(s => _sportFormatDetailSerie(s, estCardio)).join(', ');
     }
 
-    let listeHtml = '';
-    if (estGPS) {
-        let vitMoy = s.vitesseMoyenneKmh ? `${s.vitesseMoyenneKmh.toFixed(1)} km/h` : '—';
-        listeHtml = `
-        <div style="font-size:13px; color:#4b5563; margin-top:12px; display:flex; align-items:center; gap:6px;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d8b4fe" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-            <span style="color:#7c3aed;">Vitesse moyenne</span> <span style="font-weight:600;">${vitMoy}</span>
-        </div>
-        <div style="margin-top:12px; background:#f3f4f6; border-radius:8px; padding:10px; display:flex; align-items:center; justify-content:center; gap:8px; color:#6b7280; font-size:12px; font-weight:600;">
-            🗺️ Cliquez pour voir la carte et le tracé
-        </div>`;
-    } else if (s.exercices && s.exercices.length > 0) {
-        listeHtml = '<div class="sport-widget-exo-list">';
-        const nbExos = s.exercices.length;
-        const exosAffiches = s.exercices.slice(0, SPORT_WIDGET_MAX_EXERCICES_APERCU);
-        
-        exosAffiches.forEach(exo => {
-            let infos = [];
-            if (exo.is_cardio) {
-                if (exo.distance_km) infos.push(`${exo.distance_km} km`);
-                if (exo.duration_seconds) infos.push(_sportFormatDureeLongue(exo.duration_seconds));
-            } else {
-                if (exo.series && exo.series.length > 0) {
-                    const maxPoids = Math.max(...exo.series.map(ser => ser.weight_kg || 0));
-                    const totalReps = exo.series.reduce((sum, ser) => sum + (ser.reps || 0), 0);
-                    if (maxPoids > 0) infos.push(`${maxPoids} kg`);
-                    if (totalReps > 0) infos.push(`${totalReps} reps`);
-                }
-            }
-            const setLabel = (exo.series && exo.series.length > 0) ? `${exo.series.length}x ` : '';
-            listeHtml += `<div class="sport-widget-exo-item">
-                <span class="sport-widget-exo-item-name"><span style="color:#7c3aed;font-weight:700;">${setLabel}</span>${_sportEchapper(exo.exercise_name)}</span>
-                ${infos.length > 0 ? `<span class="sport-widget-exo-item-meta">· ${infos.join(' · ')}</span>` : ''}
-            </div>`;
-        });
-        
-        if (nbExos > SPORT_WIDGET_MAX_EXERCICES_APERCU) {
-            listeHtml += `<div class="sport-widget-exo-more">...et ${nbExos - SPORT_WIDGET_MAX_EXERCICES_APERCU} autres</div>`;
-        }
-        listeHtml += '</div>';
-    }
-
-    let detailsRecordsHtml = '';
-    if (s.details_records && s.details_records.length > 0) {
-        detailsRecordsHtml = `<div class="sport-widget-records-list">`;
-        s.details_records.forEach(r => {
-            let val = '';
-            if (r.record_type === 'max_weight') val = `${r.record_value} kg`;
-            else if (r.record_type === 'max_reps') val = `${r.record_value} reps`;
-            else if (r.record_type === 'max_volume') val = `${r.record_value} kg vol.`;
-            else if (r.record_type === 'max_duration') val = _sportFormatDureeLongue(r.record_value);
-            else if (r.record_type === 'max_distance') val = `${r.record_value} km`;
-            else if (r.record_type === 'max_speed') val = `${r.record_value} km/h`;
-            
-            detailsRecordsHtml += `<div class="sport-widget-record-item">
-                ${SPORT_ICONE_TROPHEE}
-                <span><strong>${_sportEchapper(r.exercise_name)}</strong> : ${val}</span>
-            </div>`;
-        });
-        detailsRecordsHtml += `</div>`;
-    }
-
-    let btnSupprHtml = '';
-    if (typeof window.sportSupprimerSeance === 'function') {
-        btnSupprHtml = `<button class="sport-widget-btn-suppr" onclick="event.stopPropagation(); sportSupprimerSeance(${s.id})" title="Supprimer">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-            </svg>
-        </button>`;
-    }
-
-    let footerHtml = `
-        <div class="sport-widget-recap-footer">
-            <div class="sport-widget-recap-footer-logo">${SPORT_ICONE_LOGO_MINI} MoaDja</div>
-            <button class="sport-widget-btn-partage" onclick="_sportOuvrirModalPartage(event, ${s.id})" title="Partager">
-                ${SPORT_ICONE_PARTAGE}
-            </button>
+    return `
+        <div class="sport-exo-ligne">
+            <span class="sport-exo-ligne-nb">${e.nb_series}x</span>
+            <span class="sport-exo-ligne-nom">${nom}</span>${detailTexte ? `
+            <span class="sport-exo-ligne-sep">·</span>
+            <span class="sport-exo-ligne-detail">${_sportEchapper(detailTexte)}</span>` : ''}
         </div>
     `;
+}
 
-    // L'ATTRIBUT ONCLICK OUVRE LA MODALE DE STATS
+// ── Bloc partagé ISO (Tableau de bord & Widget) ──
+function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
+    const dateTexte   = _sportFormatDateCourte(s.date_end || s.date_start);
+    const nbRecords   = Number.isInteger(s.nb_records) ? s.nb_records : 0;
+    const exercices   = s.exercices || [];
+    
+    // Détection du mode GPS
+    const isGps = typeof _sportIsGpsActivity === 'function' 
+        ? _sportIsGpsActivity(s.activity_type, s.isGps) 
+        : (s.isGps || s.activity_type === 'marche' || s.activity_type === 'course' || s.activity_type === 'vélo');
+    
+    const iconeTropheeJaune = `<span style="color: #eab308; display: inline-flex; align-items: center;">${SPORT_ICONE_TROPHEE}</span>`;
+
+    let listeHtml = '';
+    if (isGps) {
+        const vitMoy = s.vitesseKmh ? s.vitesseKmh.toFixed(1) : '0.0';
+        listeHtml = `
+            <div style="margin-top: 12px; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 14px; font-weight: 700; color: #a78bfa;">📍 Vitesse moyenne</span>
+                <span style="color: #c7c7d1; font-weight: 600;">·</span>
+                <span style="font-size: 14px; font-weight: 600; color: var(--text-main);">${vitMoy} km/h</span>
+            </div>
+        `;
+        
+        if (mode === 'modal') {
+            // Affichage de la carte UNIQUEMENT dans la modale (hauteur augmentée à 350px)
+            listeHtml += `
+                <div id="sport-map-modal-${s.id}" style="width: 100%; height: 350px; margin-top: 16px; border-radius: 12px; background: #f3f4f6; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #9ca3af; z-index: 1; position: relative; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);">
+                    Chargement de la carte... ⏳
+                </div>
+            `;
+        } else {
+            // Dans le widget/dashboard, on met un message incitatif
+            listeHtml += `
+                <div style="margin-top: 12px; padding: 10px; text-align: center; background: rgba(167, 139, 250, 0.1); border-radius: 8px; color: #8b5cf6; font-size: 13px; font-weight: 600;">
+                    🗺️ Cliquez pour voir la carte et le tracé
+                </div>
+            `;
+        }
+        
+    } else {
+        // Affichage musculation standard (liste d'exercices)
+        if (mode === 'widget' || mode === 'dashboard') {
+            const limit = mode === 'dashboard' ? 5 : SPORT_WIDGET_MAX_EXERCICES_APERCU;
+            const apercu = exercices.slice(0, limit);
+            const reste  = exercices.length - apercu.length;
+            if (apercu.length) {
+                listeHtml = `
+                    <div class="${mode === 'dashboard' ? 'sport-seance-recap-liste' : 'sport-widget-exercices-liste'}">
+                        ${apercu.map(e => _sportRenderBlocExerciceDetail(e)).join('')}
+                        ${reste > 0 ? `<div class="${mode === 'dashboard' ? 'sport-seance-recap-reste' : 'sport-widget-exercice-reste'}">…et ${reste} autre${reste > 1 ? 's' : ''}</div>` : ''}
+                    </div>
+                `;
+            }
+        } else {
+            listeHtml = `
+                <div class="sport-modal-exercices-liste">
+                    ${exercices.map(e => _sportRenderBlocExerciceDetail(e)).join('')}
+                </div>
+            `;
+        }
+    }
+
+    const warningCalories = s.profil_incomplet
+        ? `<div style="grid-column: 1 / -1; font-size: 11.5px; color: #ef4444; text-align: center; margin-top: 6px; padding: 6px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 8px;">
+            Complétez votre profil (poids, taille, sexe, date de naissance) pour voir vos calories brûlées.
+           </div>`
+        : '';
+    const valCalories = s.profil_incomplet ? '—' : `${s.calories || 0} kcal`;
+
+    let detailsRecordsHtml = '';
+    if (!isGps && mode === 'modal' && nbRecords > 0 && Array.isArray(s.records)) {
+        detailsRecordsHtml = `
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed rgba(167, 139, 250, 0.3);">
+                <div style="font-weight: 600; font-size: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; color: #a78bfa;">
+                    ${iconeTropheeJaune} Nouveaux records
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    ${s.records.map(r => `
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; background: rgba(255, 255, 255, 0.4); padding: 6px 10px; border-radius: 6px;">
+                            <span style="font-weight: 500; color: #1f2937;">${_sportEchapper(r.exercise_name)}</span>
+                            <span style="color: #4b5563;">
+                                <span style="text-decoration: line-through; opacity: 0.6; margin-right: 4px;">${r.ancien_record}kg</span> 
+                                <span style="font-weight: 600; color: #10b981;">${r.nouveau_poids}kg</span>
+                            </span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    const styleGris = 'color: #9ca3af; background: rgba(156, 163, 175, 0.1); border: 1px solid rgba(156, 163, 175, 0.2);';
+    let badgeHtml = '';
+    
+    if (!isGps) {
+        badgeHtml = `
+            <div class="sport-widget-badge-record" ${nbRecords === 0 ? `style="${styleGris}"` : ''}>
+                ${iconeTropheeJaune} <span>${nbRecords > 0 ? `${nbRecords} record${nbRecords > 1 ? 's' : ''}` : 'Aucun nouveau record'}</span>
+            </div>
+        `;
+    }
+
+    let footerHtml = '';
+    if (mode === 'dashboard') {
+        footerHtml = `
+            <div class="sport-widget-footer sport-widget-footer-dashboard">
+                <span class="sport-widget-footer-logo">${SPORT_ICONE_LOGO_MINI} MoaDja</span>
+                <button class="sport-widget-btn-partage" onclick="_sportOuvrirModalPartage(event, ${s.id})" title="Partager la séance">
+                    ${SPORT_ICONE_PARTAGE}
+                </button>
+            </div>
+        `;
+    } else if (mode === 'widget') {
+        footerHtml = `
+            <div class="sport-widget-footer">
+                <span class="sport-widget-footer-logo">${SPORT_ICONE_LOGO_MINI} MoaDja</span>
+            </div>
+        `;
+    }
+
+    const labelBloc2 = isGps ? 'Distance' : 'Volume';
+    const valeurBloc2 = isGps 
+        ? `${s.distanceKm ? s.distanceKm.toFixed(2) : '0.00'} km` 
+        : `${s.volumeKg || 0} kg`;
+
     return `
-    <div class="sport-widget-recap-card" data-id="${s.id}" onclick="if(typeof openModalStatsSport === 'function') openModalStatsSport(${s.id})">
         <div class="sport-widget-recap-title-row">
             <span class="sport-widget-recap-name">${_sportEchapper(s.workout_name)}</span>
             <span style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
@@ -209,163 +279,263 @@ function _sportRenderSeanceIso(s) {
 
         ${badgeHtml}
 
-        <div class="sport-widget-stats-grid">
-            <div class="sport-widget-stat-box">
-                <span class="sport-widget-stat-label">DURÉE</span>
-                <span class="sport-widget-stat-value">${_sportFormatDureeLongue(s.dureeSecondes)}</span>
+        <div class="sport-widget-stats-row">
+            <div class="sport-widget-stat">
+                <span class="sport-widget-stat-label">Durée</span>
+                <span class="sport-widget-stat-val">${_sportFormatDureeLongue(s.dureeSecondes)}</span>
             </div>
-            <div class="sport-widget-stat-box">
-                <span class="sport-widget-stat-label">${labelBloc2.toUpperCase()}</span>
-                <span class="sport-widget-stat-value">${valeurBloc2}</span>
+            <div class="sport-widget-stat">
+                <span class="sport-widget-stat-label">${labelBloc2}</span>
+                <span class="sport-widget-stat-val">${valeurBloc2}</span>
             </div>
-            <div class="sport-widget-stat-box">
-                <span class="sport-widget-stat-label">CALORIES</span>
-                <span class="sport-widget-stat-value" style="color:#ef4444;">${valCalories}</span>
+            <div class="sport-widget-stat">
+                <span class="sport-widget-stat-label">Calories</span>
+                <span class="sport-widget-stat-val" style="color:#ef4444">${valCalories}</span>
             </div>
+            ${warningCalories}
         </div>
 
         ${listeHtml}
         ${detailsRecordsHtml}
-        ${warningCalories}
         ${footerHtml}
-    </div>`;
-}
-
-// ── PARTAGE : MODALE DE CHOIX ET GÉNÉRATION ──
-
-function _sportFermerModalGenerique(id) {
-    const m = document.getElementById(id);
-    if (m) m.remove();
-}
-
-async function _sportOuvrirModalPartage(event, sessionId) {
-    if (event) {
-        event.stopPropagation();
-        event.preventDefault();
-    }
-    
-    let workoutName = "Séance";
-    let textStats = "";
-    try {
-        const r = await fetch(`/api/sport/dashboard-stats`, { headers: _sportAuthHeaders() });
-        const data = await r.json();
-        if (data.success) {
-            const seance = [...(data.dernieres_seances || [])].find(s => s.id === sessionId);
-            if (seance) {
-                workoutName = seance.workout_name || "Séance";
-                const duree = _sportFormatDureeLongue(seance.dureeSecondes || 0);
-                const isGps = seance.isGps || seance.activity_type === 'marche' || seance.activity_type === 'course' || seance.activity_type === 'vélo';
-                const bloc2 = isGps 
-                    ? `Distance : ${seance.distanceKm ? seance.distanceKm.toFixed(2) : '0'} km`
-                    : `Volume : ${seance.volumeKg || 0} kg`;
-                textStats = `\n⏱️ ${duree} | 📊 ${bloc2}`;
-            }
-        }
-    } catch (e) {
-        console.error(e);
-    }
-
-    const modalHtml = `
-        <div id="sport-modal-partage-choix" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:99999;backdrop-filter:blur(4px); animation: fadeIn 0.2s ease;">
-            <div style="background:#fff;border-radius:20px;padding:24px;width:90%;max-width:400px;box-shadow:0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);position:relative;">
-                <button onclick="_sportFermerModalGenerique('sport-modal-partage-choix')" style="position:absolute;top:16px;right:16px;background:rgba(243,244,246,0.8);border:none;width:32px;height:32px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#4b5563;transition:all 0.2s;">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-                </button>
-                
-                <h3 style="margin:0 0 8px 0;font-size:18px;font-weight:700;color:#111827;">Partager la séance</h3>
-                <p style="margin:0 0 24px 0;font-size:13px;color:#6b7280;">Comment souhaitez-vous partager <strong>${_sportEchapper(workoutName)}</strong> ?</p>
-                
-                <div style="display:flex;flex-direction:column;gap:12px;">
-                    <button onclick="_sportExecuterPartageInterne(${sessionId}, '${_sportEchapper(workoutName)}')" style="width:100%;padding:14px;background:#b49afa;color:#fff;border:none;border-radius:12px;font-weight:600;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.2s;">
-                        🎉 Publier sur le fil social
-                    </button>
-                    
-                    <button onclick="_sportExecuterPartageExterne(${sessionId}, '${_sportEchapper(workoutName)}', \`${_sportEchapper(textStats)}\`)" style="width:100%;padding:14px;background:#374151;color:#fff;border:none;border-radius:12px;font-weight:600;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.2s;">
-                        🌐 Partager (WhatsApp, etc.)
-                    </button>
-                </div>
-            </div>
-        </div>
     `;
-    
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
 }
 
-async function _sportExecuterPartageInterne(sessionId, workoutName) {
-    const btn = document.querySelector('#sport-modal-partage-choix button:nth-child(1)');
-    if (btn) {
-        btn.innerHTML = 'Génération... ⏳';
-        btn.style.opacity = '0.7';
-        btn.style.pointerEvents = 'none';
+// ── Modale de choix de partage ──
+function _sportOuvrirModalPartage(event, sessionId) {
+    if (event) event.stopPropagation();
+
+    const seance = _sportDashboardSeancesCache.find(s => s.id === sessionId);
+    if (!seance) return;
+    
+    // Au cas où la modale ait été élargie par une carte GPS avant, on réinitialise sa taille
+    const modalContent = document.querySelector('#modal-container .modal-content') || document.querySelector('.modal-content');
+    if (modalContent) {
+        modalContent.style.maxWidth = '';
+        modalContent.style.width = '';
     }
 
+    document.getElementById('overlay').classList.add('on');
+    document.body.classList.add('modal-open');
+    history.pushState({ modalOpen: true }, '', '');
+
+    document.getElementById('modal-title').textContent = 'Partager la séance';
+    document.getElementById('modal-body').innerHTML = `
+        <p style="color:#6b7280; font-size:14px; margin-bottom:20px; text-align:center">
+            Comment souhaitez-vous partager <strong>${_sportEchapper(seance.workout_name)}</strong> ?
+        </p>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <button id="btn-partage-feed" class="sport-cta-btn" onclick="_sportLancerPartage(${sessionId}, 'feed', this, '${_sportEchapper(seance.workout_name)}')" style="width:100%; justify-content:center;">
+                📝 Publier sur le fil social
+            </button>
+            <button id="btn-partage-externe" class="sport-cta-btn" onclick="_sportLancerPartage(${sessionId}, 'externe', this, '${_sportEchapper(seance.workout_name)}')" style="width:100%; justify-content:center; background:rgba(0,0,0,0.8); color:#fff; border:none;">
+                🌐 Partager (WhatsApp, etc.)
+            </button>
+        </div>
+        <p id="msg-erreur-partage" style="color:#ef4444; font-size:13px; text-align:center; margin-top:15px; display:none;"></p>
+    `;
+}
+
+async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine) {
+    const texteOriginal = boutonDom.innerHTML;
+    boutonDom.innerHTML = 'Génération en cours... ⏳';
+    boutonDom.disabled = true;
+    
+    const msgErreur = document.getElementById('msg-erreur-partage');
+    msgErreur.style.display = 'none';
+
     try {
-        const r = await fetch(`/api/sport/sessions/${sessionId}/generate-share`, {
+        const rep = await fetch(`/api/sport/sessions/${sessionId}/generate-share`, {
             method: 'POST',
             headers: _sportAuthHeaders()
         });
-        const data = await r.json();
+        const data = await rep.json();
 
-        if (data.success && data.imageUrl) {
-            _sportFermerModalGenerique('sport-modal-partage-choix');
+        if (!data.success) {
+            throw new Error(data.message || 'Erreur lors de la génération de l\'image.');
+        }
+
+        const imageUrl = data.imageUrl;
+        const openGraphUrl = `${window.location.origin}/share/seance/${sessionId}`;
+        
+        const texteInterne = `🏋️‍♂️ Séance terminée : ${nomRoutine}`;
+        const texteExterne = `🏋️‍♂️ Séance : ${nomRoutine}\nDécouvre les statistiques de cette séance sur MoaDja !`;
+
+        closeModal();
+
+        if (destination === 'feed') {
+            switchTab('accueil');
+            if (typeof ouvrirModalPost === 'function') ouvrirModalPost();
             
-            // Tente d'appeler la fonction native de création de post
-            // Ajustez ce nom si la vôtre s'appelle differemment (ex: openCreatePostModal, showPostModal...)
-            if (typeof window.openCreatePostModal === 'function') {
-                window.openCreatePostModal();
-                setTimeout(() => {
-                    const textZone = document.getElementById('postText');
-                    if (textZone) textZone.value = `🏋️‍♂️ Séance terminée : ${workoutName} !`;
+            setTimeout(async () => {
+                const inputTexte = document.getElementById('post-contenu');
+                if (inputTexte) inputTexte.value = texteInterne;
+                
+                try {
+                    const repImg = await fetch(imageUrl);
+                    const blob = await repImg.blob();
                     
-                    const urlInput = document.getElementById('postImageUrl');
-                    if (urlInput) {
-                        urlInput.value = data.imageUrl;
-                        const ev = new Event('input', { bubbles: true });
-                        urlInput.dispatchEvent(ev);
+                    const file = new File([blob], `seance_${sessionId}.jpg`, { type: 'image/jpeg' });
+                    const dataTransfer = new DataTransfer();
+                    dataTransfer.items.add(file);
+
+                    const fileInput = document.getElementById('post-photo');
+                    if (fileInput) {
+                        fileInput.files = dataTransfer.files;
+                        fileInput.dispatchEvent(new Event('change', { bubbles: true }));
                     }
-                }, 300);
+                } catch (e) {
+                    console.error('[SPORT] Impossible d\'attacher l\'image au feed:', e);
+                }
+            }, 400);
+        } 
+                else if (destination === 'externe') {
+            if (navigator.share) {
+                await navigator.share({
+                    title: `Séance : ${nomRoutine}`,
+                    text: texteExterne, 
+                    url: openGraphUrl
+                }).catch(console.error);
             } else {
-                // Fallback sécurisé : si la fonction n'est pas trouvée, on copie l'URL de l'image
-                await navigator.clipboard.writeText(`${window.location.origin}${data.imageUrl}`);
-                alert('L\'image de votre séance a été générée ! Le lien a été copié dans votre presse-papier. Collez-le dans un nouveau post.');
-            }
-        } else {
-            alert('Erreur lors de la génération : ' + (data.message || 'Inconnue'));
-            if (btn) {
-                btn.innerHTML = '🎉 Publier sur le fil social';
-                btn.style.opacity = '1';
-                btn.style.pointerEvents = 'auto';
+                await navigator.clipboard.writeText(`${texteExterne}\n\n${openGraphUrl}`);
+                alert('Lien et message copiés dans le presse-papiers !');
             }
         }
-    } catch (e) {
-        console.error(e);
-        alert('Erreur réseau.');
-        _sportFermerModalGenerique('sport-modal-partage-choix');
+
+    } catch (err) {
+        console.error('[SPORT] Erreur _sportLancerPartage :', err.message);
+        boutonDom.innerHTML = texteOriginal;
+        boutonDom.disabled = false;
+        msgErreur.textContent = `❌ ${err.message}`;
+        msgErreur.style.display = 'block';
     }
 }
 
-async function _sportExecuterPartageExterne(sessionId, workoutName, textStats) {
-    const baseUrl = window.location.origin;
-    const shareUrl = `${baseUrl}/share/seance/${sessionId}`;
-    
-    const shareData = {
-        title: `Séance MoaDja : ${workoutName}`,
-        text: `🏋️‍♂️ Découvrez ma séance de sport "${workoutName}" sur MoaDja !${textStats}\n\n`,
-        url: shareUrl
-    };
+const SPORT_PHRASES_ENCOURAGEMENT = [
+    "Chaque séance compte, même la plus courte. Lancez-vous !",
+    "Votre progression commence par un premier pas.",
+    "Aujourd'hui est un bon jour pour bouger un peu.",
+    "Pas de séance cette semaine ? Il n'est jamais trop tard.",
+    "Votre corps vous remerciera pour chaque effort, même petit."
+];
+
+let _sportWidgetDerniereSeanceCache = null;
+
+async function chargerSportStatsWidget() {
+    const zone = document.getElementById('sport-stats-widget');
+    if (!zone) return;
 
     try {
-        if (navigator.share) {
-            await navigator.share(shareData);
-        } else {
-            await navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`);
-            alert('Lien et résumé copiés dans le presse-papier !');
+        const r = await fetch('/api/sport/dashboard-stats', { headers: _sportAuthHeaders() });
+        const d = await r.json();
+
+        if (!d.success || !d.derniere_seance) {
+            _sportWidgetDerniereSeanceCache = null;
+            _sportRenderWidgetPhraseAleatoire(zone);
+            return;
         }
-    } catch (e) {
-        if (e.name !== 'AbortError') {
-            console.error('Erreur partage', e);
-        }
+
+        _sportRenderWidgetDerniereSeance(zone, d.derniere_seance);
+    } catch (err) {
+        console.error('[SPORT] chargerSportStatsWidget :', err.message);
+        _sportWidgetDerniereSeanceCache = null;
+        _sportRenderWidgetPhraseAleatoire(zone);
     }
-    _sportFermerModalGenerique('sport-modal-partage-choix');
 }
 
+function _sportRenderWidgetPhraseAleatoire(zone) {
+    const phrase = SPORT_PHRASES_ENCOURAGEMENT[
+        Math.floor(Math.random() * SPORT_PHRASES_ENCOURAGEMENT.length)
+    ];
+
+    zone.innerHTML = `
+        <div class="sport-widget-top">
+            <h3 class="sport-widget-top-title">${SPORT_ICONE_DUMBBELL} Sport</h3>
+            <button class="sport-widget-top-arrow" onclick="switchTab('sport')" title="Aller au module Sport">
+                ${SPORT_ICONE_FLECHE}
+            </button>
+        </div>
+        <p class="sport-widget-empty-text">${phrase}</p>
+    `;
+}
+
+function _sportWidgetOuvrirStats() {
+    if (!_sportWidgetDerniereSeanceCache) return;
+    window._sportSeanceStatsCourante = _sportWidgetDerniereSeanceCache;
+    openModal('sport-stats');
+}
+
+function _sportRenderWidgetDerniereSeance(zone, seance) {
+    _sportWidgetDerniereSeanceCache = seance;
+    
+    // Le widget de la colonne de droite redevient cliquable pour tout le monde
+    zone.innerHTML = `
+        <div class="sport-widget-top">
+            <h3 class="sport-widget-top-title">${SPORT_ICONE_DUMBBELL} Sport</h3>
+            <button class="sport-widget-top-arrow" onclick="switchTab('sport')" title="Aller au module Sport">
+                ${SPORT_ICONE_FLECHE}
+            </button>
+        </div>
+
+        <div onclick="_sportWidgetOuvrirStats()" role="button" tabindex="0" class="sport-widget-clickable">
+            ${_sportRenderSeanceIso(seance, 'widget')}
+        </div>
+    `;
+}
+
+async function _ouvrirModaleSportStats() {
+    const zone = document.getElementById('modal-body');
+    if (!zone) return;
+
+    const seanceCourante = window._sportSeanceStatsCourante;
+    window._sportSeanceStatsCourante = null;
+
+    if (seanceCourante) {
+        _sportRenderModaleStatsDepuisSeance(zone, seanceCourante);
+        return;
+    }
+
+    try {
+        const r = await fetch('/api/sport/dashboard-stats', { headers: _sportAuthHeaders() });
+        const d = await r.json();
+
+        if (!d.success || !d.derniere_seance) {
+            zone.innerHTML = '<p style="color:#9ca3af;text-align:center;padding:20px">Aucune séance enregistrée pour l\'instant.</p>';
+            return;
+        }
+
+        _sportRenderModaleStatsDepuisSeance(zone, d.derniere_seance);
+    } catch (err) {
+        console.error('[SPORT] _ouvrirModaleSportStats :', err.message);
+        zone.innerHTML = '<p style="color:#ef4444;text-align:center;padding:20px">Erreur de chargement des statistiques.</p>';
+    }
+}
+
+function _sportRenderModaleStatsDepuisSeance(zone, s) {
+    const isGps = typeof _sportIsGpsActivity === 'function' 
+        ? _sportIsGpsActivity(s.activity_type, s.isGps) 
+        : (s.isGps || s.activity_type === 'marche' || s.activity_type === 'course' || s.activity_type === 'vélo' || s.activity_type === 'velo');
+
+    // 🌟 MAGIE ICI : On cherche la fenêtre modale et on l'agrandit si c'est du GPS
+    const modalContent = document.querySelector('#modal-container .modal-content') || document.querySelector('.modal-content');
+    if (modalContent) {
+        if (isGps) {
+            modalContent.style.maxWidth = '700px';
+            modalContent.style.width = '95%';
+        } else {
+            // On remet la taille normale pour la musculation
+            modalContent.style.maxWidth = '';
+            modalContent.style.width = '';
+        }
+    }
+
+    zone.innerHTML = `
+        <div class="sport-modal-stats">
+            ${_sportRenderSeanceIso(s, 'modal')}
+        </div>
+    `;
+        
+    if (isGps && typeof _sportInitMap === 'function') {
+        _sportInitMap(s.id, `sport-map-modal-${s.id}`);
+    }
+}
