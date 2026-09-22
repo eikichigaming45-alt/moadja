@@ -672,7 +672,7 @@ function _sportCalculerStatsSession(session, logs, profil) {
             }
         }
 
-        return {
+                return {
             dureeSecondes,
             volumeKg: Math.round(volumeKg * 10) / 10,
             nbSeries: logsValides.length,
@@ -1054,7 +1054,7 @@ function _nettoyerNomBase(nom) {
 }
 
 function _nettoyerParenthesesNonLatines(nom) {
-    return nom.replace(/\s*$[^)]*$$/g, (match, interieur) => {
+    return nom.replace(/\s*$[^)]*$/g, (match, interieur) => {
         return /[a-zA-Z]/.test(interieur) ? match : '';
     }).trim();
 }
@@ -1313,48 +1313,21 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
             <text x="600" y="220" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#9ca3af" letter-spacing="1" text-anchor="middle">${bloc2Label}</text>
             <text x="600" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="900" fill="#1f2937" text-anchor="middle">${bloc2Value}</text>
 
-                       <rect x="780" y="190" width="300" height="90" rx="16" fill="#ffffff" filter="url(#shadowStat)" stroke="#f3f4f6" stroke-width="1" />
+                        <rect x="780" y="190" width="300" height="90" rx="16" fill="#ffffff" filter="url(#shadowStat)" stroke="#f3f4f6" stroke-width="1" />
             <text x="930" y="220" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#9ca3af" letter-spacing="1" text-anchor="middle">CALORIES</text>
             <text x="930" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="900" fill="#ef4444" text-anchor="middle">${caloriesStr}</text>
         `;
 
-        let yEx = 320;
+        let yEx = 340;
         
         if (isGps) {
-            // Affichage de la vitesse moyenne
+            // Affichage spécifique GPS propre et centré (sans mini-carte)
             svg += `
-            <text x="600" y="${yEx + 15}" font-family="system-ui, -apple-system, sans-serif" font-size="20" text-anchor="middle">
+            <text x="600" y="${yEx + 30}" font-family="system-ui, -apple-system, sans-serif" font-size="24" text-anchor="middle">
                 <tspan font-weight="800" fill="#8b5cf6">📍 Vitesse moyenne :</tspan>
                 <tspan font-weight="700" fill="#374151" dx="15">${stats.vitesseKmh.toFixed(1)} km/h</tspan>
             </text>
             `;
-
-            // Récupération des points GPS pour dessiner le tracé miniature dans l'image du feed
-            const { rows: gpsPts } = await pool.query(`
-                SELECT lat, lng FROM sport_gps_points WHERE session_id = \$1 ORDER BY recorded_at ASC
-            `, [id]);
-
-            if (gpsPts.length >= 2) {
-                const lats = gpsPts.map(p => parseFloat(p.lat));
-                const lngs = gpsPts.map(p => parseFloat(p.lng));
-                const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-                const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
-
-                const mapX = 120, mapY = 345, mapW = 960, mapH = 160;
-                const dLat = (maxLat - minLat) || 0.00001;
-                const dLng = (maxLng - minLng) || 0.00001;
-
-                const pointsSvg = gpsPts.map(p => {
-                    const x = mapX + 30 + ((parseFloat(p.lng) - minLng) / dLng) * (mapW - 60);
-                    const y = (mapY + mapH - 20) - ((parseFloat(p.lat) - minLat) / dLat) * (mapH - 40);
-                    return `${x.toFixed(1)},${y.toFixed(1)}`;
-                }).join(' ');
-
-                svg += `
-                <rect x="${mapX}" y="${mapY}" width="${mapW}" height="${mapH}" rx="16" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1.5" />
-                <polyline points="${pointsSvg}" fill="none" stroke="#8b5cf6" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
-                `;
-            }
         } else {
             // Affichage musculation standard
             const maxEx = 5;
@@ -1389,7 +1362,7 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
             }
         }
 
-        // Logo MoaDja et haltère parfaitement centrés (x=600, text-anchor="middle")
+                        // Logo MoaDja et haltère parfaitement centrés (x=600, text-anchor="middle")
         svg += `
             <g transform="translate(600, 545)">
                 <path d="M-65,-6 L-65,6 M-59,-2 L-59,2 M-41,-2 L-41,2 M-35,-6 L-35,6 M-59,0 L-41,0" stroke="#8b5cf6" stroke-width="2.5" stroke-linecap="round" fill="none"/>
