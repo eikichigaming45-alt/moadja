@@ -1236,32 +1236,46 @@
         }
     });
 
-    // ── GESTION BFCache & VISIBILITÉ (Correctif Socket Error) ──
+        // ── GESTION BFCache & VISIBILITÉ (Correctif Veille / Mode Poche) ──
+    let _badgeInterval = null;
+
+    function _startBadgeInterval() {
+        if (_badgeInterval) clearInterval(_badgeInterval);
+        _badgeInterval = setInterval(_rafraichirBadgeBulle, 30000);
+    }
+
+    function _stopBadgeInterval() {
+        if (_badgeInterval) clearInterval(_badgeInterval);
+        _badgeInterval = null;
+    }
+
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
+            // Au retour d'une mise en veille ou du mode poche : 
+            // on relance le polling et on s'assure que le socket est bien là.
             _reconnecterSocket();
             _rafraichirBadgeBulle();
+            _startBadgeInterval();
         } else {
-            // L'app passe en arrière-plan : on déconnecte proprement pour éviter
-            // que le navigateur ne "tue" le socket (erreur Back-Forward Cache)
-            if (_socket && _socket.connected) {
-                _socket.disconnect();
-            }
+            // L'écran s'éteint. On stoppe le polling des badges pour éviter les 
+            // erreurs "ERR_CONNECTION_TIMED_OUT" empilées en tâche de fond.
+            // On NE DÉCONNECTE PAS le socket manuellement, on laisse le navigateur gérer.
+            _stopBadgeInterval();
         }
     });
 
     window.addEventListener('pagehide', () => {
-        // En cas de mise en cache bfcache (navigation Précédent/Suivant)
+        _stopBadgeInterval();
         if (_socket && _socket.connected) {
-            _socket.disconnect();
+            _socket.disconnect(); // Seulement si on quitte vraiment la page
         }
     });
 
     window.addEventListener('pageshow', (e) => {
-        // Au retour depuis le bfcache
         if (e.persisted) {
             _reconnecterSocket();
             _rafraichirBadgeBulle();
+            _startBadgeInterval();
         }
     });
 
@@ -1274,7 +1288,7 @@
         init() {
             _construireDom();
             _rafraichirBadgeBulle();
-            setInterval(_rafraichirBadgeBulle, 30000);
+            _startBadgeInterval(); // Utilise la nouvelle gestion d'intervalle sécurisée
         },
         rafraichirBadge: _rafraichirBadgeBulle,
         reconnecter     : _reconnecterSocket
