@@ -98,14 +98,14 @@ function _sportAfficherModePoche(type) {
             
             <div class="sport-poche-chrono" id="gps-chrono">00:00</div>
             
-            <div class="sport-poche-stats-row" style="margin-top: 24px;">
-                <div class="sport-poche-stat">
+            <div class="sport-poche-stats-row" style="margin-top: 24px; align-items: flex-start;">
+                <div class="sport-poche-stat" style="display: flex; flex-direction: column; align-items: center;">
                     <div class="sport-poche-stat-val" id="gps-dist">0.00</div>
-                    <div class="sport-poche-stat-lbl">KM</div>
+                    <div class="sport-poche-stat-lbl" style="text-align: center;">KM</div>
                 </div>
-                <div class="sport-poche-stat">
+                <div class="sport-poche-stat" style="display: flex; flex-direction: column; align-items: center;">
                     <div class="sport-poche-stat-val" id="gps-vit">0.0</div>
-                    <div class="sport-poche-stat-lbl">KM/H <span style="font-size:10px; opacity:0.6; display:block;">(Instantanée)</span></div>
+                    <div class="sport-poche-stat-lbl" style="text-align: center;">KM/H <span style="font-size:10px; opacity:0.6; display:block; margin-top:2px;">(Instantanée)</span></div>
                 </div>
             </div>
         </div>
