@@ -8,77 +8,31 @@
 const express = require('express');
 const router  = express.Router();
 const { pool } = require('../db/pool');
-const auth = require('../middleware/auth');
+const { authenticateToken: auth } = require('../middleware/auth');
+const { SPORT_TRADUCTION_FR } = require('./sport-traduction-fr');
+const sharp = require('sharp');
 const fs = require('fs');
 const path = require('path');
-const sharp = require('sharp');
 
 const WGER_BASE_URL = 'https://wger.de/api/v2';
 
-const SPORT_TRADUCTION_FR = {
-    'Bench press': { nom: 'Développé couché', type: 'musculation' },
-    'Squat': { nom: 'Squat', type: 'musculation' },
-    'Deadlift': { nom: 'Soulevé de terre', type: 'musculation' },
-    'Pull-up': { nom: 'Tractions', type: 'musculation' },
-    'Push-up': { nom: 'Pompes', type: 'musculation' },
-    'Dumbbell Biceps Curl': { nom: 'Curl haltères', type: 'musculation' },
-    'Triceps pushdown': { nom: 'Extensions triceps poulie', type: 'musculation' },
-    'Shoulder press': { nom: 'Développé épaules', type: 'musculation' },
-    'Plank': { nom: 'Gainage (Planche)', type: 'gainage' },
-    'Crunch': { nom: 'Crunch abdominal', type: 'musculation' },
-    'Running': { nom: 'Course à pied', type: 'cardio' },
-    'Walking': { nom: 'Marche', type: 'cardio' },
-    'Cycling': { nom: 'Vélo', type: 'cardio' },
-    'Treadmill': { nom: 'Tapis de course', type: 'cardio' },
-    'Elliptical trainer': { nom: 'Vélo elliptique', type: 'cardio' },
-    'Rowing machine': { nom: 'Rameur', type: 'cardio' }
-};
+const SPORT_MET_MUSCULATION = 5;
+const SPORT_MET_CARDIO      = 6;
+const SPORT_MET_MARCHE      = 4.0;
+const SPORT_MET_COURSE      = 8.0;
 
-// ── GESTION DES ROUTINES (WORKOUTS) ──
+// ── ROUTINES : sport_workouts ──
 
 router.get('/workouts', auth, async (req, res) => {
     const moi = req.user.id;
     try {
-        const { rows: workouts } = await pool.query(`
-            SELECT id, name, description, color, created_at
+        const { rows } = await pool.query(`
+            SELECT id, user_id, name, created_at, workout_order
             FROM sport_workouts
             WHERE user_id = \$1
-            ORDER BY created_at DESC
+            ORDER BY workout_order ASC NULLS LAST, created_at ASC
         `, [moi]);
-
-        if (!workouts.length) {
-            return res.json({ success: true, workouts: [] });
-        }
-
-        const workoutIds = workouts.map(w => w.id);
-        const { rows: days } = await pool.query(`
-            SELECT d.id, d.workout_id, d.day_number, d.title
-            FROM sport_workout_days d
-            WHERE d.workout_id = ANY(\$1::int[])
-            ORDER BY d.day_number ASC
-        `, [workoutIds]);
-
-        const dayIds = days.map(d => d.id);
-        let exercises = [];
-        if (dayIds.length > 0) {
-            const { rows: exRows } = await pool.query(`
-                SELECT e.id, e.workout_day_id, e.wger_exercise_id, e.exercise_name, e.sets_count, e.reps, e.weight_kg, e.order_index
-                FROM sport_day_exercises e
-                WHERE e.workout_day_id = ANY(\$1::int[])
-                ORDER BY e.order_index ASC
-            `, [dayIds]);
-            exercises = exRows;
-        }
-
-        const workoutsComplets = workouts.map(w => {
-            const daysForW = days.filter(d => d.workout_id === w.id).map(d => {
-                const exForD = exercises.filter(e => e.workout_day_id === d.id);
-                return { ...d, exercises: exForD };
-            });
-            return { ...w, days: daysForW };
-        });
-
-        res.json({ success: true, workouts: workoutsComplets });
+        res.json({ success: true, workouts: rows });
     } catch (err) {
         console.error('[SPORT] GET /workouts :', err.message);
         res.status(500).json({ success: false, message: err.message });
@@ -86,80 +40,147 @@ router.get('/workouts', auth, async (req, res) => {
 });
 
 router.post('/workouts', auth, async (req, res) => {
-    const moi = req.user.id;
-    const { name, description, color, days } = req.body;
+    const moi  = req.user.id;
+    const name = req.body.name?.trim();
+    if (!name) return res.status(400).json({ success: false, message: 'Nom requis.' });
+    try {
+        const { rows: maxOrderRows } = await pool.query(`
+            SELECT COALESCE(MAX(workout_order), 0) AS max_order
+            FROM sport_workouts
+            WHERE user_id = \$1
+        `, [moi]);
+        const prochainOrdre = maxOrderRows[0].max_order + 1;
 
-    if (!name?.trim()) {
-        return res.status(400).json({ success: false, message: 'Le nom de la routine est requis.' });
+        const { rows } = await pool.query(`
+            INSERT INTO sport_workouts (user_id, name, workout_order)
+            VALUES (\$1, \$2, \$3)
+            RETURNING *
+        `, [moi, name, prochainOrdre]);
+        res.json({ success: true, workout: rows[0] });
+    } catch (err) {
+        console.error('[SPORT] POST /workouts :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.put('/workouts/reorder', auth, async (req, res) => {
+    const moi   = req.user.id;
+    const ordre = req.body.ordre;
+
+    if (!Array.isArray(ordre) || !ordre.length) {
+        return res.status(400).json({ success: false, message: 'Ordre invalide.' });
     }
 
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
 
-        const { rows: wRows } = await client.query(`
-            INSERT INTO sport_workouts (user_id, name, description, color, created_at)
-            VALUES (\$1, \$2, \$3, \$4, NOW())
-            RETURNING *
-        `, [moi, name.trim(), description?.trim() || null, color || '#8b5cf6']);
-        const workout = wRows[0];
+        const { rows: existantes } = await client.query(`
+            SELECT id FROM sport_workouts WHERE user_id = \$1
+        `, [moi]);
+        const idsValides  = new Set(existantes.map(w => w.id));
+        const idsRecus    = ordre.map(id => parseInt(id, 10));
+        const tousValides = idsRecus.length === idsValides.size
+            && idsRecus.every(id => idsValides.has(id));
 
-        if (Array.isArray(days)) {
-            for (const [index, day] of days.entries()) {
-                const dayNumber = day.day_number || (index + 1);
-                const title = day.title?.trim() || `Jour ${dayNumber}`;
+        if (!tousValides) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ success: false, message: 'Liste de routines incohérente.' });
+        }
 
-                const { rows: dRows } = await client.query(`
-                    INSERT INTO sport_workout_days (workout_id, day_number, title)
-                    VALUES (\$1, \$2, \$3)
-                    RETURNING id
-                `, [workout.id, dayNumber, title]);
-                const dayId = dRows[0].id;
-
-                if (Array.isArray(day.exercises)) {
-                    for (const [exIndex, ex] of day.exercises.entries()) {
-                        await client.query(`
-                            INSERT INTO sport_day_exercises
-                                (workout_day_id, wger_exercise_id, exercise_name, sets_count, reps, weight_kg, order_index)
-                            VALUES (\$1, \$2, \$3, \$4, \$5, \$6, \$7)
-                        `, [
-                            dayId,
-                            ex.wger_exercise_id,
-                            ex.exercise_name?.trim() || 'Exercice',
-                            ex.sets_count || 3,
-                            ex.reps || 10,
-                            ex.weight_kg != null ? ex.weight_kg : null,
-                            ex.order_index != null ? ex.order_index : exIndex
-                        ]);
-                    }
-                }
-            }
+        for (let i = 0; i < idsRecus.length; i++) {
+            await client.query(`
+                UPDATE sport_workouts SET workout_order = \$1 WHERE id = \$2 AND user_id = \$3
+            `, [i + 1, idsRecus[i], moi]);
         }
 
         await client.query('COMMIT');
-        res.json({ success: true, workout });
+        res.json({ success: true });
     } catch (err) {
         await client.query('ROLLBACK');
-        console.error('[SPORT] POST /workouts :', err.message);
+        console.error('[SPORT] PUT /workouts/reorder :', err.message);
         res.status(500).json({ success: false, message: err.message });
     } finally {
         client.release();
     }
 });
 
+router.get('/workouts/:id', auth, async (req, res) => {
+    const moi = req.user.id;
+    const id  = parseInt(req.params.id, 10);
+    try {
+        const { rows: workoutRows } = await pool.query(`
+            SELECT id, user_id, name, created_at, workout_order
+            FROM sport_workouts
+            WHERE id = \$1 AND user_id = \$2
+        `, [id, moi]);
+        if (!workoutRows.length) {
+            return res.status(404).json({ success: false, message: 'Routine introuvable.' });
+        }
+
+        const { rows: days } = await pool.query(`
+            SELECT id, workout_id, description, day_order
+            FROM sport_workout_days
+            WHERE workout_id = \$1
+            ORDER BY day_order ASC
+        `, [id]);
+
+        const dayIds = days.map(d => d.id);
+        let exercises = [];
+        if (dayIds.length) {
+            const { rows: exRows } = await pool.query(`
+                SELECT id, day_id, wger_exercise_id, exercise_name,
+                       order_in_day, target_sets, target_reps, target_duration_seconds,
+                       target_weight_kg, target_rest_seconds
+                FROM sport_day_exercises
+                WHERE day_id = ANY(\$1::int[])
+                ORDER BY order_in_day ASC
+            `, [dayIds]);
+            exercises = exRows;
+        }
+
+        const joursAvecExercices = days.map(d => ({
+            ...d,
+            exercises: exercises.filter(e => e.day_id === d.id)
+        }));
+
+        res.json({ success: true, workout: { ...workoutRows[0], days: joursAvecExercices } });
+    } catch (err) {
+        console.error('[SPORT] GET /workouts/:id :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.put('/workouts/:id', auth, async (req, res) => {
+    const moi  = req.user.id;
+    const id   = parseInt(req.params.id, 10);
+    const name = req.body.name?.trim();
+    if (!name) return res.status(400).json({ success: false, message: 'Nom requis.' });
+    try {
+        const { rows } = await pool.query(`
+            UPDATE sport_workouts
+            SET name = \$1
+            WHERE id = \$2 AND user_id = \$3
+            RETURNING *
+        `, [name, id, moi]);
+        if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
+        res.json({ success: true, workout: rows[0] });
+    } catch (err) {
+        console.error('[SPORT] PUT /workouts/:id :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 router.delete('/workouts/:id', auth, async (req, res) => {
     const moi = req.user.id;
-    const workoutId = parseInt(req.params.id, 10);
+    const id  = parseInt(req.params.id, 10);
     try {
         const { rows } = await pool.query(`
             DELETE FROM sport_workouts
             WHERE id = \$1 AND user_id = \$2
             RETURNING id
-        `, [workoutId, moi]);
-
-        if (!rows.length) {
-            return res.status(403).json({ success: false, message: 'Routine introuvable ou interdite.' });
-        }
+        `, [id, moi]);
+        if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
         res.json({ success: true });
     } catch (err) {
         console.error('[SPORT] DELETE /workouts/:id :', err.message);
@@ -167,65 +188,348 @@ router.delete('/workouts/:id', auth, async (req, res) => {
     }
 });
 
-// ── GESTION DES SÉANCES : sport_sessions ──
+// ── JOURS : sport_workout_days ──
 
-router.get('/sessions/en-cours', auth, async (req, res) => {
+router.post('/workouts/:workoutId/days', auth, async (req, res) => {
+    const moi         = req.user.id;
+    const workoutId   = parseInt(req.params.workoutId, 10);
+    const description = req.body.description?.trim();
+    const dayOrder    = Number.isInteger(req.body.day_order) ? req.body.day_order : 0;
+    if (!description) return res.status(400).json({ success: false, message: 'Description requise.' });
+    try {
+        const { rows: owner } = await pool.query(`
+            SELECT id FROM sport_workouts WHERE id = \$1 AND user_id = \$2
+        `, [workoutId, moi]);
+        if (!owner.length) return res.status(403).json({ success: false, message: 'Interdit.' });
+
+        const { rows } = await pool.query(`
+            INSERT INTO sport_workout_days (workout_id, description, day_order)
+            VALUES (\$1, \$2, \$3)
+            RETURNING *
+        `, [workoutId, description, dayOrder]);
+        res.json({ success: true, day: rows[0] });
+    } catch (err) {
+        console.error('[SPORT] POST /workouts/:workoutId/days :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.put('/days/:dayId', auth, async (req, res) => {
+    const moi         = req.user.id;
+    const dayId       = parseInt(req.params.dayId, 10);
+    const description = req.body.description?.trim();
+    const dayOrder    = req.body.day_order;
+    try {
+        const { rows } = await pool.query(`
+            UPDATE sport_workout_days AS d
+            SET description = COALESCE(\$1, d.description),
+                day_order   = COALESCE(\$2, d.day_order)
+            FROM sport_workouts AS w
+            WHERE d.id = \$3
+                AND d.workout_id = w.id
+                AND w.user_id = \$4
+            RETURNING d.*
+        `, [description || null, Number.isInteger(dayOrder) ? dayOrder : null, dayId, moi]);
+        if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
+        res.json({ success: true, day: rows[0] });
+    } catch (err) {
+        console.error('[SPORT] PUT /days/:dayId :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.delete('/days/:dayId', auth, async (req, res) => {
+    const moi   = req.user.id;
+    const dayId = parseInt(req.params.dayId, 10);
+    try {
+        const { rows } = await pool.query(`
+            DELETE FROM sport_workout_days AS d
+            USING sport_workouts AS w
+            WHERE d.id = \$1
+                AND d.workout_id = w.id
+                AND w.user_id = \$2
+            RETURNING d.id
+        `, [dayId, moi]);
+        if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
+        res.json({ success: true });
+    } catch (err) {
+        console.error('[SPORT] DELETE /days/:dayId :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// ── EXERCICES D'UN JOUR : sport_day_exercises ──
+
+router.post('/days/:dayId/exercises', auth, async (req, res) => {
+    const moi   = req.user.id;
+    const dayId = parseInt(req.params.dayId, 10);
+    const {
+        wger_exercise_id, exercise_name,
+        target_sets, target_reps, target_duration_seconds,
+        target_weight_kg, target_rest_seconds
+    } = req.body;
+
+    if (!wger_exercise_id || !exercise_name?.trim()) {
+        return res.status(400).json({ success: false, message: 'Données manquantes.' });
+    }
+
+    try {
+        const { rows: owner } = await pool.query(`
+            SELECT d.id
+            FROM sport_workout_days d
+            JOIN sport_workouts w ON w.id = d.workout_id
+            WHERE d.id = \$1 AND w.user_id = \$2
+        `, [dayId, moi]);
+        if (!owner.length) return res.status(403).json({ success: false, message: 'Interdit.' });
+
+        const { rows: maxOrderRows } = await pool.query(`
+            SELECT COALESCE(MAX(order_in_day), 0) AS max_order
+            FROM sport_day_exercises
+            WHERE day_id = \$1
+        `, [dayId]);
+        const prochainOrdre = maxOrderRows[0].max_order + 1;
+
+        const { rows } = await pool.query(`
+            INSERT INTO sport_day_exercises
+                (day_id, wger_exercise_id, exercise_name, order_in_day, target_sets, target_reps,
+                 target_duration_seconds, target_weight_kg, target_rest_seconds)
+            VALUES (\$1, \$2, \$3, \$4, \$5, \$6, \$7, \$8, \$9)
+            RETURNING *
+        `, [
+            dayId,
+            wger_exercise_id,
+            exercise_name.trim(),
+            prochainOrdre,
+            Number.isInteger(target_sets)  ? target_sets  : 3,
+            Number.isInteger(target_reps)  ? target_reps  : 10,
+            Number.isInteger(target_duration_seconds) ? target_duration_seconds : null,
+            target_weight_kg != null ? target_weight_kg : null,
+            Number.isInteger(target_rest_seconds) ? target_rest_seconds : 60
+        ]);
+        res.json({ success: true, exercise: rows[0] });
+    } catch (err) {
+        console.error('[SPORT] POST /days/:dayId/exercises :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.put('/days/:dayId/exercises/reorder', auth, async (req, res) => {
+    const moi   = req.user.id;
+    const dayId = parseInt(req.params.dayId, 10);
+    const ordre = req.body.ordre;
+
+    if (!Array.isArray(ordre) || !ordre.length) {
+        return res.status(400).json({ success: false, message: 'Ordre invalide.' });
+    }
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const { rows: owner } = await client.query(`
+            SELECT d.id
+            FROM sport_workout_days d
+            JOIN sport_workouts w ON w.id = d.workout_id
+            WHERE d.id = \$1 AND w.user_id = \$2
+        `, [dayId, moi]);
+        if (!owner.length) {
+            await client.query('ROLLBACK');
+            return res.status(403).json({ success: false, message: 'Interdit.' });
+        }
+
+        const { rows: existants } = await client.query(`
+            SELECT id FROM sport_day_exercises WHERE day_id = \$1
+        `, [dayId]);
+        const idsValides  = new Set(existants.map(e => e.id));
+        const idsRecus    = ordre.map(id => parseInt(id, 10));
+        const tousValides = idsRecus.length === idsValides.size
+            && idsRecus.every(id => idsValides.has(id));
+
+        if (!tousValides) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ success: false, message: "Liste d'exercices incohérente." });
+        }
+
+        for (let i = 0; i < idsRecus.length; i++) {
+            await client.query(`
+                UPDATE sport_day_exercises SET order_in_day = \$1 WHERE id = \$2
+            `, [i + 1, idsRecus[i]]);
+        }
+
+        await client.query('COMMIT');
+        res.json({ success: true });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('[SPORT] PUT /days/:dayId/exercises/reorder :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    } finally {
+        client.release();
+    }
+});
+
+router.put('/exercises/:exerciseId', auth, async (req, res) => {
+    const moi        = req.user.id;
+    const exerciseId = parseInt(req.params.exerciseId, 10);
+    const {
+        exercise_name, order_in_day, target_sets, target_reps, target_duration_seconds,
+        target_weight_kg, target_rest_seconds
+    } = req.body;
+
+    try {
+        const { rows } = await pool.query(`
+            UPDATE sport_day_exercises AS e
+            SET exercise_name = COALESCE(\$1, e.exercise_name),
+                order_in_day  = COALESCE(\$2, e.order_in_day),
+                target_sets   = COALESCE(\$3, e.target_sets),
+                target_reps   = COALESCE(\$4, e.target_reps),
+                target_duration_seconds = COALESCE(\$5, e.target_duration_seconds),
+                target_weight_kg        = COALESCE(\$6, e.target_weight_kg),
+                target_rest_seconds     = COALESCE(\$7, e.target_rest_seconds)
+            FROM sport_workout_days d
+            JOIN sport_workouts w ON w.id = d.workout_id
+            WHERE e.id = \$8
+                AND e.day_id = d.id
+                AND w.user_id = \$9
+            RETURNING e.*
+        `, [
+            exercise_name?.trim() || null,
+            Number.isInteger(order_in_day) ? order_in_day : null,
+            Number.isInteger(target_sets)  ? target_sets  : null,
+            Number.isInteger(target_reps)  ? target_reps  : null,
+            Number.isInteger(target_duration_seconds) ? target_duration_seconds : null,
+            target_weight_kg != null ? target_weight_kg : null,
+            Number.isInteger(target_rest_seconds) ? target_rest_seconds : null,
+            exerciseId,
+            moi
+        ]);
+        if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
+        res.json({ success: true, exercise: rows[0] });
+    } catch (err) {
+        console.error('[SPORT] PUT /exercises/:exerciseId :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.delete('/exercises/:exerciseId', auth, async (req, res) => {
+    const moi        = req.user.id;
+    const exerciseId = parseInt(req.params.exerciseId, 10);
+    try {
+        const { rows } = await pool.query(`
+            DELETE FROM sport_day_exercises AS e
+            USING sport_workout_days AS d, sport_workouts w
+            WHERE e.id = \$1
+                AND e.day_id = d.id
+                AND d.workout_id = w.id
+                AND w.user_id = \$2
+            RETURNING e.id
+        `, [exerciseId, moi]);
+        if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
+        res.json({ success: true });
+    } catch (err) {
+        console.error('[SPORT] DELETE /exercises/:exerciseId :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// ── SÉANCES : sport_sessions ──
+
+router.get('/sessions', auth, async (req, res) => {
     const moi = req.user.id;
     try {
         const { rows } = await pool.query(`
-            SELECT s.*, w.name AS workout_name
-            FROM sport_sessions s
-            LEFT JOIN sport_workouts w ON w.id = s.workout_id
-            WHERE s.user_id = \$1 AND s.status = 'in_progress'
-            ORDER BY s.date_start DESC
+            SELECT id, user_id, workout_id, activity_type, distance_km, vitesse_moyenne_kmh, date_start, date_end, status
+            FROM sport_sessions
+            WHERE user_id = \$1
+            ORDER BY date_start DESC
+        `, [moi]);
+        res.json({ success: true, sessions: rows });
+    } catch (err) {
+        console.error('[SPORT] GET /sessions :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.get('/sessions/active', auth, async (req, res) => {
+    const moi = req.user.id;
+    try {
+        const { rows: sessions } = await pool.query(`
+            SELECT id, user_id, workout_id, activity_type, distance_km, vitesse_moyenne_kmh, date_start, date_end, status
+            FROM sport_sessions
+            WHERE user_id = \$1 AND status = 'in_progress'
+            ORDER BY date_start DESC
             LIMIT 1
         `, [moi]);
+        if (!sessions.length) return res.json({ success: true, session: null });
 
-        if (!rows.length) {
-            return res.json({ success: true, session: null });
-        }
-
-        const session = rows[0];
         const { rows: logs } = await pool.query(`
-            SELECT * FROM sport_session_logs WHERE session_id = \$1 ORDER BY id ASC
-        `, [session.id]);
+            SELECT *
+            FROM sport_session_logs
+            WHERE session_id = \$1
+            ORDER BY id ASC
+        `, [sessions[0].id]);
 
-        let gpsPoints = [];
-        const isGps = ['marche', 'course', 'vélo', 'velo'].includes(session.activity_type);
-        if (isGps) {
-            const { rows: pts } = await pool.query(`
-                SELECT lat, lng, recorded_at FROM sport_gps_points WHERE session_id = \$1 ORDER BY recorded_at ASC
-            `, [session.id]);
-            gpsPoints = pts;
-        }
-
-        res.json({ success: true, session: { ...session, logs, gpsPoints } });
+        res.json({ success: true, session: { ...sessions[0], logs } });
     } catch (err) {
-        console.error('[SPORT] GET /sessions/en-cours :', err.message);
+        console.error('[SPORT] GET /sessions/active :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.get('/sessions/:id', auth, async (req, res) => {
+    const moi = req.user.id;
+    const id  = parseInt(req.params.id, 10);
+    try {
+        const { rows: sessions } = await pool.query(`
+            SELECT id, user_id, workout_id, activity_type, distance_km, vitesse_moyenne_kmh, date_start, date_end, status
+            FROM sport_sessions
+            WHERE id = \$1 AND user_id = \$2
+        `, [id, moi]);
+        if (!sessions.length) return res.status(404).json({ success: false, message: 'Séance introuvable.' });
+
+        const { rows: logs } = await pool.query(`
+            SELECT *
+            FROM sport_session_logs
+            WHERE session_id = \$1
+            ORDER BY id ASC
+        `, [id]);
+
+        res.json({ success: true, session: { ...sessions[0], logs } });
+    } catch (err) {
+        console.error('[SPORT] GET /sessions/:id :', err.message);
         res.status(500).json({ success: false, message: err.message });
     }
 });
 
 router.post('/sessions', auth, async (req, res) => {
-    const moi = req.user.id;
-    const { workout_id, activity_type } = req.body;
+    const moi       = req.user.id;
+    const workoutId = req.body.workout_id || null;
+
+    if (!workoutId) {
+        return res.status(400).json({ success: false, message: 'workout_id requis.' });
+    }
 
     try {
-        const { rows: active } = await pool.query(`
-            SELECT id FROM sport_sessions WHERE user_id = \$1 AND status = 'in_progress'
-        `, [moi]);
-
-        if (active.length > 0) {
-            return res.status(400).json({ success: false, message: 'Une séance est déjà en cours.' });
+        const { rows: existante } = await pool.query(`
+            SELECT id, user_id, workout_id, activity_type, date_start, date_end, status
+            FROM sport_sessions
+            WHERE user_id = \$1 AND status = 'in_progress' AND workout_id = \$2
+            ORDER BY date_start DESC
+            LIMIT 1
+        `, [moi, workoutId]);
+        if (existante.length) {
+            return res.json({ success: true, session: existante[0] });
         }
 
-        const typeFinal = activity_type || 'musculation';
+        const { rows: owner } = await pool.query(`
+            SELECT id FROM sport_workouts WHERE id = \$1 AND user_id = \$2
+        `, [workoutId, moi]);
+        if (!owner.length) return res.status(403).json({ success: false, message: 'Interdit.' });
+        
         const { rows } = await pool.query(`
-            INSERT INTO sport_sessions (user_id, workout_id, activity_type, status, date_start)
-            VALUES (\$1, \$2, \$3, 'in_progress', NOW())
+            INSERT INTO sport_sessions (user_id, workout_id, activity_type, date_start)
+            VALUES (\$1, \$2, 'musculation', NOW())
             RETURNING *
-        `, [moi, workout_id || null, typeFinal]);
-
+        `, [moi, workoutId]);
         res.json({ success: true, session: rows[0] });
     } catch (err) {
         console.error('[SPORT] POST /sessions :', err.message);
@@ -233,174 +537,102 @@ router.post('/sessions', auth, async (req, res) => {
     }
 });
 
-router.post('/sessions/:id/terminer', auth, async (req, res) => {
-    const moi = req.user.id;
-    const sessionId = parseInt(req.params.id, 10);
-    const { distance_km, vitesse_moyenne_kmh } = req.body;
+router.put('/sessions/:id', auth, async (req, res) => {
+    const moi    = req.user.id;
+    const id     = parseInt(req.params.id, 10);
+    const status = req.body.status;
+    if (!['completed', 'abandoned'].includes(status)) {
+        return res.status(400).json({ success: false, message: 'Statut invalide.' });
+    }
+    try {
+        const { rows } = await pool.query(`
+            UPDATE sport_sessions
+            SET date_end = NOW(), status = \$1
+            WHERE id = \$2 AND user_id = \$3
+            RETURNING *
+        `, [status, id, moi]);
+        if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
+        res.json({ success: true, session: rows[0] });
+    } catch (err) {
+        console.error('[SPORT] PUT /sessions/:id :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
 
+router.delete('/sessions/:id', auth, async (req, res) => {
+    const moi = req.user.id;
+    const id  = parseInt(req.params.id, 10);
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
 
-        const { rows: sRows } = await client.query(`
-            SELECT * FROM sport_sessions WHERE id = \$1 AND user_id = \$2
-        `, [sessionId, moi]);
-
-        if (!sRows.length) {
+        const { rows: owner } = await client.query(`
+            SELECT id FROM sport_sessions WHERE id = \$1 AND user_id = \$2
+        `, [id, moi]);
+        if (!owner.length) {
             await client.query('ROLLBACK');
-            return res.status(404).json({ success: false, message: 'Séance introuvable.' });
-        }
-        const session = sRows[0];
-
-        let distFinale = distance_km != null ? parseFloat(distance_km) : null;
-        let vitFinale = vitesse_moyenne_kmh != null ? parseFloat(vitesse_moyenne_kmh) : null;
-
-        const isGps = ['marche', 'course', 'vélo', 'velo'].includes(session.activity_type);
-        if (isGps && distFinale == null) {
-            const { rows: pts } = await client.query(`
-                SELECT lat, lng FROM sport_gps_points WHERE session_id = \$1 ORDER BY recorded_at ASC
-            `, [sessionId]);
-
-            if (pts.length >= 2) {
-                let distTotaleKm = 0;
-                for (let i = 1; i < pts.length; i++) {
-                    const p1 = pts[i - 1];
-                    const p2 = pts[i];
-                    distTotaleKm += _calculerDistanceHaversine(p1.lat, p1.lng, p2.lat, p2.lng);
-                }
-                distFinale = Math.round(distTotaleKm * 100) / 100;
-
-                const debut = new Date(session.date_start);
-                const fin = new Date();
-                const heures = (fin - debut) / 3600000;
-                if (heures > 0.001) {
-                    vitFinale = Math.round((distFinale / heures) * 10) / 10;
-                }
-            }
+            return res.status(403).json({ success: false, message: 'Interdit.' });
         }
 
-        const { rows: updated } = await client.query(`
-            UPDATE sport_sessions
-            SET status = 'completed',
-                date_end = NOW(),
-                distance_km = COALESCE(\$1, distance_km),
-                vitesse_moyenne_kmh = COALESCE(\$2, vitesse_moyenne_kmh)
-            WHERE id = \$3
-            RETURNING *
-        `, [distFinale, vitFinale, sessionId]);
+        await client.query(`DELETE FROM sport_session_logs WHERE session_id = \$1`, [id]);
+        await client.query(`DELETE FROM sport_gps_points WHERE session_id = \$1`, [id]);
+        await client.query(`DELETE FROM sport_sessions WHERE id = \$1`, [id]);
 
         await client.query('COMMIT');
-        res.json({ success: true, session: updated[0] });
+        res.json({ success: true });
     } catch (err) {
         await client.query('ROLLBACK');
-        console.error('[SPORT] POST /sessions/:id/terminer :', err.message);
+        console.error('[SPORT] DELETE /sessions/:id :', err.message);
         res.status(500).json({ success: false, message: err.message });
     } finally {
         client.release();
     }
 });
 
-router.delete('/sessions/:id', auth, async (req, res) => {
-    const moi = req.user.id;
-    const sessionId = parseInt(req.params.id, 10);
-    try {
-        const { rows } = await pool.query(`
-            DELETE FROM sport_sessions
-            WHERE id = \$1 AND user_id = \$2
-            RETURNING id
-        `, [sessionId, moi]);
+// ── DASHBOARD & WIDGET : stats agrégées + Mifflin-St Jeor ──
 
-        if (!rows.length) {
-            return res.status(403).json({ success: false, message: 'Séance introuvable ou interdite.' });
-        }
-        res.json({ success: true });
-    } catch (err) {
-        console.error('[SPORT] DELETE /sessions/:id :', err.message);
-        res.status(500).json({ success: false, message: err.message });
-    }
-});
-
-// ── POINTS GPS ──
-
-router.post('/sessions/:id/gps', auth, async (req, res) => {
-    const moi = req.user.id;
-    const sessionId = parseInt(req.params.id, 10);
-    const { points } = req.body;
-
-    if (!Array.isArray(points) || !points.length) {
-        return res.status(400).json({ success: false, message: 'Aucun point GPS fourni.' });
-    }
-
-    try {
-        const { rows: owner } = await pool.query(`
-            SELECT id FROM sport_sessions WHERE id = \$1 AND user_id = \$2
-        `, [sessionId, moi]);
-        if (!owner.length) return res.status(403).json({ success: false, message: 'Interdit.' });
-
-        for (const p of points) {
-            if (p.lat != null && p.lng != null) {
-                await pool.query(`
-                    INSERT INTO sport_gps_points (session_id, lat, lng, recorded_at)
-                    VALUES (\$1, \$2, \$3, COALESCE(\$4, NOW()))
-                `, [sessionId, p.lat, p.lng, p.recorded_at || null]);
-            }
-        }
-
-        res.json({ success: true });
-    } catch (err) {
-        console.error('[SPORT] POST /sessions/:id/gps :', err.message);
-        res.status(500).json({ success: false, message: err.message });
-    }
-});
-
-function _calculerDistanceHaversine(lat1, lon1, lat2, lon2) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * (Math.PI / 180);
-    const dLon = (lon2 - lon1) * (Math.PI / 180);
-    const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
+function _calculerAge(dateNaissance) {
+    if (!dateNaissance) return null;
+    const n = new Date(dateNaissance);
+    if (isNaN(n.getTime())) return null;
+    const aujourdhui = new Date();
+    let age = aujourdhui.getFullYear() - n.getFullYear();
+    const pasEncoreAnniversaire =
+        aujourdhui.getMonth() < n.getMonth() ||
+        (aujourdhui.getMonth() === n.getMonth() && aujourdhui.getDate() < n.getDate());
+    if (pasEncoreAnniversaire) age--;
+    return age;
 }
 
-// ── CALCUL STATS & CALORIES ──
-
 function _sportCalculerStatsSession(session, logs, profil) {
-    const dateStart = session.date_start ? new Date(session.date_start) : null;
-    const dateEnd = session.date_end ? new Date(session.date_end) : new Date();
-    const dureeSecondes = dateStart ? Math.max(0, Math.floor((dateEnd - dateStart) / 1000)) : 0;
+    const dureeSecondes = session.date_end
+        ? Math.max(0, Math.round((new Date(session.date_end) - new Date(session.date_start)) / 1000))
+        : 0;
 
-    const poidsUser = profil.poids ? parseFloat(profil.poids) : 70;
-    const age = profil.date_naissance ? new Date().getFullYear() - new Date(profil.date_naissance).getFullYear() : 30;
-    const sexe = profil.sexe === 'F' ? 'F' : 'M';
-    const profil_incomplet = !profil.poids || !profil.taille || !profil.sexe || !profil.date_naissance;
-
-    const isGps = ['marche', 'course', 'vélo', 'velo'].includes(session.activity_type);
+    let calories = null;
+    let profil_incomplet = false;
+    const isGps = session.activity_type === 'marche' || session.activity_type === 'course' || session.activity_type === 'vélo' || session.activity_type === 'velo';
 
     if (isGps) {
-        let distanceKm = session.distance_km != null ? parseFloat(session.distance_km) : 0;
-        let vitesseKmh = session.vitesse_moyenne_kmh != null ? parseFloat(session.vitesse_moyenne_kmh) : 0;
+        if (dureeSecondes > 0) {
+            const poids = profil?.poids != null ? parseFloat(profil.poids) : null;
+            const taille = profil?.taille != null ? parseFloat(profil.taille) : null;
+            const age = _calculerAge(profil?.date_naissance);
+            const sexe = profil?.sexe ? profil.sexe.toLowerCase() : null;
 
-        if (distanceKm === 0 && dureeSecondes > 0 && vitesseKmh > 0) {
-            distanceKm = (vitesseKmh * dureeSecondes) / 3600;
-        } else if (vitesseKmh === 0 && dureeSecondes > 0 && distanceKm > 0) {
-            vitesseKmh = (distanceKm / (dureeSecondes / 3600));
+            if (poids && taille && age && (sexe === 'homme' || sexe === 'femme')) {
+                const s = (sexe === 'homme') ? 5 : -161;
+                const bmr = (10 * poids) + (6.25 * taille) - (5 * age) + s;
+                const met = session.activity_type === 'course' ? SPORT_MET_COURSE : SPORT_MET_MARCHE;
+                calories = Math.round(met * (bmr / 24) * (dureeSecondes / 3600));
+            } else {
+                profil_incomplet = true;
+            }
         }
-
-        let met = 3.5;
-        if (session.activity_type === 'course') met = 9.8;
-        else if (session.activity_type === 'vélo' || session.activity_type === 'velo') met = 7.5;
-        else if (session.activity_type === 'marche') met = 3.8;
-
-        const dureeHeures = dureeSecondes / 3600;
-        const calories = Math.round(met * poidsUser * dureeHeures);
-
         return {
             dureeSecondes,
-            distanceKm: Math.round(distanceKm * 100) / 100,
-            vitesseKmh: Math.round(vitesseKmh * 10) / 10,
+            distanceKm: session.distance_km != null ? parseFloat(session.distance_km) : 0,
+            vitesseKmh: session.vitesse_moyenne_kmh != null ? parseFloat(session.vitesse_moyenne_kmh) : 0,
             calories,
             profil_incomplet,
             isGps: true
@@ -408,22 +640,39 @@ function _sportCalculerStatsSession(session, logs, profil) {
     } else {
         const logsValides = logs.filter(l => l.completed);
         let volumeKg = 0;
+        let nbCardio = 0, nbMusculation = 0;
+
         logsValides.forEach(l => {
-            if (l.weight_kg != null && l.reps != null) {
-                volumeKg += parseFloat(l.weight_kg) * parseInt(l.reps, 10);
+            const estCardio = l.distance_km != null || l.duration_seconds != null;
+            if (estCardio) {
+                nbCardio++;
+            } else {
+                nbMusculation++;
+                if (l.weight_kg != null && l.reps != null) {
+                    volumeKg += parseFloat(l.weight_kg) * l.reps;
+                }
             }
         });
 
-        const dureeMinutes = dureeSecondes / 60;
-        let calories = 0;
-        if (sexe === 'M') {
-            calories = Math.round((0.2017 * age + 0.09036 * poidsUser + 0.6309 * 100 - 55.0969) * (dureeMinutes / 4.184));
-        } else {
-            calories = Math.round((0.074 * age + 0.05741 * poidsUser + 0.4472 * 100 - 20.4022) * (dureeMinutes / 4.184));
-        }
-        if (isNaN(calories) || calories < 0) calories = Math.round(dureeMinutes * 5);
+        const totalSeries = nbCardio + nbMusculation;
 
-        return {
+        if (totalSeries > 0 && dureeSecondes > 0) {
+            const poids = profil?.poids != null ? parseFloat(profil.poids) : null;
+            const taille = profil?.taille != null ? parseFloat(profil.taille) : null;
+            const age = _calculerAge(profil?.date_naissance);
+            const sexe = profil?.sexe ? profil.sexe.toLowerCase() : null;
+
+            if (poids && taille && age && (sexe === 'homme' || sexe === 'femme')) {
+                const s = (sexe === 'homme') ? 5 : -161;
+                const bmr = (10 * poids) + (6.25 * taille) - (5 * age) + s;
+                const metPondere = ((nbMusculation * SPORT_MET_MUSCULATION) + (nbCardio * SPORT_MET_CARDIO)) / totalSeries;
+                calories = Math.round(metPondere * (bmr / 24) * (dureeSecondes / 3600));
+            } else {
+                profil_incomplet = true;
+            }
+        }
+
+                return {
             dureeSecondes,
             volumeKg: Math.round(volumeKg * 10) / 10,
             nbSeries: logsValides.length,
@@ -692,28 +941,282 @@ router.get('/exercises/:wgerExerciseId/dernier-log', auth, async (req, res) => {
     const wgerExerciseId = parseInt(req.params.wgerExerciseId, 10);
     try {
         const { rows } = await pool.query(`
-            SELECT l.weight_kg, l.reps, l.set_number
+            SELECT l.*
             FROM sport_session_logs l
             JOIN sport_sessions s ON s.id = l.session_id
-            WHERE s.user_id = \$1
-                AND s.status = 'completed'
-                AND l.wger_exercise_id = \$2
-                AND l.completed = TRUE
-            ORDER BY s.date_end DESC, l.set_number ASC
+            WHERE s.user_id = \$1 AND l.wger_exercise_id = \$2 AND l.completed = TRUE
+            ORDER BY l.logged_at DESC
             LIMIT 1
         `, [moi, wgerExerciseId]);
-
-        if (!rows.length) {
-            return res.json({ success: true, dernier_log: null });
-        }
-        res.json({ success: true, dernier_log: rows[0] });
+        res.json({ success: true, log: rows[0] || null });
     } catch (err) {
         console.error('[SPORT] GET /exercises/:wgerExerciseId/dernier-log :', err.message);
         res.status(500).json({ success: false, message: err.message });
     }
 });
 
-// ── ROUTE DE GÉNÉRATION D'IMAGE DE PARTAGE (JPEG) ──
+// ── MENSURATIONS : sport_measurements ──
+
+router.get('/measurements', auth, async (req, res) => {
+    const moi = req.user.id;
+    try {
+        const { rows } = await pool.query(`
+            SELECT id, user_id, date_logged, weight_kg
+            FROM sport_measurements
+            WHERE user_id = \$1
+            ORDER BY date_logged DESC
+        `, [moi]);
+        res.json({ success: true, measurements: rows });
+    } catch (err) {
+        console.error('[SPORT] GET /measurements :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.post('/measurements', auth, async (req, res) => {
+    const moi = req.user.id;
+    const { date_logged, weight_kg } = req.body;
+    if (!date_logged || weight_kg == null) {
+        return res.status(400).json({ success: false, message: 'Données manquantes.' });
+    }
+    try {
+        const { rows } = await pool.query(`
+            INSERT INTO sport_measurements (user_id, date_logged, weight_kg)
+            VALUES (\$1, \$2, \$3)
+            RETURNING *
+        `, [moi, date_logged, weight_kg]);
+        res.json({ success: true, measurement: rows[0] });
+    } catch (err) {
+        console.error('[SPORT] POST /measurements :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.delete('/measurements/:id', auth, async (req, res) => {
+    const moi = req.user.id;
+    const id  = parseInt(req.params.id, 10);
+    try {
+        const { rows } = await pool.query(`
+            DELETE FROM sport_measurements
+            WHERE id = \$1 AND user_id = \$2
+            RETURNING id
+        `, [id, moi]);
+        if (!rows.length) return res.status(403).json({ success: false, message: 'Interdit.' });
+        res.json({ success: true });
+    } catch (err) {
+        console.error('[SPORT] DELETE /measurements/:id :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// ── CATALOGUE WGER (lecture seule) ──
+
+const SPORT_WGER_CATEGORIES_FR = {
+    'Abs'      : 'Abdominaux',
+    'Arms'     : 'Bras',
+    'Back'     : 'Dos',
+    'Calves'   : 'Mollets',
+    'Cardio'   : 'Cardio',
+    'Chest'    : 'Poitrine',
+    'Legs'     : 'Jambes',
+    'Shoulders': 'Épaules'
+};
+
+const SPORT_WGER_EQUIPEMENT_FR = {
+    'Barbell'                    : 'Barre olympique',
+    'SZ-Bar'                     : 'Barre EZ',
+    'Dumbbell'                   : 'Haltère',
+    'Kettlebell'                 : 'Kettlebell',
+    'Gym mat'                    : 'Tapis de sol',
+    'Swiss Ball'                 : 'Ballon de gym',
+    'Pull-up bar'                : 'Barre de traction',
+    'Bench'                      : 'Banc',
+    'none (bodyweight exercise)' : 'Aucun (poids du corps)'
+};
+
+function _traduireCategorie(nom) {
+    return SPORT_WGER_CATEGORIES_FR[nom] || nom;
+}
+
+function _traduireEquipement(nom) {
+    return SPORT_WGER_EQUIPEMENT_FR[nom] || nom;
+}
+
+function _construireNomBilingue(translations) {
+    const en = translations.find(t => t.language === 2)?.name || null;
+    const fr = translations.find(t => t.language === 5)?.name || null;
+    if (en && fr) return `${en} (${fr})`;
+    return en || fr || 'Exercice sans nom';
+}
+
+function _nettoyerNomBase(nom) {
+    return nom.split('(')[0].trim();
+}
+
+function _nettoyerParenthesesNonLatines(nom) {
+    return nom.replace(/\s*$[^)]*$/g, (match, interieur) => {
+        return /[a-zA-Z]/.test(interieur) ? match : '';
+    }).trim();
+}
+
+function _sansAccents(txt) {
+    return txt.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
+router.get('/wger/categories', auth, async (req, res) => {
+    try {
+        const r = await fetch(`${WGER_BASE_URL}/exercisecategory/?limit=50&format=json`);
+        if (!r.ok) throw new Error(`WGER a répondu avec le statut ${r.status}`);
+        const data = await r.json();
+        const categories = data.results.map(c => ({
+            id  : c.id,
+            name: _traduireCategorie(c.name)
+        }));
+        res.json({ success: true, categories });
+    } catch (err) {
+        console.error('[SPORT] GET /wger/categories :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.get('/wger/equipment', auth, async (req, res) => {
+    try {
+        const r = await fetch(`${WGER_BASE_URL}/equipment/?limit=50&format=json`);
+        if (!r.ok) throw new Error(`WGER a répondu avec le statut ${r.status}`);
+        const data = await r.json();
+        const equipment = data.results.map(e => ({
+            id  : e.id,
+            name: _traduireEquipement(e.name)
+        }));
+        res.json({ success: true, equipment });
+    } catch (err) {
+        console.error('[SPORT] GET /wger/equipment :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+router.get('/wger/exercises', auth, async (req, res) => {
+    const search    = _sansAccents((req.query.search || '').trim().toLowerCase());
+    const category  = req.query.category   || '';
+    const equipment = req.query.equipment  || '';
+    const limit     = Math.min(parseInt(req.query.limit, 10)  || 20, 50);
+    const offset    = parseInt(req.query.offset, 10) || 0;
+
+    const LOT_INTERNE     = 50;
+    const MAX_LOTS_SONDES = 40;
+
+    try {
+        let aIgnorer   = offset;
+        let aCollecter = limit;
+        const resultats = [];
+
+        let lotOffsetWger = 0;
+        let lotsSondes     = 0;
+        let plusDeDonnees  = true;
+
+        while (aCollecter > 0 && plusDeDonnees && lotsSondes < MAX_LOTS_SONDES) {
+            const params = new URLSearchParams({
+                limit : String(LOT_INTERNE),
+                offset: String(lotOffsetWger),
+                format: 'json'
+            });
+            if (category)  params.set('category',  category);
+            if (equipment) params.set('equipment', equipment);
+
+            const r = await fetch(`${WGER_BASE_URL}/exerciseinfo/?${params.toString()}`);
+            if (!r.ok) throw new Error(`WGER a répondu avec le statut ${r.status}`);
+            const data = await r.json();
+
+            if (!data.results.length) {
+                plusDeDonnees = false;
+                break;
+            }
+
+            for (const ex of data.results) {
+                const translations = ex.translations || [];
+                const nomOriginal  = _nettoyerParenthesesNonLatines(_construireNomBilingue(translations));
+                let nom            = nomOriginal;
+                let typeSuivi      = null;
+
+                const cle = _nettoyerNomBase(nomOriginal);
+                if (Object.prototype.hasOwnProperty.call(SPORT_TRADUCTION_FR, cle)) {
+                    const mapping = SPORT_TRADUCTION_FR[cle];
+                    if (mapping === null) continue;
+                    nom       = mapping.nom;
+                    typeSuivi = mapping.type;
+                }
+
+                const image = ex.images?.[0]?.image || null;
+
+                if (search) {
+                    const texteRecherchable = _sansAccents(`${nom} ${nomOriginal}`.toLowerCase());
+                    if (!texteRecherchable.includes(search)) continue;
+                }
+
+                if (aIgnorer > 0) {
+                    aIgnorer--;
+                    continue;
+                }
+
+                resultats.push({
+                    wger_exercise_id: ex.id,
+                    name            : nom,
+                    category        : ex.category?.id ?? ex.category,
+                    equipment       : ex.equipment,
+                    muscles         : ex.muscles,
+                    image,
+                    type_suivi      : typeSuivi
+                });
+                aCollecter--;
+
+                if (aCollecter === 0) break;
+            }
+
+            plusDeDonnees = Boolean(data.next);
+            lotOffsetWger += LOT_INTERNE;
+            lotsSondes++;
+        }
+
+        res.json({
+            success  : true,
+            has_more : aCollecter === 0 && plusDeDonnees,
+            exercises: resultats
+        });
+    } catch (err) {
+        console.error('[SPORT] GET /wger/exercises :', err.message);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// ── PARTAGE DE SÉANCE : GÉNÉRATION IMAGE (PHASE 1) ──
+
+function _formatDurationLongSVG(secondes) {
+    if (!secondes) return '0s';
+    const h = Math.floor(secondes / 3600);
+    const m = Math.floor((secondes % 3600) / 60);
+    const s = secondes % 60;
+    if (h > 0) return `${h}h${String(m).padStart(2, '0')}`;
+    if (m > 0) return `${m}min${String(s).padStart(2, '0')}`;
+    return `${s}s`;
+}
+
+function _formatDetailSerieSVG(serie, estCardio) {
+    if (estCardio) {
+        if (serie.duration_seconds != null) return _formatDurationLongSVG(serie.duration_seconds);
+        if (serie.distance_km != null) return `${serie.distance_km} km`;
+        return '';
+    }
+    return serie.reps != null ? `${serie.reps} reps` : '';
+}
+
+function _echapperXML(str) {
+    return (str || '').toString()
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+}
 
 router.post('/sessions/:id/generate-share', auth, async (req, res) => {
     const moi = req.user.id;
@@ -721,7 +1224,7 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
 
     try {
         const { rows: sessions } = await pool.query(`
-            SELECT s.*, w.name AS workout_name
+            SELECT s.id, s.workout_id, s.activity_type, s.distance_km, s.vitesse_moyenne_kmh, s.date_start, s.date_end, w.name AS workout_name
             FROM sport_sessions s
             LEFT JOIN sport_workouts w ON w.id = s.workout_id
             WHERE s.id = \$1 AND s.user_id = \$2
@@ -732,103 +1235,93 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
         }
         const session = sessions[0];
 
-        const { rows: profilRows } = await pool.query(`
-            SELECT poids, taille, sexe, date_naissance FROM profiles WHERE user_id = \$1
-        `, [moi]);
+        const { rows: logs } = await pool.query(`SELECT * FROM sport_session_logs WHERE session_id = \$1 ORDER BY id ASC`, [id]);
+        const { rows: profilRows } = await pool.query(`SELECT poids, taille, sexe, date_naissance FROM profiles WHERE user_id = \$1`, [moi]);
         const profil = profilRows[0] || {};
-
-        const { rows: logs } = await pool.query(`
-            SELECT * FROM sport_session_logs WHERE session_id = \$1 ORDER BY id ASC
-        `, [id]);
 
         const stats = _sportCalculerStatsSession(session, logs, profil);
         const exercicesConsolides = _sportConsoliderExercicesSession(logs);
-
-        let titreRoutine = session.workout_name;
-        if (!titreRoutine) {
-            if (session.activity_type === 'course') titreRoutine = 'Course à pied';
-            else if (session.activity_type === 'marche') titreRoutine = 'Marche';
-            else if (session.activity_type === 'vélo' || session.activity_type === 'velo') titreRoutine = 'Vélo';
-            else titreRoutine = 'Séance MoaDja';
+        const records = await _sportDetecterRecords(moi, id, logs);
+        
+        let routineName = session.workout_name;
+        if (!routineName) {
+            if (session.activity_type === 'course') routineName = 'Course à pied';
+            else if (session.activity_type === 'marche') routineName = 'Marche';
+            else if (session.activity_type === 'vélo' || session.activity_type === 'velo') routineName = 'Vélo';
+            else routineName = 'Séance MoaDja';
         }
+        routineName = _echapperXML(routineName);
 
+        const dateStr = session.date_end 
+            ? new Date(session.date_end).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }).replace('.', '')
+            : 'En cours';
+            
+        const dureeStr = _formatDurationLongSVG(stats.dureeSecondes);
+        
         const isGps = stats.isGps;
+        const bloc2Label = isGps ? 'DISTANCE' : 'VOLUME';
+        const bloc2Value = isGps ? `${stats.distanceKm.toFixed(2)} km` : `${stats.volumeKg} kg`;
 
-        // Formats texte
-        const heures = Math.floor(stats.dureeSecondes / 3600);
-        const minutes = Math.floor((stats.dureeSecondes % 3600) / 60);
-        const secondes = stats.dureeSecondes % 60;
-        let dureeStr = '';
-        if (heures > 0) dureeStr += `${heures}h`;
-        if (minutes > 0 || heures > 0) dureeStr += `${minutes}min`;
-        dureeStr += `${secondes}`;
+        const caloriesStr = stats.calories ? `${stats.calories} kcal` : '—';
+        const nbRecords = records.length;
 
-        const caloriesStr = `${stats.calories} kcal`;
-
-        let bloc2Label = 'VOLUME';
-        let bloc2Value = `${stats.volumeKg || 0} kg`;
-
-        if (isGps) {
-            bloc2Label = 'DISTANCE';
-            bloc2Value = `${stats.distanceKm} km`;
-        }
-
-        function _echapperXML(str) {
-            if (!str) return '';
-            return str.replace(/&/g, '&amp;')
-                      .replace(/</g, '&lt;')
-                      .replace(/>/g, '&gt;')
-                      .replace(/"/g, '&quot;')
-                      .replace(/'/g, '&apos;');
-        }
-
-        const titreEchappe = _echapperXML(titreRoutine);
-
-        // Construction du SVG en 1200x630 (OpenGraph standard)
         let svg = `
-        <svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+        <svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
             <defs>
-                <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stop-color="#fff0e6" />
                     <stop offset="50%" stop-color="#fdfbfb" />
                     <stop offset="100%" stop-color="#f3e8ff" />
                 </linearGradient>
-                <filter id="shadowCard" x="-10%" y="-10%" width="120%" height="120%">
-                    <feDropShadow dx="0" dy="10" stdDeviation="20" flood-color="#7c3aed" flood-opacity="0.08" />
+                <filter id="shadowCard" x="-5%" y="-5%" width="110%" height="110%">
+                    <feDropShadow dx="0" dy="8" stdDeviation="20" flood-color="#7c3aed" flood-opacity="0.08" />
                 </filter>
-                <filter id="shadowStat" x="-10%" y="-10%" width="120%" height="120%">
-                    <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000000" flood-opacity="0.04" />
+                <filter id="shadowStat" x="-5%" y="-5%" width="110%" height="110%">
+                    <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000000" flood-opacity="0.04" />
                 </filter>
             </defs>
 
-            <!-- Fond global -->
-            <rect width="1200" height="630" fill="url(#bgGrad)" />
+            <rect width="1200" height="630" fill="url(#bgGradient)" />
+            <rect x="60" y="50" width="1080" height="530" rx="32" fill="#ffffff" fill-opacity="0.85" filter="url(#shadowCard)" stroke="#ffffff" stroke-width="2" />
 
-            <!-- Carte centrale blanche -->
-            <rect x="80" y="60" width="1040" height="510" rx="32" fill="#ffffff" filter="url(#shadowCard)" stroke="rgba(255,255,255,0.8)" stroke-width="2" />
-
-            <!-- En-tête de la carte -->
-            <text x="120" y="125" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="900" fill="#111827">${titreEchappe}</text>
-            <text x="1080" y="125" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="600" fill="#9ca3af" text-anchor="end">${new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) }</text>
-
-            <!-- 3 Blocs de statistiques -->
-            <rect x="120" y="165" width="280" height="90" rx="16" fill="#ffffff" filter="url(#shadowStat)" stroke="#f3f4f6" stroke-width="1" />
-            <text x="260" y="193" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="800" fill="#9ca3af" letter-spacing="1" text-anchor="middle">DURÉE</text>
-            <text x="260" y="232" font-family="system-ui, -apple-system, sans-serif" font-size="30" font-weight="900" fill="#1f2937" text-anchor="middle">${dureeStr}</text>
-
-            <rect x="460" y="165" width="280" height="90" rx="16" fill="#ffffff" filter="url(#shadowStat)" stroke="#f3f4f6" stroke-width="1" />
-            <text x="600" y="193" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="800" fill="#9ca3af" letter-spacing="1" text-anchor="middle">${bloc2Label}</text>
-            <text x="600" y="232" font-family="system-ui, -apple-system, sans-serif" font-size="30" font-weight="900" fill="#1f2937" text-anchor="middle">${bloc2Value}</text>
-
-            <rect x="800" y="165" width="280" height="90" rx="16" fill="#ffffff" filter="url(#shadowStat)" stroke="#f3f4f6" stroke-width="1" />
-            <text x="940" y="193" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="800" fill="#9ca3af" letter-spacing="1" text-anchor="middle">CALORIES</text>
-            <text x="940" y="232" font-family="system-ui, -apple-system, sans-serif" font-size="30" font-weight="900" fill="#ef4444" text-anchor="middle">${caloriesStr}</text>
+            <text x="120" y="110" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="900" fill="#1f2937">${routineName}</text>
+            <text x="1080" y="110" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="600" fill="#9ca3af" text-anchor="end">${dateStr}</text>
         `;
 
-        let yEx = 310;
+        if (!isGps) {
+            if (nbRecords === 0) {
+                svg += `
+                <rect x="120" y="135" width="240" height="34" rx="17" fill="#f3f4f6" stroke="#e5e7eb" stroke-width="1" />
+                <text x="140" y="158" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#eab308">🏆</text>
+                <text x="170" y="158" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="bold" fill="#9ca3af">Aucun nouveau record</text>
+                `;
+            } else {
+                svg += `
+                <rect x="120" y="135" width="180" height="34" rx="17" fill="#f3e8ff" stroke="#d8b4fe" stroke-width="1" />
+                <text x="140" y="158" font-family="system-ui, -apple-system, sans-serif" font-size="16" fill="#eab308">🏆</text>
+                <text x="170" y="158" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="bold" fill="#7c3aed">${nbRecords} Record${nbRecords > 1 ? 's' : ''}</text>
+                `;
+            }
+        }
+
+        svg += `
+            <rect x="120" y="190" width="300" height="90" rx="16" fill="#ffffff" filter="url(#shadowStat)" stroke="#f3f4f6" stroke-width="1" />
+            <text x="270" y="220" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#9ca3af" letter-spacing="1" text-anchor="middle">DURÉE</text>
+            <text x="270" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="900" fill="#1f2937" text-anchor="middle">${dureeStr}</text>
+
+            <rect x="450" y="190" width="300" height="90" rx="16" fill="#ffffff" filter="url(#shadowStat)" stroke="#f3f4f6" stroke-width="1" />
+            <text x="600" y="220" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#9ca3af" letter-spacing="1" text-anchor="middle">${bloc2Label}</text>
+            <text x="600" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="900" fill="#1f2937" text-anchor="middle">${bloc2Value}</text>
+
+                        <rect x="780" y="190" width="300" height="90" rx="16" fill="#ffffff" filter="url(#shadowStat)" stroke="#f3f4f6" stroke-width="1" />
+            <text x="930" y="220" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#9ca3af" letter-spacing="1" text-anchor="middle">CALORIES</text>
+            <text x="930" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="900" fill="#ef4444" text-anchor="middle">${caloriesStr}</text>
+        `;
+
+        let yEx = 340;
         
         if (isGps) {
-            // Affichage spécifique GPS parfaitement centré
+            // Affichage spécifique GPS propre et centré (sans mini-carte)
             svg += `
             <text x="600" y="${yEx + 30}" font-family="system-ui, -apple-system, sans-serif" font-size="24" text-anchor="middle">
                 <tspan font-weight="800" fill="#8b5cf6">📍 Vitesse moyenne :</tspan>
@@ -869,11 +1362,11 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
             }
         }
 
-        // Logo MoaDja aligné en bas à droite (avec haltère parfaitement centré)
+        // Logo MoaDja aligné en bas à droite
         svg += `
-            <g transform="translate(980, 505)">
+            <g transform="translate(980, 540)">
                 <path d="M-15,-6 L-15,6 M-9,-2 L-9,2 M9,-2 L9,2 M15,-6 L15,6 M-9,0 L9,0" stroke="#8b5cf6" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-                <text x="25" y="6" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="900" fill="#8b5cf6" text-anchor="start">MoaDja</text>
+                <text x="25" y="6" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="900" fill="#8b5cf6">MoaDja</text>
             </g>
         </svg>
         `;
@@ -900,23 +1393,5 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 });
-
-function _formatDetailSerieSVG(serie, estCardio) {
-    if (estCardio) {
-        let parts = [];
-        if (serie.distance_km) parts.push(`${serie.distance_km} km`);
-        if (serie.duration_seconds) {
-            const m = Math.floor(serie.duration_seconds / 60);
-            const s = serie.duration_seconds % 60;
-            parts.push(m > 0 ? `${m}min${s > 0 ? s : ''}` : `${s}s`);
-        }
-        return parts.join(' · ');
-    } else {
-        let parts = [];
-        if (serie.weight_kg) parts.push(`${serie.weight_kg} kg`);
-        if (serie.reps) parts.push(`${serie.reps} reps`);
-        return parts.join(' · ');
-    }
-}
 
 module.exports = router;
