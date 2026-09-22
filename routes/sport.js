@@ -1362,11 +1362,11 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
             }
         }
 
-        // Logo MoaDja aligné en bas à droite
+                // Logo MoaDja aligné en bas à droite (avec haltère parfaitement centré)
         svg += `
-            <g transform="translate(980, 540)">
+            <g transform="translate(970, 542)">
                 <path d="M-15,-6 L-15,6 M-9,-2 L-9,2 M9,-2 L9,2 M15,-6 L15,6 M-9,0 L9,0" stroke="#8b5cf6" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-                <text x="25" y="6" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="900" fill="#8b5cf6">MoaDja</text>
+                <text x="25" y="6" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="900" fill="#8b5cf6" text-anchor="start">MoaDja</text>
             </g>
         </svg>
         `;
