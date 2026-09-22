@@ -17,7 +17,7 @@ router.get('/share/seance/:id', async (req, res) => {
 
     try {
         const queryText = `
-            SELECT s.id, w.name AS workout_name, u.username 
+            SELECT s.id, s.activity_type, s.distance_km, s.vitesse_moyenne_kmh, w.name AS workout_name, u.username 
             FROM sport_sessions s 
             LEFT JOIN sport_workouts w ON w.id = s.workout_id 
             JOIN users u ON u.id = s.user_id 
@@ -32,15 +32,69 @@ router.get('/share/seance/:id', async (req, res) => {
         const initiales = nomAuteur.charAt(0).toUpperCase();
         const avatarHtml = `<div style="width:48px;height:48px;border-radius:50%;background:#7c3aed;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;flex-shrink:0;">${initiales}</div>`;
 
+        let routineName = session.workout_name;
+        const type = (session.activity_type || '').toLowerCase();
+        const isGps = type === 'marche' || type === 'course' || type === 'vélo' || type === 'velo';
+        
+        if (!routineName) {
+            if (type === 'course') routineName = 'Course à pied';
+            else if (type === 'marche') routineName = 'Marche';
+            else if (type === 'vélo' || type === 'velo') routineName = 'Vélo';
+            else routineName = 'Séance MoaDja';
+        }
+
         const baseUrl = req.protocol + '://' + req.get('host');
         const imageUrl = `${baseUrl}/uploads/sport_shares/share_seance_${id}.jpg`;
         const title = `Séance Sport MoaDja de ${nomAuteur}`;
         const desc = `Découvrez les performances de ${nomAuteur} et rejoignez la communauté MoaDja !`;
 
+        let mapHtml = '';
+        let pointsJson = '[]';
+        
+        // Si c'est du GPS, on injecte Leaflet et la map interactive
+        if (isGps) {
+            const { rows: points } = await pool.query(`SELECT lat, lng FROM sport_gps_points WHERE session_id = \$1 ORDER BY recorded_at ASC`, [id]);
+            pointsJson = JSON.stringify(points);
+            
+            mapHtml = `
+                <div id="map-container" style="width: 100%; height: 300px; border-radius: 16px; margin: 16px 0; overflow: hidden; border: 1px solid rgba(229, 231, 235, 0.8); box-shadow: 0 4px 12px rgba(0,0,0,0.04);">
+                    <div id="map" style="width: 100%; height: 100%;"></div>
+                </div>
+                <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+                <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const points = ${pointsJson};
+                        if (points.length > 0) {
+                            const map = L.map('map').setView([points[0].lat, points[0].lng], 13);
+                            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=cb1_3sfj_1_e7e2e040a3d271817c743aa0', {
+                                attribution: '&copy; OpenStreetMap &copy; CARTO'
+                            }).addTo(map);
+
+                            const latlngs = points.map(p => [p.lat, p.lng]);
+                            const polyline = L.polyline(latlngs, { color: '#a78bfa', weight: 5, opacity: 0.9, lineJoin: 'round' }).addTo(map);
+                            map.fitBounds(polyline.getBounds(), { padding: [20, 20] });
+
+                            const createDotIcon = (color) => L.divIcon({
+                                className: 'custom-map-dot',
+                                html: \`<div style="background-color: \${color}; width: 14px; height: 14px; border-radius: 50%; border: 2.5px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.4);"></div>\`,
+                                iconSize: [14, 14], iconAnchor: [7, 7]
+                            });
+
+                            L.marker(latlngs[0], { icon: createDotIcon('#10b981') }).addTo(map);
+                            L.marker(latlngs[latlngs.length - 1], { icon: createDotIcon('#ef4444') }).addTo(map);
+                        } else {
+                            document.getElementById('map-container').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;background:#f9fafb;color:#9ca3af;font-weight:600;">Aucun tracé enregistré</div>';
+                        }
+                    });
+                </script>
+            `;
+        }
+
         const html = `<!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
+        <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${title}</title>
     <meta property="og:type" content="article" />
@@ -156,8 +210,10 @@ router.get('/share/seance/:id', async (req, res) => {
             </div>
         </div>
 
-        <p class="post-text">🏋️‍♂️ Séance terminée : ${escapeHtml(session.workout_name)}</p>
+        <p class="post-text">🏋️‍♂️ Séance terminée : ${escapeHtml(routineName)}</p>
         
+        ${mapHtml}
+
         <img src="${imageUrl}" class="post-image" alt="Statistiques de la séance">
         
         <a href="https://moadja.fr" class="cta-button">Rejoindre MoaDja</a>
