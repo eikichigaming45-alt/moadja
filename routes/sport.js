@@ -16,8 +16,6 @@ const path = require('path');
 
 const WGER_BASE_URL = 'https://wger.de/api/v2';
 
-// Estimation calories : MET pondéré (5=muscu, 6=cardio) x poids x durée.
-// Indicatif uniquement, ne remplace pas une mesure médicale.
 const SPORT_MET_MUSCULATION = 5;
 const SPORT_MET_CARDIO      = 6;
 const SPORT_MET_MARCHE      = 4.0;
@@ -25,8 +23,6 @@ const SPORT_MET_COURSE      = 8.0;
 
 // ── ROUTINES : sport_workouts ──
 
-// Tri par workout_order (réorganisation manuelle par glisser-déposer),
-// NULLS LAST + created_at ASC en repli si une ligne n'a jamais reçu d'ordre.
 router.get('/workouts', auth, async (req, res) => {
     const moi = req.user.id;
     try {
@@ -43,7 +39,6 @@ router.get('/workouts', auth, async (req, res) => {
     }
 });
 
-// Nouvelle routine placée en dernière position (MAX(workout_order) + 1).
 router.post('/workouts', auth, async (req, res) => {
     const moi  = req.user.id;
     const name = req.body.name?.trim();
@@ -68,7 +63,6 @@ router.post('/workouts', auth, async (req, res) => {
     }
 });
 
-// Réordonnancement en masse des routines d'un utilisateur (drag-and-drop).
 router.put('/workouts/reorder', auth, async (req, res) => {
     const moi   = req.user.id;
     const ordre = req.body.ordre;
@@ -111,7 +105,6 @@ router.put('/workouts/reorder', auth, async (req, res) => {
     }
 });
 
-// Ajout target_weight_kg / target_rest_seconds au SELECT des exercices.
 router.get('/workouts/:id', auth, async (req, res) => {
     const moi = req.user.id;
     const id  = parseInt(req.params.id, 10);
@@ -661,7 +654,7 @@ function _sportCalculerStatsSession(session, logs, profil) {
             }
         });
 
-                const totalSeries = nbCardio + nbMusculation;
+        const totalSeries = nbCardio + nbMusculation;
 
         if (totalSeries > 0 && dureeSecondes > 0) {
             const poids = profil?.poids != null ? parseFloat(profil.poids) : null;
@@ -678,6 +671,7 @@ function _sportCalculerStatsSession(session, logs, profil) {
                 profil_incomplet = true;
             }
         }
+
                 return {
             dureeSecondes,
             volumeKg: Math.round(volumeKg * 10) / 10,
@@ -1060,7 +1054,7 @@ function _nettoyerNomBase(nom) {
 }
 
 function _nettoyerParenthesesNonLatines(nom) {
-    return nom.replace(/\s*$([^]*)$/g, (match, interieur) => {
+    return nom.replace(/\s*$[^)]*$/g, (match, interieur) => {
         return /[a-zA-Z]/.test(interieur) ? match : '';
     }).trim();
 }
@@ -1249,12 +1243,6 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
         const exercicesConsolides = _sportConsoliderExercicesSession(logs);
         const records = await _sportDetecterRecords(moi, id, logs);
         
-        let gpsPoints = [];
-        if (stats.isGps) {
-            const { rows: pts } = await pool.query(`SELECT lat, lng FROM sport_gps_points WHERE session_id = \$1 ORDER BY recorded_at ASC`, [id]);
-            gpsPoints = pts;
-        }
-
         let routineName = session.workout_name;
         if (!routineName) {
             if (session.activity_type === 'course') routineName = 'Course à pied';
@@ -1321,59 +1309,27 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
             <text x="270" y="220" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#9ca3af" letter-spacing="1" text-anchor="middle">DURÉE</text>
             <text x="270" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="900" fill="#1f2937" text-anchor="middle">${dureeStr}</text>
 
-                        <rect x="450" y="190" width="300" height="90" rx="16" fill="#ffffff" filter="url(#shadowStat)" stroke="#f3f4f6" stroke-width="1" />
+            <rect x="450" y="190" width="300" height="90" rx="16" fill="#ffffff" filter="url(#shadowStat)" stroke="#f3f4f6" stroke-width="1" />
             <text x="600" y="220" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#9ca3af" letter-spacing="1" text-anchor="middle">${bloc2Label}</text>
             <text x="600" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="900" fill="#1f2937" text-anchor="middle">${bloc2Value}</text>
 
-            <rect x="780" y="190" width="300" height="90" rx="16" fill="#ffffff" filter="url(#shadowStat)" stroke="#f3f4f6" stroke-width="1" />
+                        <rect x="780" y="190" width="300" height="90" rx="16" fill="#ffffff" filter="url(#shadowStat)" stroke="#f3f4f6" stroke-width="1" />
             <text x="930" y="220" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#9ca3af" letter-spacing="1" text-anchor="middle">CALORIES</text>
             <text x="930" y="260" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="900" fill="#ef4444" text-anchor="middle">${caloriesStr}</text>
         `;
 
+        let yEx = 340;
+        
         if (isGps) {
-            if (gpsPoints.length >= 2) {
-                const lats = gpsPoints.map(p => parseFloat(p.lat));
-                const lngs = gpsPoints.map(p => parseFloat(p.lng));
-                const minLat = Math.min(...lats), maxLat = Math.max(...lats);
-                const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
-
-                const boxWidth = 960;
-                const boxHeight = 220;
-                const boxX = 120;
-                const boxY = 320;
-                const padding = 25;
-
-                const dLat = maxLat - minLat || 0.00001;
-                const dLng = maxLng - minLng || 0.00001;
-                const scale = Math.min((boxWidth - padding * 2) / dLng, (boxHeight - padding * 2) / dLat);
-
-                const pathPoints = gpsPoints.map(p => {
-                    const x = boxX + padding + (parseFloat(p.lng) - minLng) * scale;
-                    const y = boxY + boxHeight - padding - (parseFloat(p.lat) - minLat) * scale;
-                    return `${x.toFixed(1)},${y.toFixed(1)}`;
-                }).join(' L ');
-
-                const startCoord = pathPoints.split(' L ')[0].split(',');
-                const endCoord = pathPoints.split(' L ').pop().split(',');
-
-                svg += `
-                    <rect x="${boxX}" y="${boxY}" width="${boxWidth}" height="${boxHeight}" rx="16" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1" />
-                    <path d="M ${pathPoints}" fill="none" stroke="#8b5cf6" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
-                    <circle cx="${startCoord[0]}" cy="${startCoord[1]}" r="7" fill="#10b981" stroke="#ffffff" stroke-width="2.5" />
-                    <circle cx="${endCoord[0]}" cy="${endCoord[1]}" r="7" fill="#ef4444" stroke="#ffffff" stroke-width="2.5" />
-                    <text x="${boxX + 20}" y="${boxY + 30}" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="700" fill="#6b7280">Tracé GPS · Vitesse moyenne : ${stats.vitesseKmh.toFixed(1)} km/h</text>
-                `;
-            } else {
-                svg += `
-                <text x="120" y="340" font-family="system-ui, -apple-system, sans-serif" font-size="22">
-                    <tspan font-weight="800" fill="#8b5cf6">📍 Vitesse moyenne</tspan>
-                    <tspan fill="#9ca3af" dx="15">·</tspan>
-                    <tspan font-weight="600" fill="#374151" dx="15">${stats.vitesseKmh.toFixed(1)} km/h</tspan>
-                </text>
-                `;
-            }
+            // Affichage spécifique GPS propre et centré (sans mini-carte)
+            svg += `
+            <text x="600" y="${yEx + 30}" font-family="system-ui, -apple-system, sans-serif" font-size="24" text-anchor="middle">
+                <tspan font-weight="800" fill="#8b5cf6">📍 Vitesse moyenne :</tspan>
+                <tspan font-weight="700" fill="#374151" dx="15">${stats.vitesseKmh.toFixed(1)} km/h</tspan>
+            </text>
+            `;
         } else {
-            let yEx = 340;
+            // Affichage musculation standard
             const maxEx = 5;
             const nbAffiches = Math.min(exercicesConsolides.length, maxEx);
 
@@ -1406,6 +1362,7 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
             }
         }
 
+        // Logo MoaDja aligné en bas à droite
         svg += `
             <g transform="translate(980, 540)">
                 <path d="M-15,-6 L-15,6 M-9,-2 L-9,2 M9,-2 L9,2 M15,-6 L15,6 M-9,0 L9,0" stroke="#8b5cf6" stroke-width="2.5" stroke-linecap="round" fill="none"/>
