@@ -55,11 +55,11 @@
         return html
             .replace(
                 /(https?:\/\/[^\s<>"']+)/g,
-                '<a href="\\$1" target="_blank" rel="noopener noreferrer" class="tchat-lien">\\$1</a>'
+                '<a href="\\\$1" target="_blank" rel="noopener noreferrer" class="tchat-lien">\\\$1</a>'
             )
             .replace(
                 /(?<![/"'=])\b(www\.[^\s<>"']+\.[^\s<>"']+)/g,
-                '<a href="https://\\$1" target="_blank" rel="noopener noreferrer" class="tchat-lien">\\$1</a>'
+                '<a href="https://\\\$1" target="_blank" rel="noopener noreferrer" class="tchat-lien">\\\$1</a>'
             );
     }
 
@@ -84,7 +84,7 @@
         catch { return null; }
     }
 
-    function _authHeaders() {
+        function _authHeaders() {
         return {
             'Content-Type' : 'application/json',
             'Authorization': `Bearer ${_token()}`
@@ -547,7 +547,12 @@
         if (_socket) return;
         if (typeof io === 'undefined') return;
 
-        _socket = io({ auth: { token: _token() } });
+        // SOLUTION : On force les transports 'websocket' en premier, puis 'polling' en fallback.
+        // Cela empêche la boucle infinie d'échec d'upgrade HTTP -> WebSocket
+        _socket = io({ 
+            auth: { token: _token() },
+            transports: ['websocket', 'polling']
+        });
 
         _socket.on('connect', () => console.log('[TCHAT] Socket connecté'));
 
@@ -621,10 +626,11 @@
             wrap.querySelectorAll('.tchat-msg-lu, .tchat-msg-modifie, .tchat-msg-actions').forEach(el => el.remove());
         });
 
-        _socket.on('disconnect', () => console.log('[TCHAT] Socket déconnecté'));
+        // Ajout de la raison pour mieux diagnostiquer si ça se reproduit
+        _socket.on('disconnect', (reason) => console.log(`[TCHAT] Socket déconnecté (${reason})`));
     }
 
-        // ── Reconnexion forcée (correctif v1.92.29) ─────────────────
+    // ── Reconnexion forcée (correctif v1.92.29) ─────────────────
     // En arrière-plan mobile/PWA, le socket peut se déconnecter
     // (mise en veille réseau) sans que l'événement 'disconnect' ne
     // permette une reconnexion automatique immédiate au retour au
@@ -745,7 +751,7 @@
             </button>`;
         document.getElementById('tchat-btn-plus-anciens').addEventListener('click', _chargerPlusAnciens);
 
-        // Clic image => appel du Modal global (Feed)
+                // Clic image => appel du Modal global (Feed)
         scroll.addEventListener('click', (e) => {
             const img = e.target.closest('[data-lightbox-src]');
             if (img) {
@@ -1236,7 +1242,7 @@
         }
     });
 
-        // ── GESTION BFCache & VISIBILITÉ (Correctif Veille / Mode Poche) ──
+    // ── GESTION BFCache & VISIBILITÉ (Correctif Veille / Mode Poche) ──
     let _badgeInterval = null;
 
     function _startBadgeInterval() {
