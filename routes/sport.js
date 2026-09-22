@@ -1,10 +1,6 @@
 // ============================================================
 // routes/sport.js
 // ============================================================
-// Module Sport : CRUD routines/jours/exercices/séances/logs + mensurations.
-// Toutes les routes scopées par user. Catalogue WGER en lecture seule
-// (traduction FR complète via SPORT_TRADUCTION_FR, toutes catégories,
-// recherche insensible accents/casse, bilingue anglais/français).
 const express = require('express');
 const router  = express.Router();
 const { pool } = require('../db/pool');
@@ -16,8 +12,6 @@ const path = require('path');
 
 const WGER_BASE_URL = 'https://wger.de/api/v2';
 
-// Estimation calories : MET pondéré (5=muscu, 6=cardio) x poids x durée.
-// Indicatif uniquement, ne remplace pas une mesure médicale.
 const SPORT_MET_MUSCULATION = 5;
 const SPORT_MET_CARDIO      = 6;
 const SPORT_MET_MARCHE      = 4.0;
@@ -25,8 +19,6 @@ const SPORT_MET_COURSE      = 8.0;
 
 // ── ROUTINES : sport_workouts ──
 
-// Tri par workout_order (réorganisation manuelle par glisser-déposer),
-// NULLS LAST + created_at ASC en repli si une ligne n'a jamais reçu d'ordre.
 router.get('/workouts', auth, async (req, res) => {
     const moi = req.user.id;
     try {
@@ -43,7 +35,6 @@ router.get('/workouts', auth, async (req, res) => {
     }
 });
 
-// Nouvelle routine placée en dernière position (MAX(workout_order) + 1).
 router.post('/workouts', auth, async (req, res) => {
     const moi  = req.user.id;
     const name = req.body.name?.trim();
@@ -68,7 +59,6 @@ router.post('/workouts', auth, async (req, res) => {
     }
 });
 
-// Réordonnancement en masse des routines d'un utilisateur (drag-and-drop).
 router.put('/workouts/reorder', auth, async (req, res) => {
     const moi   = req.user.id;
     const ordre = req.body.ordre;
@@ -111,7 +101,6 @@ router.put('/workouts/reorder', auth, async (req, res) => {
     }
 });
 
-// Ajout target_weight_kg / target_rest_seconds au SELECT des exercices.
 router.get('/workouts/:id', auth, async (req, res) => {
     const moi = req.user.id;
     const id  = parseInt(req.params.id, 10);
@@ -289,7 +278,6 @@ router.post('/days/:dayId/exercises', auth, async (req, res) => {
         `, [dayId, moi]);
         if (!owner.length) return res.status(403).json({ success: false, message: 'Interdit.' });
 
-        // Calcul automatique de la position : dernier ordre du jour + 1.
         const { rows: maxOrderRows } = await pool.query(`
             SELECT COALESCE(MAX(order_in_day), 0) AS max_order
             FROM sport_day_exercises
@@ -364,7 +352,7 @@ router.put('/days/:dayId/exercises/reorder', auth, async (req, res) => {
             `, [i + 1, idsRecus[i]]);
         }
 
-                await client.query('COMMIT');
+        await client.query('COMMIT');
         res.json({ success: true });
     } catch (err) {
         await client.query('ROLLBACK');
@@ -583,6 +571,7 @@ router.delete('/sessions/:id', auth, async (req, res) => {
         }
 
         await client.query(`DELETE FROM sport_session_logs WHERE session_id = \$1`, [id]);
+        await client.query(`DELETE FROM sport_gps_points WHERE session_id = \$1`, [id]);
         await client.query(`DELETE FROM sport_sessions WHERE id = \$1`, [id]);
 
         await client.query('COMMIT');
@@ -618,7 +607,8 @@ function _sportCalculerStatsSession(session, logs, profil) {
 
     let calories = null;
     let profil_incomplet = false;
-    const isGps = session.activity_type === 'marche' || session.activity_type === 'course';
+    const type = (session.activity_type || '').toLowerCase();
+    const isGps = type === 'marche' || type === 'course' || type === 'vélo' || type === 'velo';
 
     if (isGps) {
         if (dureeSecondes > 0) {
@@ -630,7 +620,10 @@ function _sportCalculerStatsSession(session, logs, profil) {
             if (poids && taille && age && (sexe === 'homme' || sexe === 'femme')) {
                 const s = (sexe === 'homme') ? 5 : -161;
                 const bmr = (10 * poids) + (6.25 * taille) - (5 * age) + s;
-                const met = session.activity_type === 'course' ? SPORT_MET_COURSE : SPORT_MET_MARCHE;
+                let met = SPORT_MET_MARCHE;
+                if (type === 'course') met = SPORT_MET_COURSE;
+                else if (type === 'vélo' || type === 'velo') met = 7.5; // MET estimé vélo moyen
+                
                 calories = Math.round(met * (bmr / 24) * (dureeSecondes / 3600));
             } else {
                 profil_incomplet = true;
@@ -798,8 +791,10 @@ router.get('/dashboard-stats', auth, async (req, res) => {
             
             let nomAffiche = s.workout_name;
             if (!nomAffiche) {
-                if (s.activity_type === 'course') nomAffiche = 'Course à pied';
-                else if (s.activity_type === 'marche') nomAffiche = 'Marche';
+                const type = (s.activity_type || '').toLowerCase();
+                if (type === 'course') nomAffiche = 'Course à pied';
+                else if (type === 'marche') nomAffiche = 'Marche';
+                else if (type === 'vélo' || type === 'velo') nomAffiche = 'Vélo';
                 else nomAffiche = 'Séance';
             }
 
@@ -1250,9 +1245,11 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
         const records = await _sportDetecterRecords(moi, id, logs);
         
         let routineName = session.workout_name;
+        const type = (session.activity_type || '').toLowerCase();
         if (!routineName) {
-            if (session.activity_type === 'course') routineName = 'Course à pied';
-            else if (session.activity_type === 'marche') routineName = 'Marche';
+            if (type === 'course') routineName = 'Course à pied';
+            else if (type === 'marche') routineName = 'Marche';
+            else if (type === 'vélo' || type === 'velo') routineName = 'Vélo';
             else routineName = 'Séance MoaDja';
         }
         routineName = _echapperXML(routineName);
@@ -1270,7 +1267,15 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
         const caloriesStr = stats.calories ? `${stats.calories} kcal` : '—';
         const nbRecords = records.length;
 
-        // Hauteurs recalculées pour éviter le crop en bas
+        // Récupération des points GPS si c'est une activité libre
+        let gpsPoints = [];
+        if (isGps) {
+            const { rows: points } = await pool.query(`
+                SELECT lat, lng FROM sport_gps_points WHERE session_id = \$1 ORDER BY recorded_at ASC
+            `, [id]);
+            gpsPoints = points;
+        }
+
         let svg = `
         <svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
             <defs>
@@ -1335,7 +1340,69 @@ router.post('/sessions/:id/generate-share', auth, async (req, res) => {
                 <tspan font-weight="600" fill="#374151" dx="15">${stats.vitesseKmh.toFixed(1)} km/h</tspan>
             </text>
             `;
-            // Note: On pourrait ajouter une carte ou un graphique ici plus tard (Etape 3).
+
+            // DESSIN DU TRACÉ GPS DIRECTEMENT DANS LE SVG
+            if (gpsPoints.length > 1) {
+                const mapWidth = 960;
+                const mapHeight = 180;
+                const mapX = 120;
+                const mapY = 370;
+
+                // Trouver les bounds (min/max)
+                let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
+                for (const p of gpsPoints) {
+                    if (p.lat < minLat) minLat = p.lat;
+                    if (p.lat > maxLat) maxLat = p.lat;
+                    if (p.lng < minLng) minLng = p.lng;
+                    if (p.lng > maxLng) maxLng = p.lng;
+                }
+
+                // Ajouter un petit padding (5%)
+                const latDiff = maxLat - minLat || 0.01;
+                const lngDiff = maxLng - minLng || 0.01;
+                minLat -= latDiff * 0.05;
+                maxLat += latDiff * 0.05;
+                minLng -= lngDiff * 0.05;
+                maxLng += lngDiff * 0.05;
+
+                const latRange = maxLat - minLat;
+                const lngRange = maxLng - minLng;
+
+                // Création du path
+                let pathD = "";
+                for (let i = 0; i < gpsPoints.length; i++) {
+                    const p = gpsPoints[i];
+                    // Projection simple (Longitude -> X, Latitude inversée -> Y)
+                    const x = mapX + ((p.lng - minLng) / lngRange) * mapWidth;
+                    const y = mapY + (1 - ((p.lat - minLat) / latRange)) * mapHeight;
+                    
+                    if (i === 0) pathD += `M ${x} ${y} `;
+                    else pathD += `L ${x} ${y} `;
+                }
+
+                // Coordonnées du départ et arrivée pour les marqueurs
+                const startX = mapX + ((gpsPoints[0].lng - minLng) / lngRange) * mapWidth;
+                const startY = mapY + (1 - ((gpsPoints[0].lat - minLat) / latRange)) * mapHeight;
+                const endX = mapX + ((gpsPoints[gpsPoints.length-1].lng - minLng) / lngRange) * mapWidth;
+                const endY = mapY + (1 - ((gpsPoints[gpsPoints.length-1].lat - minLat) / latRange)) * mapHeight;
+
+                svg += `
+                <!-- Zone de tracé -->
+                <rect x="${mapX}" y="${mapY}" width="${mapWidth}" height="${mapHeight}" rx="16" fill="#f9fafb" stroke="#e5e7eb" stroke-width="2" />
+                <path d="${pathD}" fill="none" stroke="#a78bfa" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+                
+                <!-- Marqueur de départ (Vert) -->
+                <circle cx="${startX}" cy="${startY}" r="8" fill="#10b981" stroke="#ffffff" stroke-width="3" />
+                <!-- Marqueur d'arrivée (Rouge) -->
+                <circle cx="${endX}" cy="${endY}" r="8" fill="#ef4444" stroke="#ffffff" stroke-width="3" />
+                `;
+            } else {
+                svg += `
+                <rect x="120" y="370" width="960" height="180" rx="16" fill="#f9fafb" stroke="#e5e7eb" stroke-width="2" />
+                <text x="600" y="465" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="600" fill="#9ca3af" text-anchor="middle">Aucun tracé GPS suffisant enregistré.</text>
+                `;
+            }
+
         } else {
             // Affichage musculation standard
             const maxEx = 5;
