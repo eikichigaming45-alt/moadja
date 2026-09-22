@@ -94,7 +94,6 @@ function _sportAfficherModePoche(type) {
         </div>
 
         <div style="display:flex; flex-direction:column; align-items:center; margin-top: auto; margin-bottom: auto;">
-            <!-- L'horloge est réduite à 3.2rem au lieu de 4.5rem -->
             <div class="sport-poche-horloge" id="gps-horloge" style="font-size: 3.2rem; font-weight: 800; text-align: center; color: #ffffff; letter-spacing: 2px; line-height: 1; margin-bottom: 16px;">--:--</div>
             
             <div class="sport-poche-chrono" id="gps-chrono">00:00</div>
@@ -120,6 +119,7 @@ function _sportAfficherModePoche(type) {
             <button class="sport-poche-btn-reduire" onclick="_sportReduirePoche()">📱 Masquer l'écran noir</button>
             <button class="sport-poche-btn-terminer" onclick="_sportTerminerGPS()">⏹ Terminer l'activité</button>
             <button class="sport-poche-btn-verrouiller" onclick="_sportVerrouillerPoche()">🔒 Reverrouiller l'écran</button>
+            <button class="sport-poche-btn-reduire" onclick="_sportAnnulerGPS()" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.1); margin-top: 16px;">❌ Annuler l'activité</button>
         </div>
     `;
     document.body.appendChild(div);
@@ -151,8 +151,9 @@ function _sportUpdateHorloge() {
 function _sportVerrouillerPoche() {
     document.getElementById('gps-actions').style.display = 'none';
     const slider = document.getElementById('gps-slider');
-    slider.value = 0;
-    document.getElementById('gps-slider-box').style.display = 'block';
+    if (slider) slider.value = 0;
+    const box = document.getElementById('gps-slider-box');
+    if (box) box.style.display = 'block';
 }
 
 function _sportReduirePoche() {
@@ -338,4 +339,49 @@ async function _sportTerminerGPS() {
     if (typeof _sportChargerDashboardStats === 'function') {
         _sportChargerDashboardStats();
     }
+}
+
+// ── 6. ANNULATION DE LA SÉANCE (SUPPRESSION) ──
+function _sportAnnulerGPS() {
+    const ui = document.getElementById('sport-poche-ui');
+    
+    // Masquer temporairement le mode poche pour afficher la modale correctement
+    if (ui) ui.style.display = 'none';
+
+    _sportOuvrirModalChoix(
+        'Annuler l\'activité',
+        'Êtes-vous sûr de vouloir annuler cette activité ? Rien ne sera sauvegardé.',
+        'Oui, annuler',
+        'Non, reprendre',
+        async () => {
+            // Confirmation d'annulation
+            if (_gpsWatchId !== null) navigator.geolocation.clearWatch(_gpsWatchId);
+            if (_gpsChronoInterval !== null) clearInterval(_gpsChronoInterval);
+            if (_gpsHorlogeInterval !== null) clearInterval(_gpsHorlogeInterval);
+            if (typeof _sportRelacherWakeLock === 'function') _sportRelacherWakeLock();
+
+            try {
+                // Appel API pour supprimer purement et simplement la session
+                await fetch(`/api/sport/sessions/${_gpsSessionId}`, {
+                    method: 'DELETE',
+                    headers: _sportAuthHeaders()
+                });
+            } catch (err) {
+                console.error('[SPORT-GPS] Erreur lors de l\'annulation :', err);
+            }
+
+            if (ui) ui.remove();
+            const banner = document.getElementById('sport-gps-banner');
+            if (banner) banner.remove();
+            
+            _gpsSessionId = null;
+            if (typeof _sportChargerDashboardStats === 'function') {
+                _sportChargerDashboardStats();
+            }
+        },
+        () => {
+            // Refus d'annulation, on réaffiche le mode poche
+            if (ui) ui.style.display = 'flex';
+        }
+    );
 }
