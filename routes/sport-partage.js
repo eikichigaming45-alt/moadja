@@ -5,7 +5,6 @@ const express = require('express');
 const router  = express.Router();
 const { pool } = require('../db/pool');
 
-// Page publique de partage d'une séance (Open Graph + Leaflet si GPS)
 router.get('/share/seance/:id', async (req, res) => {
     const id = parseInt(req.params.id, 10);
     try {
@@ -49,7 +48,6 @@ router.get('/share/seance/:id', async (req, res) => {
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>${titreRoutine} par ${session.username} - MoaDja</title>
             
-            <!-- Open Graph Meta Tags -->
             <meta property="og:title" content="Séance de ${session.username} : ${titreRoutine}">
             <meta property="og:description" content="Découvrez les détails et le tracé de cette séance sur MoaDja.">
             <meta property="og:image" content="https://moadja.fr${imageUrl}">
@@ -189,7 +187,6 @@ router.get('/share/seance/:id', async (req, res) => {
 
                     <div class="activity-title">🏆 Séance terminée : <strong>${titreRoutine}</strong></div>
 
-                    <!-- Image de stats propre -->
                     <div class="share-image-preview">
                         <img src="${imageUrl}" alt="Statistiques de la séance">
                     </div>
@@ -213,7 +210,7 @@ router.get('/share/seance/:id', async (req, res) => {
                     const latlngs = points.map(p => [p.lat, p.lng]);
                     const map = L.map('map', { zoomControl: true, attributionControl: false }).setView(latlngs[0], 15);
 
-                    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=cb1_3sfj_1_e7e2e040a3d271817c743aa0', {
                         maxZoom: 19
                     }).addTo(map);
 
@@ -227,7 +224,6 @@ router.get('/share/seance/:id', async (req, res) => {
 
                     map.fitBounds(polyline.getBounds(), { padding: [40, 40] });
 
-                    // Marqueur Départ (vert)
                     L.circleMarker(latlngs[0], {
                         radius: 7,
                         fillColor: '#10b981',
@@ -236,7 +232,6 @@ router.get('/share/seance/:id', async (req, res) => {
                         fillOpacity: 1
                     }).addTo(map);
 
-                    // Marqueur Arrivée (rouge)
                     L.circleMarker(latlngs[latlngs.length - 1], {
                         radius: 7,
                         fillColor: '#ef4444',
