@@ -17,7 +17,7 @@ router.get('/share/seance/:id', async (req, res) => {
 
     try {
         const queryText = `
-            SELECT s.id, w.name AS workout_name, u.username 
+            SELECT s.id, s.activity_type, s.distance_km, s.vitesse_moyenne_kmh, w.name AS workout_name, u.username 
             FROM sport_sessions s 
             LEFT JOIN sport_workouts w ON w.id = s.workout_id 
             JOIN users u ON u.id = s.user_id 
@@ -32,26 +32,94 @@ router.get('/share/seance/:id', async (req, res) => {
         const initiales = nomAuteur.charAt(0).toUpperCase();
         const avatarHtml = `<div style="width:48px;height:48px;border-radius:50%;background:#7c3aed;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;flex-shrink:0;">${initiales}</div>`;
 
+        const isGps = session.activity_type === 'marche' || session.activity_type === 'course' || session.activity_type === 'vélo' || session.activity_type === 'velo';
+        
+        let gpsPoints = [];
+        if (isGps) {
+            const { rows: pointsRows } = await pool.query(`
+                SELECT lat, lng FROM sport_gps_points WHERE session_id = \$1 ORDER BY recorded_at ASC
+            `, [id]);
+            gpsPoints = pointsRows;
+        }
+
         const baseUrl = req.protocol + '://' + req.get('host');
         const imageUrl = `${baseUrl}/uploads/sport_shares/share_seance_${id}.jpg`;
-        const title = `Séance Sport MoaDja de ${nomAuteur}`;
-        const desc = `Découvrez les performances de ${nomAuteur} et rejoignez la communauté MoaDja !`;
+        
+        let titreActivite = session.workout_name;
+        if (!titreActivite) {
+            if (session.activity_type === 'course') titreActivite = 'Course à pied';
+            else if (session.activity_type === 'marche') titreActivite = 'Marche';
+            else if (session.activity_type === 'vélo' || session.activity_type === 'velo') titreActivite = 'Vélo';
+            else titreActivite = 'Séance Sport';
+        }
+
+        const title = `Séance ${titreActivite} de ${nomAuteur} sur MoaDja`;
+        const desc = `Découvrez les performances de ${nomAuteur} (${session.distance_km ? session.distance_km + ' km' : ''}) et rejoignez la communauté MoaDja !`;
+
+        let leafletAssetsHtml = '';
+        let mapContainerHtml = '';
+        let mapScriptHtml = '';
+
+        if (isGps && gpsPoints.length > 0) {
+            leafletAssetsHtml = `
+                <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+                <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+            `;
+            mapContainerHtml = `
+                <div style="margin-top: 16px;">
+                    <div style="font-size: 14px; font-weight: 700; color: #a78bfa; margin-bottom: 8px;">📍 Tracé de l'activité</div>
+                    <div id="public-map" style="width: 100%; height: 320px; border-radius: 16px; border: 1px solid rgba(229, 231, 235, 0.8); z-index: 1;"></div>
+                </div>
+            `;
+            const pointsJson = JSON.stringify(gpsPoints);
+            mapScriptHtml = `
+                <script>
+                    window.addEventListener('DOMContentLoaded', function() {
+                        const points = ${pointsJson};
+                        if (!points || points.length === 0) return;
+                        
+                        const map = L.map('public-map');
+                        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=cb1_3sfj_1_e7e2e040a3d271817c743aa0', {
+                            attribution: '&copy; OpenStreetMap &copy; CARTO',
+                            maxZoom: 19
+                        }).addTo(map);
+
+                        const latlngs = points.map(p => [p.lat, p.lng]);
+                        const polyline = L.polyline(latlngs, { color: '#a78bfa', weight: 5, opacity: 0.9, lineJoin: 'round' }).addTo(map);
+
+                        const createDotIcon = (color) => L.divIcon({
+                            className: 'custom-map-dot',
+                            html: '<div style="background-color: ' + color + '; width: 14px; height: 14px; border-radius: 50%; border: 2.5px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.4);"></div>',
+                            iconSize: [14, 14], iconAnchor: [7, 7]
+                        });
+
+                        L.marker(latlngs[0], { icon: createDotIcon('#10b981') }).addTo(map);
+                        if (latlngs.length > 1) {
+                            L.marker(latlngs[latlngs.length - 1], { icon: createDotIcon('#ef4444') }).addTo(map);
+                        }
+
+                        map.fitBounds(polyline.getBounds(), { padding: [20, 20] });
+                    });
+                </script>
+            `;
+        }
 
         const html = `<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${title}</title>
+    <title>${escapeHtml(title)}</title>
     <meta property="og:type" content="article" />
     <meta property="og:url" content="${baseUrl}/share/seance/${id}" />
-    <meta property="og:title" content="${title}" />
-    <meta property="og:description" content="${desc}" />
+    <meta property="og:title" content="${escapeHtml(title)}" />
+    <meta property="og:description" content="${escapeHtml(desc)}" />
     <meta property="og:image" content="${imageUrl}" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:site_name" content="MoaDja" />
     <meta name="twitter:card" content="summary_large_image" />
+    ${leafletAssetsHtml}
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -156,12 +224,15 @@ router.get('/share/seance/:id', async (req, res) => {
             </div>
         </div>
 
-        <p class="post-text">🏋️‍♂️ Séance terminée : ${escapeHtml(session.workout_name)}</p>
+        <p class="post-text">🏋️‍♂️ Séance terminée : ${escapeHtml(titreActivite)}</p>
         
         <img src="${imageUrl}" class="post-image" alt="Statistiques de la séance">
         
+        ${mapContainerHtml}
+        
         <a href="https://moadja.fr" class="cta-button">Rejoindre MoaDja</a>
     </div>
+    ${mapScriptHtml}
 </body>
 </html>`;
         
