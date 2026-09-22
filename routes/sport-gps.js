@@ -26,7 +26,7 @@ router.post('/sessions', auth, async (req, res) => {
         const { rows: existante } = await pool.query(`
             SELECT id, user_id, activity_type, date_start, status
             FROM sport_sessions
-            WHERE user_id = \\$1 AND status = 'in_progress'
+            WHERE user_id = \$1 AND status = 'in_progress'
             ORDER BY date_start DESC
             LIMIT 1
         `, [moi]);
@@ -38,7 +38,7 @@ router.post('/sessions', auth, async (req, res) => {
         // Création de la séance sans workout_id
         const { rows } = await pool.query(`
             INSERT INTO sport_sessions (user_id, workout_id, activity_type, date_start, status)
-            VALUES (\\$1, NULL, \\$2, NOW(), 'in_progress')
+            VALUES (\$1, NULL, \$2, NOW(), 'in_progress')
             RETURNING *
         `, [moi, type]);
 
@@ -66,7 +66,7 @@ router.post('/sessions/:id/points', auth, async (req, res) => {
 
         // Vérifier la propriété et l'état de la séance
         const { rows: owner } = await client.query(`
-            SELECT id FROM sport_sessions WHERE id = \\$1 AND user_id = \\$2 AND status = 'in_progress'
+            SELECT id FROM sport_sessions WHERE id = \$1 AND user_id = \$2 AND status = 'in_progress'
         `, [sessionId, moi]);
 
         if (!owner.length) {
@@ -77,7 +77,7 @@ router.post('/sessions/:id/points', auth, async (req, res) => {
         // Insérer les points
         const queryText = `
             INSERT INTO sport_gps_points (session_id, lat, lng, recorded_at)
-            VALUES (\\$1, \\$2, \\$3, \\$4)
+            VALUES (\$1, \$2, \$3, \$4)
         `;
         for (const pt of points) {
             const recordDate = pt.recorded_at ? new Date(pt.recorded_at) : new Date();
@@ -106,9 +106,9 @@ router.put('/sessions/:id/end', auth, async (req, res) => {
             UPDATE sport_sessions
             SET date_end = NOW(),
                 status = 'completed',
-                distance_km = \\$1,
-                vitesse_moyenne_kmh = \\$2
-            WHERE id = \\$3 AND user_id = \\$4 AND status = 'in_progress'
+                distance_km = \$1,
+                vitesse_moyenne_kmh = \$2
+            WHERE id = \$3 AND user_id = \$4 AND status = 'in_progress'
             RETURNING *
         `, [
             distance_km != null ? parseFloat(distance_km) : null,
@@ -135,7 +135,7 @@ router.get('/sessions/:id/points', auth, async (req, res) => {
 
     try {
         const { rows: owner } = await pool.query(`
-            SELECT id FROM sport_sessions WHERE id = \\$1 AND user_id = \\$2
+            SELECT id FROM sport_sessions WHERE id = \$1 AND user_id = \$2
         `, [sessionId, moi]);
 
         if (!owner.length) {
@@ -145,7 +145,7 @@ router.get('/sessions/:id/points', auth, async (req, res) => {
         const { rows: points } = await pool.query(`
             SELECT lat, lng, recorded_at
             FROM sport_gps_points
-            WHERE session_id = \\$1
+            WHERE session_id = \$1
             ORDER BY recorded_at ASC
         `, [sessionId]);
 
