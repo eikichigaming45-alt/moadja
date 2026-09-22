@@ -167,9 +167,9 @@ function _sportRenderSeanceIso(s, mode = 'modal', btnSupprHtml = '') {
         `;
         
         if (mode === 'modal') {
-            // Affichage de la carte UNIQUEMENT dans la modale
+            // Affichage de la carte UNIQUEMENT dans la modale (hauteur augmentée à 350px)
             listeHtml += `
-                <div id="sport-map-modal-${s.id}" style="width: 100%; height: 220px; margin-top: 16px; border-radius: 12px; background: #f3f4f6; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #9ca3af; z-index: 1; position: relative;">
+                <div id="sport-map-modal-${s.id}" style="width: 100%; height: 350px; margin-top: 16px; border-radius: 12px; background: #f3f4f6; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #9ca3af; z-index: 1; position: relative; box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);">
                     Chargement de la carte... ⏳
                 </div>
             `;
@@ -307,6 +307,13 @@ function _sportOuvrirModalPartage(event, sessionId) {
 
     const seance = _sportDashboardSeancesCache.find(s => s.id === sessionId);
     if (!seance) return;
+    
+    // Au cas où la modale ait été élargie par une carte GPS avant, on réinitialise sa taille
+    const modalContent = document.querySelector('#modal-container .modal-content') || document.querySelector('.modal-content');
+    if (modalContent) {
+        modalContent.style.maxWidth = '';
+        modalContent.style.width = '';
+    }
 
     document.getElementById('overlay').classList.add('on');
     document.body.classList.add('modal-open');
@@ -382,7 +389,7 @@ async function _sportLancerPartage(sessionId, destination, boutonDom, nomRoutine
                 }
             }, 400);
         } 
-        else if (destination === 'externe') {
+                else if (destination === 'externe') {
             if (navigator.share) {
                 await navigator.share({
                     title: `Séance : ${nomRoutine}`,
@@ -505,16 +512,28 @@ async function _ouvrirModaleSportStats() {
 }
 
 function _sportRenderModaleStatsDepuisSeance(zone, s) {
+    const isGps = typeof _sportIsGpsActivity === 'function' 
+        ? _sportIsGpsActivity(s.activity_type, s.isGps) 
+        : (s.isGps || s.activity_type === 'marche' || s.activity_type === 'course' || s.activity_type === 'vélo' || s.activity_type === 'velo');
+
+    // 🌟 MAGIE ICI : On cherche la fenêtre modale et on l'agrandit si c'est du GPS
+    const modalContent = document.querySelector('#modal-container .modal-content') || document.querySelector('.modal-content');
+    if (modalContent) {
+        if (isGps) {
+            modalContent.style.maxWidth = '700px';
+            modalContent.style.width = '95%';
+        } else {
+            // On remet la taille normale pour la musculation
+            modalContent.style.maxWidth = '';
+            modalContent.style.width = '';
+        }
+    }
+
     zone.innerHTML = `
         <div class="sport-modal-stats">
             ${_sportRenderSeanceIso(s, 'modal')}
         </div>
     `;
-    
-    // Si c'est une séance GPS, on initialise la carte dans la modale
-    const isGps = typeof _sportIsGpsActivity === 'function' 
-        ? _sportIsGpsActivity(s.activity_type, s.isGps) 
-        : (s.isGps || s.activity_type === 'marche' || s.activity_type === 'course' || s.activity_type === 'vélo');
         
     if (isGps && typeof _sportInitMap === 'function') {
         _sportInitMap(s.id, `sport-map-modal-${s.id}`);
