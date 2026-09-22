@@ -1,104 +1,107 @@
 // ============================================================
 // routes/sport-partage.js
 // ============================================================
-// Route publique Open Graph (Page de destination de partage de séance)
-
 const express = require('express');
 const router = express.Router();
 const { pool } = require('../db/pool');
 
 function escapeHtml(str) {
-    return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
-router.get('/share/seance/:id', async (req, res) => {
-    const id = parseInt(req.params.id, 10);
-    if (isNaN(id)) return res.status(400).send('ID invalide');
-
+router.get('/seance/:id', async (req, res) => {
     try {
-        const queryText = `
-            SELECT s.id, s.activity_type, s.distance_km, s.vitesse_moyenne_kmh, w.name AS workout_name, u.username 
-            FROM sport_sessions s 
-            LEFT JOIN sport_workouts w ON w.id = s.workout_id 
-            JOIN users u ON u.id = s.user_id 
-            WHERE s.id = \$1
-        `;
-        const { rows } = await pool.query(queryText, [id]);
-
-        if (!rows.length) return res.status(404).send('Séance introuvable');
+        const sessionId = parseInt(req.params.id, 10);
+        const baseUrl = `${req.protocol}://${req.get('host')}`;
         
-        const session = rows[0];
-        const nomAuteur = session.username || 'Utilisateur';
-        const initiales = nomAuteur.charAt(0).toUpperCase();
-        const avatarHtml = `<div style="width:48px;height:48px;border-radius:50%;background:#7c3aed;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;flex-shrink:0;">${initiales}</div>`;
+        const sessionRes = await pool.query(
+            `SELECT s.*, 
+                    u.nom, u.prenom, u.username, u.avatar
+             FROM sport_sessions s
+             JOIN users u ON s.user_id = u.id
+             WHERE s.id = \$1`,
+            [sessionId]
+        );
 
-        let routineName = session.workout_name;
-        const type = (session.activity_type || '').toLowerCase();
-        const isGps = type === 'marche' || type === 'course' || type === 'vélo' || type === 'velo';
-        
-        if (!routineName) {
-            if (type === 'course') routineName = 'Course à pied';
-            else if (type === 'marche') routineName = 'Marche';
-            else if (type === 'vélo' || type === 'velo') routineName = 'Vélo';
-            else routineName = 'Séance MoaDja';
+        if (sessionRes.rows.length === 0) {
+            return res.status(404).send('Séance introuvable.');
         }
 
-        const baseUrl = req.protocol + '://' + req.get('host');
-        const imageUrl = `${baseUrl}/uploads/sport_shares/share_seance_${id}.jpg`;
-        const title = `Séance Sport MoaDja de ${nomAuteur}`;
-        const desc = `Découvrez les performances de ${nomAuteur} et rejoignez la communauté MoaDja !`;
+        const session = sessionRes.rows[0];
+        const nomAuteur = session.prenom || session.nom || session.username;
+        const routineName = session.workout_name || 'Séance MoaDja';
+        const isGps = session.activity_type === 'marche' || session.activity_type === 'course' || session.activity_type === 'vélo';
+        
+        const title = `Séance : ${escapeHtml(routineName)} par ${escapeHtml(nomAuteur)}`;
+        const desc = isGps 
+            ? `Découvrez la séance de ${session.activity_type} de ${escapeHtml(nomAuteur)} sur MoaDja !`
+            : `Découvrez la séance de musculation de ${escapeHtml(nomAuteur)} sur MoaDja !`;
+            
+        const imageUrl = session.share_image_url 
+            ? `${baseUrl}${session.share_image_url}` 
+            : `${baseUrl}/images/logo.png`;
+
+        const avatarHtml = session.avatar 
+            ? `<img src="${baseUrl}${escapeHtml(session.avatar)}" alt="Avatar" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover; border: 2px solid #a78bfa;">`
+            : `<div style="width: 48px; height: 48px; border-radius: 50%; background: #a78bfa; color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px;">${escapeHtml(nomAuteur.charAt(0).toUpperCase())}</div>`;
 
         let mapHtml = '';
-        let pointsJson = '[]';
-        
-        // Si c'est du GPS, on injecte Leaflet et la map interactive
+        let mapScript = '';
+
         if (isGps) {
-            const { rows: points } = await pool.query(`SELECT lat, lng FROM sport_gps_points WHERE session_id = \$1 ORDER BY recorded_at ASC`, [id]);
-            pointsJson = JSON.stringify(points);
-            
-            mapHtml = `
-                <div id="map-container" style="width: 100%; height: 300px; border-radius: 16px; margin: 16px 0; overflow: hidden; border: 1px solid rgba(229, 231, 235, 0.8); box-shadow: 0 4px 12px rgba(0,0,0,0.04);">
-                    <div id="map" style="width: 100%; height: 100%;"></div>
-                </div>
-                <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-                <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-                <script>
-                    document.addEventListener('DOMContentLoaded', function() {
-                        const points = ${pointsJson};
-                        if (points.length > 0) {
-                            const map = L.map('map').setView([points[0].lat, points[0].lng], 13);
-                            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=cb1_3sfj_1_e7e2e040a3d271817c743aa0', {
-                                attribution: '&copy; OpenStreetMap &copy; CARTO'
-                            }).addTo(map);
+            const pointsRes = await pool.query(
+                `SELECT lat, lng FROM sport_gps_points WHERE session_id = \$1 ORDER BY recorded_at ASC`,
+                [sessionId]
+            );
+            const points = pointsRes.rows;
 
-                            const latlngs = points.map(p => [p.lat, p.lng]);
-                            const polyline = L.polyline(latlngs, { color: '#a78bfa', weight: 5, opacity: 0.9, lineJoin: 'round' }).addTo(map);
-                            map.fitBounds(polyline.getBounds(), { padding: [20, 20] });
+            if (points.length > 0) {
+                mapHtml = `
+                    <div id="map" style="width: 100%; height: 320px; border-radius: 16px; margin: 16px 0; z-index: 1; box-shadow: inset 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #e5e7eb;"></div>
+                `;
+                mapScript = `
+                    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+                    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+                    <script>
+                        document.addEventListener("DOMContentLoaded", function() {
+                            var points = ${JSON.stringify(points)};
+                            if(points.length > 0) {
+                                var map = L.map('map', { zoomControl: false }).setView([points[0].lat, points[0].lng], 14);
+                                L.control.zoom({ position: 'bottomright' }).addTo(map);
+                                
+                                L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=cb1_3sfj_1_e7e2e040a3d271817c743aa0', {
+                                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                                    subdomains: 'abcd',
+                                    maxZoom: 20
+                                }).addTo(map);
 
-                            const createDotIcon = (color) => L.divIcon({
-                                className: 'custom-map-dot',
-                                html: \`<div style="background-color: \${color}; width: 14px; height: 14px; border-radius: 50%; border: 2.5px solid white; box-shadow: 0 1px 4px rgba(0,0,0,0.4);"></div>\`,
-                                iconSize: [14, 14], iconAnchor: [7, 7]
-                            });
+                                var latlngs = points.map(function(p) { return [p.lat, p.lng]; });
+                                var polyline = L.polyline(latlngs, {color: '#a78bfa', weight: 4, opacity: 0.9}).addTo(map);
+                                map.fitBounds(polyline.getBounds(), { padding: [20, 20] });
 
-                            L.marker(latlngs[0], { icon: createDotIcon('#10b981') }).addTo(map);
-                            L.marker(latlngs[latlngs.length - 1], { icon: createDotIcon('#ef4444') }).addTo(map);
-                        } else {
-                            document.getElementById('map-container').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;background:#f9fafb;color:#9ca3af;font-weight:600;">Aucun tracé enregistré</div>';
-                        }
-                    });
-                </script>
-            `;
+                                L.circleMarker(latlngs[0], { radius: 6, fillColor: "#10b981", color: "#fff", weight: 2, fillOpacity: 1 }).addTo(map);
+                                L.circleMarker(latlngs[latlngs.length - 1], { radius: 6, fillColor: "#ef4444", color: "#fff", weight: 2, fillOpacity: 1 }).addTo(map);
+                            }
+                        });
+                    </script>
+                `;
+            }
         }
 
         const html = `<!DOCTYPE html>
 <html lang="fr">
 <head>
-        <meta charset="UTF-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${title}</title>
     <meta property="og:type" content="article" />
-    <meta property="og:url" content="${baseUrl}/share/seance/${id}" />
+    <meta property="og:url" content="${baseUrl}/share/seance/${sessionId}" />
     <meta property="og:title" content="${title}" />
     <meta property="og:description" content="${desc}" />
     <meta property="og:image" content="${imageUrl}" />
@@ -142,61 +145,21 @@ router.get('/share/seance/:id', async (req, res) => {
             flex-direction: column;
             gap: 16px;
         }
-        .user-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .user-info {
-            display: flex;
-            flex-direction: column;
-        }
-        .user-name {
-            font-size: 16px;
-            font-weight: 700;
-            color: #111827;
-        }
-        .user-handle {
-            font-size: 13px;
-            color: #9ca3af;
-        }
-        .post-text {
-            font-size: 14.5px;
-            color: #374151;
-            line-height: 1.5;
-            margin: 0;
-        }
-        .post-image {
-            width: 100%;
-            height: auto;
-            border-radius: 16px;
-            display: block;
-            border: 1px solid rgba(229, 231, 235, 0.8);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-        }
+        .user-row { display: flex; align-items: center; gap: 12px; }
+        .user-info { display: flex; flex-direction: column; }
+        .user-name { font-size: 16px; font-weight: 700; color: #111827; }
+        .user-handle { font-size: 13px; color: #9ca3af; }
+        .post-text { font-size: 14.5px; color: #374151; line-height: 1.5; margin: 0; }
+        .post-image { width: 100%; height: auto; border-radius: 16px; display: block; border: 1px solid rgba(229, 231, 235, 0.8); }
         .cta-button {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            padding: 14px;
-            background: #a78bfa;
-            color: #ffffff;
-            text-decoration: none;
-            border-radius: 50px;
-            font-weight: 700;
-            font-size: 15px;
-            transition: all 0.2s ease;
-            box-shadow: 0 8px 20px rgba(167, 139, 250, 0.3);
-            box-sizing: border-box;
+            display: flex; align-items: center; justify-content: center; width: 100%; padding: 14px;
+            background: #a78bfa; color: #ffffff; text-decoration: none; border-radius: 50px;
+            font-weight: 700; font-size: 15px; transition: all 0.2s ease; box-shadow: 0 8px 20px rgba(167, 139, 250, 0.3);
             border: 1px solid rgba(255,255,255,0.5);
         }
-        .cta-button:hover {
-            background: #7c3aed;
-            transform: translateY(-2px);
-            box-shadow: 0 12px 24px rgba(124, 58, 237, 0.4);
-        }
+        .cta-button:hover { background: #7c3aed; transform: translateY(-2px); box-shadow: 0 12px 24px rgba(124, 58, 237, 0.4); }
     </style>
+    ${mapScript}
 </head>
 <body>
     <div class="brand-header">MoaDja</div>
