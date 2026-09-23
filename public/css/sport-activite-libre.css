@@ -146,7 +146,7 @@
     box-shadow: 0 4px 12px rgba(167, 139, 250, 0.4);
 }
 
-/* ── 3. ACTIONS APRÈS DÉVERROUILLAGE (HARMONISATION TOTALE) ── */
+/* ── 3. ACTIONS APRÈS DÉVERROUILLAGE (HARMONISATION ISOLÉE) ── */
 .sport-poche-actions {
     display: flex;
     flex-direction: column;
@@ -157,7 +157,7 @@
     margin-bottom: 10px;
 }
 
-/* Style commun strict à TOUS les éléments d'action (boutons & liens transformés) */
+/* Cible uniquement les boutons internes du mode poche pour ne rien casser ailleurs */
 .sport-poche-actions button,
 .sport-poche-actions .sport-poche-btn-verrouiller {
     width: 100%;
