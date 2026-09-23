@@ -59,8 +59,8 @@ async function _sportDemarrerGPS(type) {
         _gpsDistanceKm = 0;
         _gpsDernierPoint = null;
         
-        const dateStart = new Date(d.session.date_start);
-        _gpsStartTime = dateStart.getTime();
+        // CORRECTION DU CHRONO (-1:-1) : Utilisation d'un timestamp absolu sécurisé
+        _gpsStartTime = Date.now();
 
         _sportAfficherModePoche(type);
         
@@ -93,8 +93,8 @@ function _sportAfficherModePoche(type) {
             <div class="sport-poche-status" id="gps-status">🟡 Recherche signal GPS...</div>
         </div>
 
-        <div style="display:flex; flex-direction:column; align-items:center; margin-top: auto; margin-bottom: auto;">
-            <div class="sport-poche-horloge" id="gps-horloge" style="font-size: 3.2rem; font-weight: 800; text-align: center; color: #ffffff; letter-spacing: 2px; line-height: 1; margin-bottom: 16px;">--:--</div>
+        <div style="display:flex; flex-direction:column; align-items:center; margin-top: auto; margin-bottom: auto; width: 100%;">
+            <div class="sport-poche-horloge" id="gps-horloge" style="font-size: 2.8rem; font-weight: 800; text-align: center; color: #ffffff; letter-spacing: 1px; line-height: 1; margin-bottom: 20px;">--:--</div>
             
             <div class="sport-poche-chrono" id="gps-chrono">00:00</div>
             
@@ -119,7 +119,7 @@ function _sportAfficherModePoche(type) {
             <button class="sport-poche-btn-reduire" onclick="_sportReduirePoche()">📱 Masquer l'écran noir</button>
             <button class="sport-poche-btn-terminer" onclick="_sportTerminerGPS()">⏹ Terminer l'activité</button>
             <button class="sport-poche-btn-verrouiller" onclick="_sportVerrouillerPoche()">🔒 Reverrouiller l'écran</button>
-            <button class="sport-poche-btn-reduire" onclick="_sportAnnulerGPS()" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.1); margin-top: 16px;">❌ Annuler l'activité</button>
+            <button class="sport-poche-btn-reduire" onclick="_sportAnnulerGPS()" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.1);">❌ Annuler l'activité</button>
         </div>
     `;
     document.body.appendChild(div);
@@ -188,7 +188,7 @@ function _sportUpdateChronoGPS() {
     const el = document.getElementById('gps-chrono');
     if (!el || !_gpsStartTime) return;
     
-    const diffSec = Math.floor((Date.now() - _gpsStartTime) / 1000);
+    const diffSec = Math.max(0, Math.floor((Date.now() - _gpsStartTime) / 1000));
     const h = Math.floor(diffSec / 3600);
     const m = Math.floor((diffSec % 3600) / 60);
     const s = diffSec % 60;
@@ -345,7 +345,6 @@ async function _sportTerminerGPS() {
 function _sportAnnulerGPS() {
     const ui = document.getElementById('sport-poche-ui');
     
-    // Masquer temporairement le mode poche pour afficher la modale correctement
     if (ui) ui.style.display = 'none';
 
     _sportOuvrirModalChoix(
@@ -354,14 +353,12 @@ function _sportAnnulerGPS() {
         'Oui, annuler',
         'Non, reprendre',
         async () => {
-            // Confirmation d'annulation
             if (_gpsWatchId !== null) navigator.geolocation.clearWatch(_gpsWatchId);
             if (_gpsChronoInterval !== null) clearInterval(_gpsChronoInterval);
             if (_gpsHorlogeInterval !== null) clearInterval(_gpsHorlogeInterval);
             if (typeof _sportRelacherWakeLock === 'function') _sportRelacherWakeLock();
 
             try {
-                // Appel API pour supprimer purement et simplement la session
                 await fetch(`/api/sport/sessions/${_gpsSessionId}`, {
                     method: 'DELETE',
                     headers: _sportAuthHeaders()
@@ -380,7 +377,6 @@ function _sportAnnulerGPS() {
             }
         },
         () => {
-            // Refus d'annulation, on réaffiche le mode poche
             if (ui) ui.style.display = 'flex';
         }
     );
