@@ -9,7 +9,7 @@ const bcrypt     = require('bcryptjs');
 const jwt        = require('jsonwebtoken');
 const rateLimit  = require('express-rate-limit');
 const { pool }   = require('../db/pool');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const { validerMotDePasse } = require('../utils/validations');
 
 // ── Rate limiter login ────────────────────────────────────────
@@ -34,24 +34,24 @@ router.post('/login', loginLimiter, async (req, res) => {
     }
     try {
         const result = await pool.query(
-            'SELECT id, username, password, role, must_change_password FROM users WHERE username = \$1',
+            'SELECT id, username, password, role, must_change_password FROM users WHERE username = \\$1',
             [username]
         );
         if (result.rows.length === 0) {
-            return res.status(401).json({ success: false, message: 'Utilisateur inconnu.' });
+            return res.status(401).json({ success: false, message: 'Identifiants incorrects.' });
         }
         const user  = result.rows[0];
         const match = await bcrypt.compare(password, user.password);
         if (!match) {
-            return res.status(401).json({ success: false, message: 'Mot de passe incorrect.' });
+            return res.status(401).json({ success: false, message: 'Identifiants incorrects.' });
         }
 
         const mdpInvalide = validerMotDePasse(password) !== null;
         if (mdpInvalide && !user.must_change_password) {
-            await pool.query('UPDATE users SET must_change_password = TRUE WHERE id = \$1', [user.id]);
+            await pool.query('UPDATE users SET must_change_password = TRUE WHERE id = \\$1', [user.id]);
         }
 
-        await pool.query('UPDATE users SET last_login = NOW() WHERE id = \$1', [user.id]);
+        await pool.query('UPDATE users SET last_login = NOW() WHERE id = \\$1', [user.id]);
 
         const token = jwt.sign(
             { id: user.id, username: user.username, role: user.role },
@@ -74,11 +74,10 @@ router.post('/login', loginLimiter, async (req, res) => {
 });
 
 // ── POST /api/debloquer ───────────────────────────────────────
-// Réservé admin — point de contrôle pour débloquer un utilisateur.
-router.post('/debloquer', authenticateToken, async (req, res) => {
-    if (req.user.role !== 'admin') {
-        return res.status(403).json({ success: false, message: 'Accès refusé.' });
-    }
+// Réservé admin. NB : aucune notion de compte "bloqué" n'existe
+// actuellement dans la table users — cette route ne réalise donc
+// aucune action de déblocage réelle pour l'instant.
+router.post('/debloquer', authenticateToken, requireAdmin, async (req, res) => {
     res.json({ success: true, message: 'Action autorisée.' });
 });
 
