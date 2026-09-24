@@ -9,9 +9,10 @@ router.get('/share/seance/:id', async (req, res) => {
     const id = parseInt(req.params.id, 10);
     try {
         const { rows: sessions } = await pool.query(`
-            SELECT s.*, u.username, w.name AS workout_name
+            SELECT s.*, u.username, p.first_name, p.last_name, w.name AS workout_name
             FROM sport_sessions s
             JOIN users u ON u.id = s.user_id
+            LEFT JOIN profiles p ON p.user_id = u.id
             LEFT JOIN sport_workouts w ON w.id = s.workout_id
             WHERE s.id = \$1
         `, [id]);
@@ -20,6 +21,12 @@ router.get('/share/seance/:id', async (req, res) => {
             return res.status(404).send('Séance introuvable.');
         }
         const session = sessions[0];
+        
+        // Construction du nom complet (Prénom Nom), avec repli sur username si vide
+        const fullName = (session.first_name || session.last_name) 
+            ? `${session.first_name || ''} ${session.last_name || ''}`.trim() 
+            : session.username;
+
         const isGps = ['marche', 'course', 'vélo', 'velo'].includes(session.activity_type);
 
         let gpsPoints = [];
@@ -46,9 +53,10 @@ router.get('/share/seance/:id', async (req, res) => {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>${titreRoutine} par ${session.username} - MoaDja</title>
+            <title>${titreRoutine} par ${fullName} - MoaDja</title>
+            <link rel="icon" type="image/png" href="/icon-192.png">
             
-            <meta property="og:title" content="Séance de ${session.username} : ${titreRoutine}">
+            <meta property="og:title" content="Séance de ${fullName} : ${titreRoutine}">
             <meta property="og:description" content="Découvrez les détails et le tracé de cette séance sur MoaDja.">
             <meta property="og:image" content="https://moadja.fr${imageUrl}">
             <meta property="og:url" content="${shareUrl}">
@@ -178,9 +186,9 @@ router.get('/share/seance/:id', async (req, res) => {
                 
                 <div class="card">
                     <div class="user-info">
-                        <div class="avatar">${session.username.charAt(0).toUpperCase()}</div>
+                        <div class="avatar">${fullName.charAt(0).toUpperCase()}</div>
                         <div>
-                            <div class="username">${session.username}</div>
+                            <div class="username">${fullName}</div>
                             <div class="handle">@${session.username.toLowerCase()}</div>
                         </div>
                     </div>
