@@ -9,7 +9,7 @@ router.get('/share/seance/:id', async (req, res) => {
     const id = parseInt(req.params.id, 10);
     try {
         const { rows: sessions } = await pool.query(`
-            SELECT s.*, u.username, p.first_name, p.last_name, w.name AS workout_name
+            SELECT s.*, u.username, p.prenom, p.nom, w.name AS workout_name
             FROM sport_sessions s
             JOIN users u ON u.id = s.user_id
             LEFT JOIN profiles p ON p.user_id = u.id
@@ -22,9 +22,9 @@ router.get('/share/seance/:id', async (req, res) => {
         }
         const session = sessions[0];
         
-        // Construction du prénom/nom, avec repli sur username si vide
-        const fullName = (session.first_name || session.last_name) 
-            ? `${session.first_name || ''} ${session.last_name || ''}`.trim() 
+        // Construction du nom complet (Prénom Nom) s'ils sont renseignés, sinon repli sur le username
+        const fullName = (session.prenom || session.nom)
+            ? `${session.prenom || ''} ${session.nom || ''}`.trim()
             : session.username;
 
         const isGps = ['marche', 'course', 'vélo', 'velo'].includes(session.activity_type);
