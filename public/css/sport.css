@@ -441,6 +441,12 @@
     padding: 16px 20px;
     cursor: pointer;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    /* Empêche la sélection de texte / menu contextuel iOS (Copier, loupe)
+       pendant le geste de glissement tactile sur toute la ligne. */
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: pan-y;
 }
 .sport-routine-carte:hover {
     transform: translateY(-2px);
@@ -468,6 +474,12 @@
     font-size: 12px;
     color: #9ca3af;
     margin-top: 2px;
+}
+
+.sport-routine-drag-handle {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
 }
 
 .sport-routine-detail-header {
@@ -508,6 +520,12 @@
     border: 1px solid rgba(255, 255, 255, 0.7);
     border-radius: 16px;
     position: relative;
+    /* Empêche la sélection de texte / menu contextuel iOS (Copier, loupe)
+       pendant le geste de glissement tactile sur toute la ligne. */
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: pan-y;
 }
 .sport-routine-exercice-info { flex: 1; min-width: 0; }
 .sport-routine-exercice-nom {
@@ -534,6 +552,12 @@
 .sport-routine-exercice-btn-edit:hover,
 .sport-routine-exercice-btn-del:hover {
     background: rgba(167, 139, 250, 0.1);
+}
+
+.sport-routine-exercice-drag-handle {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
 }
 
 .sport-routine-exercice-edit {
