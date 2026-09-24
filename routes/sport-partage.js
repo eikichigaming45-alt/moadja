@@ -22,7 +22,7 @@ router.get('/share/seance/:id', async (req, res) => {
         }
         const session = sessions[0];
         
-        // Construction du nom complet (Prénom Nom), avec repli sur username si vide
+        // Construction du prénom/nom, avec repli sur username si vide
         const fullName = (session.first_name || session.last_name) 
             ? `${session.first_name || ''} ${session.last_name || ''}`.trim() 
             : session.username;
