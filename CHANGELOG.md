@@ -1,4 +1,13 @@
-# 📝 Historique des mises à jour (Changelog) - MoaDja
+## 📝 Historique des mises à jour (Changelog) - MoaDja
+
+## v1.96.23 - 24 septembre 2026
+
+## ✨ Sport, Partage et Finitions
+- **Partage de vos séances** : Sur les pages de vos séances partagées avec vos proches (via WhatsApp ou autre), votre nom et prénom complets s'affichent désormais clairement à la place du nom d'utilisateur technique.
+- **Identité visuelle des onglets** : Le logo officiel de MoaDja apparaît désormais dans les onglets de votre navigateur lorsque vous consultez une page partagée, remplaçant la mapemonde par défaut.
+- **Sécurité et Stabilité** : Correction de divers correctifs de fond pour garantir le bon fonctionnement de l'application et la fiabilité des connexions.
+
+---
 
 ## v1.96.22 - 22 septembre 2026 🏷️ Stable
 
