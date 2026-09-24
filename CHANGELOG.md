@@ -1,5 +1,14 @@
 ## 📝 Historique des mises à jour (Changelog) - MoaDja
 
+## v1.96.24 - 24 septembre 2026
+
+## ✨ Sport et Fil social
+- **Réorganisation des exercices sur mobile** : Le glisser-déposer pour réordonner vos exercices dans une routine fonctionne désormais parfaitement au toucher sur iPhone. Vous pouvez saisir n'importe où sur la ligne de l'exercice pour le déplacer, sans risquer de le sélectionner par erreur.
+- **Fin de séance en douceur** : Valider la dernière série d'un exercice ne termine plus votre séance automatiquement. C'est vous qui décidez, en appuyant sur le bouton "Terminer", quand votre entraînement est fini.
+- **Mentions dans le fil social** : Correction d'un souci où une mention ajoutée lors de la modification d'une publication ou d'un commentaire par un administrateur ne s'affichait pas correctement.
+
+---
+
 ## v1.96.23 - 24 septembre 2026
 
 ## ✨ Sport, Partage et Finitions
