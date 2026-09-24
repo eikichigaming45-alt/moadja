@@ -372,7 +372,7 @@ function _sportToggleTimerSerie(exIndex, setNumber, targetSeconds) {
         inputS.style.display = 'none';
         chronoZone.style.display = 'block';
         
-        chronoZone.textContent = _sportFormatChrono(targetSeconds);
+                chronoZone.textContent = _sportFormatChrono(targetSeconds);
         chronoZone.classList.remove('depassement');
 
         btnPlayStop.innerHTML = '⏹️';
@@ -484,14 +484,15 @@ async function _sportValiderLogSerie(ex, setNumber, exIndex) {
         if (d.success) {
             d.log.exIndex = exIndex;
             _sportSeanceActive.logs.push(d.log);
-            
-            // NOUVELLE LOGIQUE : on ne force plus à tout cocher. 
-            // Si on vient de valider la DERNIÈRE série du DERNIER exercice de la liste, on propose de terminer.
+
+            // Dernière série du dernier exercice : on valide simplement la ligne,
+            // aucun repos n'est lancé, et on ne déclenche plus automatiquement
+            // la modale de fin (l'utilisateur clique lui-même sur "Terminer").
             const isLastEx = exIndex === _sportSeanceExercices.length - 1;
             const isLastSet = setNumber === _sportGetNbSets(ex, exIndex);
 
             if (isLastEx && isLastSet) {
-                _sportConfirmerFinSeance();
+                _sportRenderTousLesExercices();
             } else {
                 _sportLancerReposEntreSeries(ex.target_rest_seconds || 60, exIndex);
             }
@@ -533,12 +534,14 @@ async function _sportValiderLogDuree(ex, setNumber, exIndex) {
             d.log.exIndex = exIndex;
             _sportSeanceActive.logs.push(d.log);
 
-            // NOUVELLE LOGIQUE
+            // Dernière série du dernier exercice : on valide simplement la ligne,
+            // aucun repos n'est lancé, et on ne déclenche plus automatiquement
+            // la modale de fin (l'utilisateur clique lui-même sur "Terminer").
             const isLastEx = exIndex === _sportSeanceExercices.length - 1;
             const isLastSet = setNumber === _sportGetNbSets(ex, exIndex);
 
             if (isLastEx && isLastSet) {
-                _sportConfirmerFinSeance();
+                _sportRenderTousLesExercices();
             } else {
                 _sportLancerReposEntreSeries(ex.target_rest_seconds || 60, exIndex);
             }
