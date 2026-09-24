@@ -542,7 +542,7 @@ router.put('/:id', authenticateToken, upload.single('photo'), async (req, res) =
         ? JSON.parse(req.body.personnes_taguees)
         : undefined;
     try {
-                const { rows } = await pool.query(
+        const { rows } = await pool.query(
             `SELECT user_id, photo_url FROM posts WHERE id = \$1`, [postId]
         );
         if (!rows.length) return res.status(404).json({ success: false, message: 'Post introuvable.' });
@@ -560,7 +560,13 @@ router.put('/:id', authenticateToken, upload.single('photo'), async (req, res) =
         } else if (photoB64) {
             photo_url = await sauvegarderImage(Buffer.from(photoB64, 'base64'), userId);
         }
-        const mentionIds = contenu ? await resoudreMentions(contenu, userId) : [];
+
+        // Correctif : l'auteur RÉEL du post (post.user_id) est utilisé pour
+        // résoudre les mentions, et non l'éditeur (userId). Sans ça, un admin
+        // qui édite le post d'un autre utilisateur et se mentionne lui-même
+        // voit sa propre mention filtrée par l'anti-auto-mention de resoudreMentions.
+        const mentionIds = contenu ? await resoudreMentions(contenu, post.user_id) : [];
+
         const setClauses = [
             `contenu = \$1`, `photo_url = \$2`, `mentions = \$3`
         ];
