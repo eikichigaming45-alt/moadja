@@ -122,8 +122,8 @@ function _sportInitDragAndDropRoutines(zone) {
             poignee.addEventListener('touchstart', (e) => {
                 elementGlisse = item;
                 item.style.opacity = '0.4';
-                // On ne preventDefault pas ici pour laisser le touchmove natif s'initialiser
-            }, { passive: true });
+                e.preventDefault();
+            }, { passive: false });
         }
     });
 
@@ -473,7 +473,7 @@ function _sportEditerExercice(exerciceId, nom, setsActuel, repsActuel, dureeActu
 
     const estDuree = Number.isInteger(dureeActuelleSecondes);
 
-    itemEl.innerHTML = `
+        itemEl.innerHTML = `
         <div class="sport-routine-exercice-edit">
             <span class="sport-routine-exercice-edit-nom">${_sportEchapper(nom)}</span>
             <div class="sport-routine-exercice-edit-champs">
