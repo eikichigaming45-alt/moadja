@@ -4,8 +4,7 @@
 // Dépend de sport-widget.js et sport.js chargés AVANT (auth, échappement,
 // icônes, modales génériques _sportOuvrirConfirmationSuppression, etc.).
 
-let _sportRoutineDetailActive   = null;  // { workoutId, dayId }
-let _sportGlissementJusteTermine = false; // évite d'ouvrir une routine juste après un drag
+let _sportRoutineDetailActive = null; // { workoutId, dayId }
 
 async function _sportChargerListeRoutines() {
     const zone = document.getElementById('sport-routines-zone');
@@ -31,7 +30,7 @@ function _sportRenderListeRoutines(routines) {
     const zone = document.getElementById('sport-routines-zone');
     if (!zone) return;
 
-        zone.innerHTML = `
+    zone.innerHTML = `
         <div class="sport-card">
             <div class="sport-routine-creation">
                 <input type="text" id="sport-routine-nouveau-nom" class="sport-catalogue-search"
@@ -48,8 +47,8 @@ function _sportRenderListeRoutines(routines) {
         ` : `
             <div class="sport-routine-liste">
                 ${routines.map(w => `
-                    <div class="sport-routine-carte" id="sport-routine-carte-${w.id}" data-workout-id="${w.id}" onclick="_sportOuvrirDetailRoutine(${w.id})">
-                        <span class="sport-routine-drag-handle" style="cursor:grab; color:#9ca3af; display:flex; align-items:center; margin-right:4px;" title="Glisser pour réordonner">${SPORT_ICONE_POIGNEE}</span>
+                    <div class="sport-routine-carte" id="sport-routine-carte-${w.id}" data-workout-id="${w.id}" draggable="true" onclick="_sportOuvrirDetailRoutine(${w.id})">
+                        <span class="sport-routine-drag-handle" style="cursor:grab; color:#9ca3af; display:flex; align-items:center; margin-right:4px;" title="Glisser pour réordonner" onclick="event.stopPropagation()">${SPORT_ICONE_POIGNEE}</span>
                         <div class="sport-routine-carte-icone">${SPORT_ICONE_DUMBBELL}</div>
                         <div class="sport-routine-carte-info">
                             <div class="sport-routine-carte-nom">${_sportEchapper(w.name)}</div>
@@ -86,131 +85,101 @@ function _sportRenderListeRoutines(routines) {
 }
 
 // ── Drag & Drop des routines ──
-// Mécanisme unifié basé sur les Pointer Events (souris, tactile, stylet),
-// actif sur toute la ligne (pas seulement une poignée).
-// - Souris : le glissement démarre dès qu'un mouvement dépasse le seuil de
-//   10px, comportement instantané.
-// - Tactile (Android/iOS) : le glissement ne s'arme qu'après un appui
-//   maintenu de DELAI_ARMEMENT_MS sans déplacement significatif. Si le doigt
-//   bouge avant ce délai, le geste est laissé au scroll natif de la page
-//   (le timer est annulé). Ce délai lève l'ambiguïté entre "je veux scroller"
-//   et "je veux réordonner", qui posait problème avec touch-action seul.
-// Un seul système actif sur toutes les plateformes : plus de concurrence
-// avec un drag natif HTML5 (draggable retiré) ni avec le compositeur tactile.
+// Le drag natif HTML5 (draggable="true") gère desktop et Android (qui émule
+// le drag natif au toucher). Sur iOS/Safari, le drag natif au toucher ne
+// fonctionne jamais (limitation WebKit) : le bloc tactile ci-dessous prend
+// le relais et permet de démarrer le glissement depuis N'IMPORTE QUEL point
+// de la ligne (pas seulement la poignée), avec un seuil de déplacement pour
+// distinguer un simple tap (ouvrir la routine) d'un glissement (réordonner).
 function _sportInitDragAndDropRoutines(zone) {
     const liste = zone.querySelector('.sport-routine-liste');
     if (!liste) return;
 
     const SEUIL_DEPLACEMENT_PX = 10;
-    const DELAI_ARMEMENT_MS    = 250;
 
-    let itemActif     = null;
-    let pointerId     = null;
-    let pointerType   = null;
-    let enGlissement  = false;
-    let arme          = false;
-    let timerArmement = null;
+    let elementGlisse   = null;
+    let toucheCandidate = null;
+    let enGlissement    = false;
     let departX = 0, departY = 0;
 
-    function annulerTimer() {
-        if (timerArmement) {
-            clearTimeout(timerArmement);
-            timerArmement = null;
-        }
-    }
-
-    function demarrerGlissement(item) {
-        enGlissement = true;
-        item.setPointerCapture(pointerId);
-        item.style.opacity = '0.4';
-    }
-
-    function reinitialiser() {
-        annulerTimer();
-        itemActif    = null;
-        pointerId    = null;
-        pointerType  = null;
-        enGlissement = false;
-        arme         = false;
-    }
-
     liste.querySelectorAll('.sport-routine-carte').forEach(item => {
-        item.addEventListener('pointerdown', (e) => {
-            if (e.target.closest('button')) return;       // ne pas interférer avec ✏️ / 🗑️
-            if (item.dataset.dragLock === '1') return;     // désactivé pendant le renommage
-            if (e.pointerType === 'mouse' && e.button !== 0) return;
+        // ── Drag natif (souris desktop + émulation Android) ──
+        item.addEventListener('dragstart', () => {
+            elementGlisse = item;
+            item.style.opacity = '0.4';
+        });
 
-            itemActif   = item;
-            pointerId   = e.pointerId;
-            pointerType = e.pointerType;
-            enGlissement = false;
-            arme         = false;
-            departX = e.clientX;
-            departY = e.clientY;
+        item.addEventListener('dragend', () => {
+            item.style.opacity = '1';
+            elementGlisse = null;
+            _sportSauvegarderOrdreRoutines(liste);
+        });
 
-            if (pointerType !== 'mouse') {
-                // Tactile : on arme le drag après un appui maintenu.
-                timerArmement = setTimeout(() => {
-                    if (!itemActif) return;
-                    arme = true;
-                    demarrerGlissement(itemActif);
-                }, DELAI_ARMEMENT_MS);
+        item.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (!elementGlisse || elementGlisse === item) return;
+
+            const rect = item.getBoundingClientRect();
+            const apresMilieu = e.clientY > rect.top + rect.height / 2;
+
+            if (apresMilieu) {
+                item.after(elementGlisse);
+            } else {
+                item.before(elementGlisse);
             }
         });
+
+        // ── Tactile de secours (iOS) : actif sur toute la ligne ──
+        item.addEventListener('touchstart', (e) => {
+            if (e.target.closest('button')) return; // ne pas interférer avec ✏️ / 🗑️
+            if (!item.draggable) return;             // désactivé pendant le renommage
+            if (e.touches.length !== 1) return;
+
+            toucheCandidate = item;
+            enGlissement    = false;
+            departX = e.touches[0].clientX;
+            departY = e.touches[0].clientY;
+        }, { passive: true });
     });
 
-    liste.addEventListener('pointermove', (e) => {
-        if (!itemActif || e.pointerId !== pointerId) return;
-        const dx = e.clientX - departX;
-        const dy = e.clientY - departY;
-        const depasseSeuil = Math.abs(dx) >= SEUIL_DEPLACEMENT_PX || Math.abs(dy) >= SEUIL_DEPLACEMENT_PX;
+    liste.addEventListener('touchmove', (e) => {
+        if (!toucheCandidate) return;
+        const touch = e.touches[0];
+        const dx = touch.clientX - departX;
+        const dy = touch.clientY - departY;
 
         if (!enGlissement) {
-            if (pointerType === 'mouse') {
-                if (!depasseSeuil) return;
-                demarrerGlissement(itemActif);
-            } else {
-                // Tactile : tant que le drag n'est pas armé par le timer,
-                // un mouvement significatif annule le drag (= scroll normal).
-                if (depasseSeuil && !arme) {
-                    reinitialiser();
-                    return;
-                }
-                if (!arme) return; // en attente de l'armement par le timer
+            if (Math.abs(dx) < SEUIL_DEPLACEMENT_PX && Math.abs(dy) < SEUIL_DEPLACEMENT_PX) {
+                return; // sous le seuil : on laisse le scroll normal s'exécuter
             }
+            enGlissement  = true;
+            elementGlisse = toucheCandidate;
+            elementGlisse.style.opacity = '0.4';
         }
 
         e.preventDefault();
-        const cible = document.elementFromPoint(e.clientX, e.clientY);
+        const cible = document.elementFromPoint(touch.clientX, touch.clientY);
         const item  = cible?.closest('.sport-routine-carte');
-        if (!item || item === itemActif) return;
+        if (!item || item === elementGlisse) return;
 
         const rect = item.getBoundingClientRect();
-        const apresMilieu = e.clientY > rect.top + rect.height / 2;
+        const apresMilieu = touch.clientY > rect.top + rect.height / 2;
 
         if (apresMilieu) {
-            item.after(itemActif);
+            item.after(elementGlisse);
         } else {
-            item.before(itemActif);
+            item.before(elementGlisse);
         }
     }, { passive: false });
 
-    liste.addEventListener('pointerup', (e) => {
-        if (!itemActif || e.pointerId !== pointerId) return;
-        if (enGlissement) {
-            itemActif.style.opacity = '1';
-            itemActif.releasePointerCapture(pointerId);
+    liste.addEventListener('touchend', () => {
+        if (enGlissement && elementGlisse) {
+            elementGlisse.style.opacity = '1';
             _sportSauvegarderOrdreRoutines(liste);
-            _sportGlissementJusteTermine = true;
-            setTimeout(() => { _sportGlissementJusteTermine = false; }, 50);
         }
-        reinitialiser();
-    });
-
-    liste.addEventListener('pointercancel', (e) => {
-        if (!itemActif || e.pointerId !== pointerId) return;
-        if (enGlissement) itemActif.style.opacity = '1';
-        reinitialiser();
+        toucheCandidate = null;
+        enGlissement    = false;
+        elementGlisse   = null;
     });
 }
 
@@ -236,7 +205,7 @@ function _sportRenommerRoutineCarte(workoutId, nomActuel) {
     if (!carte) return;
 
     carte.onclick = null;
-    carte.dataset.dragLock = '1'; // Désactiver le drag pendant l'édition
+    carte.draggable = false; // Désactiver le drag pendant l'édition
     carte.innerHTML = `
         <div class="sport-routine-carte-icone">${SPORT_ICONE_DUMBBELL}</div>
         <div class="sport-routine-carte-info" style="display:flex;flex-direction:column;gap:8px">
@@ -323,8 +292,6 @@ async function _sportCreerRoutine() {
 }
 
 async function _sportOuvrirDetailRoutine(workoutId) {
-    if (_sportGlissementJusteTermine) return; // évite d'ouvrir la routine juste après un drag
-
     const zone = document.getElementById('sport-routines-zone');
     if (!zone) return;
 
@@ -387,7 +354,7 @@ function _sportRenderDetailRoutine(workout, jour) {
             ` : `
                 <div class="sport-routine-exercices-liste">
                     ${exercices.map(ex => `
-                        <div class="sport-routine-exercice-item" id="sport-exercice-${ex.id}" data-exercice-id="${ex.id}">
+                        <div class="sport-routine-exercice-item" id="sport-exercice-${ex.id}" data-exercice-id="${ex.id}" draggable="true">
                             <span class="sport-routine-exercice-drag-handle" title="Glisser pour réordonner">${SPORT_ICONE_POIGNEE}</span>
                             <div class="sport-routine-exercice-info">
                                 <div class="sport-routine-exercice-nom">${_sportEchapper(ex.exercise_name)}</div>
@@ -434,120 +401,99 @@ function _sportRenderDetailRoutine(workout, jour) {
 }
 
 // ── Drag & Drop des exercices d'une routine ──
-// Même mécanisme unifié que pour les routines : Pointer Events sur toute la
-// ligne, avec armement différé (250ms) sur tactile pour laisser le scroll
-// natif fonctionner tant que l'utilisateur n'a pas manifestement l'intention
-// de réordonner (appui maintenu immobile).
+// Même principe que pour les routines : le drag natif gère desktop/Android,
+// et le bloc tactile ci-dessous permet de démarrer le glissement depuis
+// N'IMPORTE QUEL point de la ligne sur iOS (pas seulement la poignée),
+// avec un seuil de déplacement pour ne pas gêner le défilement normal.
 function _sportInitDragAndDropExercices(zone, workoutId) {
     const liste = zone.querySelector('.sport-routine-exercices-liste');
     if (!liste) return;
 
     const SEUIL_DEPLACEMENT_PX = 10;
-    const DELAI_ARMEMENT_MS    = 250;
 
-    let itemActif     = null;
-    let pointerId     = null;
-    let pointerType   = null;
-    let enGlissement  = false;
-    let arme          = false;
-    let timerArmement = null;
+    let elementGlisse   = null;
+    let toucheCandidate = null;
+    let enGlissement    = false;
     let departX = 0, departY = 0;
 
-    function annulerTimer() {
-        if (timerArmement) {
-            clearTimeout(timerArmement);
-            timerArmement = null;
-        }
-    }
-
-    function demarrerGlissement(item) {
-        enGlissement = true;
-        item.setPointerCapture(pointerId);
-        item.classList.add('sport-exercice-en-glissement');
-    }
-
-    function reinitialiser() {
-        annulerTimer();
-        itemActif    = null;
-        pointerId    = null;
-        pointerType  = null;
-        enGlissement = false;
-        arme         = false;
-    }
-
     liste.querySelectorAll('.sport-routine-exercice-item').forEach(item => {
-        item.addEventListener('pointerdown', (e) => {
-            if (e.target.closest('button')) return;       // ne pas interférer avec ✏️ / 🗑️
-            if (e.target.closest('input')) return;         // ne pas interférer avec les champs d'édition
-            if (item.dataset.dragLock === '1') return;     // désactivé pendant l'édition
-            if (e.pointerType === 'mouse' && e.button !== 0) return;
+        // ── Drag natif (souris desktop + émulation Android) ──
+        item.addEventListener('dragstart', () => {
+            elementGlisse = item;
+            item.classList.add('sport-exercice-en-glissement');
+        });
 
-            itemActif   = item;
-            pointerId   = e.pointerId;
-            pointerType = e.pointerType;
-            enGlissement = false;
-            arme         = false;
-            departX = e.clientX;
-            departY = e.clientY;
+        item.addEventListener('dragend', () => {
+            item.classList.remove('sport-exercice-en-glissement');
+            elementGlisse = null;
+            _sportSauvegarderOrdreExercices(liste, workoutId);
+        });
 
-            if (pointerType !== 'mouse') {
-                timerArmement = setTimeout(() => {
-                    if (!itemActif) return;
-                    arme = true;
-                    demarrerGlissement(itemActif);
-                }, DELAI_ARMEMENT_MS);
+        item.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (!elementGlisse || elementGlisse === item) return;
+
+            const rect = item.getBoundingClientRect();
+            const apresMilieu = e.clientY > rect.top + rect.height / 2;
+
+            if (apresMilieu) {
+                item.after(elementGlisse);
+            } else {
+                item.before(elementGlisse);
             }
         });
+
+        // ── Tactile de secours (iOS) : actif sur toute la ligne ──
+        item.addEventListener('touchstart', (e) => {
+            if (e.target.closest('button')) return; // ne pas interférer avec ✏️ / 🗑️
+            if (!item.draggable) return;             // désactivé pendant l'édition
+            if (e.touches.length !== 1) return;
+
+            toucheCandidate = item;
+            enGlissement    = false;
+            departX = e.touches[0].clientX;
+            departY = e.touches[0].clientY;
+        }, { passive: true });
     });
 
-    liste.addEventListener('pointermove', (e) => {
-        if (!itemActif || e.pointerId !== pointerId) return;
-        const dx = e.clientX - departX;
-        const dy = e.clientY - departY;
-        const depasseSeuil = Math.abs(dx) >= SEUIL_DEPLACEMENT_PX || Math.abs(dy) >= SEUIL_DEPLACEMENT_PX;
+    liste.addEventListener('touchmove', (e) => {
+        if (!toucheCandidate) return;
+        const touch = e.touches[0];
+        const dx = touch.clientX - departX;
+        const dy = touch.clientY - departY;
 
         if (!enGlissement) {
-            if (pointerType === 'mouse') {
-                if (!depasseSeuil) return;
-                demarrerGlissement(itemActif);
-            } else {
-                if (depasseSeuil && !arme) {
-                    reinitialiser();
-                    return;
-                }
-                if (!arme) return;
+            if (Math.abs(dx) < SEUIL_DEPLACEMENT_PX && Math.abs(dy) < SEUIL_DEPLACEMENT_PX) {
+                return; // sous le seuil : on laisse le scroll normal s'exécuter
             }
+            enGlissement  = true;
+            elementGlisse = toucheCandidate;
+            elementGlisse.classList.add('sport-exercice-en-glissement');
         }
 
         e.preventDefault();
-        const cible = document.elementFromPoint(e.clientX, e.clientY);
+        const cible = document.elementFromPoint(touch.clientX, touch.clientY);
         const item  = cible?.closest('.sport-routine-exercice-item');
-        if (!item || item === itemActif) return;
+        if (!item || item === elementGlisse) return;
 
         const rect = item.getBoundingClientRect();
-        const apresMilieu = e.clientY > rect.top + rect.height / 2;
+        const apresMilieu = touch.clientY > rect.top + rect.height / 2;
 
         if (apresMilieu) {
-            item.after(itemActif);
+            item.after(elementGlisse);
         } else {
-            item.before(itemActif);
+            item.before(elementGlisse);
         }
-        }, { passive: false });
+    }, { passive: false });
 
-    liste.addEventListener('pointerup', (e) => {
-        if (!itemActif || e.pointerId !== pointerId) return;
-        if (enGlissement) {
-            itemActif.classList.remove('sport-exercice-en-glissement');
-            itemActif.releasePointerCapture(pointerId);
+    liste.addEventListener('touchend', () => {
+        if (enGlissement && elementGlisse) {
+            elementGlisse.classList.remove('sport-exercice-en-glissement');
             _sportSauvegarderOrdreExercices(liste, workoutId);
         }
-        reinitialiser();
-    });
-
-    liste.addEventListener('pointercancel', (e) => {
-        if (!itemActif || e.pointerId !== pointerId) return;
-        if (enGlissement) itemActif.classList.remove('sport-exercice-en-glissement');
-        reinitialiser();
+        toucheCandidate = null;
+        enGlissement    = false;
+        elementGlisse   = null;
     });
 }
 
@@ -583,8 +529,6 @@ function _sportConfirmerSuppressionExercice(exerciceId) {
 function _sportEditerExercice(exerciceId, nom, setsActuel, repsActuel, dureeActuelleSecondes, poidsActuel, reposActuelSecondes) {
     const itemEl = document.getElementById(`sport-exercice-${exerciceId}`);
     if (!itemEl) return;
-
-    itemEl.dataset.dragLock = '1'; // Désactiver le drag pendant l'édition
 
     const estDuree = Number.isInteger(dureeActuelleSecondes);
 
