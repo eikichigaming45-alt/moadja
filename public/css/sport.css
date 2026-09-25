@@ -480,7 +480,6 @@
     -webkit-user-select: none;
     user-select: none;
     -webkit-touch-callout: none;
-    touch-action: none;
 }
 
 .sport-routine-detail-header {
@@ -559,7 +558,13 @@
     -webkit-user-select: none;
     user-select: none;
     -webkit-touch-callout: none;
-    touch-action: none;
+}
+
+/* Feedback visuel pendant le glissement d'un exercice (Pointer Events).
+   Manquait précédemment : la classe était appliquée en JS mais aucune
+   règle CSS ne lui donnait d'effet visible. */
+.sport-exercice-en-glissement {
+    opacity: 0.4;
 }
 
 .sport-routine-exercice-edit {
