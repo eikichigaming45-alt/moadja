@@ -86,15 +86,13 @@ function _sportRenderListeRoutines(routines) {
 
 // ── Drag & Drop des routines ──
 // Mécanisme unifié basé sur les Pointer Events (souris, tactile, stylet).
-// Remplace l'ancien double système (drag natif HTML5 + fallback tactile custom),
-// qui entrait en concurrence sur iOS/Safari : passé iOS 13, WebKit reconnaît
-// lui-même le drag natif au toucher sur un élément draggable="true", ce qui
-// se disputait la main avec le fallback JS de façon non déterministe (résultat
-// différent selon la vitesse du geste). En supprimant draggable="true" et en
-// gérant tout via pointerdown/pointermove/pointerup, un seul système reste actif
-// sur toutes les plateformes : desktop (souris), Android, iOS.
-// Le seuil de déplacement distingue toujours un simple tap/clic (ouvrir la
-// routine) d'un glissement (réordonner).
+// Le geste démarre UNIQUEMENT depuis la poignée (.sport-routine-drag-handle),
+// qui porte touch-action: none en CSS. Ainsi Android/iOS ne captent jamais
+// le geste pour le scroll natif de la page quand on saisit la poignée, tandis
+// que le reste de la ligne garde touch-action: pan-y et le scroll normal
+// fonctionne partout ailleurs. Un seul système actif sur toutes les
+// plateformes (desktop, Android, iOS) : plus de concurrence avec un éventuel
+// drag natif HTML5 (draggable retiré) ni avec le compositeur tactile.
 function _sportInitDragAndDropRoutines(zone) {
     const liste = zone.querySelector('.sport-routine-liste');
     if (!liste) return;
@@ -107,9 +105,11 @@ function _sportInitDragAndDropRoutines(zone) {
     let departX = 0, departY = 0;
 
     liste.querySelectorAll('.sport-routine-carte').forEach(item => {
-        item.addEventListener('pointerdown', (e) => {
-            if (e.target.closest('button')) return;       // ne pas interférer avec ✏️ / 🗑️
-            if (item.dataset.dragLock === '1') return;     // désactivé pendant le renommage
+        const poignee = item.querySelector('.sport-routine-drag-handle');
+        if (!poignee) return;
+
+        poignee.addEventListener('pointerdown', (e) => {
+            if (item.dataset.dragLock === '1') return; // désactivé pendant le renommage
             if (e.pointerType === 'mouse' && e.button !== 0) return;
 
             itemActif    = item;
@@ -127,7 +127,7 @@ function _sportInitDragAndDropRoutines(zone) {
 
         if (!enGlissement) {
             if (Math.abs(dx) < SEUIL_DEPLACEMENT_PX && Math.abs(dy) < SEUIL_DEPLACEMENT_PX) {
-                return; // sous le seuil : on laisse le clic / scroll normal s'exécuter
+                return;
             }
             enGlissement = true;
             itemActif.setPointerCapture(pointerId);
@@ -210,7 +210,7 @@ function _sportRenommerRoutineCarte(workoutId, nomActuel) {
         _sportChargerListeRoutines();
     });
 
-                document.getElementById(`sport-routine-rename-save-${workoutId}`).addEventListener('click', async (e) => {
+        document.getElementById(`sport-routine-rename-save-${workoutId}`).addEventListener('click', async (e) => {
         e.stopPropagation();
         const input = document.getElementById(`sport-routine-rename-input-${workoutId}`);
         const nouveauNom = input?.value.trim();
@@ -388,11 +388,10 @@ function _sportRenderDetailRoutine(workout, jour) {
 }
 
 // ── Drag & Drop des exercices d'une routine ──
-// Même mécanisme unifié que pour les routines : Pointer Events uniquement,
-// sans draggable="true", pour éviter toute concurrence avec le drag natif
-// WebKit sur iOS. Le glissement peut démarrer depuis n'importe quel point
-// de la ligne (pas seulement la poignée), avec un seuil de déplacement pour
-// distinguer un tap (ouvrir l'édition via le bouton ✏️) d'un glissement.
+// Même mécanisme unifié que pour les routines : Pointer Events, geste démarré
+// uniquement depuis la poignée (.sport-routine-exercice-drag-handle), qui porte
+// touch-action: none en CSS. Le reste de la ligne garde touch-action: pan-y et
+// le scroll normal fonctionne partout ailleurs sur mobile.
 function _sportInitDragAndDropExercices(zone, workoutId) {
     const liste = zone.querySelector('.sport-routine-exercices-liste');
     if (!liste) return;
@@ -405,10 +404,11 @@ function _sportInitDragAndDropExercices(zone, workoutId) {
     let departX = 0, departY = 0;
 
     liste.querySelectorAll('.sport-routine-exercice-item').forEach(item => {
-        item.addEventListener('pointerdown', (e) => {
-            if (e.target.closest('button')) return;       // ne pas interférer avec ✏️ / 🗑️
-            if (e.target.closest('input')) return;         // ne pas interférer avec les champs d'édition
-            if (item.dataset.dragLock === '1') return;     // désactivé pendant l'édition
+        const poignee = item.querySelector('.sport-routine-exercice-drag-handle');
+        if (!poignee) return;
+
+        poignee.addEventListener('pointerdown', (e) => {
+            if (item.dataset.dragLock === '1') return; // désactivé pendant l'édition
             if (e.pointerType === 'mouse' && e.button !== 0) return;
 
             itemActif    = item;
@@ -426,7 +426,7 @@ function _sportInitDragAndDropExercices(zone, workoutId) {
 
         if (!enGlissement) {
             if (Math.abs(dx) < SEUIL_DEPLACEMENT_PX && Math.abs(dy) < SEUIL_DEPLACEMENT_PX) {
-                return; // sous le seuil : on laisse le scroll normal s'exécuter
+                return;
             }
             enGlissement = true;
             itemActif.setPointerCapture(pointerId);
@@ -448,7 +448,7 @@ function _sportInitDragAndDropExercices(zone, workoutId) {
         }
     }, { passive: false });
 
-    liste.addEventListener('pointerup', (e) => {
+        liste.addEventListener('pointerup', (e) => {
         if (!itemActif || e.pointerId !== pointerId) return;
         if (enGlissement) {
             itemActif.classList.remove('sport-exercice-en-glissement');
