@@ -560,13 +560,6 @@
     -webkit-touch-callout: none;
 }
 
-/* Feedback visuel pendant le glissement d'un exercice (Pointer Events).
-   Manquait précédemment : la classe était appliquée en JS mais aucune
-   règle CSS ne lui donnait d'effet visible. */
-.sport-exercice-en-glissement {
-    opacity: 0.4;
-}
-
 .sport-routine-exercice-edit {
     display: flex;
     flex-direction: column;
