@@ -90,7 +90,6 @@ function _sportInitDragAndDropRoutines(zone) {
     if (!liste) return;
 
     const SEUIL_DEPLACEMENT_PX = 10;
-    // Détection iOS pour désactiver uniquement chez eux le drag natif qui cause un conflit
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
     let elementGlisse   = null;
@@ -104,11 +103,11 @@ function _sportInitDragAndDropRoutines(zone) {
         // ── Drag natif (souris desktop + émulation Android) ──
         item.addEventListener('dragstart', () => {
             elementGlisse = item;
-            item.style.opacity = '0.4';
+            item.classList.add('sport-en-glissement');
         });
 
         item.addEventListener('dragend', () => {
-            item.style.opacity = '1';
+            item.classList.remove('sport-en-glissement');
             elementGlisse = null;
             _sportSauvegarderOrdreRoutines(liste);
         });
@@ -152,7 +151,7 @@ function _sportInitDragAndDropRoutines(zone) {
             }
             enGlissement  = true;
             elementGlisse = toucheCandidate;
-            elementGlisse.style.opacity = '0.4';
+            elementGlisse.classList.add('sport-en-glissement');
         }
 
         e.preventDefault();
@@ -172,7 +171,7 @@ function _sportInitDragAndDropRoutines(zone) {
 
     liste.addEventListener('touchend', () => {
         if (enGlissement && elementGlisse) {
-            elementGlisse.style.opacity = '1';
+            elementGlisse.classList.remove('sport-en-glissement');
             _sportSauvegarderOrdreRoutines(liste);
         }
         toucheCandidate = null;
@@ -405,7 +404,6 @@ function _sportInitDragAndDropExercices(zone, workoutId) {
     if (!liste) return;
 
     const SEUIL_DEPLACEMENT_PX = 10;
-    // Détection iOS pour désactiver uniquement chez eux le drag natif qui cause un conflit
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
     let elementGlisse   = null;
@@ -419,12 +417,11 @@ function _sportInitDragAndDropExercices(zone, workoutId) {
         // ── Drag natif (souris desktop + émulation Android) ──
         item.addEventListener('dragstart', () => {
             elementGlisse = item;
-            // CORRECTIF COULEUR : on utilise l'opacité directe comme pour les routines
-            item.style.opacity = '0.4';
+            item.classList.add('sport-en-glissement');
         });
 
         item.addEventListener('dragend', () => {
-            item.style.opacity = '1';
+            item.classList.remove('sport-en-glissement');
             elementGlisse = null;
             _sportSauvegarderOrdreExercices(liste, workoutId);
         });
@@ -468,8 +465,7 @@ function _sportInitDragAndDropExercices(zone, workoutId) {
             }
             enGlissement  = true;
             elementGlisse = toucheCandidate;
-            // CORRECTIF COULEUR
-            elementGlisse.style.opacity = '0.4';
+            elementGlisse.classList.add('sport-en-glissement');
         }
 
         e.preventDefault();
@@ -489,7 +485,7 @@ function _sportInitDragAndDropExercices(zone, workoutId) {
 
     liste.addEventListener('touchend', () => {
         if (enGlissement && elementGlisse) {
-            elementGlisse.style.opacity = '1';
+            elementGlisse.classList.remove('sport-en-glissement');
             _sportSauvegarderOrdreExercices(liste, workoutId);
         }
         toucheCandidate = null;
@@ -597,4 +593,3 @@ function _sportEditerExercice(exerciceId, nom, setsActuel, repsActuel, dureeActu
         }
     });
 }
-
