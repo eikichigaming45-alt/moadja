@@ -1130,15 +1130,6 @@
 
 /* ══════════════════════════════════════════════════════════════
    ── DÉTAIL PAR EXERCICE — FORMAT LIGNE COMPACTE ──
-   Remplace l'ancien format en pills empilées par une ligne unique
-   par exercice : pastille "Nx" + nom + séparateur + détail des
-   séries, le tout en texte coloré (violet MoaDja), sans encadré ni
-   pill. Utilisé à la fois dans la carte dashboard (sport.js), la
-   modale de stats détaillées et le widget colonne droite
-   (sport-widget.js complète le style modale/widget).
-   Correctif v1.92.61 : seul le NOM de l'exercice (.sport-exo-ligne-nom)
-   perd son gras (700 → 500) pour distinguer visuellement les Titres/
-   Durée/Volume/Calories (qui restent en 700/800) des exercices listés.
    ══════════════════════════════════════════════════════════════ */
 
 .sport-exo-ligne {
@@ -1175,10 +1166,7 @@
     margin-top: 2px;
 }
 
-/* ── État "prêt pour une nouvelle séance" (au moins 1 séance déjà enregistrée) ──
-   Layout horizontal compact : icône à gauche, titre + CTA alignés à droite,
-   verticalement centrés ensemble — évite le grand vide vertical de l'ancien
-   format en colonne (icône seule en haut, titre au milieu, bouton tout en bas). */
+/* ── État "prêt pour une nouvelle séance" ── */
 .sport-ready-state {
     display: flex;
     align-items: center;
@@ -1211,6 +1199,15 @@
 }
 .sport-ready-info .sport-cta-btn {
     align-self: flex-start;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ── DRAG & DROP (Classe unifiée) ──
+   ══════════════════════════════════════════════════════════════ */
+.sport-en-glissement {
+    background: rgba(167, 139, 250, 0.2) !important;
+    border: 2px dashed rgba(167, 139, 250, 0.8) !important;
+    opacity: 0.9 !important;
 }
 
 /* ══════════════════════════════════════════════════════════════
