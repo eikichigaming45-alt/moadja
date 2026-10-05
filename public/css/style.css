@@ -35,6 +35,7 @@ body.modal-open { overflow: hidden; position: fixed; width: 100%; }
   background: var(--glass-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  -webkit-transform: translateZ(0); transform: translateZ(0);
   border: var(--glass-border);
   padding: 40px;
   border-radius: var(--radius-xl);
@@ -103,10 +104,6 @@ input:focus { border-color: #7C3AED; background: #fff; }
 .sidebar-col { display: none; }
 .center-col { flex: 1; width: 100%; }
 
-/* AJOUT v1.84.7 : espacement entre widgets empilés dans la colonne droite
-   (la colonne gauche avait déjà .desktop-nav-container { margin-top: 16px }
-   mais aucune règle équivalente n'existait pour .right-sidebar, d'où les
-   widgets Sport Stats / Human Link collés l'un à l'autre). */
 .right-sidebar > .glass-panel + .glass-panel {
   margin-top: 16px;
 }
@@ -115,6 +112,7 @@ input:focus { border-color: #7C3AED; background: #fff; }
   background: var(--glass-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  -webkit-transform: translateZ(0); transform: translateZ(0);
   border-bottom: var(--glass-border);
   color: var(--text-main);
   padding: 0 24px;
@@ -162,6 +160,7 @@ input:focus { border-color: #7C3AED; background: #fff; }
   background: var(--glass-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  -webkit-transform: translateZ(0); transform: translateZ(0);
   border: var(--glass-border);
   border-radius: 50px;
   box-shadow: var(--glass-shadow);
@@ -251,6 +250,7 @@ input:focus { border-color: #7C3AED; background: #fff; }
   background: var(--glass-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  -webkit-transform: translateZ(0); transform: translateZ(0);
   border-top: var(--glass-border);
   display: flex;
   align-items: stretch;
@@ -312,6 +312,7 @@ input:focus { border-color: #7C3AED; background: #fff; }
   background: var(--glass-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  -webkit-transform: translateZ(0); transform: translateZ(0);
   border: var(--glass-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--glass-shadow);
@@ -500,6 +501,7 @@ input:focus { border-color: #7C3AED; background: #fff; }
   background: rgba(0, 0, 0, .2);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  -webkit-transform: translateZ(0); transform: translateZ(0);
   z-index: 1000;
   justify-content: center;
   align-items: center;
@@ -510,6 +512,7 @@ input:focus { border-color: #7C3AED; background: #fff; }
   background: rgba(255, 255, 255, 0.75);
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
+  -webkit-transform: translateZ(0); transform: translateZ(0);
   border: 1px solid rgba(255, 255, 255, 0.9);
   border-radius: 32px;
   padding: 30px;
@@ -695,8 +698,8 @@ input:focus { border-color: #7C3AED; background: #fff; }
 .item-meta { font-size: 12px; color: #6b7280; margin-top: 2px; }
 .item-del { background: none; border: none; cursor: pointer; color: #d1d5db; font-size: 16px; padding: 4px; flex-shrink: 0; transition: color 0.2s; }
 .item-del:hover { color: #ef4444; }
-.badge-today { display: inline-block; background: rgba(254, 243, 199, 0.8); color: #d97706; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 700; margin-left: 6px; }
-.badge-recur { display: inline-block; background: rgba(209, 250, 229, 0.8); color: #059669; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 700; margin-left: 4px; }
+.badge-today { display: inline-block; background: rgba(243, 244, 246, 0.8); color: #4b5563; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 700; margin-left: 6px; }
+.badge-recur { display: inline-block; background: rgba(243, 244, 246, 0.8); color: #4b5563; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 700; margin-left: 4px; }
 
 /* ===================== WIDGET CHOIX ===================== */
 .widget-choix-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid rgba(0, 0, 0, 0.05); }

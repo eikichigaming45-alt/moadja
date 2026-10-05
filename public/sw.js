@@ -1,5 +1,5 @@
 <<<<<<< HEAD
-const CACHE_NAME = 'moadja-cache-v1.96.25';
+const CACHE_NAME = 'moadja-cache-v1.96.26';
 =======
 const CACHE_NAME = 'moadja-cache-v1.96.24';
 >>>>>>> d2ba33611ea0d2e271db4ebb75ce05503e9b48dd
