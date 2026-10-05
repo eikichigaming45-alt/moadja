@@ -36,6 +36,8 @@ body.modal-open { overflow: hidden; position: fixed; width: 100%; }
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   -webkit-transform: translateZ(0); transform: translateZ(0);
+  will-change: transform, backdrop-filter;
+  isolation: isolate;
   border: var(--glass-border);
   padding: 40px;
   border-radius: var(--radius-xl);
@@ -113,6 +115,8 @@ input:focus { border-color: #7C3AED; background: #fff; }
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   -webkit-transform: translateZ(0); transform: translateZ(0);
+  will-change: transform, backdrop-filter;
+  isolation: isolate;
   border-bottom: var(--glass-border);
   color: var(--text-main);
   padding: 0 24px;
@@ -161,6 +165,7 @@ input:focus { border-color: #7C3AED; background: #fff; }
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   -webkit-transform: translateZ(0); transform: translateZ(0);
+  will-change: transform, backdrop-filter;
   border: var(--glass-border);
   border-radius: 50px;
   box-shadow: var(--glass-shadow);
@@ -251,6 +256,8 @@ input:focus { border-color: #7C3AED; background: #fff; }
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   -webkit-transform: translateZ(0); transform: translateZ(0);
+  will-change: transform, backdrop-filter;
+  isolation: isolate;
   border-top: var(--glass-border);
   display: flex;
   align-items: stretch;
@@ -313,6 +320,8 @@ input:focus { border-color: #7C3AED; background: #fff; }
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   -webkit-transform: translateZ(0); transform: translateZ(0);
+  will-change: transform, backdrop-filter;
+  isolation: isolate;
   border: var(--glass-border);
   border-radius: var(--radius-lg);
   box-shadow: var(--glass-shadow);
@@ -502,6 +511,8 @@ input:focus { border-color: #7C3AED; background: #fff; }
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   -webkit-transform: translateZ(0); transform: translateZ(0);
+  will-change: transform, backdrop-filter;
+  isolation: isolate;
   z-index: 1000;
   justify-content: center;
   align-items: center;
@@ -513,6 +524,8 @@ input:focus { border-color: #7C3AED; background: #fff; }
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
   -webkit-transform: translateZ(0); transform: translateZ(0);
+  will-change: transform, backdrop-filter;
+  isolation: isolate;
   border: 1px solid rgba(255, 255, 255, 0.9);
   border-radius: 32px;
   padding: 30px;
