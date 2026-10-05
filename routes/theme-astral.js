@@ -120,14 +120,27 @@ router.get('/status', authenticateToken, async (req, res) => {
     const userId = req.user.id;
     try {
         const { rows } = await pool.query(
-            'SELECT date_naissance, naissance_lat, naissance_lon, astral_cache FROM profiles WHERE user_id = \$1',
+            'SELECT date_naissance, heure_naissance, naissance_lat, naissance_lon, astral_cache FROM profiles WHERE user_id = \$1',
             [userId]
         );
         if (!rows.length) return res.json({ success: true, hasCache: false, hasDate: false, hasLocation: false });
+        
         const profil = rows[0];
+        let isCacheValid = false;
+        
+        if (profil.astral_cache) {
+            const cacheData = typeof profil.astral_cache === 'string' ? JSON.parse(profil.astral_cache) : profil.astral_cache;
+            // Si le cache n'a pas d'heure, MAIS que l'utilisateur a maintenant renseigné une heure : le cache est obsolète (Upgrade)
+            if (!cacheData.hasHeure && profil.heure_naissance) {
+                isCacheValid = false;
+            } else {
+                isCacheValid = true;
+            }
+        }
+
         res.json({
             success    : true,
-            hasCache   : !!profil.astral_cache,
+            hasCache   : isCacheValid,
             hasDate    : !!profil.date_naissance,
             hasLocation: !!(profil.naissance_lat && profil.naissance_lon)
         });
@@ -162,8 +175,15 @@ router.get('/', authenticateToken, async (req, res) => {
 
         const hasHeure = !!profil.heure_naissance;
 
+        // Vérification d'upgrade de cache
         if (profil.astral_cache) {
-            return res.json({ success: true, data: profil.astral_cache, fromCache: true });
+            const cacheData = typeof profil.astral_cache === 'string' ? JSON.parse(profil.astral_cache) : profil.astral_cache;
+            // On renvoie le cache si : il contient déjà une heure, OU s'il n'y a toujours pas d'heure dispo dans le profil.
+            if (cacheData.hasHeure || !hasHeure) {
+                return res.json({ success: true, data: cacheData, fromCache: true });
+            }
+            // Si cacheData.hasHeure est false mais que hasHeure est true -> on ignore le cache pour faire l'upgrade.
+            console.log(`[THEME-ASTRAL] Upgrade autorisé pour l'utilisateur ${userId} : ajout de l'heure de naissance.`);
         }
 
         const dateNaissance = new Date(profil.date_naissance);
