@@ -247,9 +247,24 @@ input:focus { border-color: #7C3AED; background: #fff; }
 }
 
 /* ===================== TAB PANES ===================== */
-.tab-content-wrap { flex: 1; overflow: hidden; position: relative; }
-.tab-pane { display: none; height: 100%; overflow-y: auto; padding-bottom: 80px; }
-.tab-pane.active { display: flex; flex-direction: column; }
+.tab-content-wrap { 
+  flex: 1; 
+  overflow: hidden; 
+  position: relative; 
+  -webkit-transform: translateZ(0); 
+  transform: translateZ(0); 
+}
+.tab-pane { 
+  display: none; 
+  height: 100%; 
+  overflow-y: auto; 
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 80px; 
+}
+.tab-pane.active { 
+  display: flex; 
+  flex-direction: column; 
+}
 @media (min-width: 1024px) { .tab-pane { padding-bottom: 20px; } }
 
 /* ===================== BOTTOM NAV (Mobile) ===================== */
