@@ -1,4 +1,22 @@
-# 📝 Historique des mises à jour (Changelog) - MoaDja
+## 📝 Historique des mises à jour (Changelog) - MoaDja
+
+## v1.96.24 - 24 septembre 2026
+
+## ✨ Sport et Fil social
+- **Réorganisation des exercices sur mobile** : Le glisser-déposer pour réordonner vos exercices dans une routine fonctionne désormais parfaitement au toucher sur iPhone. Vous pouvez saisir n'importe où sur la ligne de l'exercice pour le déplacer, sans risquer de le sélectionner par erreur.
+- **Fin de séance en douceur** : Valider la dernière série d'un exercice ne termine plus votre séance automatiquement. C'est vous qui décidez, en appuyant sur le bouton "Terminer", quand votre entraînement est fini.
+- **Mentions dans le fil social** : Correction d'un souci où une mention ajoutée lors de la modification d'une publication ou d'un commentaire par un administrateur ne s'affichait pas correctement.
+
+---
+
+## v1.96.23 - 24 septembre 2026
+
+## ✨ Sport, Partage et Finitions
+- **Partage de vos séances** : Sur les pages de vos séances partagées avec vos proches (via WhatsApp ou autre), votre nom et prénom complets s'affichent désormais clairement à la place du nom d'utilisateur technique.
+- **Identité visuelle des onglets** : Le logo officiel de MoaDja apparaît désormais dans les onglets de votre navigateur lorsque vous consultez une page partagée, remplaçant la mapemonde par défaut.
+- **Sécurité et Stabilité** : Correction de divers correctifs de fond pour garantir le bon fonctionnement de l'application et la fiabilité des connexions.
+
+---
 
 ## v1.96.22 - 22 septembre 2026 🏷️ Stable
 
